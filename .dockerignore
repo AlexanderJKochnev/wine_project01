@@ -4,8 +4,9 @@
 # Но разрешить следующие файлы и директории
 !/.dockerignore
 !/Dockerfile
-!/docker-compose.yml
+!/docker-compose.yaml
 !/.env
+!/alembic.ini
 
 # Разрешить исходный код Python
 !/app/
@@ -15,6 +16,7 @@
 !/setup.py
 
 # Исключить ненужные файлы в разрешённых директориях
+*/__pycache__
 **/__pycache__
 **/*.pyc
 **/*.pyo
@@ -33,3 +35,5 @@
 
 # Исключить данные PostgreSQL, если они есть в проекте
 **/postgres-data/
+**/pg_data/
+**/migration_volume/

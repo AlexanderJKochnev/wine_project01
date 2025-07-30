@@ -20,6 +20,8 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+pg_data/
+migration_volume/
 
 # Virtual environment
 .venv/

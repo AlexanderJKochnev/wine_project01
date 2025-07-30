@@ -12,7 +12,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - ./pg_data:/var/lib/postgresql/data
       # pgsql initializing scripts shall be placed in /initdb.d directory
     # env_file:
     #   - .env
@@ -57,6 +57,7 @@ services:
       WEB_HOST: ${API_HOST}
     volumes:
       - ./templates:/app/templates
+      - ./migration_volume:/app/app/migration/versions
     networks:
       - pgnetwork
 
@@ -65,7 +66,6 @@ networks:
     driver: bridge
 
 volumes:
-  pg_data:
-    name: pg_data
-    # external: true
+  migration_volume: # alembic migrations
+  pg_data: # postgresql data
     

@@ -3,12 +3,13 @@
 2. alembic init -t async migration
    1. migration: название директории с миграциями
 3. alembic.ini
-   1. заменить параметр sqlalchemy.url = postgresql+asyncpg://<user>:<password>@<host>:<port>
+   1. заменить параметр sqlalchemy.url = postgresql+asyncpg://<user>:<password>@<host>:<port>/<db>
       1. user = .env/POSTGRES_USER
       2. password = .env/POSTGRES_PASSWORD
-      3. host = localhost (.env/POSTGRES_HOST)
+      3. host = .env/POSTGRES_HOST
       4. port = .env/POSTGRES_PORT
-      5. пример: postgresql+asyncpg://wine:wine1@localhost:5432
+      5. db = .env/POSTGRES_DB
+      6. пример: sqlalchemy.url = postgresql+asyncpg://wine:wine1@wine_host:5432/wine_db
    2. script_location = заменить migration -> app/migration 
 4. migration/env.py:
    1. После 'from alembic import context' вставить все что ниже:
@@ -31,7 +32,6 @@
    17. fileConfig(config.config_file_name)
    18. target_metadata = Base.metadata
 5. перенести alembic.ini из app в корень
-6. alembic revision --autogenerate -m "Initial revision"
-7. alembic upgrade head
-   1. или alembic upgrade 3eb856b293fa
-8. alembic downgrade -1  ? отмена последней трансзакции
+6. После запуска приложения в docker, запустить из командной строки (сделать автоматизацию?):
+   1. docker compose exec app alembic revision --autogenerate -m 'Initial revision'
+   2. docker compose exec app alembic upgrade head
