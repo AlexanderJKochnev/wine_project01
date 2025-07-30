@@ -1,0 +1,35 @@
+# Игнорировать всё
+*
+
+# Но разрешить следующие файлы и директории
+!/.dockerignore
+!/Dockerfile
+!/docker-compose.yml
+!/.env
+
+# Разрешить исходный код Python
+!/app/
+!/app/**/*.py
+!/requirements.txt
+!/pyproject.toml
+!/setup.py
+
+# Исключить ненужные файлы в разрешённых директориях
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.DS_Store
+**/.venv
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+
+# Исключить логи и временные файлы
+**/*.log
+**/*.tmp
+**/.cache
+
+# Исключить данные PostgreSQL, если они есть в проекте
+**/postgres-data/

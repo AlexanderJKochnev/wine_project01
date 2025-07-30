@@ -1,0 +1,71 @@
+services:
+  wine_host: # this is the name of the service and name of the host (POSTGRES_HOST)
+    restart: unless-stopped
+    container_name: ${POSTGRES_HOST}
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # expose:
+    # - "${POSTGRES_PORT}"
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # pgsql initializing scripts shall be placed in /initdb.d directory
+    # env_file:
+    #   - .env
+    networks:
+      pgnetwork:
+        aliases:
+          - ${POSTGRES_HOST}
+    healthcheck:
+      test: [ "CMD", "pg_isready -h postgres_db"]
+      # add -h dd in order to avoid message FATAL: role 'root' doesnot exist
+      interval: 10s # 1m30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+      start_interval: 5s
+
+  adminer:
+    container_name: pg_admin
+    image: adminer:4.8.1
+    restart: unless-stopped
+    environment:
+      - ADMINER_PLUGINS=tables-filter enum-option enum-types
+      - ADMINER_DESIGN=nette
+    ports:
+      - "${ADMINER_PORTS}"
+    networks:
+      - pgnetwork
+
+  app:
+    container_name: app
+    build: .
+    restart: unless-stopped
+    command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
+    depends_on:
+      - wine_host
+    ports:
+      - ${API_PORT}:${API_PORT}
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      # POSTGRES_HOST shall be equal postgres service name
+      WEB_PORT: ${API_PORT}
+      WEB_HOST: ${API_HOST}
+    volumes:
+      - ./templates:/app/templates
+    networks:
+      - pgnetwork
+
+networks:
+  pgnetwork:
+    driver: bridge
+
+volumes:
+  pg_data:
+    name: pg_data
+    # external: true
+    
