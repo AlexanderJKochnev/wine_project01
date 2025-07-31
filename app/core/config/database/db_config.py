@@ -38,6 +38,7 @@ class ConfigDataBase(BaseSettings):
 settings_db = ConfigDataBase()
 
 
+"""
 def get_db_url():
     return (
         f"postgresql+asyncpg://{settings_db.POSTGRES_USER}"
@@ -45,6 +46,7 @@ def get_db_url():
         f"{settings_db.POSTGRES_HOST}:{settings_db.POSTGRES_PORT}/"
         f"{settings_db.POSTGRES_DB}"
     )
+"""
 
 
 def get_auth_data():

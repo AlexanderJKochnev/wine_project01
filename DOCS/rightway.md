@@ -8,8 +8,8 @@
 2. Заполнить данными файлы в созданой директории в следующем порядке:
    1. models.py
       1. добавить созданную модель в migration/env.py секция import
-      2. alembic revision --autogenerate -m "<name> revision"
-      3. alembic upgrade head
+      2. alembic revision --autogenerate -m "<name> revision" -> потом при перезапруске docker
+      3. alembic upgrade head -> потом при перезапруске docker
    2. service.py
    3. schemas.py
       1. Hint: S<name> = S<name>Add + id: int

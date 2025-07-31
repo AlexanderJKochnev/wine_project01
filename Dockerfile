@@ -1,4 +1,4 @@
-FROM python:3.12-alpine
+FROM python:3.12-slim
 # slim ?
 ARG APP_PORT
 ARG APP_HOST

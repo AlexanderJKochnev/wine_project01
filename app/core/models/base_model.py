@@ -27,7 +27,7 @@ str_uniq = Annotated[str, mapped_column(unique=True, nullable=False)]
 str_null_true = Annotated[str, mapped_column(nullable=True)]
 
 # int field with default value 0
-count = Annotated[int, mapped_column(server_default=text('0'))]
+nmbr = Annotated[int, mapped_column(server_default=text('0'))]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -41,7 +41,8 @@ class Base(AsyncAttrs, DeclarativeBase):
     @declared_attr.directive
     def __tablename__(cls) -> str:
         """ Table name for postgresql is based on model name formatted
-        as bellow"""
+        as bellow
+        """
         name = cls.__name__.lower()
         if name.endswith('model'):
             name = name[0:-5]
