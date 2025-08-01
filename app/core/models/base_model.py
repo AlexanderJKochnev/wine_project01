@@ -43,7 +43,9 @@ class Base(AsyncAttrs, DeclarativeBase):
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
     description: Mapped[descr]
+    description_ru: Mapped[descr]
     name: Mapped[str_uniq]
+    name_ru: Mapped[str_null_index]
 
     @declared_attr.directive
     def __tablename__(cls) -> str:

@@ -5,6 +5,7 @@ from sqlalchemy.sql.sqltypes import Integer, String
 from sqlalchemy import inspect
 from typing import Set, List, Any
 from functools import cached_property
+from sqlalchemy.orm import RelationshipProperty
 
 
 class AutoModelView(ModelView):
@@ -44,26 +45,36 @@ class AutoModelView(ModelView):
         """Возвращает список атрибутов модели для column_list."""
         mapper = inspect(self.model)
         # pk_name = mapper.primary_key[0].name if mapper.primary_key else None
-        columns = []
-        tmp = []
+        columns: List[Any] = []
+        tmp: dict = {}
+        rel: List[Any] = []
         for attr in mapper.attrs:
-            # Только колонки (не relationships)
-            """
-            ttr.columns[0]=Column('count_drink',
-            Integer(),
-            table=<categories>,
-            nullable=False,
-            """
             if (hasattr(attr, "columns")
                     and attr.key not in self.exclude_columns):
+                # Только колонки (не relationships)
                 col = attr.columns[0]
                 x = sum((False if getattr(col, key) is None
                         else getattr(col, key))*2**n
                         for n, key in enumerate(reversed(self.sort_columns)))
                 y = sum(isinstance(getattr(col, 'type'), a) * 2**n
                         for n, a in enumerate(reversed(self.type_priority)))
-                tmp.append((attr, x, y, attr.key))
-        sorted_columns = sorted(tmp, key=lambda a: (a[1], a[2], a[3]))
+                tmp[attr.key] = (attr, x, y)
+                # tmp.append((attr, x, y, attr.key))
+            if isinstance(attr, RelationshipProperty):
+                # relationships
+                if (attr.direction.name == "MANYTOONE" and
+                        attr.key not in self.exclude_columns):
+                    rel.append(attr)
+        # замена id на relationship
+        for item in rel:
+            val = tmp.get(f'{item.key}_id')
+            if val:
+                tmp[f'{item.key}_id'] = (item, val[1], val[2])
+            else:
+                tmp[item.key] = (item, 0, 0)
+        # сортировка
+        tmp1 = [(*val, key) for key, val in tmp.items()]
+        sorted_columns = sorted(tmp1, key=lambda a: (a[1], a[2], a[3]))
         columns = [a for a, *b in reversed(sorted_columns)]
         return columns
 
