@@ -3,7 +3,7 @@
 """ Base Model for SqlAlchemy """
 from datetime import datetime
 from typing import Annotated
-from sqlalchemy import func, text
+from sqlalchemy import func, text, Text
 from sqlalchemy.orm import (DeclarativeBase, Mapped,
                             declared_attr, mapped_column)
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -21,13 +21,18 @@ updated_at = Annotated[datetime, mapped_column(server_default=func.now(),
                                                onupdate=datetime.now)]
 
 # unique non-null string field
-str_uniq = Annotated[str, mapped_column(unique=True, nullable=False)]
+str_uniq = Annotated[str, mapped_column(unique=True,
+                                        nullable=False, index=True)]
 
 # non-unique nullable string field
 str_null_true = Annotated[str, mapped_column(nullable=True)]
+str_null_index = Annotated[str, mapped_column(nullable=True, index=True)]
 
 # int field with default value 0
 nmbr = Annotated[int, mapped_column(server_default=text('0'))]
+
+# text field wouthout default value
+descr = Annotated[str, mapped_column(Text)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -37,6 +42,8 @@ class Base(AsyncAttrs, DeclarativeBase):
     id: Mapped[int_pk]
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
+    description: Mapped[descr]
+    name: Mapped[str_uniq]
 
     @declared_attr.directive
     def __tablename__(cls) -> str:
@@ -52,3 +59,10 @@ class Base(AsyncAttrs, DeclarativeBase):
             else:
                 name = f'{name}s'
         return name
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        # return f"<Category(name={self.name})>"
+        return str(self)
