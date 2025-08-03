@@ -12,7 +12,7 @@ git push -u origin main
 4. git commit -m "описание commit"
 5. git push -u origin main
 
-linux
+linux - на этой стороне ничего не менять
 1. ssh-keygen -t ed25519 -C "ваш_email@example.com"
 2. eval "$(ssh-agent -s)"  # Запуск ssh-agent
 3. ssh-add ~/.ssh/id_ed25519  # Добавление ключа
