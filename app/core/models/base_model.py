@@ -32,7 +32,7 @@ str_null_index = Annotated[str, mapped_column(nullable=True, index=True)]
 nmbr = Annotated[int, mapped_column(server_default=text('0'))]
 
 # text field wouthout default value
-descr = Annotated[str, mapped_column(Text)]
+descr = Annotated[str, mapped_column(Text, nullable=True)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):

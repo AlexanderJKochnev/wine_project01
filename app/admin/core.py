@@ -1,7 +1,7 @@
 # app/admin/core.py
 # app/admin/sqladmin.py
 from sqladmin import ModelView
-from sqlalchemy.sql.sqltypes import Integer, String
+from sqlalchemy.sql.sqltypes import Integer, String, Text
 from sqlalchemy import inspect
 from typing import Set, List, Any
 from functools import cached_property
@@ -33,10 +33,9 @@ class AutoModelView(ModelView):
             "primary_key",
             "index",
             "nullable",
-            # "type"
             )
     type_priority: tuple[Any] = (String, Integer)
-
+    type_excluded: tuple[Any] = (Text,)
     # Включать ли первичный ключ в список
     include_pk_in_list: bool = True
 
@@ -53,9 +52,13 @@ class AutoModelView(ModelView):
                     and attr.key not in self.exclude_columns):
                 # Только колонки (не relationships)
                 col = attr.columns[0]
+                # Исключить типы self.type_excluded
+                if type(getattr(col, 'type')) in self.type_excluded:
+                    continue
                 x = sum((False if getattr(col, key) is None
                         else getattr(col, key))*2**n
-                        for n, key in enumerate(reversed(self.sort_columns)))
+                        for n, key in enumerate(reversed(self.sort_columns))
+                        )
                 y = sum(isinstance(getattr(col, 'type'), a) * 2**n
                         for n, a in enumerate(reversed(self.type_priority)))
                 tmp[attr.key] = (attr, x, y)
