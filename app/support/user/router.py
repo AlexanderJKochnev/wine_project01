@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.support.users.auth import authenticate_user, create_access_token
-from app.support.users.auth import get_password_hash
-from app.support.users.dependencies import (get_current_admin_user,
-                                            get_current_user)
-from app.support.users.models import User
-from app.support.users.schemas import SUserAuth, SUserRegister
-from app.support.users.service import UsersDAO
+from app.support.user.auth import authenticate_user, create_access_token
+from app.support.user.auth import get_password_hash
+from app.support.user.dependencies import (get_current_admin_user,
+                                           get_current_user)
+from app.support.user.models import User
+from app.support.user.schemas import SUserAuth, SUserRegister
+from app.support.user.service import UsersDAO
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
@@ -33,7 +33,7 @@ async def auth_user(response: Response, user_data: SUserAuth):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Неверная почта или пароль')
     access_token = create_access_token({"sub": str(check.id)})
-    response.set_cookie(key="users_access_token",
+    response.set_cookie(key="user_access_token",
                         value=access_token, httponly=True)
     return {'access_token': access_token, 'refresh_token': None}
 
@@ -45,10 +45,10 @@ async def get_me(user_data: User = Depends(get_current_user)):
 
 @router.post("/logout/")
 async def logout_user(response: Response):
-    response.delete_cookie(key="users_access_token")
+    response.delete_cookie(key="user_access_token")
     return {'message': 'Пользователь успешно вышел из системы'}
 
 
-@router.get("/all_users/")
-async def get_all_users(user_data: User = Depends(get_current_admin_user)):
+@router.get("/all_user/")
+async def get_all_user(user_data: User = Depends(get_current_admin_user)):
     return await UsersDAO.find_all()

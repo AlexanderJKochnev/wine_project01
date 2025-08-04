@@ -1,5 +1,6 @@
 1. Тесты:
-2. Alembic: script for revison
+   1. Ок см DOCS/pytest.md
+2. Alembic: script for revison OK 
 3. SQLAdmin
    1. доделать сортировку колонок:
       1. nullable reversed

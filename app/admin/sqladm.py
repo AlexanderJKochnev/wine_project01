@@ -3,14 +3,19 @@
 from app.support.drink.models import Drink
 from app.support.category.models import Category
 from app.admin.core import AutoModelView
+# from app.support.user.models import User
+
+
+"""class UserAdmin(ModelView, User):
+    column_list = [User.name, User.first_name]
+    column_searchable_list = [User.name]
+"""
 
 
 class DrinkAdmin(AutoModelView, model=Drink):
-    # column_list = [Drink.id, Drink.title, Drink.category, Drink.subtitle]
-    column_searchable_list = [Drink.name]
+    column_searchable_list = [Drink.name, Drink.name_ru]
     column_sortable_list = [Drink.id, Drink.name, Drink.category]
 
-    # Это поле будет отображаться как выпадающий список
     form_columns = [Drink.name, Drink.subtitle,
                     Drink.description, Drink.category]
 
@@ -27,5 +32,7 @@ class CategoryAdmin(AutoModelView, model=Category):
                          "style": "min-height: 150px; width: 100%;",
                          "placeholder": "Enter detailed description...", }}
 """
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+"""

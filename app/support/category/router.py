@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends
 from app.support.category.repository import CategoryRepository
 from app.support.category.schemas import SCategory, SCategoryAdd, SCategoryUpd
 from app.support.category.service import CategoryDAO
-# from typing import Literal
 router = APIRouter(prefix='/categories',
                    tags=['Работа с категориями напитков'])
 
@@ -12,7 +11,8 @@ router = APIRouter(prefix='/categories',
 async def get_all_categories(
         request_body:
         CategoryRepository = Depends()) -> (list[SCategory] | dict):
-    result = await CategoryDAO.find_all(**request_body.to_dict())
+    result = await CategoryDAO.find_all(**request_body.model_dump())
+    # result = await CategoryDAO.find_all(**request_body.to_dict())
     if result:
         return result
     else:

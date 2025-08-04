@@ -1,8 +1,6 @@
 # app/core/config/project_config.py
-# from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
-
-# load_dotenv()
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from app.core.utils import get_path_to_root
 
 
 class Settings(BaseSettings):
@@ -13,8 +11,9 @@ class Settings(BaseSettings):
     DEBUG: bool
     CORS_ALLOWED_ORIGINS: str
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=get_path_to_root(),
+                                      env_file_encoding='utf-8',
+                                      extra='ignore')
 
 
 settings = Settings()

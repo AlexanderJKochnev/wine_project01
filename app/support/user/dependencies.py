@@ -6,8 +6,8 @@ from fastapi import Depends, HTTPException, Request, status
 from jose import jwt, JWTError
 
 from app.core.config.database.db_config import get_auth_data
-from app.support.users.service import UsersDAO
-from app.support.users.models import User
+from app.support.user.service import UsersDAO
+from app.support.user.models import User
 
 
 def get_token(request: Request):

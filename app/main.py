@@ -2,12 +2,15 @@
 from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-from app.support.users.router import router as user_router
+from app.support.user.router import router as user_router
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
 from sqladmin import Admin
-from app.core.config.database.db_noclass import engine
+# from app.core.config.database.db_noclass import engine
+from app.core.config.database.db_helper import db_help
 from app.admin import sqladm
+# from sqlalchemy.ext.asyncio import AsyncSession
+# from sqlalchemy import text
 
 
 app = FastAPI()
@@ -25,15 +28,9 @@ async def authenticate(username: str, password: str):
         return True
     return False
 
-"""admin = Admin(
-    app,
-    engine,
-    authentication_backend=authenticate,  # упрощённый пример
-    login_view="/admin/login"
-)"""
 
-
-admin = Admin(app, engine)
+# admin = Admin(app, engine)
+admin = Admin(app, db_help.engine)
 admin.add_view(sqladm.CategoryAdmin)
 admin.add_view(sqladm.DrinkAdmin)
 

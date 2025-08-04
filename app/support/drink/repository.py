@@ -1,16 +1,10 @@
 # app/support/drink/repository.py
+from app.core.repositories.sqlalchemy_repository import SqlAlchemyRepository
+from app.support.drink.models import Drink
 
-class DrinkRepository:
-    def __init__(
-            self, drink_id: int | None = None,
-            title: str | None = None,
-            subtitle: str | None = None,
-            category_id: int | None = None
-            ):
-        self.id = drink_id
-        self.title = title
-        self.subtitle = subtitle
-        self.category_id = category_id
+
+class DrinkRepository(SqlAlchemyRepository):
+    model = Drink
 
     def to_dict(self) -> dict:
         data = {'id': self.id,

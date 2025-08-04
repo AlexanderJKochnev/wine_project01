@@ -1,4 +1,4 @@
-# app/core/support/users/auth.py
+# app/core/support/user/auth.py
 
 from datetime import datetime, timedelta, timezone
 
@@ -6,7 +6,7 @@ from jose import jwt
 from passlib.context import CryptContext
 
 from app.core.config.database.db_config import get_auth_data
-from app.support.users.service import UsersDAO
+from app.support.user.service import UsersDAO
 
 from pydantic import EmailStr
 

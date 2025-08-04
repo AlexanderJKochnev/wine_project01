@@ -1,30 +1,28 @@
 # app/core/config/database/db_config.py
 
-from pathlib import Path
 from typing import Optional
-from dotenv import load_dotenv
-# from os import path
 from pydantic import PostgresDsn
-from pydantic_settings import BaseSettings  # , SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from app.core.utils import get_path_to_root
 
-load_dotenv()
+# load_dotenv() - не использовать - путает
 
 
 class ConfigDataBase(BaseSettings):
     """ Postgresql Database Setting """
-    # model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=get_path_to_root(),
+                                      env_file_encoding='utf-8',
+                                      extra='ignore')
+
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
     POSTGRES_PORT: str
     POSTGRES_DB: str
     DB_ECHO_LOG: bool
+    # probable secirity issue:
     SECRET_KEY: str
     ALGORITHM: str
-
-    class Config:
-        env_file = Path('../.env')
-        # env_file = ".env"
 
     @property
     def database_url(self) -> Optional[PostgresDsn]:
@@ -36,17 +34,6 @@ class ConfigDataBase(BaseSettings):
 
 
 settings_db = ConfigDataBase()
-
-
-"""
-def get_db_url():
-    return (
-        f"postgresql+asyncpg://{settings_db.POSTGRES_USER}"
-        f":{settings_db.POSTGRES_PASSWORD}@"
-        f"{settings_db.POSTGRES_HOST}:{settings_db.POSTGRES_PORT}/"
-        f"{settings_db.POSTGRES_DB}"
-    )
-"""
 
 
 def get_auth_data():
