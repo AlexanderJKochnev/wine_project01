@@ -1,12 +1,6 @@
 # app/support/category/repository.py
-from app.core.repositories.sqlalchemy_repository import SqlAlchemyRepository
+
+from app.core.repositories.repo_factory import RepositoryFactory
 from app.support.category.models import Category
 
-
-class CategoryRepository(SqlAlchemyRepository):
-    model = Category
-
-    def to_dict(self):
-        data = self.model.model_dump()
-        filtered_data = {key: value for key, value in data.items() if value is not None}
-        return filtered_data
+CategoryRepository = RepositoryFactory.get_repository(Category)

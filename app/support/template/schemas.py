@@ -1,25 +1,13 @@
 # app/support/template/schemas.py
+"""
+замени Template на имя модели в единственном числе с сохранением регистра
+"""
+from app.core.schemas.base_schema import create_pydantic_models_from_orm
+from app.support.template.models import Template
 
-from app.core.schemas.base_schema import BaseModel
-
-
-class TemplateBase(BaseModel):
-    """ список полей модели """
-    name: str
-
-
-class TemplateCreate(TemplateBase):
-    pass
-
-
-class TemplateUpdate(TemplateBase):
-    pass
-
-
-class TemplateResponse(TemplateBase):
-    id: int
-
-
-class TemplateListResponse(TemplateBase):
-    id: int | None = None
-    name: str | None = None
+TemplateSchemas = create_pydantic_models_from_orm(Template)
+SAdd = TemplateSchemas['Create']
+SUpd = TemplateSchemas['Update']
+SDel = TemplateSchemas['DeleteResponse']
+SRead = TemplateSchemas['Read']
+SList = TemplateSchemas['List']

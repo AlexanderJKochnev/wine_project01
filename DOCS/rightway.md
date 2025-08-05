@@ -16,4 +16,6 @@
    4. repository.py
    5. router.py
    6. add/main.py (добавить новый роутер)
-3. 
+3. Добавить роутер в SQLAdmin:
+   1. app/admin/sqladmin.py добавить класс по аналогии с имеющимися
+   2. app/main.py доавить роутер admin.add_view(sqladm.<Name>Admin)

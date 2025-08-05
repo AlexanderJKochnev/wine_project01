@@ -1,16 +1,17 @@
 # app/core/config/database/db_helper.py
-
+""" not used - see db_noclass"""
 from asyncio import current_task
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import (
-    AsyncSession,
+    AsyncSession, AsyncEngine,
     create_async_engine,
     async_sessionmaker,
     async_scoped_session
 )
 
 from app.core.config.database.db_config import settings_db
+from fastapi import Depends
 
 
 class DatabaseHelper:
@@ -18,9 +19,13 @@ class DatabaseHelper:
         при каждом вызове создает новую сессию
     """
     def __init__(self, url: str, echo: bool = True):
-        self.engine = create_async_engine(url=url, echo=echo)
+        self.engine: AsyncEngine = create_async_engine(
+            url=url,    # строка подключения
+            echo=echo,  # логирование SQL-запросов (выключить в продакшене)
+            pool_pre_ping=True)
         self.session_factory = async_sessionmaker(
             bind=self.engine,
+            class_=AsyncSession,
             autoflush=False,
             autocommit=False,
             expire_on_commit=False
@@ -40,7 +45,7 @@ class DatabaseHelper:
     @asynccontextmanager
     async def get_db_session(self):
         """ @asynccontextmanager may not work properly. alternative see
-        in db_noclass.py """
+        bellow """
         from sqlalchemy import exc
 
         session: AsyncSession = self.session_factory()
@@ -51,6 +56,11 @@ class DatabaseHelper:
             raise
         finally:
             await session.close()
+
+    async def get_db(self):
+        """Зависимость для внедрения сессии в маршруты."""
+        async with self.session_factory() as session:
+            yield session
 
 
 db_help = DatabaseHelper(settings_db.database_url, settings_db.DB_ECHO_LOG)

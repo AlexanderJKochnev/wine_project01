@@ -68,14 +68,14 @@ def create_pydantic_models_from_orm(
     read_fields.update(base_fields)
     read_fields.update(rel_fields)
 
-    def to_dict(self) -> dict:
-        """Возвращает словарь: {имя_поля: значение}"""
-        return self.model_dump()
+    # def to_dict(self) -> dict:
+    """Возвращает словарь: {имя_поля: значение}"""
+    #     return self.model_dump()
 
     ReadModel = create_model(
         f"{model_name}Read",
         __config__=ConfigDict(from_attributes=True),
-        to_dict=to_dict,  # добавляем метод
+        # to_dict=to_dict,  # добавляем метод
         **read_fields
     )
 

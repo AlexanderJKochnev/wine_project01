@@ -26,6 +26,11 @@ class ConfigDataBase(BaseSettings):
 
     @property
     def database_url(self) -> Optional[PostgresDsn]:
+        """
+        выводит строку подключения
+        :return:
+        :rtype:
+        """
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:"
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
