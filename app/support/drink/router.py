@@ -1,85 +1,148 @@
 # app/support/drink/router.py
-from fastapi import APIRouter, Depends  # noqa: F401
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+from app.core.config.database.db_noclass import get_db
+from app.core.config.project_config import get_paging
+from app.core.routers.router import create_find_router
+from app.support.drink.repository import DrinkRepository as repo
+from app.support.drink.models import Drink as MyModel
+from app.support.drink.schemas import SRead
+from app.support.drink.schemas import SAdd
+from app.support.drink.schemas import SUpd
+from app.support.drink.schemas import SList
+from app.support.drink.schemas import SDel
+from app.support.drink.schemas import SDetail
+from app.core.utils import apply_relationship_loads
 
-from app.support.drink.repository import DrinkRepository
-from app.support.drink.schemas import SDrink, SDrinkAdd
-from app.support.drink.service import DrinkDAO
+# список подсказок, в дальнейшем загрузить в бд на разных языках и выводить на языке интерфейса
+lbl: dict = {'get': 'Список напитков',
+             'prefix': 'Напитки',
+             'item': 'Напиток',
+             'items': 'Напитки',
+             'notfound': 'не найден(а)'}
+paging: dict = get_paging
 
-# from sqlalchemy import select   # noqa: F401
-# from app.core.config.database.db_helper import db_helper     # noqa: F401
-# from app.support.template.models import TemplateModel     # noqa: F401
-# from app.core.config.database.db_noclass import async_session_maker
-
-
-tag1: str = 'Работа с напитками'
-tag2: str = 'Получить все напитки'
-prefix = '/drink'
-router = APIRouter(prefix=f'{prefix}', tags=[f'{tag1}'])
+router = APIRouter(prefix='/drinks',
+                   tags=[f'{lbl.get("prefix")}'])
 
 
-@router.get("/", summary=tag2, response_model=list[SDrink])
-async def get_all_drink(
-        request_body:
-        DrinkRepository = Depends()) -> list[SDrink]:
-    result = await DrinkDAO.find_all(**request_body.to_dict())
+# ————————————————————————
+# GET: Список с пагинацией
+# ————————————————————————
+@router.get("/", summary=lbl.get('get'), response_model=SList)
+async def get_list(db: AsyncSession = Depends(get_db),
+                   page: int = Query(1, ge=1),
+                   page_size: int = Query(paging.get('def', 20),
+                                          ge=paging.get('min', 1),
+                                          le=paging.get('max', 100))):
+    skip = (page - 1) * page_size
+    result = await repo.get_all(db, skip=skip, limit=page_size)
+    # Общее количество
+    total = await db.scalar(select(func.count()).select_from(MyModel))
+
+    return {"items": result,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_next": skip + len(result) < total,
+            "has_prev": page > 1}
+
+
+# ————————————————————————
+# GET: Получение по ID
+# ————————————————————————
+@router.get("/{item_id}", response_model=SRead)
+async def get_one(item_id: int, db: AsyncSession = Depends(get_db)):
+    item = await repo.get_by_id(db, item_id)
+    if not item:
+        raise HTTPException(404, f"{lbl.get('item')} {item_id} {lbl.get('notfound')}")
+    # return SRead.model_validate(item, from_attributes=True)
+    print(f'{item=}')
+    print(f'{type(item)=}')
+    print(f'{dir(item)=}')
+    return item
+
+
+# ————————————————————————
+# PATCH: Частичное обновление
+# ————————————————————————
+@router.patch("/{item_id}", response_model=SRead)
+async def update_item(
+    item_id: int,
+    data: SUpd,
+    db: AsyncSession = Depends(get_db)
+):
+    update_data = data.model_dump(exclude_unset=True)  # только переданные поля
+    item = await repo.update(db, item_id, update_data)
+    if not item:
+        raise HTTPException(404, f"{lbl.get('item')} {item_id} {lbl.get('notfound')}")
+    return SRead.model_validate(item, from_attributes=True)
+
+
+# ————————————————————————
+# DELETE: Удаление
+# ————————————————————————
+@router.delete("/{item_id}", response_model=SDel)
+async def delete_item(item_id: int, db: AsyncSession = Depends(get_db)):
+    success = await repo.delete(db, item_id)
+    if not success:
+        raise HTTPException(404, f"{lbl.get('item')} {item_id} {lbl.get('notfound')}")
+    return {"id": item_id, "success": True}
+
+
+# ————————————————————————
+# POST: Создание
+# ————————————————————————
+@router.post("/", response_model=SRead, status_code=201)
+async def create_item(
+    data: SAdd,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await repo.create(db, data.model_dump())
     # return result
-    if result:
-        return result
-    else:
-        return {'message': 'Напитки не найдены!'}
+    return SRead.model_validate(result, from_attributes=True)
+
+# ————————————————————————
+# DETAIL: детальная информация с загрузкой relationships
+# ————————————————————————
 
 
-@router.get("/{id}", summary="Получить один напиток по id")
-async def get_drink_by_id(drink_id: int) -> SDrink | dict:
-    # result = await DrinkDAO.find_one_or_none_by_id(drink_id)
-    result = await DrinkDAO.find_full_data(drink_id)
-    if result:
-        return result
-    else:
-        return {'message': f'Напиток с ID {drink_id} не найден!'}
+@router.get("/detail/", response_model=List[SDetail])
+async def get_details(db: AsyncSession = Depends(get_db)):
+    """
+    Возвращает данные с раскрытыми полями из связанных таблиц:
+    """
+    stmt = select(MyModel)
+    stmt = apply_relationship_loads(stmt, MyModel)
+    res = await db.scalars(stmt)
+    results = res.all()
+
+    # Конвертируем в схему
+    return [
+        SDetail.model_validate(
+            result,
+            from_attributes=True,
+            # При необходимости можно добавить контекст
+        )
+        for result in results
+    ]
 
 
-@router.get("/filter_by", summary="Получить один напиток по фильтру")
-async def get_drink_by_filter(request_body: DrinkRepository =
-                              Depends()) -> SDrink | dict:
-    result = await DrinkDAO.find_one_or_none(**request_body.to_dict())
-    if result:
-        return result
-    else:
-        return {'message': 'Напиток с указанными параметрами не найден!'}
+@router.get("/detail/{user_id}", response_model=SDetail)
+async def get_detail(item_id: int, db: AsyncSession = Depends(get_db)):
+    """То же, но по ID"""
+    stmt = select(MyModel).where(MyModel.id == item_id)
+    stmt = apply_relationship_loads(stmt, MyModel)
+    res = await db.scalars(stmt)
+    result = res.first()
+    if not result:
+        raise HTTPException(404, "Result not found")
+    return SDetail.model_validate(result, from_attributes=True)
 
-
-@router.post("/add/")
-async def create_drink(drink: SDrinkAdd) -> dict:
-    check = await DrinkDAO.add(**drink.dict())
-    if check:
-        return {"message": "Напиток успешно добавлен!",
-                "drink": drink}
-    else:
-        return {"message": "Ошибка при добавлении напитка!"}
-
-
-@router.put("/update/")
-async def update_category_description(drink: SDrinkAdd) -> dict:
-    check = await DrinkDAO.update(
-        filter_by={'title': drink.title,
-                   'subtitle': drink.subtitle},
-        **drink.dict())
-    # category_description=category.category_description)
-    if check:
-        return {"message": f"Описание напитка {drink.title}"
-                           f"{drink.subtitle} успешно обновлено!",
-                "drink": drink}
-    else:
-        return {"message": "Ошибка при обновлении описания напитка!"}
-
-
-@router.delete("/del/{drink_id}")
-async def delete_category(drink_id: int) -> dict:
-    # filter_by: dict = {a: b for a, b in category.dict().items() if b}
-    check = await DrinkDAO.delete(id=drink_id)
-    if check:
-        return {"message": f"напиток {drink_id} "
-                           f"удален!"}
-    else:
-        return {"message": "Ошибка при удалении напитка!"}
+# ————————————————————————
+# FIND: Поиск по полям (фильтрация) динамический роутер
+# ————————————————————————
+find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
+router.routes.append(find_route)

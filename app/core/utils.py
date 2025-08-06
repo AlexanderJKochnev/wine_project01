@@ -3,6 +3,10 @@
 
 from pathlib import Path
 from typing import Dict
+from sqlalchemy.orm import selectinload, Load
+from sqlalchemy.orm.util import AliasedClass
+from sqlalchemy.sql.selectable import Select
+from sqlalchemy.orm import DeclarativeMeta
 
 
 def get_path_to_root(name: str = '.env'):
@@ -21,7 +25,7 @@ def get_path_to_root(name: str = '.env'):
 
 def get_searchable_fields(model: type) -> Dict[str, type]:
     """
-    СЛОВАРЬ ПОЛЕ ПО КОТОРЫМ МОЖНО ОСУЩЕВЛЯТЬ ПОИСК
+    СЛОВАРЬ ПОЛЕЙ ПО КОТОРЫМ МОЖНО ОСУЩЕВЛЯТЬ ПОИСК
     Возвращает словарь: {field_name: field_type}
     включая:
     - простые поля модели
@@ -51,3 +55,16 @@ def get_searchable_fields(model: type) -> Dict[str, type]:
             fields[field_name] = col.type.python_type
 
     return fields
+
+
+def apply_relationship_loads(stmt: Select, model: DeclarativeMeta) -> Select:
+    """
+    Автоматически добавляет .options(selectinload(...)) для всех many-to-one relationships.
+    Используется при детальном чтении.
+    """
+    mapper = model.__mapper__
+    for rel_name, relationship in mapper.relationships.items():
+        if relationship.uselist:
+            continue  # skip one-to-many (можно расширить при необходимости)
+        stmt = stmt.options(selectinload(getattr(model, rel_name)))
+    return stmt

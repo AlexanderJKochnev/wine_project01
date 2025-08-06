@@ -5,6 +5,10 @@ from typing import List  # get_type_hints
 from app.core.utils import get_searchable_fields
 from app.core.config.database.db_noclass import get_db
 from app.core.config.project_config import get_paging
+"""
+   создание динамического роутера для поиска
+"""
+
 
 paging = get_paging
 

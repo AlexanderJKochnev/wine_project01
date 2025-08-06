@@ -3,7 +3,7 @@
 """ Base methods """
 from app.core.schemas.base_schema import PyModel
 from app.core.repositories.base_repository import AbstractRepository
-from app.core.repositories.sqlalchemy_repository import ModelType
+from app.core.repositories.sqlalchemy_repo2 import ModelType
 
 """ not implemented """
 

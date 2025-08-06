@@ -2,7 +2,8 @@
 
 """ Base Model for SqlAlchemy """
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Dict, Any
+from sqlalchemy import inspect
 from sqlalchemy import func, text, Text
 from sqlalchemy.orm import (DeclarativeBase, Mapped,
                             declared_attr, mapped_column)
@@ -68,3 +69,45 @@ class Base(AsyncAttrs, DeclarativeBase):
     def __repr__(self):
         # return f"<Category(name={self.name})>"
         return str(self)
+
+    def to_dict(self, exclude: list[str] | None = None, relationships: bool = False) -> Dict[str, Any]:
+        """Convert model instance to dictionary.
+
+        Args:
+            exclude: List of field names to exclude from result
+            relationships: Whether to include relationship fields
+        """
+        if exclude is None:
+            exclude = []
+
+        result = {}
+
+        # Get all column names
+        mapper = inspect(self.__class__)
+
+        for column in mapper.attrs:
+            # Skip relationships if not requested
+            if (not relationships and hasattr(column, 'property') and column.property.direction.name
+                    in ('ONETOMANY', 'MANYTOONE', 'MANYTOMANY')):
+                continue
+
+            # Skip excluded fields
+            if column.key in exclude:
+                continue
+
+            # Get the value
+            value = getattr(self, column.key)
+            # Handle datetime objects
+            if isinstance(value, datetime):
+                value = value.isoformat()
+            # Handle other models (for relationships)
+            elif hasattr(value, 'to_dict'):
+                value = value.to_dict(exclude=exclude, relationships=relationships)
+            # Handle lists of models (for one-to-many relationships)
+            elif isinstance(value, list):
+                value = [item.to_dict(exclude=exclude,
+                                      relationships=relationships)
+                         if hasattr(item, 'to_dict') else item for item in value]
+
+            result[column.key] = value
+        return result

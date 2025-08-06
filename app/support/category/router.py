@@ -105,5 +105,5 @@ async def create_item(
 # ————————————————————————
 # FIND: Поиск по полям (фильтрация)
 # ————————————————————————
-# find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
-# router.routes.append(find_route)
+find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
+router.routes.append(find_route)
