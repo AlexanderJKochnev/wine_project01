@@ -1,17 +1,44 @@
 # app/core/schemas/base_schema.py
 
 """ Base Pydantic Model """
-from pydantic import BaseModel, create_model  # , model_validator, ConfigDict
+from pydantic import BaseModel, create_model, ConfigDict
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty
 from typing import NewType, Any, Dict, Type, List, Optional
+from app.core.schemas.base_schema import BaseModel
 
 PyModel = NewType("PyModel", BaseModel)
 
 
 class Base(BaseModel):
-    class Config:
-        from_attributes = True
+    """
+    Базовый роутер с общими CRUD-методами.
+    Наследуйте и переопределяйте get_query() для добавления selectinload.
+    """
+    __config__ = ConfigDict(from_attributes=True)
+
+    def __init__(
+        self,
+        model: Type[Any],
+        create_schema: Type[BaseSchema],
+        update_schema: Type[BaseSchema],
+        read_schema: Type[BaseSchema],
+        prefix: str,
+        tags: List[str],
+        session: AsyncSession = Depends(get_async_session)
+    ):
+        self.model = model
+        self.create_schema = create_schema
+        self.update_schema = update_schema
+        self.read_schema = read_schema
+        self.prefix = prefix
+        self.tags = tags
+        self.router = APIRouter(prefix=prefix, tags=tags)
+        self.session = session  # будет установлен через зависимости
+
+
+
+
 
 
 def create_pydantic_models_from_orm(

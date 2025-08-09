@@ -1,59 +1,76 @@
 # app/core/repositories/sqlalchemy_repo2.py
-"""
-    функция для генерации репозиториев на базе model
-"""
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from typing import Any, Dict, Optional, Type, TypeVar, Generic
+from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
+from sqlalchemy import select, func
+from app.core.config.database.db_noclass import get_db
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
 
 class Repository(Generic[ModelType]):
-    def __init__(self, model: Type[ModelType]):
-        self.model = model
-        self.pk_name = self._get_pk_name()
+    model: ModelType
 
-    def _get_pk_name(self) -> str:
-        mapper = self.model.__mapper__
-        pk_cols = list(mapper.primary_key)
-        if len(pk_cols) != 1:
-            raise NotImplementedError("Composite PK не поддерживается в фабрике")
-        return pk_cols[0].name
+    def get_query(self):
+        """
+        Переопределяемый метод.
+        Возвращает select() с нужными selectinload.
+        По умолчанию — без связей.
+        """
+        return select(self.model)
 
-    async def create(self, db: AsyncSession, data: Dict[str, Any]) -> ModelType:
+    async def create(self, data: Dict[str, Any], session: AsyncSession = Depends(get_db())) -> ModelType:
+        """ create & return record"""
         obj = self.model(**data)
-        db.add(obj)
-        await db.commit()
-        await db.refresh(obj)
+        session.add(obj)
+        # await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
+        await session.commit()
+        await session.refresh(obj)
         return obj
 
-    async def get_by_id(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
-        stmt = select(self.model).where(getattr(self.model, self.pk_name) == id)
-        result = await db.scalars(stmt)
-        return result.first()
+    async def get_by_id(self, id: Any, session: AsyncSession = Depends(get_db)) -> Optional[ModelType]:
+        """
+        get one record by id
+        """
+        stmt = self.get_query().where(self.model.id == id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
+        return obj
 
-    async def get_all(self, db: AsyncSession, skip: int = 0, limit: int = 100) -> list[ModelType]:
-        stmt = select(self.model).offset(skip).limit(limit)
-        result = await db.scalars(stmt)
-        return result.all()
+    async def get_all(self, skip, limit, session: AsyncSession, ) -> dict:
+        # Запрос с загрузкой связей и пагинацией
+        stmt = self.get_query().offset(skip).limit(limit)
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+        print(f'{items=}')
+        # Подсчёт общего количества
+        count_stmt = select(func.count()).select_from(self.model)
+        count_result = await session.execute(count_stmt)
+        total = count_result.scalar()
+        page = (skip // limit) + 1
+        return {"items": items,
+                "page": page,
+                "page_size": limit,
+                "total": total,
+                "has_next": skip + len(items) < total,
+                "has_prev": page > 1}
 
-    async def update(self, db: AsyncSession, id: Any, data: Dict[str, Any]) -> Optional[ModelType]:
-        obj = await self.get_by_id(db, id)
+    async def update(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
+        obj = await self.get_by_id(session, id)
         if not obj:
             return None
         for k, v in data.items():
             if hasattr(obj, k):
                 setattr(obj, k, v)
-        await db.commit()
-        await db.refresh(obj)
+        await session.commit()
+        await session.refresh(obj)
         return obj
 
-    async def delete(self, db: AsyncSession, id: Any) -> bool:
-        obj = await self.get_by_id(db, id)
+    async def delete(self, id: Any, session: AsyncSession) -> bool:
+        obj = await self.get_by_id(session, id)
         if not obj:
             return False
-        await db.delete(obj)
-        await db.commit()
+        await session.delete(obj)
+        await session.commit()
         return True

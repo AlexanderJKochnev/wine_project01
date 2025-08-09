@@ -12,12 +12,10 @@ from sqlalchemy.orm import DeclarativeMeta
 
 PyModel = NewType("PyModel", BaseModel)
 
-"""
-class Base(BaseModel):
+
+class BaseSchema(BaseModel):
     class Config:
         from_attributes = True
-
-"""
 
 
 def create_pydantic_models_from_orm(

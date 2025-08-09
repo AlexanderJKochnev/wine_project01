@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.core.config.database.db_noclass import get_db
 from app.core.config.project_config import get_paging
-from app.core.routers.router import create_find_router
+# from app.core.routers.router import create_find_router
 from app.support.category.repository import CategoryRepository as repo
 from app.support.category.models import Category as MyModel
 from app.support.category.schemas import SRead
@@ -105,5 +105,5 @@ async def create_item(
 # ————————————————————————
 # FIND: Поиск по полям (фильтрация)
 # ————————————————————————
-find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
-router.routes.append(find_route)
+# find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
+# router.routes.append(find_route)

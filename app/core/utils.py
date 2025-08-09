@@ -68,3 +68,67 @@ def apply_relationship_loads(stmt: Select, model: DeclarativeMeta) -> Select:
             continue  # skip one-to-many (можно расширить при необходимости)
         stmt = stmt.options(selectinload(getattr(model, rel_name)))
     return stmt
+
+def get_model_fields_info(model) -> dict:
+    """
+                field_type,
+                col.nullable,
+                col.primary_key
+    """
+    fields_info = {}
+
+    # 1. Стандартные колонки через __table__
+    if hasattr(model, "__table__") and model.__table__ is not None:
+        for col in model.__table__.columns:
+            field_type = getattr(col.type, "python_type", None)
+            if field_type is None:
+                field_type = type(col.type).__name__
+            else:
+                field_type = field_type.__name__
+
+            fields_info[col.name] = (
+                field_type,
+                col.nullable,
+                col.primary_key
+            )
+
+    # 2. Relationships через маппер
+    if hasattr(model, "__mapper__"):
+        for rel in model.__mapper__.relationships:
+            direction = rel.direction.name
+            target = rel.entity.class_.__name__
+
+            if direction == "ONETOMANY":
+                field_type = f"List[{target}]"
+                is_nullable = True
+            else:  # MANYTOONE
+                field_type = target
+                # Проверяем, nullable ли внешний ключ
+                is_nullable = True
+                for local_col in rel.local_columns:
+                    if hasattr(local_col, "nullable"):
+                        is_nullable = local_col.nullable
+                        break
+
+            fields_info[rel.key] = (field_type, is_nullable, False)
+
+    return fields_info
+
+
+def print_model_schema(model, title=None):
+    """
+    Выводит схему модели в читаемом виде.
+    """
+    # schema = generate_model_schema(model)
+    name = title or model.__name__
+    print(f"\n📊 Схема модели: {name}")
+    print("-" * 50)
+    for field, info in model.items():
+        type_str = info["type"]
+        null_str = "NULL" if info["nullable"] else "NOT NULL"
+        extra = ""
+        if info.get("relation"):
+            extra = f" 🔗 {info['direction']} → {info['back_populates']}"
+        if info.get("default"):
+            extra += f" (default={info['default']})"
+        print(f"{field:20} : {type_str:12} | {null_str:8}{extra}")

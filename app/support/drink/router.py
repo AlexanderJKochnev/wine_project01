@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.core.config.database.db_noclass import get_db
 from app.core.config.project_config import get_paging
-from app.core.routers.router import create_find_router
-from app.support.drink.repository import DrinkRepository as repo
+# from app.core.routers.router import create_find_router
+from app.support.drink.repository import DrinkRepository
 from app.support.drink.models import Drink as MyModel
 from app.support.drink.schemas import SRead
 from app.support.drink.schemas import SAdd
@@ -26,28 +26,20 @@ paging: dict = get_paging
 
 router = APIRouter(prefix='/drinks',
                    tags=[f'{lbl.get("prefix")}'])
-
+repo = DrinkRepository()
 
 # ————————————————————————
 # GET: Список с пагинацией
 # ————————————————————————
 @router.get("/", summary=lbl.get('get'), response_model=SList)
-async def get_list(db: AsyncSession = Depends(get_db),
+async def get_list(session: AsyncSession = Depends(get_db),
                    page: int = Query(1, ge=1),
                    page_size: int = Query(paging.get('def', 20),
                                           ge=paging.get('min', 1),
                                           le=paging.get('max', 100))):
     skip = (page - 1) * page_size
-    result = await repo.get_all(db, skip=skip, limit=page_size)
-    # Общее количество
-    total = await db.scalar(select(func.count()).select_from(MyModel))
-
-    return {"items": result,
-            "page": page,
-            "page_size": page_size,
-            "total": total,
-            "has_next": skip + len(result) < total,
-            "has_prev": page > 1}
+    result = await repo.get_all(skip, page_size, session)
+    return result
 
 
 # ————————————————————————
@@ -55,13 +47,11 @@ async def get_list(db: AsyncSession = Depends(get_db),
 # ————————————————————————
 @router.get("/{item_id}", response_model=SRead)
 async def get_one(item_id: int, db: AsyncSession = Depends(get_db)):
-    item = await repo.get_by_id(db, item_id)
+    print(f'{type(repo)=}')
+    item = await repo.get_by_id(item_id, db)
     if not item:
         raise HTTPException(404, f"{lbl.get('item')} {item_id} {lbl.get('notfound')}")
     # return SRead.model_validate(item, from_attributes=True)
-    print(f'{item=}')
-    print(f'{type(item)=}')
-    print(f'{dir(item)=}')
     return item
 
 
@@ -144,5 +134,5 @@ async def get_detail(item_id: int, db: AsyncSession = Depends(get_db)):
 # ————————————————————————
 # FIND: Поиск по полям (фильтрация) динамический роутер
 # ————————————————————————
-find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
-router.routes.append(find_route)
+# find_route = create_find_router(repo=repo, model=repo.model, ReadSchema=SRead)
+# router.routes.append(find_route)

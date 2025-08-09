@@ -26,3 +26,8 @@ linux - на этой стороне ничего не менять
 11. git clone git@github.com:username/repo.git
 12. git branch -M main  # Убедитесь, что локальная ветка имеет правильное имя 
 13. git pull origin main  # Обновите её из удалённого репозитория
+
+как клонировать в новую папку с активной venv & git
+1. git remote add origin https://github.com/AlexanderJKochnev/wine_project01.git
+2. rm -r .idea
+3. git pull origin main
