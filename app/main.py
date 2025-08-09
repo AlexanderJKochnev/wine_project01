@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-from app.support.user.router import router as user_router
+# from app.support.user.router import router as user_router
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
 from sqladmin import Admin
@@ -48,4 +48,4 @@ async def wait_some_time(seconds: float):
 
 app.include_router(drink_router)
 app.include_router(category_router)
-app.include_router(user_router)
+# app.include_router(user_router)

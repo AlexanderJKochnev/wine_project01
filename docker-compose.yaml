@@ -44,7 +44,7 @@ services:
   app:
     container_name: app
     build: .
-    restart: unless-stopped
+    restart: no
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
       - wine_host

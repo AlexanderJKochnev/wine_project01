@@ -1,9 +1,9 @@
-# app/core/repositories/sqlalchemy_repo2.py
+# app/core/repositories/sqlalchemy_repository.py
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import select, func
+from sqlalchemy import select
 from app.core.config.database.db_noclass import get_db
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -21,7 +21,7 @@ class Repository(Generic[ModelType]):
         return select(self.model)
 
     async def create(self, data: Dict[str, Any], session: AsyncSession = Depends(get_db())) -> ModelType:
-        """ create & return record"""
+        """ create & return record """
         obj = self.model(**data)
         session.add(obj)
         # await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
@@ -43,21 +43,10 @@ class Repository(Generic[ModelType]):
         stmt = self.get_query().offset(skip).limit(limit)
         result = await session.execute(stmt)
         items = result.scalars().all()
-        print(f'{items=}')
-        # Подсчёт общего количества
-        count_stmt = select(func.count()).select_from(self.model)
-        count_result = await session.execute(count_stmt)
-        total = count_result.scalar()
-        page = (skip // limit) + 1
-        return {"items": items,
-                "page": page,
-                "page_size": limit,
-                "total": total,
-                "has_next": skip + len(items) < total,
-                "has_prev": page > 1}
+        return items
 
     async def update(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
-        obj = await self.get_by_id(session, id)
+        obj = await self.get_by_id(id, session)
         if not obj:
             return None
         for k, v in data.items():

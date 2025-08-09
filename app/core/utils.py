@@ -3,8 +3,8 @@
 
 from pathlib import Path
 from typing import Dict
-from sqlalchemy.orm import selectinload, Load
-from sqlalchemy.orm.util import AliasedClass
+from sqlalchemy.orm import selectinload
+# from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql.selectable import Select
 from sqlalchemy.orm import DeclarativeMeta
 
@@ -69,11 +69,12 @@ def apply_relationship_loads(stmt: Select, model: DeclarativeMeta) -> Select:
         stmt = stmt.options(selectinload(getattr(model, rel_name)))
     return stmt
 
+
 def get_model_fields_info(model) -> dict:
     """
-                field_type,
-                col.nullable,
-                col.primary_key
+        field_type,
+        col.nullable,
+        col.primary_key
     """
     fields_info = {}
 
