@@ -9,6 +9,7 @@ from sqladmin import Admin
 # from app.core.config.database.db_noclass import engine
 from app.core.config.database.db_helper import db_help
 from app.admin import sqladm
+from app.support.category.listeners import *  # noqa F403
 # from sqlalchemy.ext.asyncio import AsyncSession
 # from sqlalchemy import text
 

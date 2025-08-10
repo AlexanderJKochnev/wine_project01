@@ -57,7 +57,8 @@ class Repository(Generic[ModelType]):
         return obj
 
     async def delete(self, id: Any, session: AsyncSession) -> bool:
-        obj = await self.get_by_id(session, id)
+        obj = await self.get_by_id(id, session)
+        print(f'{obj=}')
         if not obj:
             return False
         await session.delete(obj)

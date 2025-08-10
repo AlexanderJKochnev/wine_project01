@@ -12,6 +12,9 @@ class BaseSchema(BaseModel):
     model_config = ConfigDict(rom_attributes=True,
                               arbitrary_types_allowed=True)
 
+    def __init__(self, *args, **kwargs):
+        pass
+
 
 """ Общие для всех схем ответы. используются в роутерах """
 
@@ -21,7 +24,6 @@ class ListResponse(BaseModel, Generic[T]):
     total: int
     page: Optional[int] = None
     page_size: Optional[int] = None
-    total: Optional[int] = None
     has_next: Optional[int] = None
     has_prev: Optional[int] = None
 

@@ -2,7 +2,7 @@
 """
 замени Template на имя модели в единственном числе с сохранением регистра
 """
-from app.core.schemas.base_schema import create_pydantic_models_from_orm
+from app.core.schemas.dynamic_schema import create_pydantic_models_from_orm
 from app.support.template.models import Template
 
 TemplateSchemas = create_pydantic_models_from_orm(Template)

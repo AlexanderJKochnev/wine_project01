@@ -69,8 +69,8 @@ class BaseRouter(Generic[TCreate, TUpdate, TRead]):
         self.router.add_api_route("/{item_id}", self.update, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{item_id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
-    async def get_one(self, item_id: int) -> TRead:  # , session: AsyncSession = Depends(get_db)) -> TRead:
-        obj = await self.repo.get_by_id(item_id)
+    async def get_one(self, item_id: int, session: AsyncSession = Depends(get_db)) -> TRead:
+        obj = await self.repo.get_by_id(item_id, session=session)
         if not obj:
             raise HTTPException(status_code=404, detail=f"{self.model.__name__} not found")
         return obj
@@ -88,9 +88,9 @@ class BaseRouter(Generic[TCreate, TUpdate, TRead]):
         total = count_result.scalar()
         page = (skip // page_size) + 1
         retu = {"items": items,
+                "total": total,
                 "page": page,
                 "page_size": page_size,
-                "total": total,
                 "has_next": skip + len(items) < total,
                 "has_prev": page > 1}
         result = self.paginated_response(**retu)
@@ -109,7 +109,8 @@ class BaseRouter(Generic[TCreate, TUpdate, TRead]):
 
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
-        obj = await self.repo.delete(id, session)
-        await session.delete(obj)
-        await session.commit()
-        return {"success": True, "message": f"{self.model.__name__} deleted"}
+        result = await self.repo.delete(id, session)
+        if result:
+            return {"success": True, "message": f"{self.model.__name__} deleted"}
+        else:
+            raise HTTPException(status_code=404, detail="Not found")

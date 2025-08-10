@@ -2,7 +2,7 @@
 # some useful utilits
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 from sqlalchemy.orm import selectinload
 # from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql.selectable import Select
@@ -70,12 +70,36 @@ def apply_relationship_loads(stmt: Select, model: DeclarativeMeta) -> Select:
     return stmt
 
 
-def get_model_fields_info(model) -> dict:
+#  список полей которые доллны выводиться всегда (костыль)
+white_list: list = ['count_drink']
+
+
+def get_model_fields_info(model, schema_type: int = 0, include_list: list = white_list) -> dict:
     """
-        field_type,
-        col.nullable,
-        col.primary_key
+    Возвращает информацию о полях модели:
+    - field_type: тип поля
+    - nullable: может ли быть NULL (bool)
+    - primary_key: является ли первичным ключом (bool)
+    - foreign: является ли внешним ключом (bool)
+    - has_default: есть ли значение по умолчанию (bool)
+    - # default_value: само значение по умолчанию (если есть)
+    schema_type:
+    Read (0):   все поля кроме _id, pk, default_value
+    Create (1): все поля кроме _id, pk, default_value, foreign
+    Update (2): все поля кроме _id, pk, default_value, foreign | все поля optional
+    include_list: имена полей которые должны быть включены обязательно
     """
+    defval, pk, _id, foreign, updatable = False, False, False, True, True,
+    match schema_type:
+        case 0:  # Read
+            pk, _id, defval, foreign = True, True, True, False
+        case 1:  # Create
+            pk, defval, foreign = True, True, False
+        case 2:  # Update
+            pk, defval, foreign, updatable = True, True, False, False
+        case _:  # All
+            pass
+
     fields_info = {}
 
     # 1. Стандартные колонки через __table__
@@ -83,35 +107,56 @@ def get_model_fields_info(model) -> dict:
         for col in model.__table__.columns:
             field_type = getattr(col.type, "python_type", None)
             if field_type is None:
-                field_type = type(col.type).__name__
-            else:
-                field_type = field_type.__name__
+                field_type = type(col.type)
 
-            fields_info[col.name] = (
-                field_type,
-                col.nullable,
-                col.primary_key
-            )
+            # Определяем наличие и значение по умолчанию
+            has_default = False
+            # default_value = None
 
+            if col.default is not None:
+                has_default = True
+                # if col.default.is_scalar:
+                #     default_value = col.default.arg
+                # elif col.default.is_callable:
+                #     default_value = f"<callable: {col.default.callable.__name__}>"
+            elif col.server_default is not None:
+                has_default = True
+                # default_value = f"<server_default: {str(col.server_default)}>"
+            # defval, pk, _id, foreign, updatable
+            if all((pk, col.primary_key, col.name not in include_list)):
+                continue
+            if all((defval, has_default, col.name not in include_list)):
+                continue
+            if all((_id, col.name.endswith('_id'), col.name not in include_list)):
+                continue
+            xnullable = col.nullable if updatable else True
+            fields_info[col.name] = {'field_type': field_type,
+                                     'nullable': xnullable,
+                                     'primary_key': col.primary_key,
+                                     'foreign': False,  # Это не foreign key
+                                     'has_default': has_default}  # , default_value)
     # 2. Relationships через маппер
-    if hasattr(model, "__mapper__"):
+    if all((hasattr(model, "__mapper__"), foreign)):
         for rel in model.__mapper__.relationships:
             direction = rel.direction.name
-            target = rel.entity.class_.__name__
-
+            target = rel.entity.class_  # .__name__
+            # print(f'{target=}, {type(target)=}')
             if direction == "ONETOMANY":
-                field_type = f"List[{target}]"
+                field_type = List[{target}]
                 is_nullable = True
             else:  # MANYTOONE
                 field_type = target
-                # Проверяем, nullable ли внешний ключ
                 is_nullable = True
                 for local_col in rel.local_columns:
                     if hasattr(local_col, "nullable"):
                         is_nullable = local_col.nullable
                         break
-
-            fields_info[rel.key] = (field_type, is_nullable, False)
+            xnullable = is_nullable if updatable else True
+            fields_info[rel.key] = {'field_type': field_type,
+                                    'nullable': xnullable,
+                                    'primary_key': False,
+                                    'foreign': True,  # Это foreign key
+                                    'has_default': False}  # , default_value)
 
     return fields_info
 

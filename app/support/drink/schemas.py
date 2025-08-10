@@ -1,30 +1,14 @@
 # app/support/drink/schemas.py
-# from pydantic import BaseModel, ConfigDict
-# from typing import Optional
-# from app.core.schemas.base_schema import create_pydantic_models_from_orm
-# from app.core.schemas.base_schema import create_detail_view_model
-# from app.support.drink.models import Drink
-# from app.support.category.models import Category
-
-
-"""DrinkSchemas = create_pydantic_models_from_orm(Drink)
-SAdd = DrinkSchemas['Create']
-SUpd = DrinkSchemas['Update']
-SDel = DrinkSchemas['DeleteResponse']
-SRead = DrinkSchemas['Read']
-SList = DrinkSchemas['List']
-SDetail = create_detail_view_model(Drink, include_relationships=True)
-"""
-
-# class SDetail(BaseModel):
-#     model_config = ConfigDict(from_attributes=True)
 
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import datetime
+# from datetime import datetime
 from app.support.category.schemas import CategoryBase
+from app.core.utils import get_model_fields_info  # , get_searchable_fields
+from app.support.drink.models import Drink
+from app.core.schemas.dynamic_schema import create_drink_schema
 
-
+"""
 class DrinkBase(BaseModel):
     model_config = ConfigDict(rom_attributes=True,
                               arbitrary_types_allowed=True)
@@ -34,6 +18,9 @@ class DrinkBase(BaseModel):
     description: Optional[str] = None
     decsription_ru: Optional[str] = None
     category_id: int
+
+    def __init__(self, *args, **kwargs):
+        print(f'({get_model_fields_info(Drink)=})')
 
 
 class DrinkCreate(DrinkBase):
@@ -56,3 +43,27 @@ class DrinkRead(DrinkBase):
     created_at: datetime
     updated_at: datetime
     category: CategoryBase
+"""
+
+# DrinkRead = create_drink_schema(Drink, 0)
+DrinkCreate = create_drink_schema(Drink, 1,)
+DrinkUpdate = create_drink_schema(Drink, 2)
+# DrinkRead = create_drink_schema(Drink, 0)
+
+
+class DrinkRead(BaseModel):
+    model_config = ConfigDict(rom_attributes=True,
+                              arbitrary_types_allowed=True)
+    category: CategoryBase
+    name: str
+    name_ru: Optional[str] = None
+    subtitle: Optional[str] = None
+    description: Optional[str] = None
+    decsription_ru: Optional[str] = None
+    category_id: int
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        ffields = get_model_fields_info(Drink, 0)
+        for key, val in ffields.items():
+            print(f'{key}: {val}')

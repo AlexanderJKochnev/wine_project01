@@ -11,5 +11,5 @@ class DrinkRepository(Repository):
     model = Drink
 
     def get_query(self):
-        # Добавляем загрузку связи с Category
+        # Добавляем загрузку связи с relationships
         return select(Drink).options(selectinload(Drink.category))
