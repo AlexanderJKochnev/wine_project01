@@ -2,15 +2,15 @@
 
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-# from datetime import datetime
+from datetime import datetime
 from app.support.category.schemas import CategoryBase
 from app.core.utils import get_model_fields_info  # , get_searchable_fields
 from app.support.drink.models import Drink
 from app.core.schemas.dynamic_schema import create_drink_schema
 
-"""
+
 class DrinkBase(BaseModel):
-    model_config = ConfigDict(rom_attributes=True,
+    model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True)
     name: str
     name_ru: Optional[str] = None
@@ -18,9 +18,6 @@ class DrinkBase(BaseModel):
     description: Optional[str] = None
     decsription_ru: Optional[str] = None
     category_id: int
-
-    def __init__(self, *args, **kwargs):
-        print(f'({get_model_fields_info(Drink)=})')
 
 
 class DrinkCreate(DrinkBase):
@@ -43,8 +40,9 @@ class DrinkRead(DrinkBase):
     created_at: datetime
     updated_at: datetime
     category: CategoryBase
-"""
 
+
+"""
 # DrinkRead = create_drink_schema(Drink, 0)
 DrinkCreate = create_drink_schema(Drink, 1,)
 DrinkUpdate = create_drink_schema(Drink, 2)
@@ -67,3 +65,4 @@ class DrinkRead(BaseModel):
         ffields = get_model_fields_info(Drink, 0)
         for key, val in ffields.items():
             print(f'{key}: {val}')
+"""
