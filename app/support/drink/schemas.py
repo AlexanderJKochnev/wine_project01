@@ -1,68 +1,39 @@
 # app/support/drink/schemas.py
 
-from pydantic import BaseModel, ConfigDict
-from typing import Optional
-from datetime import datetime
-from app.support.category.schemas import CategoryBase
-from app.core.utils import get_model_fields_info  # , get_searchable_fields
-from app.support.drink.models import Drink
-from app.core.schemas.dynamic_schema import create_drink_schema
+from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
+from app.support.category.schemas import CategoryShort
+from pydantic import ConfigDict
+
+"""
+Custom
+Short
+Read
+Create
+Update
+Full
+"""
 
 
-class DrinkBase(BaseModel):
-    model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True)
-    name: str
-    name_ru: Optional[str] = None
-    subtitle: Optional[str] = None
-    description: Optional[str] = None
-    decsription_ru: Optional[str] = None
+class DrinkCustom:
     category_id: int
 
 
-class DrinkCreate(DrinkBase):
-    model_config = ConfigDict(from_attributes=True)
+class DrinkShort(ShortSchema):
+    pass
 
 
-class DrinkUpdate(DrinkBase):
-    model_config = ConfigDict(from_attributes=True)
-    name: Optional[str] = None
-    name_ru: Optional[str] = None
-    subtitle: Optional[str] = None
-    description: Optional[str] = None
-    decsription_ru: Optional[str] = None
-    category_id: Optional[int] = None
+class DrinkRead(BaseSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    category: CategoryShort
 
 
-class DrinkRead(DrinkBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    category: CategoryBase
+class DrinkCreate(BaseSchema, DrinkCustom):
+    pass
 
 
-"""
-# DrinkRead = create_drink_schema(Drink, 0)
-DrinkCreate = create_drink_schema(Drink, 1,)
-DrinkUpdate = create_drink_schema(Drink, 2)
-# DrinkRead = create_drink_schema(Drink, 0)
+class DrinkUpdate(UpdateSchema, DrinkCustom):
+    pass
 
 
-class DrinkRead(BaseModel):
-    model_config = ConfigDict(rom_attributes=True,
-                              arbitrary_types_allowed=True)
-    category: CategoryBase
-    name: str
-    name_ru: Optional[str] = None
-    subtitle: Optional[str] = None
-    description: Optional[str] = None
-    decsription_ru: Optional[str] = None
-    category_id: int
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        ffields = get_model_fields_info(Drink, 0)
-        for key, val in ffields.items():
-            print(f'{key}: {val}')
-"""
+class DrinkFull(FullSchema, DrinkCustom):
+    pass

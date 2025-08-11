@@ -1,9 +1,11 @@
 # app/core/models/base_model.py
 
-""" Base Model for SqlAlchemy """
+"""
+    Base Model for SqlAlchemy
+    в случае изменения модели Base внести соответствующие изменения в app/core/schemas/base.py
+"""
 from datetime import datetime
-from typing import Annotated, Dict, Any
-from sqlalchemy import inspect
+from typing import Annotated
 from sqlalchemy import func, text, Text
 from sqlalchemy.orm import (DeclarativeBase, Mapped,
                             declared_attr, mapped_column)

@@ -16,7 +16,7 @@ TUpdate = TypeVar("TUpdate", bound=BaseSchema)
 TRead = TypeVar("TRead", bound=BaseSchema)
 
 
-class BaseRouter(Generic[TCreate, TUpdate, TRead]):
+class BaseRouter:  # (Generic[TCreate, TUpdate, TRead]):
     """
     Базовый роутер с общими CRUD-методами.
     Наследуйте и переопределяйте get_query() для добавления selectinload.
@@ -26,9 +26,9 @@ class BaseRouter(Generic[TCreate, TUpdate, TRead]):
         self,
         model: Type[Any],
         repo: Type[Any],
-        create_schema: Type[TCreate],
-        update_schema: Type[TUpdate],
-        read_schema: Type[TRead],
+        create_schema: Type[BaseSchema],
+        update_schema: Type[BaseSchema],
+        read_schema: Type[BaseSchema],
         prefix: str,
         tags: List[str],
         session: AsyncSession = Depends(get_db)
@@ -69,10 +69,11 @@ class BaseRouter(Generic[TCreate, TUpdate, TRead]):
         self.router.add_api_route("/{item_id}", self.update, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{item_id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
-    async def get_one(self, item_id: int, session: AsyncSession = Depends(get_db)) -> TRead:
+    async def get_one(self, item_id: int, session: AsyncSession = Depends(get_db)) -> Any:
         obj = await self.repo.get_by_id(item_id, session=session)
         if not obj:
             raise HTTPException(status_code=404, detail=f"{self.model.__name__} not found")
+        # raw_validated = self.read_schema.model_validate(obj, from_attributes=True)
         return obj
 
     async def get_all(self, page: int = Query(1, ge=1),
