@@ -2,17 +2,14 @@
 from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-# from app.support.user.router import router as user_router
+from sqladmin import Admin
+from app.admin import sqladm
+from app.core.config.database.db_noclass import engine
+from app.support.category.listeners import *  # noqa F403
+# -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
-from sqladmin import Admin
-# from app.core.config.database.db_noclass import engine
-from app.core.config.database.db_helper import db_help
-from app.admin import sqladm
-from app.support.category.listeners import *  # noqa F403
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy import text
-
+from app.support.country.router import router as country_router
 
 app = FastAPI()
 app.add_middleware(
@@ -29,11 +26,12 @@ async def authenticate(username: str, password: str):
         return True
     return False
 
+admin = Admin(app, engine)
 
-# admin = Admin(app, engine)
-admin = Admin(app, db_help.engine)
+# --------------подключение админ панели------------------
 admin.add_view(sqladm.CategoryAdmin)
 admin.add_view(sqladm.DrinkAdmin)
+admin.add_view(sqladm.CountryAdmin)
 
 
 @app.get("/")
@@ -46,7 +44,7 @@ async def wait_some_time(seconds: float):
     await asyncio.sleep(seconds)  # Не блокирует поток
     return {"waited": seconds}
 
-
+# --------------подключение роутеров---------------
 app.include_router(drink_router)
 app.include_router(category_router)
-# app.include_router(user_router)
+app.include_router(country_router)

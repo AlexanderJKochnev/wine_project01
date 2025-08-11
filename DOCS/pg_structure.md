@@ -25,17 +25,15 @@
    3. Drink_id ONETOMANY
    4. Shelf_id ONETOMANY
    5. WineShop_id ONETOMANY
-3. Shelf (конкретное место хранения)
-   1. Warehouse_id
-4. Warehouse (конкретный склад/винный шкаф)
+3. Warehouse (конкретный склад/винный шкаф)
    1. Customer_id ONETOMANY
-5. WineShop (магазин где было приобретено вино)
-6. Customer: (пользователь)
-7. Category (категория напитка)
-8. Region (регион)
+4. WineShop (магазин где было приобретено вино)
+5. Customer: (пользователь)
+6. Category (категория напитка)
+7. Region (регион)
    1. Country_id
-9. Country
-10. Raw material/Varietal (сырье для производства напитка)
-11. Food (Pairing)
-12. Type: тип ?
-13. madeOf "Изготовлено из" ?
+8. Country
+9. Raw material/Varietal (сырье для производства напитка)
+10. Food (Pairing)
+11. Type: тип ?
+12. madeOf "Изготовлено из" ?

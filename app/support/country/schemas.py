@@ -1,4 +1,4 @@
-# app/support/template/schemas.py
+# app/support/country/schemas.py
 """
     После замен как указано в главной инструкции сделай следующее:
     1.
@@ -22,26 +22,26 @@ Full - все поля включая системные и скрытые
 """
 
 
-class TemplateCustom:
+class CountryCustom:
     category_id: int
 
 
-class TemplateShort(ShortSchema):
+class CountryShort(ShortSchema):
     pass
 
 
-class TemplateRead(BaseSchema):
+class CountryRead(BaseSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
     category: CategoryShort
 
 
-class TemplateCreate(BaseSchema, TemplateCustom):
+class CountryCreate(BaseSchema, CountryCustom):
     pass
 
 
-class TemplateUpdate(UpdateSchema, TemplateCustom):
+class CountryUpdate(UpdateSchema, CountryCustom):
     pass
 
 
-class TemplateFull(FullSchema, TemplateCustom):
+class CountryFull(FullSchema, CountryCustom):
     pass

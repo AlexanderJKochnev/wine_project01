@@ -1,3 +1,4 @@
+# docker-compose.yaml
 services:
   wine_host: # this is the name of the service and name of the host (POSTGRES_HOST)
     restart: unless-stopped
@@ -7,10 +8,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    # expose:
-    # - "${POSTGRES_PORT}"
-    ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    expose:
+      - "${POSTGRES_PORT}"
+    # ports:
+    #  - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - pg_data:/var/lib/postgresql/data
       # pgsql initializing scripts shall be placed in /initdb.d directory
@@ -44,7 +45,7 @@ services:
   app:
     container_name: app
     build: .
-    restart: no
+    restart: unless-stopped
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
       - wine_host

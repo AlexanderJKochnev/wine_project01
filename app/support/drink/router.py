@@ -8,7 +8,7 @@ from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import DrinkRead, DrinkCreate, DrinkUpdate
 
 
-class DrinkRouter(BaseRouter):  #  [DrinkCreate, DrinkUpdate, DrinkRead]):
+class DrinkRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Drink,
