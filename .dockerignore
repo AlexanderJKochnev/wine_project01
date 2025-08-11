@@ -29,7 +29,7 @@
 **/.gitignore
 **/.vscode
 **/.idea
-
+*/tests/test_fastapi.py
 # Исключить логи и временные файлы
 **/*.log
 **/*.tmp

@@ -18,6 +18,7 @@ async def test_db_connection():
     try:
         # Подключаемся к базе данных
         conn = await asyncpg.connect(ASYNC_PG_URL)
+        # conn = await asyncpg.connect(DB_URL)
 
         # Выполняем простой запрос для проверки соединения
         result = await conn.fetchval("SELECT 1")

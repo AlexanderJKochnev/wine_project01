@@ -6,7 +6,6 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from app import main
 from tests import config
-from app.core.config.database.db_noclass import get_db
 # from app.core.config.database.db_helper import db_help
 # from tests.router import router as testrouter
 

@@ -25,8 +25,7 @@ class BaseSchema(ShortSchema):
     стандартные поля для read/create
     """
     model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True,
-                              exclude_none=True)
+                              arbitrary_types_allowed=True)
     description: Optional[str] = None
     decsription_ru: Optional[str] = None
 
