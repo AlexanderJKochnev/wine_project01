@@ -1,7 +1,6 @@
 # app/support/customer/schemas.py
 
 from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
-from app.support.category.schemas import CategoryShort
 from pydantic import ConfigDict
 from typing import Optional
 
@@ -18,7 +17,6 @@ class CustomerShort(ShortSchema):
 
 class CustomerRead(BaseSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-    category: CategoryShort
 
 
 class CustomerCreate(BaseSchema, CustomerCustom):

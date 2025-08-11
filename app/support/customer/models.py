@@ -9,3 +9,7 @@ class Customer(Base):
     fisrtname: Mapped[str_null_true]
     lastname: Mapped[str_null_true]
     account: Mapped[str_null_index]
+
+    wartehouses: Mapped[List["Warehouse"]] = relationship("Warehouse",  # noqa F821
+                                                          back_populates="category",
+                                                          cascade="all, delete-orphan")

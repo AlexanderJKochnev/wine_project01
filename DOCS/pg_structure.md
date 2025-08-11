@@ -28,11 +28,11 @@
 3. Warehouse (конкретный склад/винный шкаф)
    1. Customer_id ONETOMANY
 4. WineShop (магазин где было приобретено вино)
-5. Customer: (пользователь)
-6. Category (категория напитка)
+5. *Customer: (пользователь) *
+6. *Category (категория напитка) *
 7. Region (регион)
    1. Country_id
-8. Country
+8. *Country *
 9. Raw material/Varietal (сырье для производства напитка)
 10. Food (Pairing)
 11. Type: тип ?
