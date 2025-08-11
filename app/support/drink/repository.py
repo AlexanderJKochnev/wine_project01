@@ -12,4 +12,4 @@ class DrinkRepository(Repository):
 
     def get_query(self):
         # Добавляем загрузку связи с relationships
-        return select(Drink).options(selectinload(Drink.category))
+        return select(Drink).options(selectinload(Drink.category, Drink.food))

@@ -7,6 +7,7 @@ from app.support.category.models import Category
 from app.support.country.models import Country
 from app.support.customer.models import Customer
 from app.support.warehouse.models import Warehouse
+from app.support.food.models import Food
 
 
 class DrinkAdmin(AutoModelView, model=Drink):
@@ -33,4 +34,8 @@ class CustomerAdmin(AutoModelView, model=Customer):
 
 
 class WarehouseAdmin(AutoModelView, model=Warehouse):
+    pass
+
+
+class FoodAdmin(AutoModelView, model=Food):
     pass

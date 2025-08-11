@@ -17,7 +17,7 @@ class ShortSchema(BaseModel):
     """
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
     name: str
-    name_ru: Optional[str] = None
+    # name_ru: Optional[str] = None
 
 
 class BaseSchema(ShortSchema):

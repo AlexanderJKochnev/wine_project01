@@ -10,5 +10,7 @@ class Drink(Base):
     subtitle: Mapped[str_null_true]
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id"), nullable=False)
-    # Добавляем relationship
     category: Mapped["Category"] = relationship(back_populates="drinks")  # noqa F821
+
+    food_id: Mapped[int] = mapped_column(ForeignKey("foods.id"), nullable=True)
+    food: Mapped["Food"] = relationship(back_populates = "drinks")  # noqa F821
