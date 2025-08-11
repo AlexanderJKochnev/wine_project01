@@ -1,47 +1,33 @@
-# app/support/template/schemas.py
-"""
-    После замен как указано в главной инструкции сделай следующее:
-    1.
-
-"""
-
+# app/support/customer/schemas.py
 
 from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
 from app.support.category.schemas import CategoryShort
 from pydantic import ConfigDict
-
-"""
-Custom - нестандартные поля характерные для этой формы. Если их нет - оставить pass.
-         модель полностью не удалять.
-Short - короткая форма которая будет отражаться в связанном поле связанной таблицы
-Read - модель для чтения - все поля кроме id, created_at, updated_at
-Create - поля котоые должны и могут быть заполнены для записи в базу данных.
-    При отсутсвии обязательных данных будеит выдана ошибка
-Update - все поля как и в Create, НО ЗАПОЛНЯТЬ НУЖНО ТОЛЬКО ТЕ ПОЛЯ КОТОРЫЕ МЕНЯЮТСЯ
-Full - все поля включая системные и скрытые
-"""
+from typing import Optional
 
 
-class TemplateCustom:
-    category_id: int
+class CustomerCustom:
+    firstname: Optional[str]
+    lastname: Optional[str]
+    account: Optional[str]
 
 
-class TemplateShort(ShortSchema):
+class CustomerShort(ShortSchema):
     pass
 
 
-class TemplateRead(BaseSchema):
+class CustomerRead(BaseSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
     category: CategoryShort
 
 
-class TemplateCreate(BaseSchema, TemplateCustom):
+class CustomerCreate(BaseSchema, CustomerCustom):
     pass
 
 
-class TemplateUpdate(UpdateSchema, TemplateCustom):
+class CustomerUpdate(UpdateSchema, CustomerCustom):
     pass
 
 
-class TemplateFull(FullSchema, TemplateCustom):
+class CustomerFull(FullSchema, CustomerCustom):
     pass

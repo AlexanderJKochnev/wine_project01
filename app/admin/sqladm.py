@@ -5,6 +5,7 @@ from app.admin.core import AutoModelView
 from app.support.drink.models import Drink
 from app.support.category.models import Category
 from app.support.country.models import Country
+from app.support.customer.models import Customer
 
 
 class DrinkAdmin(AutoModelView, model=Drink):
@@ -24,3 +25,7 @@ class CategoryAdmin(AutoModelView, model=Category):
 class CountryAdmin(AutoModelView, model=Country):
     name = 'Country'
     name_plural = 'Countries'
+
+
+class CustomerAdmin(AutoModelView, model=Customer):
+    pass

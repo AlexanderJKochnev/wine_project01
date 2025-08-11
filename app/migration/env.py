@@ -16,6 +16,7 @@ from app.core.models.base_model import Base  # noqa: F401, E402
 from app.support.drink.models import Drink  # noqa: F401, E402
 from app.support.country.models import Country  # noqa: F401, E402
 from app.support.category.models import Category  # noqa: F401, E402
+from app.support.customer.models import Customer   # noqa: F401, E402
 from app.core.config.database.db_config import settings_db  # noqa:
 # F401, E402
 

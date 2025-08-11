@@ -10,6 +10,7 @@ from app.support.category.listeners import *  # noqa F403
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
 from app.support.country.router import router as country_router
+from app.support.customer.router import router as customer_router
 
 app = FastAPI()
 app.add_middleware(
@@ -32,6 +33,7 @@ admin = Admin(app, engine)
 admin.add_view(sqladm.CategoryAdmin)
 admin.add_view(sqladm.DrinkAdmin)
 admin.add_view(sqladm.CountryAdmin)
+admin.add_view(sqladm.CustomerAdmin)
 
 
 @app.get("/")
@@ -48,3 +50,4 @@ async def wait_some_time(seconds: float):
 app.include_router(drink_router)
 app.include_router(category_router)
 app.include_router(country_router)
+app.include_router(customer_router)

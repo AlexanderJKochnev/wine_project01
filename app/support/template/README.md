@@ -27,3 +27,4 @@
 8. перезагрузи докер (из корня программы там где есть файл docker-compose.yaml): docker compose up --build -d
 9. выполни миграции (из корня программы) sh alembic.sh
 10. Enjoy
+11. создание relationships
