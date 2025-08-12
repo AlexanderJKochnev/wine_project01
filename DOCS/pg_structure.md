@@ -19,7 +19,7 @@
    17. Region_id ONETOMANY
    18. Varietal_id MANYTOMANY
    19. Pairing_id MANYTOMANY
-2. Bottle (конкретная бутылка)
+2. *Bottle (конкретная бутылка)
    1. Volume 
    2. Price
    3. Drink_id ONETOMANY
@@ -27,7 +27,7 @@
    5. WineShop_id ONETOMANY
 3. *Warehouse (конкретный склад/винный шкаф)
    1. Customer_id ONETOMANY
-4. WineShop (магазин где было приобретено вино)
+4. -WineShop (магазин где было приобретено вино)
 5. *Customer: (пользователь) *
 6. *Category (категория напитка) *
 7. Region (регион)

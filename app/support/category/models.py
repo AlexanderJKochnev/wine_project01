@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import String, Text, text   # noqa: F401
 from sqlalchemy.orm import (relationship,   # noqa: F401
                             Mapped, mapped_column)    # noqa: F401
-from typing import List  # , TYPE_CHECKING
+from typing import List
 from sqlalchemy import ForeignKey   # noqa: F401
 from app.core.models.base_model import Base, nmbr
 

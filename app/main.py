@@ -14,6 +14,7 @@ from app.support.customer.router import router as customer_router
 from app.support.warehouse.router import router as warehouse_router
 from app.support.food.router import router as food_router
 from app.support.item.router import router as item_router
+from app.support.region.router import router as region_router
 
 app = FastAPI()
 app.add_middleware(
@@ -40,6 +41,7 @@ admin.add_view(sqladm.CustomerAdmin)
 admin.add_view(sqladm.WarehouseAdmin)
 admin.add_view(sqladm.FoodAdmin)
 admin.add_view(sqladm.ItemAdmin)
+admin.add_view(sqladm.RegionAdmin)
 
 
 @app.get("/")
@@ -60,3 +62,4 @@ app.include_router(customer_router)
 app.include_router(warehouse_router)
 app.include_router(food_router)
 app.include_router(item_router)
+app.include_router(region_router)
