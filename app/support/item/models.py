@@ -4,11 +4,11 @@
 from sqlalchemy import String, Text, text, ForeignKey   # noqa: F401
 from sqlalchemy.orm import (relationship,
                             Mapped, mapped_column)    # noqa: F401
-from app.core.models.base_model import Base, money, nmbr
+from app.core.models.base_model import Base, money, volume
 
 
 class Item(Base):
-    volume: Mapped[nmbr]
+    volume: Mapped[volume]
     price: Mapped[money]
     drink_id: Mapped[int] = mapped_column(
         ForeignKey("drinks.id"), nullable=False)

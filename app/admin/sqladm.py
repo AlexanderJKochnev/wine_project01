@@ -10,6 +10,8 @@ from app.support.warehouse.models import Warehouse
 from app.support.food.models import Food
 from app.support.item.models import Item
 from app.support.region.models import Region
+from app.support.color.models import Color
+from app.support.sweetness.models import Sweetness
 
 
 class DrinkAdmin(AutoModelView, model=Drink):
@@ -48,4 +50,13 @@ class ItemAdmin(AutoModelView, model=Item):
 
 
 class RegionAdmin(AutoModelView, model=Region):
+    pass
+
+
+class SweetnessAdmin(AutoModelView, model=Sweetness):
+    name = 'Sweetness'
+    name_plural = 'Sweetness type'
+
+
+class ColorAdmin(AutoModelView, model=Color):
     pass

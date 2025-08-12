@@ -44,6 +44,15 @@ descr = Annotated[str, mapped_column(Text, nullable=True)]
 # money
 money = Annotated[Decimal, mapped_column(DECIMAL(10, 2), nullable=True)]
 
+# volume, alcohol sugar percentage
+volume = Annotated[Decimal, mapped_column(DECIMAL(4, 1), nullable=True)]
+
+# int or none
+ion = Annotated[int, mapped_column(nullable=True)]
+
+# boolean triple
+boolnone = Annotated[bool | None, mapped_column(nullable=True)]
+
 
 class Base(AsyncAttrs, DeclarativeBase):
     """ Abstract class """

@@ -19,7 +19,7 @@
    17. Region_id ONETOMANY
    18. Varietal_id MANYTOMANY
    19. Pairing_id MANYTOMANY
-2. *Bottle (конкретная бутылка)
+2. *Bottle (конкретная бутылка) item
    1. Volume 
    2. Price
    3. Drink_id ONETOMANY
@@ -30,10 +30,14 @@
 4. -WineShop (магазин где было приобретено вино)
 5. *Customer: (пользователь) *
 6. *Category (категория напитка) *
-7. Region (регион)
+7. *Region (регион)
    1. Country_id
 8. *Country *
 9. Raw material/Varietal (сырье для производства напитка)
 10. *Food (Pairing)
 11. Type: тип ?
 12. madeOf "Изготовлено из" ?
+
+13. sweetness
+14. sparkling yes/no
+15. color

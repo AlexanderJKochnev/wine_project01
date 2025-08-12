@@ -21,6 +21,8 @@ from app.support.warehouse.models import Warehouse   # noqa: F401, E402
 from app.support.food.models import Food   # noqa: F401, E402
 from app.support.item.models import Item   # noqa: F401, E402
 from app.support.region.models import Region   # noqa: F401, E402
+from app.support.color.models import Color   # noqa: F401, E402
+from app.support.sweetness.models import Sweetness   # noqa: F401, E402
 from app.core.config.database.db_config import settings_db  # noqa:
 # F401, E402
 
