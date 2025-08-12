@@ -8,6 +8,7 @@ from app.support.country.models import Country
 from app.support.customer.models import Customer
 from app.support.warehouse.models import Warehouse
 from app.support.food.models import Food
+from app.support.item.models import Item
 
 
 class DrinkAdmin(AutoModelView, model=Drink):
@@ -38,4 +39,8 @@ class WarehouseAdmin(AutoModelView, model=Warehouse):
 
 
 class FoodAdmin(AutoModelView, model=Food):
+    pass
+
+
+class ItemAdmin(AutoModelView, model=Item):
     pass

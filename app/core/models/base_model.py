@@ -11,6 +11,9 @@ from sqlalchemy.orm import (DeclarativeBase, Mapped,
                             declared_attr, mapped_column)
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import class_mapper
+# from sqlalchemy.dialects.postgresql import MONEY
+from sqlalchemy import DECIMAL
+from decimal import Decimal
 
 # annotation of some types of alchemy's fields
 
@@ -37,6 +40,9 @@ nmbr = Annotated[int, mapped_column(server_default=text('0'))]
 
 # text field wouthout default value
 descr = Annotated[str, mapped_column(Text, nullable=True)]
+
+# money
+money = Annotated[Decimal, mapped_column(DECIMAL(10, 2), nullable=True)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
