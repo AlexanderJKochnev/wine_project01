@@ -27,7 +27,9 @@ class Drink(Base):
     sweetness_id: Mapped[int] = mapped_column(ForeignKey("sweetness.id"), nullable=True)
     sweetness: Mapped["Sweetness"] = relationship(back_populates = "drinks")  # noqa F821
 
-
+    region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=True)
+    region: Mapped["Region"] = relationship(back_populates = "drinks")  # noqa F821
+    
     items: Mapped[List["Item"]] = relationship("Item",  # noqa F821
                                                back_populates="drink",
                                                cascade="all, delete-orphan")
