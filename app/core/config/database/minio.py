@@ -14,7 +14,7 @@ class ConfigMinioBase(BaseSettings):
                                       env_file_encoding='utf-8',
                                       extra='ignore')
     MINIO_URL: str
-    MINIO_ACCESS_KEY: str
+    MINIO_ROOT_USER: str
     MINIO_ROOT_PASSWORD: str
     # MINIO_SECRET_KEY = os.getenv("MINIO_ROOT_PASSWORD", "minioadmin")
     MINIO_SECRET_KEY: str = "minioadmin"
@@ -37,11 +37,11 @@ class ConfigMinioBase(BaseSettings):
 
 setting_minio = ConfigMinioBase()
 
-# Создаём клиент
-minio_client = Minio(setting_minio.MINIO_URL,
-                     access_key=setting_minio.MINIO_ACCESS_KEY,
+# Создаём клиент MINIO_URL SHALL BE WITHOUT http://... prefixes
+minio_client = Minio(setting_minio.MINIO_URL.removeprefix("https://").removeprefix("http://"),
+                     access_key=setting_minio.MINIO_ROOT_USER,
                      secret_key=setting_minio.MINIO_ROOT_PASSWORD,
-                     secure=setting_minio.MINIO_SECURE)  # False для localhost без HTTPS
+                     secure=False)  # False для localhost без HTTPS
 
 
 bucket_name = setting_minio.MINIO_BUCKET
