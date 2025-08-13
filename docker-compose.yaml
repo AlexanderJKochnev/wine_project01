@@ -14,6 +14,7 @@ services:
     #  - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./pg_dump:/tmp
       # pgsql initializing scripts shall be placed in /initdb.d directory
     # env_file:
     #   - .env
@@ -69,4 +70,4 @@ networks:
 volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
-    
+  pg_dump: # postgres dump/restore

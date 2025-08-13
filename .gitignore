@@ -44,6 +44,7 @@ docker-compose.override.yml
 *.db
 *.sqlite
 postgres-data/
+pg_dump/
 
 # Logs
 *.log

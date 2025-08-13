@@ -3,8 +3,13 @@
 from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
 from app.support.category.schemas import CategoryShort
 from app.support.food.schemas import FoodShort
+from app.support.color.schemas import ColorShort
+from app.support.region.schemas import RegionShort
+from app.support.sweetness.schemas import SweetnessShort
+from app.support.item.schemas import ItemShort
+
 from pydantic import ConfigDict
-from typing import Optional
+from typing import Optional, List
 
 """
 Custom
@@ -29,6 +34,10 @@ class DrinkRead(BaseSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
     category: CategoryShort
     food: FoodShort
+    color: ColorShort
+    sweetness: SweetnessShort
+    region: RegionShort
+    items: List[ItemShort]
 
 
 class DrinkCreate(BaseSchema, DrinkCustom):
