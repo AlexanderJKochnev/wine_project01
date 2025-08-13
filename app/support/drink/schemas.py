@@ -37,7 +37,7 @@ class DrinkRead(BaseSchema):
     color: ColorShort
     sweetness: SweetnessShort
     region: RegionShort
-    items: List[ItemShort]
+    # items: List[ItemShort]
 
 
 class DrinkCreate(BaseSchema, DrinkCustom):

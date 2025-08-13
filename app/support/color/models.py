@@ -9,6 +9,8 @@ from typing import List
 
 class Color(Base):
     # Обратная связь: один ко многим
-    drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
+    """drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
                                                  back_populates="color",
                                                  cascade="all, delete-orphan")
+    """
+    drinks = relationship("Drink", back_populates = "color", lazy = "select")
