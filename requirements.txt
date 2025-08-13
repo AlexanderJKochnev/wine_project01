@@ -8,3 +8,6 @@ passlib==1.7.4
 pytest
 pytest-asyncio
 pytest-cov
+python-multipart
+minio
+pillow

@@ -4,6 +4,7 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 from app.admin import sqladm
+from app.core.config.database.minio import minio_client, bucket_name
 from app.core.config.database.db_noclass import engine
 from app.support.category.listeners import *  # noqa F403
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -26,6 +27,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    if not minio_client.bucket_exists(bucket_name):
+        minio_client.make_bucket(bucket_name)
+    # Настройка публичного доступа (только для dev)
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {"AWS": "*"},
+                "Action": ["s3:GetObject"],
+                "Resource": f"arn:aws:s3:::{bucket_name}/*"
+            }
+        ]
+    }
+    minio_client.set_bucket_policy(bucket_name, policy)
 
 
 async def authenticate(username: str, password: str):
