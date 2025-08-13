@@ -7,5 +7,7 @@ from typing import List
 
 
 class Food(Base):
-    drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
+    """drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
                                                  back_populates="food", cascade="all, delete-orphan")
+    """
+    drinks = relationship("Drink", back_populates = "food", lazy = "select")

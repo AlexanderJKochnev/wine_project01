@@ -37,3 +37,9 @@ linux - на этой стороне ничего не менять
 1. git remote add origin https://github.com/AlexanderJKochnev/wine_project01.git
 2. rm -r .idea
 3. git pull origin main
+
+ описание последнего коммита
+ git log -1
+ 
+откат до последнего коммита
+git reset --hard HEAD
