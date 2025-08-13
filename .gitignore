@@ -39,6 +39,7 @@ venv.bak/
 
 # Docker
 docker-compose.override.yml
+requirements1.txt
 
 # Database
 *.db
