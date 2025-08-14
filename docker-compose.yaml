@@ -28,9 +28,7 @@ services:
   
   minio:
     # image: quay.io/minio/minio
-    # в quay.io/minio/minio отсутсвует поддержка старых процессоров, но он вроде более оптимизирован
-    # в production можно заменить minio/minio на quay.io/minio/minio если процессор поддерживает
-    image: minio/minio
+    image: minio/minio:latest-cicd
     container_name: minio_server
     command: server /data --console-address ":9001"
     environment:
