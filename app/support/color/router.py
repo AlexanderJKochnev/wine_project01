@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_noclass import get_db
 from app.core.routers.base import BaseRouter
-from app.support.color.models import Color
+from app.support.color.model import Color
 from app.support.color.repository import ColorRepository
 from app.support.color.schemas import ColorRead, ColorCreate, ColorUpdate
 

@@ -2,8 +2,8 @@
 from sqlalchemy.orm import joinedload
 from sqlalchemy import select
 from app.core.repositories.sqlalchemy_repository import Repository
-from app.support.drink.models import Drink
-from app.support.region.models import Region
+from app.support.drink.model import Drink
+from app.support.region.model import Region
 
 
 # DrinkRepository = RepositoryFactory.get_repository(Drink)

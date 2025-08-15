@@ -1,4 +1,4 @@
-# app/support/customer/models.py
+# app/support/customer/model.py
 
 from sqlalchemy import String, Text, text, ForeignKey   # noqa: F401
 from sqlalchemy.orm import (relationship, Mapped, mapped_column)    # noqa: F401

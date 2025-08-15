@@ -1,4 +1,4 @@
-# app/support/drink/models.py
+# app/support/drink/model.py
 from __future__ import annotations
 from sqlalchemy import String, Text, text, ForeignKey, Integer, Column   # noqa: F401
 from sqlalchemy.orm import (relationship,

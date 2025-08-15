@@ -1,4 +1,4 @@
-# app/support/template/models.py
+# app/support/template/model.py
 
 """
      - Наименование класса с большой буквы в ед. числе.

@@ -1,10 +1,8 @@
-# app/support/region/models.py
+# app/support/region/model.py
 
 from sqlalchemy import String, Text, text, ForeignKey, Column, Integer   # noqa: F401
-from sqlalchemy.orm import (relationship,
-                            Mapped, mapped_column)    # noqa: F401
+from sqlalchemy.orm import (relationship, Mapped, mapped_column)    # noqa: F401
 from app.core.models.base_model import Base, str_null_true, str_null_index   # noqa: F401
-from typing import List
 
 
 class Region(Base):
@@ -19,7 +17,7 @@ class Region(Base):
     country_id = Column(Integer, ForeignKey("countries.id"))
     # country = relationship("Country", back_populates="regions")
     # drinks = relationship("Drink", back_populates="region", lazy="select")
-    
+
     country_id = Column(Integer, ForeignKey("countries.id"))
-    country = relationship("Country", back_populates = "regions")
-    drinks = relationship("Drink", back_populates = "region", lazy = "select")
+    country = relationship("Country", back_populates="regions")
+    drinks = relationship("Drink", back_populates="region", lazy="select")

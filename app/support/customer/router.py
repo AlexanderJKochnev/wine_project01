@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_noclass import get_db
 from app.core.routers.base import BaseRouter
-from app.support.customer.models import Customer
+from app.support.customer.model import Customer
 from app.support.customer.repository import CustomerRepository
 from app.support.customer.schemas import CustomerRead, CustomerCreate, CustomerUpdate
 

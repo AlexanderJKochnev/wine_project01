@@ -5,7 +5,7 @@
     ЕСЛИ ТАКИХ ПОЛЕЙ НЕТ - УДАЛИ ЭТУ ПРОЦЕДУРУ ПОЛНОСТЬЮ
 """
 
-from app.support.template.models import Template
+from app.support.template.model import Template
 from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select

@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_noclass import get_db
 from app.core.routers.base import BaseRouter
-from app.support.warehouse.models import Warehouse
+from app.support.warehouse.model import Warehouse
 from app.support.warehouse.repository import WarehouseRepository
 from app.support.warehouse.schemas import WarehouseRead, WarehouseCreate, WarehouseUpdate
 

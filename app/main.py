@@ -4,7 +4,7 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 from app.admin import sqladm
-from app.core.config.database.minio import minio_client, bucket_name, initialize_minio
+# from app.core.config.database.minio import minio_client, bucket_name, initialize_minio
 from app.core.config.database.db_noclass import engine
 from app.support.category.listeners import *  # noqa F403
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -28,10 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+"""
 @app.on_event("startup")
 def startup():
     initialize_minio()  # Явно вызываем инициализацию
+"""
 
 
 async def authenticate(username: str, password: str):

@@ -1,4 +1,4 @@
-# app/support/Item/models.py
+# app/support/Item/model.py
 
 
 from sqlalchemy import String, Text, text, ForeignKey   # noqa: F401

@@ -1,6 +1,6 @@
 # app/support/Item/repository.py
 
-from app.support.item.models import Item
+from app.support.item.model import Item
 from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select

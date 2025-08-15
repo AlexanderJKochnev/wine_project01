@@ -2,16 +2,16 @@
 # from wtforms.widgets import TextArea
 from app.admin.core import AutoModelView
 # --------подключение моделей-----------
-from app.support.drink.models import Drink
-from app.support.category.models import Category
-from app.support.country.models import Country
-from app.support.customer.models import Customer
-from app.support.warehouse.models import Warehouse
-from app.support.food.models import Food
-from app.support.item.models import Item
-from app.support.region.models import Region
-from app.support.color.models import Color
-from app.support.sweetness.models import Sweetness
+from app.support.drink.model import Drink
+from app.support.category.model import Category
+from app.support.country.model import Country
+from app.support.customer.model import Customer
+from app.support.warehouse.model import Warehouse
+from app.support.food.model import Food
+from app.support.item.model import Item
+from app.support.region.model import Region
+from app.support.color.model import Color
+from app.support.sweetness.model import Sweetness
 
 
 class DrinkAdmin(AutoModelView, model=Drink):

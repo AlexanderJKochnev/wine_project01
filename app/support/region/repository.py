@@ -5,7 +5,7 @@
     ЕСЛИ ТАКИХ ПОЛЕЙ НЕТ - УДАЛИ ЭТУ ПРОЦЕДУРУ ПОЛНОСТЬЮ
 """
 
-from app.support.region.models import Region
+from app.support.region.model import Region
 from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select

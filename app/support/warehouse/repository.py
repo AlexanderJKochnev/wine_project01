@@ -1,7 +1,7 @@
 # app/support/warehouse/repository.py
 
 
-from app.support.warehouse.models import Warehouse
+from app.support.warehouse.model import Warehouse
 from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select

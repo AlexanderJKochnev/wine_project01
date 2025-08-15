@@ -34,8 +34,8 @@ services:
     ports:
       # - "9000:9333"  # Web UI
       # - "9001:8888"  # S3 Gateway
-      - "${SEAWEED_PORT}:{SEAWEED_PORT}"
-      - "${SEAWEED_S3_PORT}:{SEAWEED_S3_PORT}"
+      - "${SEAWEED_PORT}:${SEAWEED_PORT}"
+      - "${SEAWEED_S3_PORT}:${SEAWEED_S3_PORT}"
     networks:
       - pgnetwork
   
@@ -54,7 +54,7 @@ services:
   app:
     container_name: app
     build: .
-    restart: unless-stopped
+    restart: no  # unless-stopped
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
       - wine_host
@@ -81,4 +81,4 @@ volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
-  seawed_data: # seaweed data
+  seaweed_data: # seaweed data

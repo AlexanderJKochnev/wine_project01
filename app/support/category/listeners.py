@@ -3,8 +3,8 @@
 from sqlalchemy import update, event, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-from app.support.drink.models import Drink
-from app.support.category.models import Category
+from app.support.drink.model import Drink
+from app.support.category.model import Category
 from app.core.config.database.db_noclass import get_db
 
 

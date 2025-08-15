@@ -1,8 +1,7 @@
-# app/support/country/models.py
+# app/support/country/model.py
 
 from app.core.models.base_model import Base
-from typing import List
-from sqlalchemy.orm import (relationship, Mapped, mapped_column)
+from sqlalchemy.orm import relationship
 
 
 class Country(Base):

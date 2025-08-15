@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_noclass import get_db
 from app.core.routers.base import BaseRouter
-from app.support.drink.models import Drink
+from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import DrinkRead, DrinkCreate, DrinkUpdate
 

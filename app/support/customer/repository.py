@@ -1,6 +1,6 @@
 # app/support/customer/repository.py
 
-from app.support.customer.models import Customer
+from app.support.customer.model import Customer
 from app.core.repositories.sqlalchemy_repository import Repository
 # from sqlalchemy.orm import selectinload
 # from sqlalchemy import select

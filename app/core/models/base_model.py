@@ -34,6 +34,7 @@ str_uniq = Annotated[str, mapped_column(unique=True,
 # non-unique nullable string field
 str_null_true = Annotated[str, mapped_column(nullable=True)]
 str_null_index = Annotated[str, mapped_column(nullable=True, index=True)]
+str_null_false = Annotated[str, mapped_column(nullable=False)]
 
 # int field with default value 0
 nmbr = Annotated[int, mapped_column(server_default=text('0'))]
@@ -55,7 +56,11 @@ boolnone = Annotated[bool | None, mapped_column(nullable=True)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
-    """ Abstract class """
+    """ clear model with
+        id only,
+        common methods,
+        table name
+    """
     __abstarct__ = True
 
     id: Mapped[int_pk]
@@ -94,3 +99,27 @@ class Base(AsyncAttrs, DeclarativeBase):
         columns = class_mapper(self.__class__).columns
         # Возвращаем словарь всех колонок и их значений
         return {column.key: getattr(self, column.key) for column in columns}
+
+
+class BaseAt:
+    __abstarct__ = True
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
+    # description: Mapped[descr]
+    # description_ru: Mapped[descr]
+    # name: Mapped[str_uniq]
+    # name_ru: Mapped[str_null_index]
+
+
+class BaseEn:
+    __abstarct__ = True
+    description: Mapped[descr]
+    # description_ru: Mapped[descr]
+    name: Mapped[str_uniq]
+    # name_ru: Mapped[str_null_index]
+
+
+class BaseRu:
+    __abstarct__ = True
+    description_ru: Mapped[descr]
+    name_ru: Mapped[str_null_index]

@@ -1,4 +1,4 @@
-# app/support/warehouse/models.py
+# app/support/warehouse/model.py
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import (relationship,

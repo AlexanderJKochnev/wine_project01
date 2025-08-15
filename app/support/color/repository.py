@@ -1,6 +1,6 @@
 # app/support/color/repository.py
 
-from app.support.color.models import Color
+from app.support.color.model import Color
 from app.core.repositories.sqlalchemy_repository import Repository
 # from sqlalchemy.orm import selectinload
 # from sqlalchemy import select

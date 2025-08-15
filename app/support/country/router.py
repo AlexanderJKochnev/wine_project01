@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_noclass import get_db
 from app.core.routers.base import BaseRouter
-from app.support.country.models import Country
+from app.support.country.model import Country
 from app.support.country.repository import CountryRepository
 from app.support.country.schemas import CountryRead, CountryCreate, CountryUpdate
 

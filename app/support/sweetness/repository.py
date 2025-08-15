@@ -1,6 +1,6 @@
 # app/support/sweetness/repository.py
 
-from app.support.sweetness.models import Sweetness
+from app.support.sweetness.model import Sweetness
 from app.core.repositories.sqlalchemy_repository import Repository
 # from sqlalchemy.orm import selectinload
 # from sqlalchemy import select

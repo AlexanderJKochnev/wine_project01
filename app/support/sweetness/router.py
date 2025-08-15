@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_noclass import get_db
 from app.core.routers.base import BaseRouter
-from app.support.sweetness.models import Sweetness
+from app.support.sweetness.model import Sweetness
 from app.support.sweetness.repository import SweetnessRepository
 from app.support.sweetness.schemas import SweetnessRead, SweetnessCreate, SweetnessUpdate
 
