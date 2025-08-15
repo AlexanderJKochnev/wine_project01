@@ -8,6 +8,13 @@ passlib==1.7.4
 pytest
 pytest-asyncio
 pytest-cov
-python-multipart
-minio
+# python-multipart
+# minio
 pillow
+
+#  fastapi==0.95.0
+uvicorn
+# sqlalchemy==2.0.5
+aiobotocore
+# ==2.4.2
+aiohttp
