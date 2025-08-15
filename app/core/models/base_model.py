@@ -64,12 +64,12 @@ class Base(AsyncAttrs, DeclarativeBase):
     __abstarct__ = True
 
     id: Mapped[int_pk]
-    created_at: Mapped[created_at]
-    updated_at: Mapped[updated_at]
-    description: Mapped[descr]
-    description_ru: Mapped[descr]
-    name: Mapped[str_uniq]
-    name_ru: Mapped[str_null_index]
+    # created_at: Mapped[created_at]
+    # updated_at: Mapped[updated_at]
+    # description: Mapped[descr]
+    # description_ru: Mapped[descr]
+    # name: Mapped[str_uniq]
+    # name_ru: Mapped[str_null_index]
 
     @declared_attr.directive
     def __tablename__(cls) -> str:
@@ -114,12 +114,10 @@ class BaseAt:
 class BaseEn:
     __abstarct__ = True
     description: Mapped[descr]
-    # description_ru: Mapped[descr]
     name: Mapped[str_uniq]
-    # name_ru: Mapped[str_null_index]
 
 
-class BaseRu:
+class BaseLang:
     __abstarct__ = True
-    description_ru: Mapped[descr]
     name_ru: Mapped[str_null_index]
+    description_ru: Mapped[descr]

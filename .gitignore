@@ -21,6 +21,7 @@ wheels/
 *.egg
 MANIFEST
 pg_data/
+seaweed_data/
 migration_volume/
 
 # Virtual environment

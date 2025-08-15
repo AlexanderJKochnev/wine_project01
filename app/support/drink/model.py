@@ -4,8 +4,8 @@ from sqlalchemy import String, Text, text, ForeignKey, Integer, Column   # noqa:
 from sqlalchemy.orm import (relationship,
                             Mapped, mapped_column)
 from typing import List, TYPE_CHECKING
-from app.core.models.base_model import (Base, str_null_true, str_null_index,  # noqa F401
-                                        nmbr, money, volume, ion, boolnone)  # noqa F401
+from app.core.models.base_model import (Base, BaseLang, BaseEn, BaseAt,
+                                        str_null_true, volume, ion, boolnone)
 
 if TYPE_CHECKING:
     from app.support.sweetness.model import Sweetness
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from app.support.category.model import Category
 
 
-class Drink(Base):
+class Drink(Base, BaseLang, BaseEn, BaseAt):
     subtitle: Mapped[str_null_true]
     alcohol: Mapped[volume]
     sugar: Mapped[volume]
@@ -32,11 +32,6 @@ class Drink(Base):
     items: Mapped[List["Item"]] = relationship("Item",  # noqa F821
                                                back_populates="drink",
                                                cascade="all, delete-orphan")
-
-    #  region_id = Column(Integer, ForeignKey("regions.id"), nullable=False)
-    # region = relationship("Region", back_populates="drinks")
-    # category_id = Column(Integer, ForeignKey("categories.id"))
-    # category = relationship("Category", back_populates="drinks")
     region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
     region: Mapped["Region"] = relationship(back_populates="drinks")
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)

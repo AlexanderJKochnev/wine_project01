@@ -1,11 +1,11 @@
 # app/support/region/model.py
 
-from sqlalchemy import String, Text, text, ForeignKey, Column, Integer   # noqa: F401
-from sqlalchemy.orm import (relationship, Mapped, mapped_column)    # noqa: F401
-from app.core.models.base_model import Base, str_null_true, str_null_index   # noqa: F401
+from sqlalchemy import ForeignKey, Column, Integer
+from sqlalchemy.orm import relationship
+from app.core.models.base_model import Base, BaseLang, BaseEn, BaseAt
 
 
-class Region(Base):
+class Region(Base, BaseLang, BaseEn, BaseAt):
     """country_id: Mapped[int] = mapped_column(
         ForeignKey("countries.id"), nullable=False)
     # Добавляем relationship

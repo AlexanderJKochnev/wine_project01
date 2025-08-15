@@ -1,13 +1,12 @@
 # app/support/warehouse/model.py
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import (relationship,
-                            Mapped, mapped_column)    # noqa: F401
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from typing import List
-from app.core.models.base_model import Base, str_null_true, str_null_index   # noqa: F401
+from app.core.models.base_model import Base, BaseLang, BaseEn, BaseAt, str_null_true
 
 
-class Warehouse(Base):
+class Warehouse(Base, BaseLang, BaseEn, BaseAt):
     address: Mapped[str_null_true]
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), nullable=False)
     # Добавляем relationship
