@@ -27,15 +27,18 @@ services:
       start_interval: 5s
   
   seaweedfs:
-    image: chrislusf/seaweedfs
-    command: "server -dir=/data -s3 -volume.max=100 -master.volumeSizeLimitMB=5000"
+    image: chrislusf/seaweedfs:latest
+    command: "server -filer=true -dir=/data -s3 -s3.allowEmptyFolder"
+    # command: "server -filer=true -dir=/data -s3 -volume.max=100"
+    # command: "server -dir=/data -s3 -volume.max=100 -master.volumeSizeLimitMB=5000"
+    restart: no
     volumes:
       - ./seaweed_data:/data
     ports:
       # - "9000:9333"  # Web UI
       # - "9001:8888"  # S3 Gateway
-      - "${SEAWEED_PORT}:${SEAWEED_PORT}"
-      - "${SEAWEED_S3_PORT}:${SEAWEED_S3_PORT}"
+      - "9000:${SEAWEED_PORT}"
+      - "9001:${SEAWEED_S3_PORT}"
     networks:
       - pgnetwork
   

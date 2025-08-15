@@ -1,10 +1,8 @@
 # app/core/config/database/minio.py
 
-from typing import Optional
-from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from minio import Minio
-from minio.error import S3Error
+# from minio.error import S3Error
 from app.core.utils import get_path_to_root
 
 
@@ -20,19 +18,6 @@ class ConfigMinioBase(BaseSettings):
     MINIO_SECRET_KEY: str = "minioadmin"
     MINIO_BUCKET: str
     MINIO_SECURE: str = False
-
-    @property
-    def database_url(self) -> Optional[PostgresDsn]:
-        """
-        выводит строку подключения
-        :return:
-        :rtype:
-        """
-        return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:"
-            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
-            f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
 
 
 setting_minio = ConfigMinioBase()

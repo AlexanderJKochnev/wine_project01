@@ -23,7 +23,7 @@ from app.support.item.model import Item   # noqa: F401, E402
 from app.support.region.model import Region   # noqa: F401, E402
 from app.support.color.model import Color   # noqa: F401, E402
 from app.support.sweetness.model import Sweetness   # noqa: F401, E402
-from app.core.models.seaweed_model import File  # noqa: F401, E402
+from app.support.models.seaweed_model import File  # noqa: F401, E402
 from app.core.config.database.db_config import settings_db  # noqa:  F401, E402
 # F401, E402
 

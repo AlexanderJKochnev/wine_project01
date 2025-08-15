@@ -1,6 +1,6 @@
 # app/admin/sqladmin.md
 # from wtforms.widgets import TextArea
-from app.admin.core import AutoModelView
+from app.admin.core import AutoModelView, ModelView
 # --------подключение моделей-----------
 from app.support.drink.model import Drink
 from app.support.category.model import Category
@@ -12,6 +12,7 @@ from app.support.item.model import Item
 from app.support.region.model import Region
 from app.support.color.model import Color
 from app.support.sweetness.model import Sweetness
+from app.support.seaweed.model import File
 
 
 class DrinkAdmin(AutoModelView, model=Drink):
@@ -60,3 +61,8 @@ class SweetnessAdmin(AutoModelView, model=Sweetness):
 
 class ColorAdmin(AutoModelView, model=Color):
     pass
+
+
+class SeaweedAdmin(ModelView, model=File):
+    column_list = [File.id, File.filename, File.size]
+    form_columns = [File.filename, File.content_type]

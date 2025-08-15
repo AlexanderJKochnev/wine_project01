@@ -1,6 +1,6 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar, Generic
+from typing import Type, Any, List, TypeVar
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ TUpdate = TypeVar("TUpdate", bound=BaseSchema)
 TRead = TypeVar("TRead", bound=BaseSchema)
 
 
-class BaseRouter:  # (Generic[TCreate, TUpdate, TRead]):
+class BaseRouter:
     """
     Базовый роутер с общими CRUD-методами.
     Наследуйте и переопределяйте get_query() для добавления selectinload.
