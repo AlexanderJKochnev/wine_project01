@@ -23,7 +23,8 @@ Full - все поля включая системные и скрытые
 
 
 class TemplateCustom:
-    category_id: int
+    """ ни в коем случае не вставлять pk field"""
+    pass
 
 
 class TemplateShort(ShortSchema):

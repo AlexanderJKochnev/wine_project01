@@ -1,5 +1,4 @@
 # app/admin/sqladmin.md
-# from wtforms.widgets import TextArea
 from app.admin.core import AutoModelView, BaseAdmin
 # --------подключение моделей-----------
 from app.support.drink.model import Drink
@@ -20,34 +19,12 @@ class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
     # form_columns = [Drink.name, Drink.subtitle,
     #                 Drink.description, Drink.category]
     # form_excluded_columns = ['created_at', 'updated_at', 'pk']
-    """
-    column_list = [Drink.id, Drink.name, Drink.alcohol, Drink.category, "image_preview"]
-    column_searchable_list = [Drink.name]
-    column_sortable_list = [Drink.id, Drink.name, Drink.alcohol]
-    column_labels = {
-        Drink.name: "Название",
-        "image_preview": "Изображение"
-    }
+    column_labels = {Drink.name: "Название", "image_preview": "Изображение"}
 
-    form_columns = [
-        Drink.name, Drink.subtitle, Drink.alcohol, Drink.sugar,
-        Drink.aging, Drink.sparkling, Drink.category_id, Drink.food_id,
-        Drink.region_id, Drink.color_id, Drink.sweetness_id, "image_path"
-    ]
-
-    def get_list_value(self, model, column):
-        if column.key == "image_preview":
-            if model.image_path:
-                return f'<img src="/images/{model.image_path}" style="max-width: 100px; max-height: 100px;" />'
-            return "Нет изображения"
-        return super().get_list_value(model, column)
-
-    def get_detail_value(self, model, column):
-        if column.key == "image_path" and model.image_path:
-            return f'<img src="/images/{model.image_path}" style="max-width: 300px;" />'
-        return super().get_detail_value(model, column)
-    """
-    pass
+    form_columns = [Drink.name, Drink.subtitle, Drink.alcohol,
+                    Drink.sugar, Drink.aging, Drink.sparkling,
+                    Drink.category_id, Drink.food_id, Drink.region_id,
+                    Drink.color_id, Drink.sweetness_id, "image_path"]
 
 
 class CategoryAdmin(AutoModelView, BaseAdmin, model=Category):

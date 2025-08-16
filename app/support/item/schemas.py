@@ -17,7 +17,8 @@ Full - все поля включая системные и скрытые
 
 
 class ItemCustom:
-    drink_id: int
+    # drink_id: int
+    pass
 
 
 class ItemShort(ShortSchema):

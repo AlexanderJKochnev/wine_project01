@@ -4,7 +4,8 @@ from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSch
 
 
 class ColorCustom:
-    category_id: int
+    # category_id: int
+    pass
 
 
 class ColorShort(ShortSchema):
@@ -15,7 +16,7 @@ class ColorRead(BaseSchema):
     pass
 
 
-class ColorCreate(BaseSchema, ColorCustom):
+class ColorCreate(BaseSchema):
     pass
 
 

@@ -6,7 +6,8 @@ from pydantic import ConfigDict
 
 
 class SweetnessCustom:
-    category_id: int
+    # category_id: int
+    pass
 
 
 class SweetnessShort(ShortSchema):

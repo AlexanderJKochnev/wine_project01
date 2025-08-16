@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy import select
 from app.core.config.database.db_async import get_db
+from app.core.utils.image_utils import ImageService
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -22,9 +23,15 @@ class Repository(Generic[ModelType]):
 
     async def create(self, data: Dict[str, Any], session: AsyncSession = Depends(get_db)) -> ModelType:
         """ create & return record """
+        # Обрабатываем изображение если модель поддерживает его
+        if hasattr(self.model, 'image_path') and 'image_file' in data:
+            image_file = data.pop('image_file')
+            if image_file and hasattr(image_file, 'filename'):
+                image_path = await ImageService.process_and_save_image(image_file)
+                data['image_path'] = image_path
+
         obj = self.model(**data)
         session.add(obj)
-        # await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
         await session.commit()
         await session.refresh(obj)
         return obj
@@ -49,6 +56,24 @@ class Repository(Generic[ModelType]):
         obj = await self.get_by_id(id, session)
         if not obj:
             return None
+
+        # Обрабатываем изображение если модель поддерживает его
+        if hasattr(self.model, 'image_path') and 'image_file' in data:
+            image_file = data.pop('image_file')
+            if image_file and hasattr(image_file, 'filename'):
+                # Удаляем старое изображение если оно было
+                if hasattr(obj, 'image_path') and obj.image_path:
+                    ImageService.delete_image(obj.image_path)
+
+                # Сохраняем новое изображение
+                image_path = await ImageService.process_and_save_image(image_file)
+                data['image_path'] = image_path
+            elif image_file is None:
+                # Явно удаляем изображение
+                if hasattr(obj, 'image_path') and obj.image_path:
+                    ImageService.delete_image(obj.image_path)
+                data['image_path'] = None
+
         for k, v in data.items():
             if hasattr(obj, k):
                 setattr(obj, k, v)
@@ -58,9 +83,13 @@ class Repository(Generic[ModelType]):
 
     async def delete(self, id: Any, session: AsyncSession) -> bool:
         obj = await self.get_by_id(id, session)
-        print(f'{obj=}')
         if not obj:
             return False
+
+        # Удаляем изображение если оно есть
+        if hasattr(obj, 'image_path') and obj.image_path:
+            ImageService.delete_image(obj.image_path)
+
         await session.delete(obj)
         await session.commit()
         return True

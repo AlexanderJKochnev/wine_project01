@@ -41,7 +41,6 @@ class AutoModelView(ModelView):
     def _model_columns(self) -> List[Any]:
         """Возвращает список атрибутов модели для column_list."""
         mapper = inspect(self.model)
-        # pk_name = mapper.primary_key[0].name if mapper.primary_key else None
         columns: List[Any] = []
         tmp: dict = {}
         rel: List[Any] = []
@@ -76,6 +75,10 @@ class AutoModelView(ModelView):
         tmp1 = [(*val, key) for key, val in tmp.items()]
         sorted_columns = sorted(tmp1, key=lambda a: (a[1], a[2], a[3]))
         columns = [a for a, *b in reversed(sorted_columns)]
+        # Добавляем превью изображения если модель поддерживает его
+        if hasattr(self.model, 'image_path') and "image_preview" not in [getattr(c, 'key', str(c)) for c in columns]:
+            columns.append("image_preview")
+
         return columns
 
     def __init_subclass__(cls, **kwargs):

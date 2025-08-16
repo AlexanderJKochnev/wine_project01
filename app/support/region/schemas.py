@@ -6,7 +6,8 @@ from pydantic import ConfigDict
 
 
 class RegionCustom:
-    country_id: int
+    # country_id: int
+    pass
 
 
 class RegionShort(ShortSchema):
