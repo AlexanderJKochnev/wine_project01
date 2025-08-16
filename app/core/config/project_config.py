@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     PAGE_DEFAULT: int = 20
     PAGE_MIN: int = 0
     PAGE_MAX: int = 100
+    SECRET_KEY: str
+    ALGORITHM: str = 'HS256'
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 50
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')

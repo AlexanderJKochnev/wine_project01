@@ -1,6 +1,6 @@
 # app/admin/sqladmin.md
 # from wtforms.widgets import TextArea
-from app.admin.core import AutoModelView
+from app.admin.core import AutoModelView, BaseAdmin
 # --------подключение моделей-----------
 from app.support.drink.model import Drink
 from app.support.category.model import Category
@@ -14,7 +14,7 @@ from app.support.color.model import Color
 from app.support.sweetness.model import Sweetness
 
 
-class DrinkAdmin(AutoModelView, model=Drink):
+class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
     # column_searchable_list = [Drink.name, Drink.name_ru]
     # column_sortable_list = [Drink.id, Drink.name, Drink.category]
     # form_columns = [Drink.name, Drink.subtitle,
@@ -23,42 +23,42 @@ class DrinkAdmin(AutoModelView, model=Drink):
     pass
 
 
-class CategoryAdmin(AutoModelView, model=Category):
+class CategoryAdmin(AutoModelView, BaseAdmin, model=Category):
     name = "Category"
     name_plural = "Categories"
 
 
-class CountryAdmin(AutoModelView, model=Country):
+class CountryAdmin(AutoModelView, BaseAdmin, model=Country):
     name = 'Country'
     name_plural = 'Countries'
 
 
-class CustomerAdmin(AutoModelView, model=Customer):
+class CustomerAdmin(AutoModelView, BaseAdmin, model=Customer):
     pass
 
 
-class WarehouseAdmin(AutoModelView, model=Warehouse):
+class WarehouseAdmin(AutoModelView, BaseAdmin, model=Warehouse):
     pass
 
 
-class FoodAdmin(AutoModelView, model=Food):
+class FoodAdmin(AutoModelView, BaseAdmin, model=Food):
     pass
 
 
-class ItemAdmin(AutoModelView, model=Item):
+class ItemAdmin(AutoModelView, BaseAdmin, model=Item):
     pass
 
 
-class RegionAdmin(AutoModelView, model=Region):
+class RegionAdmin(AutoModelView, BaseAdmin, model=Region):
     pass
 
 
-class SweetnessAdmin(AutoModelView, model=Sweetness):
+class SweetnessAdmin(AutoModelView, BaseAdmin, model=Sweetness):
     name = 'Sweetness'
     name_plural = 'Sweetness type'
 
 
-class ColorAdmin(AutoModelView, model=Color):
+class ColorAdmin(AutoModelView, BaseAdmin, model=Color):
     pass
 
 

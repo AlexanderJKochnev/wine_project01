@@ -64,3 +64,8 @@ class Repository(Generic[ModelType]):
         await session.delete(obj)
         await session.commit()
         return True
+
+    async def get_by_field(self, field_name: str, field_value: Any, session: AsyncSession):
+        stmt = select(self.model).where(getattr(self.model, field_name) == field_value)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()

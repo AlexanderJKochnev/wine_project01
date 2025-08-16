@@ -4,11 +4,9 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 from app.admin import sqladm
-# from app.core.config.database.minio import minio_client, bucket_name, initialize_minio
 from app.core.config.database.db_async import engine
-# from app.core.config.file import get_s3_client
 from app.support.category.listeners import *  # noqa F403
-
+from app.auth.router import router as auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
@@ -21,6 +19,7 @@ from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
 
+from app.admin.auth import authentication_backend
 
 app = FastAPI()
 app.add_middleware(
@@ -32,13 +31,19 @@ app.add_middleware(
 )
 
 
+"""
 async def authenticate(username: str, password: str):
     if username == "admin" and password == "password":
         return True
     return False
+    """
 
-admin = Admin(app, engine, templates_dir="templates")
-
+admin = Admin(
+    app,
+    engine,
+    authentication_backend=authentication_backend,
+    templates_dir="templates"
+)
 # --------------подключение админ панели------------------
 admin.add_view(sqladm.CategoryAdmin)
 admin.add_view(sqladm.DrinkAdmin)
@@ -62,6 +67,7 @@ async def wait_some_time(seconds: float):
     await asyncio.sleep(seconds)  # Не блокирует поток
     return {"waited": seconds}
 
+app.include_router(auth_router)
 # --------------подключение роутеров---------------
 app.include_router(drink_router)
 app.include_router(category_router)

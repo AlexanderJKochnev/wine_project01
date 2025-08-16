@@ -5,6 +5,7 @@ from sqlalchemy import inspect
 from typing import Set, List, Any
 from functools import cached_property
 from sqlalchemy.orm import RelationshipProperty
+from starlette.requests import Request
 
 
 class AutoModelView(ModelView):
@@ -82,3 +83,17 @@ class AutoModelView(ModelView):
         # Устанавливаем column_list, если не задан явно
         if not cls.column_list:
             cls.column_list = cls._model_columns
+
+
+class BaseAdmin(ModelView):
+    """Базовый класс для админ панели с проверкой прав"""
+
+    async def is_accessible(self, request: Request) -> bool:
+        # Проверяем, авторизован ли пользователь
+        token = request.session.get("admin_token")
+        if not token:
+            return False
+        return True
+
+    async def is_visible(self, request: Request) -> bool:
+        return await self.is_accessible(request)
