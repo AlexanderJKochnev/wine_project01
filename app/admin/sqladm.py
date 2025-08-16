@@ -1,15 +1,6 @@
 # app/admin/sqladmin.md
 # from wtforms.widgets import TextArea
-from app.admin.core import AutoModelView, ModelView
-from fastapi import Request, UploadFile, Depends, HTTPException
-from fastapi import UploadFile as FastAPIUploadFile
-# from starlette.responses import RedirectResponse
-from app.core.config.database.db_sync import get_db_sync  # синхронная сессия
-from sqlalchemy.ext.asyncio import AsyncSession
-# from app.core.config.database.db_async import get_db
-from app.support.file.service import SeaweedFSClient
-import uuid
-# from app.support.file.schemas import FileCreate
+from app.admin.core import AutoModelView
 # --------подключение моделей-----------
 from app.support.drink.model import Drink
 from app.support.category.model import Category
@@ -21,55 +12,6 @@ from app.support.item.model import Item
 from app.support.region.model import Region
 from app.support.color.model import Color
 from app.support.sweetness.model import Sweetness
-from app.support.file.model import File
-import io
-
-seaweed = SeaweedFSClient()
-print("✅ FileAdmin loaded!")
-
-class FileAdmin(ModelView, model=File):
-    column_list = [File.id, File.filename, File.size, File.content_type]
-    form_excluded_columns = [File.seaweedfs_id]  # не редактируем вручную
-    form_template = "admin/file/form.html"  # ← указываем кастомный шаблон
-
-    async def after_model_change(self, model: File, is_created: bool, request: Request) -> None:
-        form = await request.form()
-        if "upload_file" in form:
-            upload_file = form["upload_file"]
-            if hasattr(upload_file, "filename") and upload_file.filename:
-                # Оборачиваем в FastAPI UploadFile
-                file_stream = io.BytesIO(await upload_file.read())
-                fastapi_file = FastAPIUploadFile(
-                    file=file_stream,
-                    filename=upload_file.filename,
-                    content_type=upload_file.content_type or "application/octet-stream",
-                )
-
-                file_id = str(uuid.uuid4())
-                try:
-                    # Загружаем в SeaweedFS
-                    result = await seaweed.upload(fastapi_file, file_id)
-
-                    # Сохраняем метаданные
-                    model.filename = fastapi_file.filename
-                    model.content_type = fastapi_file.content_type
-                    model.size = len(result.get("eTag", ""))  # или получите из ответа
-                    model.seaweedfs_id = file_id
-
-                    # Сохраняем в БД
-                    sync_db = next(get_db_sync())
-                    sync_db.add(model)
-                    sync_db.commit()
-                    sync_db.refresh(model)
-                    sync_db.close()
-
-                except Exception as e:
-                    # При ошибке удаляем из SeaweedFS
-                    await seaweed.delete(file_id)
-                    raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-
-    async def after_model_delete(self, model: File, request: Request) -> None:
-        await seaweed.delete(model.seaweedfs_id)
 
 
 class DrinkAdmin(AutoModelView, model=Drink):

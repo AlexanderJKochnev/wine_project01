@@ -14,8 +14,8 @@ pillow
 psycopg2-binary
 
 #  fastapi==0.95.0
-uvicorn
+# uvicorn
 # sqlalchemy==2.0.5
-aiobotocore
+# aiobotocore
 # ==2.4.2
-aiohttp
+# aiohttp

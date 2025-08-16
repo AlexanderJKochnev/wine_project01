@@ -26,23 +26,6 @@ services:
       start_period: 40s
       start_interval: 5s
   
-  seaweedfs:
-    image: chrislusf/seaweedfs:latest
-    command: "server -filer=true -dir=/data -s3 -s3.allowEmptyFolder"
-    # command: "server -filer=true -dir=/data -s3 -volume.max=100"
-    # command: "server -dir=/data -s3 -volume.max=100 -master.volumeSizeLimitMB=5000"
-    restart: no
-    volumes:
-      - ./seaweed_data:/data
-    ports:
-      # - "9000:9333"  # Web UI
-      # - "9001:8888"  # S3 Gateway
-      - "${SEAWEED_MASTER_PORT_OUT}:${SEAWEED_MASTER_PORT}"
-      - "${SEAWEED_S3_PORT_OUT}:${SEAWEED_S3_PORT}"
-      # - "${SEAWEED_VOLUME_PORT_OUT}:${SEAWEED_VOLUME_PORT}"
-    networks:
-      - pgnetwork
-  
   adminer:
     container_name: pg_admin
     image: adminer:4.8.1
@@ -62,15 +45,12 @@ services:
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
       - wine_host
-      - seaweedfs
     ports:
       - ${API_PORT}:${API_PORT}
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       WEB_PORT: ${API_PORT}
       WEB_HOST: ${API_HOST}
-      SEAWEEDFS_URL: ${SEAWEED_URL}:${SEAWEED_MASTER_PORT}
-      SEAWEEDFS_S3_URL: ${SEAWEED_URL}:${SEAWEED_S3_PORT}
     volumes:
       - ./templates:/app/templates
       - ./migration_volume:/app/app/migration/versions
@@ -85,4 +65,3 @@ volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
-  seaweed_data: # file data

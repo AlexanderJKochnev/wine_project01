@@ -20,7 +20,7 @@ from app.support.item.router import router as item_router
 from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
-from app.support.file.router import router as seaweed_router
+
 
 app = FastAPI()
 app.add_middleware(
@@ -50,7 +50,6 @@ admin.add_view(sqladm.ItemAdmin)
 admin.add_view(sqladm.RegionAdmin)
 admin.add_view(sqladm.ColorAdmin)
 admin.add_view(sqladm.SweetnessAdmin)
-admin.add_view(sqladm.FileAdmin)
 
 
 @app.get("/")
@@ -74,4 +73,3 @@ app.include_router(item_router)
 app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
-app.include_router(seaweed_router)
