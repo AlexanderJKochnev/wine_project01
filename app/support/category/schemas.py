@@ -1,10 +1,27 @@
-# from pydantic import BaseModel, Field
-from app.core.schemas.base_schema import create_pydantic_models_from_orm
-from app.support.category.models import Category
+# app/support/category/schemas.py
+from typing import Optional
+from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
 
-CategorySchemas = create_pydantic_models_from_orm(Category)
-SAdd = CategorySchemas['Create']
-SUpd = CategorySchemas['Update']
-SDel = CategorySchemas['DeleteResponse']
-SRead = CategorySchemas['Read']
-SList = CategorySchemas['List']
+
+class CategoryCustom:
+    pass
+
+
+class CategoryShort(ShortSchema):
+    pass
+
+
+class CategoryRead(BaseSchema, CategoryCustom):
+    count_drink: Optional[int] = 0
+
+
+class CategoryCreate(BaseSchema):
+    pass
+
+
+class CategoryUpdate(UpdateSchema):
+    pass
+
+
+class CategoryFull(FullSchema, CategoryRead, CategoryCustom):
+    pass

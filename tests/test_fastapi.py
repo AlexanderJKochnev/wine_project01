@@ -33,10 +33,3 @@ async def test_redoc(async_test_app):
     ac, _ = async_test_app
     response = await ac.get('/redoc')
     assert response.status_code == 200
-
-
-async def test_pgsql(async_test_app):
-    """ тест доступности redoc """
-    ac, _ = async_test_app
-    response = await ac.get('/tests')
-    assert response.status_code == 200

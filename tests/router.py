@@ -9,7 +9,6 @@ router = APIRouter(prefix='/tests',
 
 @router.get("/", summary='Проверка соединения с базой данных')
 async def get_answer():
-    # _session_factory = db_help.get_db_session
     async def wait_some_time(seconds: float):
         await asyncio.sleep(seconds)  # Не блокирует поток
         return {"waited": seconds}

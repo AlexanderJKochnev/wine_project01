@@ -33,6 +33,6 @@
    18. target_metadata = Base.metadata
 5. перенести alembic.ini из app в корень
 6. После запуска приложения в docker, запустить из командной строки:
-   1. sh alembic.sh (он выполгнит следующие команды и выполнит миграцию изменений в бд)
+   1. sh alembic.sh (он выполнит следующие команды и выполнит миграцию изменений в бд)
       1. docker compose exec app alembic revision --autogenerate -m 'Initial revision'
       2. docker compose exec app alembic upgrade head

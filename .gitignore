@@ -21,6 +21,7 @@ wheels/
 *.egg
 MANIFEST
 pg_data/
+seaweed_data/
 migration_volume/
 
 # Virtual environment
@@ -39,11 +40,13 @@ venv.bak/
 
 # Docker
 docker-compose.override.yml
+requirements1.txt
 
 # Database
 *.db
 *.sqlite
 postgres-data/
+pg_dump/
 
 # Logs
 *.log

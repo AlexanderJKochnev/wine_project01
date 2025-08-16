@@ -1,14 +1,52 @@
 # app/support/drink/schemas.py
-# import re
-# from datetime import date, datetime
-from app.core.schemas.base_schema import create_pydantic_models_from_orm
-from app.core.schemas.base_schema import create_detail_view_model
-from app.support.drink.models import Drink
 
-DrinkSchemas = create_pydantic_models_from_orm(Drink)
-SAdd = DrinkSchemas['Create']
-SUpd = DrinkSchemas['Update']
-SDel = DrinkSchemas['DeleteResponse']
-SRead = DrinkSchemas['Read']
-SList = DrinkSchemas['List']
-SDetail = create_detail_view_model(Drink, include_relationships=True)
+from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
+from app.support.category.schemas import CategoryShort
+from app.support.food.schemas import FoodShort
+from app.support.color.schemas import ColorShort
+from app.support.region.schemas import RegionShort
+from app.support.sweetness.schemas import SweetnessShort
+from app.support.item.schemas import ItemShort
+
+from pydantic import ConfigDict
+from typing import Optional, List
+
+"""
+Custom
+Short
+Read
+Create
+Update
+Full
+"""
+
+
+class DrinkCustom:
+    category_id: int
+    food_id: Optional[int]
+
+
+class DrinkShort(ShortSchema):
+    pass
+
+
+class DrinkRead(BaseSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    category: CategoryShort
+    food: FoodShort
+    color: ColorShort
+    sweetness: SweetnessShort
+    region: RegionShort
+    # items: List[ItemShort]
+
+
+class DrinkCreate(BaseSchema, DrinkCustom):
+    pass
+
+
+class DrinkUpdate(UpdateSchema, DrinkCustom):
+    pass
+
+
+class DrinkFull(FullSchema, DrinkCustom):
+    pass

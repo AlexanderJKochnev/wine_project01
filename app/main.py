@@ -2,15 +2,24 @@
 from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-from app.support.user.router import router as user_router
+from sqladmin import Admin
+from app.admin import sqladm
+# from app.core.config.database.minio import minio_client, bucket_name, initialize_minio
+from app.core.config.database.db_async import engine
+# from app.core.config.file import get_s3_client
+from app.support.category.listeners import *  # noqa F403
+
+# -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
-from sqladmin import Admin
-# from app.core.config.database.db_noclass import engine
-from app.core.config.database.db_helper import db_help
-from app.admin import sqladm
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy import text
+from app.support.country.router import router as country_router
+from app.support.customer.router import router as customer_router
+from app.support.warehouse.router import router as warehouse_router
+from app.support.food.router import router as food_router
+from app.support.item.router import router as item_router
+from app.support.region.router import router as region_router
+from app.support.color.router import router as color_router
+from app.support.sweetness.router import router as sweetness_router
 
 
 app = FastAPI()
@@ -28,11 +37,19 @@ async def authenticate(username: str, password: str):
         return True
     return False
 
+admin = Admin(app, engine, templates_dir="templates")
 
-# admin = Admin(app, engine)
-admin = Admin(app, db_help.engine)
+# --------------подключение админ панели------------------
 admin.add_view(sqladm.CategoryAdmin)
 admin.add_view(sqladm.DrinkAdmin)
+admin.add_view(sqladm.CountryAdmin)
+admin.add_view(sqladm.CustomerAdmin)
+admin.add_view(sqladm.WarehouseAdmin)
+admin.add_view(sqladm.FoodAdmin)
+admin.add_view(sqladm.ItemAdmin)
+admin.add_view(sqladm.RegionAdmin)
+admin.add_view(sqladm.ColorAdmin)
+admin.add_view(sqladm.SweetnessAdmin)
 
 
 @app.get("/")
@@ -45,7 +62,14 @@ async def wait_some_time(seconds: float):
     await asyncio.sleep(seconds)  # Не блокирует поток
     return {"waited": seconds}
 
-
+# --------------подключение роутеров---------------
 app.include_router(drink_router)
 app.include_router(category_router)
-app.include_router(user_router)
+app.include_router(country_router)
+app.include_router(customer_router)
+app.include_router(warehouse_router)
+app.include_router(food_router)
+app.include_router(item_router)
+app.include_router(region_router)
+app.include_router(color_router)
+app.include_router(sweetness_router)

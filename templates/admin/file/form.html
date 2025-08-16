@@ -1,0 +1,20 @@
+<!-- templates/admin/file/form.html -->
+{% extends "admin/model/form.html" %}
+
+{% block body %}
+  {{ super() }}
+
+  <div class="mb-3">
+    <label for="upload_file" class="form-label" style="color: red; font-weight: bold;">
+      🔥 Upload File to SeaweedFS
+    </label>
+    <input
+      type="file"
+      name="upload_file"
+      id="upload_file"
+      class="form-control"
+      accept="*/*"
+    >
+    <div class="form-text">Выберите файл для загрузки</div>
+  </div>
+{% endblock %}

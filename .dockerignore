@@ -7,6 +7,7 @@
 !/docker-compose.yaml
 !/.env
 !/alembic.ini
+!/alembic.sh
 # Разрешить тесты (убрать в production)
 !/tests/
 
@@ -29,7 +30,7 @@
 **/.gitignore
 **/.vscode
 **/.idea
-
+*/tests/test_fastapi.py
 # Исключить логи и временные файлы
 **/*.log
 **/*.tmp
@@ -39,3 +40,4 @@
 **/postgres-data/
 **/pg_data/
 **/migration_volume/
+**/pg_dump

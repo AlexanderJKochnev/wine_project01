@@ -12,10 +12,19 @@ from os.path import dirname, abspath
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from app.core.models.base_model import Base  # noqa: F401, E402
-from app.support.user.models import User  # noqa: F401, E402
-from app.support.drink.models import Drink  # noqa: F401, E402
-from app.support.category.models import Category  # noqa: F401, E402
-from app.core.config.database.db_config import settings_db  # noqa:
+# -------model import----------------
+from app.support.drink.model import Drink  # noqa: F401, E402
+from app.support.country.model import Country  # noqa: F401, E402
+from app.support.category.model import Category  # noqa: F401, E402
+from app.support.customer.model import Customer   # noqa: F401, E402
+from app.support.warehouse.model import Warehouse   # noqa: F401, E402
+from app.support.food.model import Food   # noqa: F401, E402
+from app.support.item.model import Item   # noqa: F401, E402
+from app.support.region.model import Region   # noqa: F401, E402
+from app.support.color.model import Color   # noqa: F401, E402
+from app.support.sweetness.model import Sweetness   # noqa: F401, E402
+from app.support.file.model import File  # noqa: F401, E402
+from app.core.config.database.db_config import settings_db  # noqa:  F401, E402
 # F401, E402
 
 # this is the Alembic Config object, which provides

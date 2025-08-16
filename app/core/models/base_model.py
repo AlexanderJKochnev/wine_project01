@@ -1,13 +1,19 @@
 # app/core/models/base_model.py
 
-""" Base Model for SqlAlchemy """
+"""
+    Base Model for SqlAlchemy
+    в случае изменения модели Base внести соответствующие изменения в app/core/schemas/base.py
+"""
 from datetime import datetime
-from typing import Annotated, Dict, Any
-from sqlalchemy import inspect
+from typing import Annotated
 from sqlalchemy import func, text, Text
 from sqlalchemy.orm import (DeclarativeBase, Mapped,
                             declared_attr, mapped_column)
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import class_mapper
+# from sqlalchemy.dialects.postgresql import MONEY
+from sqlalchemy import DECIMAL
+from decimal import Decimal
 
 # annotation of some types of alchemy's fields
 
@@ -28,6 +34,7 @@ str_uniq = Annotated[str, mapped_column(unique=True,
 # non-unique nullable string field
 str_null_true = Annotated[str, mapped_column(nullable=True)]
 str_null_index = Annotated[str, mapped_column(nullable=True, index=True)]
+str_null_false = Annotated[str, mapped_column(nullable=False)]
 
 # int field with default value 0
 nmbr = Annotated[int, mapped_column(server_default=text('0'))]
@@ -35,18 +42,34 @@ nmbr = Annotated[int, mapped_column(server_default=text('0'))]
 # text field wouthout default value
 descr = Annotated[str, mapped_column(Text, nullable=True)]
 
+# money
+money = Annotated[Decimal, mapped_column(DECIMAL(10, 2), nullable=True)]
+
+# volume, alcohol sugar percentage
+volume = Annotated[Decimal, mapped_column(DECIMAL(4, 1), nullable=True)]
+
+# int or none
+ion = Annotated[int, mapped_column(nullable=True)]
+
+# boolean triple
+boolnone = Annotated[bool | None, mapped_column(nullable=True)]
+
 
 class Base(AsyncAttrs, DeclarativeBase):
-    """ Abstract class """
+    """ clear model with
+        id only,
+        common methods,
+        table name
+    """
     __abstarct__ = True
 
     id: Mapped[int_pk]
-    created_at: Mapped[created_at]
-    updated_at: Mapped[updated_at]
-    description: Mapped[descr]
-    description_ru: Mapped[descr]
-    name: Mapped[str_uniq]
-    name_ru: Mapped[str_null_index]
+    # created_at: Mapped[created_at]
+    # updated_at: Mapped[updated_at]
+    # description: Mapped[descr]
+    # description_ru: Mapped[descr]
+    # name: Mapped[str_uniq]
+    # name_ru: Mapped[str_null_index]
 
     @declared_attr.directive
     def __tablename__(cls) -> str:
@@ -70,44 +93,31 @@ class Base(AsyncAttrs, DeclarativeBase):
         # return f"<Category(name={self.name})>"
         return str(self)
 
-    def to_dict(self, exclude: list[str] | None = None, relationships: bool = False) -> Dict[str, Any]:
-        """Convert model instance to dictionary.
+    def to_dict(self) -> dict:
+        """Универсальный метод для конвертации объекта SQLAlchemy в словарь"""
+        # Получаем маппер для текущей модели
+        columns = class_mapper(self.__class__).columns
+        # Возвращаем словарь всех колонок и их значений
+        return {column.key: getattr(self, column.key) for column in columns}
 
-        Args:
-            exclude: List of field names to exclude from result
-            relationships: Whether to include relationship fields
-        """
-        if exclude is None:
-            exclude = []
 
-        result = {}
+class BaseAt:
+    __abstarct__ = True
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
+    # description: Mapped[descr]
+    # description_ru: Mapped[descr]
+    # name: Mapped[str_uniq]
+    # name_ru: Mapped[str_null_index]
 
-        # Get all column names
-        mapper = inspect(self.__class__)
 
-        for column in mapper.attrs:
-            # Skip relationships if not requested
-            if (not relationships and hasattr(column, 'property') and column.property.direction.name
-                    in ('ONETOMANY', 'MANYTOONE', 'MANYTOMANY')):
-                continue
+class BaseEn:
+    __abstarct__ = True
+    description: Mapped[descr]
+    name: Mapped[str_uniq]
 
-            # Skip excluded fields
-            if column.key in exclude:
-                continue
 
-            # Get the value
-            value = getattr(self, column.key)
-            # Handle datetime objects
-            if isinstance(value, datetime):
-                value = value.isoformat()
-            # Handle other models (for relationships)
-            elif hasattr(value, 'to_dict'):
-                value = value.to_dict(exclude=exclude, relationships=relationships)
-            # Handle lists of models (for one-to-many relationships)
-            elif isinstance(value, list):
-                value = [item.to_dict(exclude=exclude,
-                                      relationships=relationships)
-                         if hasattr(item, 'to_dict') else item for item in value]
-
-            result[column.key] = value
-        return result
+class BaseLang:
+    __abstarct__ = True
+    name_ru: Mapped[str_null_index]
+    description_ru: Mapped[descr]
