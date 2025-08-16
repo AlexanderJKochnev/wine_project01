@@ -4,7 +4,7 @@ from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSch
 
 
 class ColorCustom:
-    category_id: int
+    pass
 
 
 class ColorShort(ShortSchema):

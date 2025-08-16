@@ -18,6 +18,7 @@ from app.support.item.router import router as item_router
 from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
+from app.core.routers.image_router import router as image_router
 
 from app.admin.auth import authentication_backend
 
@@ -79,3 +80,4 @@ app.include_router(item_router)
 app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
+app.include_router(image_router)

@@ -23,7 +23,7 @@ Full - все поля включая системные и скрытые
 
 
 class TemplateCustom:
-    category_id: int
+    pass
 
 
 class TemplateShort(ShortSchema):

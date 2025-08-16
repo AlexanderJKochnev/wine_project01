@@ -4,6 +4,7 @@ from sqlalchemy import String, Text, text, ForeignKey, Integer, Column   # noqa:
 from sqlalchemy.orm import (relationship,
                             Mapped, mapped_column)
 from typing import List, TYPE_CHECKING
+from app.core.models.image_mixin import ImageMixin
 from app.core.models.base_model import (Base, BaseLang, BaseEn, BaseAt,
                                         str_null_true, volume, ion, boolnone)
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from app.support.category.model import Category
 
 
-class Drink(Base, BaseLang, BaseEn, BaseAt):
+class Drink(Base, BaseLang, BaseEn, BaseAt, ImageMixin):
     subtitle: Mapped[str_null_true]
     alcohol: Mapped[volume]
     sugar: Mapped[volume]

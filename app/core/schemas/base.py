@@ -29,9 +29,6 @@ class BaseSchema(ShortSchema):
     description: Optional[str] = None
     decsription_ru: Optional[str] = None
 
-    def __init__(self, *args, **kwargs):
-        pass
-
 
 class FullSchema(BaseSchema):
     """

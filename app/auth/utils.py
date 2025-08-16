@@ -1,4 +1,4 @@
-# app/auth/utils.py
+# app/auth/common_utils.py
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
