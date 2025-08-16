@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from app.support.drink.model import Drink
 from app.support.category.model import Category
-from app.core.config.database.db_noclass import get_db
+from app.core.config.database.db_async import get_db
 
 
 async def increment_drink_count(category_id: int, session: AsyncSession):

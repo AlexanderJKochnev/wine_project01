@@ -10,7 +10,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
-from app.core.config.database.db_noclass import get_db
+from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.template.model import Template
 from app.support.template.repository import TemplateRepository

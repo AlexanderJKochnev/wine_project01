@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from app.core.config.database.db_noclass import get_db
+from app.core.config.database.db_async import get_db
 from app.core.schemas.base import BaseSchema
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse

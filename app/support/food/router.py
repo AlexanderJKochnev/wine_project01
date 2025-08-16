@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
-from app.core.config.database.db_noclass import get_db
+from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.food.model import Food
 from app.support.food.repository import FoodRepository

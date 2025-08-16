@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 from app.admin import sqladm
 # from app.core.config.database.minio import minio_client, bucket_name, initialize_minio
-from app.core.config.database.db_noclass import engine
-# from app.core.config.seaweed import get_s3_client
+from app.core.config.database.db_async import engine
+# from app.core.config.file import get_s3_client
 from app.support.category.listeners import *  # noqa F403
 
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -20,7 +20,7 @@ from app.support.item.router import router as item_router
 from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
-from app.support.seaweed.router import router as seaweed_router
+from app.support.file.router import router as seaweed_router
 
 app = FastAPI()
 app.add_middleware(
@@ -31,19 +31,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-"""
-@app.on_event("startup")
-def startup():
-    initialize_minio()  # Явно вызываем инициализацию
-"""
-
 
 async def authenticate(username: str, password: str):
     if username == "admin" and password == "password":
         return True
     return False
 
-admin = Admin(app, engine)
+admin = Admin(app, engine, templates_dir="templates")
 
 # --------------подключение админ панели------------------
 admin.add_view(sqladm.CategoryAdmin)
@@ -56,7 +50,7 @@ admin.add_view(sqladm.ItemAdmin)
 admin.add_view(sqladm.RegionAdmin)
 admin.add_view(sqladm.ColorAdmin)
 admin.add_view(sqladm.SweetnessAdmin)
-admin.add_view(sqladm.SeaweedAdmin)
+admin.add_view(sqladm.FileAdmin)
 
 
 @app.get("/")

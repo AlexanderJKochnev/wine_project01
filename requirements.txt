@@ -8,9 +8,10 @@ passlib==1.7.4
 pytest
 pytest-asyncio
 pytest-cov
-# python-multipart
+python-multipart
 # minio
 pillow
+psycopg2-binary
 
 #  fastapi==0.95.0
 uvicorn

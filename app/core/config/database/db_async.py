@@ -1,18 +1,12 @@
-# app/core/config/database/no_class.py
-
-# from sqlalchemy.orm import sessionmaker
+# app/core/config/database/db_async.py
+# асинхронный драйвер
 from sqlalchemy.ext.asyncio import (create_async_engine,
                                     async_sessionmaker,
                                     AsyncEngine,
                                     AsyncSession)
 from app.core.config.database.db_config import settings_db
 
-""" no class way """
-# DATABASE_URL = settings_db.database_url
-# engine = create_async_engine(DATABASE_URL)
-# async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
-
-# 1. Engine
+# 1.    Асинхронный двигатель
 engine: AsyncEngine = create_async_engine(settings_db.database_url,
                                           echo=settings_db.DB_ECHO_LOG,
                                           pool_pre_ping=True,)
@@ -31,5 +25,3 @@ AsyncSessionLocal = async_sessionmaker(
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
-
-async_session_maker = AsyncSessionLocal  # delete

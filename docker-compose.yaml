@@ -37,8 +37,9 @@ services:
     ports:
       # - "9000:9333"  # Web UI
       # - "9001:8888"  # S3 Gateway
-      - "9000:${SEAWEED_PORT}"
-      - "9001:${SEAWEED_S3_PORT}"
+      - "${SEAWEED_MASTER_PORT_OUT}:${SEAWEED_MASTER_PORT}"
+      - "${SEAWEED_S3_PORT_OUT}:${SEAWEED_S3_PORT}"
+      # - "${SEAWEED_VOLUME_PORT_OUT}:${SEAWEED_VOLUME_PORT}"
     networks:
       - pgnetwork
   
@@ -68,7 +69,7 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       WEB_PORT: ${API_PORT}
       WEB_HOST: ${API_HOST}
-      SEAWEEDFS_URL: ${SEAWEED_URL}:${SEAWEED_PORT}
+      SEAWEEDFS_URL: ${SEAWEED_URL}:${SEAWEED_MASTER_PORT}
       SEAWEEDFS_S3_URL: ${SEAWEED_URL}:${SEAWEED_S3_PORT}
     volumes:
       - ./templates:/app/templates
@@ -84,4 +85,4 @@ volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
-  seaweed_data: # seaweed data
+  seaweed_data: # file data

@@ -1,4 +1,4 @@
-# app/support/seaweed/model.py
+# app/support/file/model.py
 from __future__ import annotations
 from sqlalchemy.orm import Mapped
 from app.core.models.base_model import Base, str_null_false, str_uniq
