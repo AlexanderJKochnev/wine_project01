@@ -6,19 +6,10 @@ from app.support.food.schemas import FoodShort
 from app.support.color.schemas import ColorShort
 from app.support.region.schemas import RegionShort
 from app.support.sweetness.schemas import SweetnessShort
-from app.support.item.schemas import ItemShort
+# from app.support.item.schemas import ItemShort
 
 from pydantic import ConfigDict
-from typing import Optional, List
-
-"""
-Custom
-Short
-Read
-Create
-Update
-Full
-"""
+from typing import Optional  # , List
 
 
 class DrinkCustom:
@@ -37,7 +28,7 @@ class DrinkRead(BaseSchema):
     color: ColorShort
     sweetness: SweetnessShort
     region: RegionShort
-    # items: List[ItemShort]
+    image_url: Optional[str] = None  # Добавляем поле для URL изображения
 
 
 class DrinkCreate(BaseSchema, DrinkCustom):

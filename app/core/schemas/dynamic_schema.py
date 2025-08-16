@@ -7,7 +7,7 @@ from pydantic import BaseModel, create_model, Field
 from sqlalchemy.orm import DeclarativeMeta, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
-from app.core.utils import get_model_fields_info
+from app.core.utils.common_utils import get_model_fields_info
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 PyModel = NewType("PyModel", BaseModel)
