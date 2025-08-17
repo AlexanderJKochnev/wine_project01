@@ -1,10 +1,11 @@
 # app/core/repositories/sqlalchemy_repository.py
-from fastapi import Depends
+""" не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import select
-from app.core.config.database.db_async import get_db
+from sqlalchemy import select, func
+
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -20,7 +21,7 @@ class Repository(Generic[ModelType]):
         """
         return select(self.model)
 
-    async def create(self, data: Dict[str, Any], session: AsyncSession = Depends(get_db)) -> ModelType:
+    async def create(self, data: Dict[str, Any], session: AsyncSession) -> ModelType:
         """ create & return record """
         obj = self.model(**data)
         session.add(obj)
@@ -29,14 +30,17 @@ class Repository(Generic[ModelType]):
         await session.refresh(obj)
         return obj
 
-    async def get_by_id(self, id: Any, session: AsyncSession = Depends(get_db)) -> Optional[ModelType]:
+    async def get_by_id(self, id: int, session: AsyncSession) -> Optional[ModelType]:
         """
         get one record by id
         """
-        stmt = self.get_query().where(self.model.id == id)
-        result = await session.execute(stmt)
-        obj = result.scalar_one_or_none()
-        return obj
+        try:
+            stmt = self.get_query().where(self.model.id == id)
+            result = await session.execute(stmt)
+            obj = result.scalar_one_or_none()
+            return obj
+        except Exception as e:
+            print(f'============{e}')
 
     async def get_all(self, skip, limit, session: AsyncSession, ) -> dict:
         # Запрос с загрузкой связей и пагинацией
@@ -69,3 +73,9 @@ class Repository(Generic[ModelType]):
         stmt = select(self.model).where(getattr(self.model, field_name) == field_value)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_count(self, session: AsyncSession) -> int:
+        count_stmt = select(func.count()).select_from(self.model)
+        count_result = await session.execute(count_stmt)
+        total = count_result.scalar()
+        return total
