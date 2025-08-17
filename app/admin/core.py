@@ -13,8 +13,11 @@ class AutoModelView(ModelView):
     Автоматически формирует column_list из всех колонок модели,
     кроме исключённых. Работает корректно с sqladmin.
     """
+    # поля которые будут выведены в списке
+    column_list = ["name", "name_ru"]
+    # поля по которым будет производиться поиск
     column_searchable_list = ['name', 'name_ru']
-    # Поля, которые исключаем по умолчанию
+    # поля, которые исключаем по умолчанию
     exclude_columns: Set[str] = {
         "password",
         "secret",
@@ -29,13 +32,23 @@ class AutoModelView(ModelView):
         "description",
         "id"
     }
+    # поля сортировки
+    column_sortable_list = ['name', 'name_ru']
+    # DETAIL VIEW
+    # поля исключаемые из detail view
+    column_details_exclude_list = ['created_at', 'updated_at', 'pk', 'id']
+    # поля detail view
+    # column_details_list =
+    # поля, которые исключаются из формы
     form_excluded_columns = ['created_at', 'updated_at', 'pk']
+    #form_columns
+
     # порядок вывода колонок
     sort_columns: tuple[str] = ("primary_key", "index", "nullable",)
     type_priority: tuple[Any] = (String, Integer)
     type_excluded: tuple[Any] = (Text,)
     # Включать ли первичный ключ в список
-    include_pk_in_list: bool = True
+    include_pk_in_list: bool = False
 
     @cached_property
     def _model_columns(self) -> List[Any]:
@@ -83,6 +96,8 @@ class AutoModelView(ModelView):
         # Устанавливаем column_list, если не задан явно
         if not cls.column_list:
             cls.column_list = cls._model_columns
+        if not cls.column_details_list:
+            cls.column_details_list = cls._model_columns
 
 
 class BaseAdmin(ModelView):

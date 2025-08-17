@@ -21,7 +21,7 @@ class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
     #                 Drink.description, Drink.category]
     # form_excluded_columns = ['created_at', 'updated_at', 'pk']
     """
-    column_list = [Drink.id, Drink.name, Drink.alcohol, Drink.category, "image_preview"]
+    column_list = ['name']
     column_searchable_list = [Drink.name]
     column_sortable_list = [Drink.id, Drink.name, Drink.alcohol]
     column_labels = {
@@ -47,7 +47,7 @@ class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
             return f'<img src="/images/{model.image_path}" style="max-width: 300px;" />'
         return super().get_detail_value(model, column)
     """
-    pass
+    column_list = ['name', 'name_ru']
 
 
 class CategoryAdmin(AutoModelView, BaseAdmin, model=Category):
