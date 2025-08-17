@@ -11,7 +11,7 @@ class ColorShort(ShortSchema):
     pass
 
 
-class ColorRead(BaseSchema):
+class ColorRead(BaseSchema, ColorCustom):
     pass
 
 
