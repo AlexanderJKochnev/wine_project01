@@ -1,11 +1,9 @@
 # app/core/routers/base.py
 
 from typing import Type, Any, List, TypeVar
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import create_model
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from app.core.config.database.db_async import get_db
+# from sqlalchemy import select
 from app.core.schemas.base import BaseSchema
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
@@ -30,8 +28,7 @@ class BaseRouter:
         update_schema: Type[BaseSchema],
         read_schema: Type[BaseSchema],
         prefix: str,
-        tags: List[str],
-        session: AsyncSession = Depends(get_db)
+        tags: List[str]
     ):
         self.model = model
         self.repo = repo()
@@ -41,25 +38,10 @@ class BaseRouter:
         self.prefix = prefix
         self.tags = tags
         self.router = APIRouter(prefix=prefix, tags=tags)
-        self.session = session  # будет установлен через зависимости
         self.paginated_response = create_model(f"Paginated{read_schema.__name__}",
                                                __base__=PaginatedResponse[read_schema])
         self.delete_response = DeleteResponse
         # self.setup_routes()
-
-    def get_query(self):
-        """
-            Переопределяемый метод.
-            Возвращает select() с нужными selectinload.
-            По умолчанию — без связей.
-        """
-        return select(self.model)
-
-    """ async def get_sesion(self, session: AsyncSession = Depends(get_db)):
-        # Зависимость для сессии
-        self.session = session
-        return session
-    """
 
     def setup_routes(self):
         """Настраивает маршруты"""
@@ -69,24 +51,20 @@ class BaseRouter:
         self.router.add_api_route("/{item_id}", self.update, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{item_id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
-    async def get_one(self, item_id: int, session: AsyncSession = Depends(get_db)) -> Any:
-        obj = await self.repo.get_by_id(item_id, session=session)
+    async def get_one(self, item_id: int) -> TRead:
+        obj = await self.repo.get_by_id(item_id)
         if not obj:
             raise HTTPException(status_code=404, detail=f"{self.model.__name__} not found")
-        # raw_validated = self.read_schema.model_validate(obj, from_attributes=True)
         return obj
 
     async def get_all(self, page: int = Query(1, ge=1),
                       page_size: int = Query(paging.get('def', 20),
                                              ge=paging.get('min', 1),
-                                             le=paging.get('max', 1000)),
-                      session: AsyncSession = Depends(get_db)) -> dict:
+                                             le=paging.get('max', 1000))) -> dict:
         skip = (page - 1) * page_size
-        items = await self.repo.get_all(skip=skip, limit=page_size, session=session)
+        items = await self.repo.get_all(skip=skip, limit=page_size)
         # Подсчёт общего количества
-        count_stmt = select(func.count()).select_from(self.model)
-        count_result = await session.execute(count_stmt)
-        total = count_result.scalar()
+        total = await self.repo.get_count()
         page = (skip // page_size) + 1
         retu = {"items": items,
                 "total": total,
@@ -97,20 +75,18 @@ class BaseRouter:
         result = self.paginated_response(**retu)
         return result
 
-    async def create(self, data: Any, session: AsyncSession = Depends(get_db)) -> TRead:
-        obj = await self.repo.create(data.model_dump(exclude_unset=True), session)
+    async def create(self, data: TCreate) -> TRead:
+        obj = await self.repo.create(data.model_dump(exclude_unset=True))
         return obj
 
-    async def update(self, id: int, data: TUpdate,
-                     session: AsyncSession = Depends(get_db)) -> TRead:
-        obj = await self.repo.update(id, data.model_dump(exclude_unset=True), session)
+    async def update(self, id: int, data: TUpdate) -> TRead:
+        obj = await self.repo.update(id, data.model_dump(exclude_unset=True))
         if not obj:
             raise HTTPException(status_code=404, detail="Not found")
         return obj
 
-    async def delete(self, id: int,
-                     session: AsyncSession = Depends(get_db)) -> DeleteResponse:
-        result = await self.repo.delete(id, session)
+    async def delete(self, id: int) -> DeleteResponse:
+        result = await self.repo.delete(id)
         if result:
             return {"success": True, "message": f"{self.model.__name__} deleted"}
         else:

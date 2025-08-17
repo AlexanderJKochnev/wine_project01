@@ -1,7 +1,4 @@
 # app/support/drink/router.py
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
-from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
@@ -21,12 +18,11 @@ class DrinkRouter(BaseRouter):
         )
         self.setup_routes()
 
-    async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkRead:
-        return await super().create(data, session)
+    async def create(self, data: DrinkCreate) -> DrinkRead:
+        return await super().create(data)
 
-    async def update(self, id: int, data: DrinkUpdate,
-                     session: AsyncSession = Depends(get_db)) -> DrinkRead:
-        return await super().update(id, data, session)
+    async def update(self, id: int, data: DrinkUpdate) -> DrinkRead:
+        return await super().update(id, data)
 
 
 router = DrinkRouter().router
