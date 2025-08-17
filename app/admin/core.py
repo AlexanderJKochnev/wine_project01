@@ -14,7 +14,7 @@ class AutoModelView(ModelView):
     кроме исключённых. Работает корректно с sqladmin.
     """
     column_searchable_list = ['name', 'name_ru']
-    # Поля, которые исключаем по умолчанию
+    # Поля, которые исключаем по умолчанию в таблице
     exclude_columns: Set[str] = {
         "password",
         "secret",
@@ -29,6 +29,7 @@ class AutoModelView(ModelView):
         "description",
         "id"
     }
+    # поля, которые исключаем в форме
     form_excluded_columns = ['created_at', 'updated_at', 'pk']
     # порядок вывода колонок
     sort_columns: tuple[str] = ("primary_key", "index", "nullable",)
