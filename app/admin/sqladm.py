@@ -47,7 +47,8 @@ class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
             return f'<img src="/images/{model.image_path}" style="max-width: 300px;" />'
         return super().get_detail_value(model, column)
     """
-    column_list = ['name', 'name_ru']
+    pass
+    # column_list = ['name', 'name_ru']
 
 
 class CategoryAdmin(AutoModelView, BaseAdmin, model=Category):
