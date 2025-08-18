@@ -2,11 +2,36 @@
 # some useful utilits
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, TypeVar
 from sqlalchemy.orm import selectinload
-# from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql.selectable import Select
-from sqlalchemy.orm import DeclarativeMeta
+from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty
+from sqlalchemy import inspect
+from sqlalchemy.sql.sqltypes import String, Text, Boolean
+
+
+ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
+
+
+def strtolist(data: str, delim: str = ',') -> List[str]:
+    """ строка с разделителями в список"""
+    if isinstance(data, str):
+        return [a.strip() for a in data.split(delim)]
+    else:
+        return []
+
+
+def sort_strings_by_alphabet_and_length(strings: List[str]) -> List[str]:
+    """
+    Сортирует список строк сначала по алфавиту, затем по длине строки.
+
+    Args:
+        strings: Список строк для сортировки
+
+    Returns:
+        Отсортированный список строк
+    """
+    return sorted(strings, key=lambda s: (s.lower(), len(s)))
 
 
 def get_path_to_root(name: str = '.env'):
@@ -70,11 +95,7 @@ def apply_relationship_loads(stmt: Select, model: DeclarativeMeta) -> Select:
     return stmt
 
 
-#  список полей которые доллны выводиться всегда (костыль)
-white_list: list = ['count_drink']
-
-
-def get_model_fields_info(model, schema_type: int = 0, include_list: list = white_list) -> dict:
+def get_model_fields_info(model, schema_type: int = 0, include_list: list = []) -> dict:
     """
     Возвращает информацию о полях модели:
     - field_type: тип поля
@@ -178,3 +199,74 @@ def print_model_schema(model, title=None):
         if info.get("default"):
             extra += f" (default={info['default']})"
         print(f"{field:20} : {type_str:12} | {null_str:8}{extra}")
+
+
+def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
+                     list_view: bool = False,
+                     detail_view: bool = False) -> List[str]:
+    mapper = inspect(model)
+    columns = []
+
+    # Группируем поля по категориям
+    str_fields = []    # текстовые обязательные поля
+    str_null_fields = []    # текстовые необязательные поля
+    bool_fields = []
+    rel_fields = []     # relation fields
+    memo_fields = []    # memo fields
+    other_fields = []   # остальные поля
+    other_null_fields = []
+
+    for attr in mapper.attrs:
+        if attr.key in exclude_columns:
+            continue
+
+        if isinstance(attr, RelationshipProperty):
+            if attr.direction.name == "MANYTOONE":
+                rel_fields.append(attr.key)
+            continue
+
+        if hasattr(attr, "columns"):
+            col = attr.columns[0]
+            # Пропускаем поля с default
+            if col.default is not None:  # or col.autoincrement:
+                continue
+            # Получаем тип поля
+            col_type = col.type.__class__ if hasattr(col.type, '__class__') else type(col.type)
+            if issubclass(col_type, Text):
+                memo_fields.append(attr.key)
+                continue
+            if issubclass(col_type, Boolean):
+                bool_fields.append(attr.key)
+                continue
+            if issubclass(col_type, String):
+                if not col.nullable:
+                    str_fields.append(attr.key)
+                    continue
+                str_null_fields.append(attr.key)
+                continue
+            # Другие типы (Integer и т.д.)
+            if not col.nullable:
+                other_fields.append(attr.key)
+                continue
+            other_null_fields.append(attr.key)
+    """
+    print(f'{str_fields=}')
+    print(f'{str_null_fields=}')
+    print(f'{bool_fields=}')
+    print(f'{rel_fields=}')
+    print(f'{other_fields=}')
+    print(f'{other_null_fields=}')
+    print(f'{memo_fields=}')
+    """
+    # Формируем итоговый порядок
+    columns.extend(sort_strings_by_alphabet_and_length(str_fields))
+    columns.extend(sort_strings_by_alphabet_and_length(str_null_fields))
+    if not list_view:
+        columns.extend(sort_strings_by_alphabet_and_length(other_fields))  # Добавляем другие типы после String
+        columns.extend(sort_strings_by_alphabet_and_length(other_null_fields))
+        columns.extend(sort_strings_by_alphabet_and_length(bool_fields))
+        columns.extend(sort_strings_by_alphabet_and_length(rel_fields))
+        columns.extend(sort_strings_by_alphabet_and_length(memo_fields))
+    if detail_view:
+        columns = [a for a in columns if all((not a.endswith('_id'), a != 'image_path'))]
+    return columns

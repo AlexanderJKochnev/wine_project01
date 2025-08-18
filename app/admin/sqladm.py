@@ -15,11 +15,6 @@ from app.support.sweetness.model import Sweetness
 
 
 class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
-    # column_searchable_list = [Drink.name, Drink.name_ru]
-    # column_sortable_list = [Drink.id, Drink.name, Drink.category]
-    # form_columns = [Drink.name, Drink.subtitle,
-    #                 Drink.description, Drink.category]
-    # form_excluded_columns = ['created_at', 'updated_at', 'pk']
     """
     column_list = ['name']
     column_searchable_list = [Drink.name]
@@ -47,8 +42,10 @@ class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
             return f'<img src="/images/{model.image_path}" style="max-width: 300px;" />'
         return super().get_detail_value(model, column)
     """
-    pass
     # column_list = ['name', 'name_ru']
+    # column_details_list =
+    # form_columns =
+    pass
 
 
 class CategoryAdmin(AutoModelView, BaseAdmin, model=Category):

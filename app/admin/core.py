@@ -6,12 +6,13 @@ from typing import Set, List, Any, Tuple
 from functools import cached_property
 from sqlalchemy.orm import RelationshipProperty
 from starlette.requests import Request
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import get_model_fields
 
 
 class AutoModelView(ModelView):
     """
-    Автоматически формирует column_list из всех колонок модели,
-    кроме исключённых. Работает корректно с sqladmin.
+    Автоматически формирует column_list из всех колонок модели, кроме исключённых. Работает корректно с sqladmin.
     """
     # поля которые будут выведены в списке
     # column_list = ["name", "name_ru"]
@@ -20,14 +21,17 @@ class AutoModelView(ModelView):
     # поля, которые исключаем по умолчанию
     exclude_columns: Set[str] = {"password", "secret", "api_key",
                                  "token", "salt", "hashed_password", "created_at",
-                                 "updated_at", "deleted_at", "is_deleted", "description", "id"}
+                                 "deleted_at", "is_deleted", "id"}
+    custom_exclude = settings.get_exclude_list
+    if custom_exclude:
+        exclude_columns.update(custom_exclude)
     # поля сортировки
     column_sortable_list = ['name', 'name_ru']
     # DETAIL VIEW
     # поля исключаемые из detail view
-    column_details_exclude_list = {'created_at', 'updated_at', 'pk', 'id'}
+    # column_details_exclude_list = {'created_at', 'updated_at', 'pk', 'id'}
     # поля, которые исключаются из формы
-    form_excluded_columns = {'created_at', 'updated_at', 'pk'}
+    # form_excluded_columns = {'created_at', 'updated_at', 'pk'}
 
     # порядок вывода колонок
     sort_columns: Tuple[str] = ("primary_key", "index", "nullable",)
@@ -39,6 +43,7 @@ class AutoModelView(ModelView):
     @cached_property
     def _model_columns(self) -> List[str]:
         """Возвращает список атрибутов модели для column_list."""
+        return get_model_fields(self.model, self.exclude_columns, list_view=True)
         mapper = inspect(self.model)
         columns: List[str] = []
         tmp: dict = {}
@@ -77,120 +82,17 @@ class AutoModelView(ModelView):
         tmp1 = [(*val, key) for key, val in tmp.items()]
         sorted_columns = sorted(tmp1, key=lambda a: (a[1], a[2], a[3]))
         columns = [a[3] for a in reversed(sorted_columns)]
-
         return columns
 
     @cached_property
     def _form_columns(self) -> List[str]:
         """Формирует список полей для формы с заданным порядком."""
-        mapper = inspect(self.model)
-        columns = []
-
-        # Группируем поля по категориям
-        text_fields = []
-        bool_fields = []
-        rel_fields = []
-        memo_fields = []
-        other_fields = []
-
-        for attr in mapper.attrs:
-            if attr.key in self.form_excluded_columns or attr.key in self.exclude_columns:
-                continue
-
-            if isinstance(attr, RelationshipProperty):
-                if attr.direction.name == "MANYTOONE":
-                    rel_fields.append(attr.key)
-                continue
-
-            if hasattr(attr, "columns"):
-                col = attr.columns[0]
-
-                # Пропускаем поля с default/autoincrement
-                if col.default is not None or col.autoincrement:
-                    continue
-
-                # Получаем тип поля
-                col_type = col.type.__class__ if hasattr(col.type, '__class__') else type(col.type)
-
-                if issubclass(col_type, Text):
-                    memo_fields.append(attr.key)
-                elif issubclass(col_type, Boolean):
-                    bool_fields.append(attr.key)
-                elif issubclass(col_type, String):
-                    # Сначала non-nullable поля
-                    if not col.nullable:
-                        text_fields.insert(0, attr.key)
-                    else:
-                        text_fields.append(attr.key)
-                else:
-                    # Другие типы (Integer и т.д.)
-                    if not col.nullable:
-                        other_fields.insert(0, attr.key)
-                    else:
-                        other_fields.append(attr.key)
-
-        # Формируем итоговый порядок
-        columns.extend(text_fields)
-        columns.extend(other_fields)  # Добавляем другие типы после String
-        columns.extend(bool_fields)
-        columns.extend(rel_fields)
-        columns.extend(memo_fields)
-
-        return columns
+        return get_model_fields(self.model, self.exclude_columns)
 
     @cached_property
     def _column_details_list(self) -> List[str]:
         """Формирует список полей для детального просмотра."""
-        mapper = inspect(self.model)
-        columns = []
-
-        # Группируем поля по категориям
-        text_fields = []
-        bool_fields = []
-        rel_fields = []
-        memo_fields = []
-        other_fields = []
-
-        for attr in mapper.attrs:
-            if attr.key in self.column_details_exclude_list or attr.key in self.exclude_columns:
-                continue
-
-            if isinstance(attr, RelationshipProperty):
-                if attr.direction.name in ["MANYTOONE", "ONETOMANY"]:
-                    rel_fields.append(attr.key)
-                continue
-
-            if hasattr(attr, "columns"):
-                col = attr.columns[0]
-
-                # Получаем тип поля
-                col_type = col.type.__class__ if hasattr(col.type, '__class__') else type(col.type)
-
-                if issubclass(col_type, Text):
-                    memo_fields.append(attr.key)
-                elif issubclass(col_type, Boolean):
-                    bool_fields.append(attr.key)
-                elif issubclass(col_type, String):
-                    # Сначала non-nullable поля
-                    if not col.nullable:
-                        text_fields.insert(0, attr.key)
-                    else:
-                        text_fields.append(attr.key)
-                else:
-                    # Другие типы (Integer и т.д.)
-                    if not col.nullable:
-                        other_fields.insert(0, attr.key)
-                    else:
-                        other_fields.append(attr.key)
-
-        # Формируем итоговый порядок
-        columns.extend(text_fields)
-        columns.extend(other_fields)
-        columns.extend(bool_fields)
-        columns.extend(rel_fields)
-        columns.extend(memo_fields)
-
-        return columns
+        return get_model_fields(self.model, self.exclude_columns, detail_view=True)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

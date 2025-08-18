@@ -61,3 +61,7 @@ class DeleteResponse(BaseModel):
     success: bool
     deleted_count: int = 1
     message: str
+
+
+class ImageMixin:
+    image_url: Optional[str] = None  # Добавляем поле для URL изображения

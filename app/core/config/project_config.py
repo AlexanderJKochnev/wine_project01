@@ -1,7 +1,9 @@
 # app/core/config/project_config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+from typing import List
 from app.core.utils.common_utils import get_path_to_root
+from app.core.utils.common_utils import strtolist
 
 
 class Settings(BaseSettings):
@@ -19,6 +21,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 50
+    # SQLADMIN
+    COLUMN_LIST: str = 'name, name_ru'
+    EXCLUDE_LIST: str = ''
     # IMAGES
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10  # * 1024 * 1024  # 10MB
@@ -33,8 +38,12 @@ class Settings(BaseSettings):
         return self.MAX_FILE_SIZE * 1024 * 1024
 
     @property
-    def allowed_extensions(self) -> str:
-        return {a.strip() for a in self.ALLOWED_EXTENSIONS.split(',')}
+    def allowed_extensions(self) -> List[str]:
+        return strtolist(self.ALLOWED_EXTENSIONS)
+
+    @property
+    def get_exclude_list(self) -> List[str]:
+        return strtolist(self.EXCLUDE_LIST)
 
 
 settings = Settings()

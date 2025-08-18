@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.support.food.model import Food
     from app.support.region.model import Region
     from app.support.category.model import Category
+    from app.support.item.model import Item
 
 
 class Drink(Base, BaseLang, BaseEn, BaseAt, ImageMixin):
@@ -22,16 +23,7 @@ class Drink(Base, BaseLang, BaseEn, BaseAt, ImageMixin):
     sugar: Mapped[volume]
     aging: Mapped[ion]
     sparkling: Mapped[boolnone]
-    """category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
-    category: Mapped["Category"] = relationship(back_populates="drinks", lazy="joinload", join_depth=1)  # noqa F821
-
-    food_id: Mapped[int] = mapped_column(ForeignKey("foods.id"), nullable=True)
-    food: Mapped["Food"] = relationship(back_populates = "drinks", lazy="joinload", join_depth=1)  # noqa F821
-
-   """
-
-    items: Mapped[List["Item"]] = relationship("Item",  # noqa F821
-                                               back_populates="drink",
+    items: Mapped[List["Item"]] = relationship("Item", back_populates="drink",
                                                cascade="all, delete-orphan")
     region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
     region: Mapped["Region"] = relationship(back_populates="drinks")
