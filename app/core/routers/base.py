@@ -98,7 +98,11 @@ class BaseRouter:
 
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
+            data_dict = data.model_dump(exclude_unset=True)
+            print(f"Attempting to create: {data_dict}")
+            print(f'{data_dict=}')
             obj = await self.repo.create(data.model_dump(exclude_unset=True), session)
+            print(f"Successfully created: {obj}")
             return obj
         except IntegrityError:
             raise HTTPException(

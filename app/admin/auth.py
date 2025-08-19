@@ -26,9 +26,7 @@ class AdminAuth(AuthenticationBackend):
             if user and user.is_superuser:
                 # Создаем токен для админки
                 token = jwt.encode({"sub": username, "superuser": True},
-                                   settings.SECRET_KEY, algorithm=settings.ALGORITHM,
-                                   # "admin-secret-key", algorithm = "HS256"
-                )
+                                   settings.SECRET_KEY, algorithm=settings.ALGORITHM,)
                 request.session.update({"admin_token": token})
                 return True
 

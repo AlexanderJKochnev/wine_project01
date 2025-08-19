@@ -6,7 +6,7 @@ from sqladmin import Admin
 from app.middleware.auth_middleware import AuthMiddleware
 from app.admin import sqladm
 from app.core.config.database.db_async import engine
-from app.support.category.listeners import *  # noqa F403
+# from app.support.category.listeners import *
 from app.auth.router import router as auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import router as category_router
