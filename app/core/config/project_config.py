@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     PAGE_MIN: int = 0
     PAGE_MAX: int = 100
     # AUTHORIZATIOON
-    SECRET_KEY: str
+    SECRET_KEY: str = 'gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt'
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 50
     # SQLADMIN

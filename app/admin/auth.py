@@ -1,12 +1,13 @@
 # app/admin/auth.py
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
+from jose import jwt
+from jose import JWTError
 #  from starlette.responses import RedirectResponse
 from app.auth.repository import UserRepository
 # from app.auth.utils import verify_token
 from app.core.config.database.db_async import AsyncSessionLocal
-from jose import jwt
-from jose import JWTError
+from app.core.config.project_config import settings
 
 
 class AdminAuth(AuthenticationBackend):
@@ -24,8 +25,9 @@ class AdminAuth(AuthenticationBackend):
 
             if user and user.is_superuser:
                 # Создаем токен для админки
-                token = jwt.encode(
-                    {"sub": username, "superuser": True}, "admin-secret-key", algorithm="HS256"
+                token = jwt.encode({"sub": username, "superuser": True},
+                                   settings.SECRET_KEY, algorithm=settings.ALGORITHM,
+                                   # "admin-secret-key", algorithm = "HS256"
                 )
                 request.session.update({"admin_token": token})
                 return True
@@ -43,7 +45,8 @@ class AdminAuth(AuthenticationBackend):
             return False
 
         try:
-            payload = jwt.decode(token, "admin-secret-key", algorithms=["HS256"])
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            # payload = jwt.decode(token, "admin-secret-key", algorithms=["HS256"])
             username = payload.get("sub")
             is_superuser = payload.get("superuser")
 
@@ -62,4 +65,5 @@ class AdminAuth(AuthenticationBackend):
             return False
 
 
-authentication_backend = AdminAuth(secret_key="admin-secret-key")
+# authentication_backend = AdminAuth(secret_key="admin-secret-key")
+authentication_backend = AdminAuth(secret_key=settings.SECRET_KEY)
