@@ -43,3 +43,20 @@ linux - на этой стороне ничего не менять
  
 откат до последнего коммита
 git reset --hard HEAD
+
+слияние двух веток (просто, но много мусора)
+1. merge
+    git checkout <branche_1>
+    git merge <branche_2>
+    сольется в branche_1
+
+2. rebase Этот способ "перемещает" коммиты одной ветки <branche_2> на верх другой <branche_1>, создавая линейную историю.
+    git checkout <branche_2>
+    git rebase <branche_1>
+    сольется в branche_1
+    Если есть конфликты, разрешите их, затем выполните:
+    git add .
+    git rebase --continue
+    после перебазирования сделать rebase
+    git checkout <branche_1>
+    git merge <branche_2>

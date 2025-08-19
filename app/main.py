@@ -1,8 +1,9 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
+from app.middleware.auth_middleware import AuthMiddleware
 from app.admin import sqladm
 from app.core.config.database.db_async import engine
 from app.support.category.listeners import *  # noqa F403
@@ -19,6 +20,7 @@ from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
 from app.core.routers.image_router import router as image_router
+from app.core.security import get_current_active_user
 
 from app.admin.auth import authentication_backend
 
@@ -30,14 +32,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.add_middleware(AuthMiddleware)
 
 """
 async def authenticate(username: str, password: str):
     if username == "admin" and password == "password":
         return True
     return False
-    """
+"""
 
 admin = Admin(
     app,
@@ -68,8 +70,26 @@ async def wait_some_time(seconds: float):
     await asyncio.sleep(seconds)  # Не блокирует поток
     return {"waited": seconds}
 
+# --------подлкючение защищенных роутеров ----------
+protected_routers = [
+    drink_router,
+    category_router,
+    country_router,
+    customer_router,
+    warehouse_router,
+    food_router,
+    item_router,
+    region_router,
+    color_router,
+    sweetness_router,
+    image_router]
+
+for router in protected_routers:
+    app.include_router(router, dependencies=[Depends(get_current_active_user)])
+
+# --------подключение незащищенных роутеров ---------
 app.include_router(auth_router)
-# --------------подключение роутеров---------------
+"""
 app.include_router(drink_router)
 app.include_router(category_router)
 app.include_router(country_router)
@@ -81,3 +101,4 @@ app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(image_router)
+"""

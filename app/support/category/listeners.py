@@ -1,5 +1,5 @@
 # app/support/category/listeners.py
-
+#  удалить
 from sqlalchemy import update, event, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
