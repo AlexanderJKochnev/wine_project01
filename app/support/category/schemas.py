@@ -1,5 +1,4 @@
 # app/support/category/schemas.py
-from typing import Optional
 from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
 
 
@@ -12,7 +11,8 @@ class CategoryShort(ShortSchema):
 
 
 class CategoryRead(BaseSchema, CategoryCustom):
-    count_drink: Optional[int] = 0
+    pass
+    # count_drink: Optional[int] = 0
 
 
 class CategoryCreate(BaseSchema):
