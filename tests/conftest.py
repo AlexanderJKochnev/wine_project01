@@ -4,6 +4,7 @@ import asyncio
 import logging
 import pytest
 from httpx import ASGITransport, AsyncClient
+from fastapi.testclient import TestClient
 from app import main
 from tests import config
 from app.auth.schemas import UserRead
@@ -67,7 +68,7 @@ async def authenticated_client(super_user, base_url):
     token = create_access_token(data={"sub": super_user.username})
     # Создаем клиент с токеном в заголовках
     async with AsyncClient(
-        transport=ASGITransport(app=main.app), base_url=base_url,
+        transport=ASGITransport(app=main.app), base_url='http://testserver',
         headers={"Authorization": f"Bearer {token}"}
     ) as ac:
         yield ac
@@ -113,3 +114,17 @@ async def cleanup_admin_test_users():
     yield
     # Здесь можно добавить логику очистки тестовых пользователей
     pass
+
+
+@pytest.fixture(scope=scope)
+def sync_authenticated_client(super_user):
+    """Синхронный аутентифицированный клиент для тестирования"""
+    # from fastapi.testclient import TestClient
+
+    # Создаем токен для тестового пользователя
+    token = create_access_token(data={"sub": super_user.username})
+    with TestClient(main.app) as client:
+    # Создаем синхронный клиент с токеном в заголовках
+    # client = TestClient(main.app)  # , base_url="http://testserver")
+        client.headers.update( {"Authorization": f"Bearer {token}"})
+    yield client

@@ -34,13 +34,10 @@ class Repository(Generic[ModelType]):
         """
         get one record by id
         """
-        try:
-            stmt = self.get_query().where(self.model.id == id)
-            result = await session.execute(stmt)
-            obj = result.scalar_one_or_none()
-            return obj
-        except Exception as e:
-            print(f'============{e}')
+        stmt = self.get_query().where(self.model.id == id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
+        return obj
 
     async def get_all(self, skip, limit, session: AsyncSession, ) -> dict:
         # Запрос с загрузкой связей и пагинацией

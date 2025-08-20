@@ -52,7 +52,7 @@ class BaseRouter:
     def setup_routes(self):
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_schema)
-        self.router.add_api_route("", self.get_all, methods=["GET"], response_model=self.paginated_response)
+        self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/{item_id}", self.get_one, methods=["GET"], response_model=self.read_schema)
         self.router.add_api_route("/{item_id}", self.update, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{item_id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
@@ -72,11 +72,11 @@ class BaseRouter:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error: {str(e)}"
             )
 
-    async def get_all(self, page: int = Query(1, ge=1),
-                      page_size: int = Query(paging.get('def', 20),
-                                             ge=paging.get('min', 1),
-                                             le=paging.get('max', 1000)),
-                      session: AsyncSession = Depends(get_db)) -> dict:
+    async def get(self, page: int = Query(1, ge=1),
+                  page_size: int = Query(paging.get('def', 20),
+                                         ge=paging.get('min', 1),
+                                         le=paging.get('max', 1000)),
+                  session: AsyncSession = Depends(get_db)) -> dict:
         try:
             skip = (page - 1) * page_size
             items = await self.repo.get_all(skip=skip, limit=page_size, session=session)
