@@ -30,4 +30,4 @@ async def test_fault_fastapi_root(unauthenticated_client_with_db):
     """ тест подключения к url """
     client = unauthenticated_client_with_db
     response = await client.get('/')
-    assert response.status_code == 401
+    assert response.status_code == 401, f'{response.status_code=}'
