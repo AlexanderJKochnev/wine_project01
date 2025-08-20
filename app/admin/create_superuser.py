@@ -1,3 +1,4 @@
+# app/admin/create_superuser.py
 import asyncio
 import getpass
 from app.core.config.database.db_async import AsyncSessionLocal

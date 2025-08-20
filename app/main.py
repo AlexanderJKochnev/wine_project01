@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 from app.middleware.auth_middleware import AuthMiddleware
 from app.admin import sqladm
-from app.core.config.database.db_async import engine
+from app.core.config.database.db_async import engine, get_db  # noqa: F401
 # from app.support.category.listeners import *
 from app.auth.router import router as auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
