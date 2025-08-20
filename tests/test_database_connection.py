@@ -4,6 +4,8 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+pytestmark = pytest.mark.asyncio
+
 
 async def test_database_connection_established(authenticated_client_with_db1, test_db_session):
     """Тест проверяет, что соединение с тестовой базой данных установлено"""

@@ -43,13 +43,13 @@ def super_user():
 
 
 # ---- DATABASE MOCK ----
-@pytest.fixture(scope="session")
+@pytest.fixture(scope=scope)
 def mock_db_url():
     """URL для тестовой базы данных SQLite"""
     return "sqlite+aiosqlite:///:memory:"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope=scope)
 async def mock_engine(mock_db_url):
     """Создает асинхронный движок для тестовой базы данных"""
     engine = create_async_engine(
@@ -105,7 +105,6 @@ async def authenticated_client_with_db(test_db_session, super_user, override_app
     token_data = {"sub": super_user.get('username')}
     # Создаем токен для тестового пользователя
     token = create_access_token(data=token_data)
-
     # Создаем клиент с токеном в заголовках
     async with AsyncClient(
         transport=ASGITransport(app=main.app), base_url=base_url,
@@ -118,9 +117,14 @@ async def authenticated_client_with_db(test_db_session, super_user, override_app
 
 
 @pytest.fixture(scope=scope)
-async def authenticated_client_with_db1(test_db_session, super_user, override_app_dependency, base_url):
+async def authenticated_client_with_db1(test_db_session, create_superuser, super_user, override_app_dependency,
+                                        base_url):
     """ Аутентифицированный клиент с тестовой базой данных и авторизацией по логин/пароль"""
     # Переопределяем зависимость get_db
+    token_data = {"sub": super_user.get('username')}
+    # Создаем токен для сравнения
+    token = create_access_token(data=token_data)
+
     async def get_test_db():
         yield test_db_session
 
@@ -141,7 +145,9 @@ async def authenticated_client_with_db1(test_db_session, super_user, override_ap
         if response.status_code == 200:
             # Получаем токен из ответа
             token_data = response.json()
+            print(f'{token_data=}')
             access_token = token_data.get("access_token")
+            print(f'----------------{access_token == token=}')
             if access_token:
                 # Устанавливаем заголовок авторизации для последующих запросов
                 ac.headers.update({"Authorization": f"Bearer {access_token}"})
@@ -151,7 +157,7 @@ async def authenticated_client_with_db1(test_db_session, super_user, override_ap
 @pytest.fixture(scope=scope)
 async def unauthenticated_client_with_db(test_db_session, override_app_dependency, base_url):
     """ Аутентифицированный клиент с тестовой базой данных и авторизацией по логин/пароль"""
-
+    # не работает !!!
     # Переопределяем зависимость get_db
     async def get_test_db():
         yield test_db_session
@@ -164,3 +170,11 @@ async def unauthenticated_client_with_db(test_db_session, override_app_dependenc
         yield ac
 
 # -------------------------END-------------------------------
+@pytest.fixture(scope=scope)
+async def admin_client():
+    """Клиент для тестирования админки"""
+    async with AsyncClient(
+        transport=ASGITransport(app=main.app),
+        base_url="http://test"
+    ) as client:
+        yield client
