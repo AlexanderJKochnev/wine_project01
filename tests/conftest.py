@@ -109,10 +109,11 @@ async def authenticated_client_with_db(test_db_session, super_user, override_app
     async with AsyncClient(
         transport=ASGITransport(app=main.app), base_url=base_url,
         # headers={"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"}
     ) as ac:
-        ac.headers.update(
-            {"Authorization": f"Bearer {token}", "Accept": "application/json"}
-        )
+        # ac.headers.update(
+        #     {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        # )
         yield ac
 
 
