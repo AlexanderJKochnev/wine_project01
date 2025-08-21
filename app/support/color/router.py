@@ -1,4 +1,4 @@
-# app/support/color/router.py
+# app/support/color/auth.py
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends

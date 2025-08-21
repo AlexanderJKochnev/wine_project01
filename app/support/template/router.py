@@ -1,4 +1,4 @@
-# app/support/template/router.py
+# app/support/template/auth.py
 """
     1. Выполни замену Template/template на актуальное имя следующим образом
     1.1. замени templates на выбранное имя (мн.число по правилам англ языка в нижнем регистре)

@@ -89,7 +89,12 @@ async def create_superuser(login: str = 'admin',
 
         # Создаем суперпользователя
         user_repo = UserRepository()
-        user_data = {"username": login, "email": email, "password": password, "is_active": True, "is_superuser": True}
+        user_data = {"username": login,
+                     "email": email,
+                     "password": password,
+                     "is_active": True,
+                     "is_superuser": True,
+                     "disabled": False}
 
         try:
             user = await user_repo.create(user_data, session)

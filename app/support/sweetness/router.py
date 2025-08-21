@@ -1,4 +1,4 @@
-# app/support/sweetness/router.py
+# app/support/sweetness/auth.py
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends

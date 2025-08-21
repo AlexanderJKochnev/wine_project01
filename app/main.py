@@ -1,13 +1,12 @@
 # app/main.py
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
-from app.middleware.auth_middleware import AuthMiddleware
+# from app.middleware.auth_middleware import AuthMiddleware
 from app.admin import sqladm
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
-# from app.support.category.listeners import *
-from app.auth.router import router as auth_router
+from app.auth.routers import user_router, auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import router as category_router
 from app.support.drink.router import router as drink_router
@@ -20,7 +19,7 @@ from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
 from app.core.routers.image_router import router as image_router
-from app.core.security import get_current_active_user
+# from app.core.security import get_current_active_user
 
 from app.admin.auth import authentication_backend
 
@@ -32,7 +31,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(AuthMiddleware)
+# app.add_middleware(AuthMiddleware)
 
 """
 async def authenticate(username: str, password: str):
@@ -71,6 +70,7 @@ async def wait_some_time(seconds: float):
     return {"waited": seconds}
 
 # --------подлкючение защищенных роутеров ----------
+"""
 protected_routers = [
     drink_router,
     category_router,
@@ -86,10 +86,10 @@ protected_routers = [
 
 for router in protected_routers:
     app.include_router(router, dependencies=[Depends(get_current_active_user)])
-
+"""
 # --------подключение незащищенных роутеров ---------
 app.include_router(auth_router)
-"""
+app.include_router(user_router)
 app.include_router(drink_router)
 app.include_router(category_router)
 app.include_router(country_router)
@@ -101,4 +101,3 @@ app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(image_router)
-"""

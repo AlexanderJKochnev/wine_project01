@@ -1,7 +1,6 @@
 # app/auth/schemas.py
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional
-from datetime import datetime
 
 
 class Token(BaseModel):
@@ -15,7 +14,7 @@ class TokenData(BaseModel):
 
 class UserBase(BaseModel):
     username: str
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     is_active: bool = True
     is_superuser: bool = False
 
@@ -30,7 +29,12 @@ class UserUpdate(UserBase):
 
 class UserRead(UserBase):
     id: int
-    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserInDB(UserBase):
+    id: int
+    hashed_password: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -38,3 +42,9 @@ class UserRead(UserBase):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class UserResponse(UserBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,4 +1,4 @@
-# tests/router.py
+# tests/auth.py
 from fastapi import APIRouter
 import asyncio
 # from app.core.config.database.db_helper import db_help

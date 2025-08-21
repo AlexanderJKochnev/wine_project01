@@ -1,4 +1,4 @@
-# app/support/food/router.py
+# app/support/food/auth.py
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends

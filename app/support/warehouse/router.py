@@ -1,4 +1,4 @@
-# app/support/warehouse/router.py
+# app/support/warehouse/auth.py
 """
     1. Выполни замену Warehouse/warehouse на актуальное имя следующим образом
     1.1. замени warehouses на выбранное имя (мн.число по правилам англ языка в нижнем регистре)
