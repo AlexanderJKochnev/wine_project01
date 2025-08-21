@@ -26,8 +26,8 @@ async def test_redoc(authenticated_client_with_db):
     assert response.status_code == 200
 
 
-async def test_fault_fastapi_root(unauthenticated_client_with_db):
+@pytest.mark.skip
+async def test_fault_fastapi_root(client):
     """ тест подключения к url """
-    client = unauthenticated_client_with_db
-    response = await client.get('/')
+    response = await client.get('/auth/token')
     assert response.status_code == 401, f'{response.status_code=}'

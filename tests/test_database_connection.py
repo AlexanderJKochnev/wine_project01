@@ -7,58 +7,34 @@ from sqlalchemy.exc import SQLAlchemyError
 pytestmark = pytest.mark.asyncio
 
 
-async def test_database_connection_established(authenticated_client_with_db1, test_db_session):
+async def test_database_connection_established(test_db_session):
     """Тест проверяет, что соединение с тестовой базой данных установлено"""
     # Проверяем, что сессия существует
     assert test_db_session is not None
-
     # Выполняем простой запрос к базе данных
-    try:
-        result = await test_db_session.execute(text("SELECT 1"))
-        value = result.scalar()
-        assert value == 1
-    except SQLAlchemyError as e:
-        pytest.fail(f"Database connection failed: {e}")
+    result = await test_db_session.execute(text("SELECT 1"))
+    value = result.scalar()
+    assert value == 1
 
 
 async def test_database_tables_accessible(authenticated_client_with_db, test_db_session):
-    """Тест проверяет, что таблицы доступны в тестовой базе данных"""
+    """Тест проверяет, что таблицы созданы и доступны в тестовой базе данных"""
     # Проверяем доступ к основным таблицам
     expected_tables = ['users', 'categories', 'drinks', 'colors', 'regions', 'countries']
 
     for table_name in expected_tables:
-        try:
-            # Выполняем запрос к таблице
-            result = await test_db_session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
-            count = result.scalar()
-            # Если запрос выполнен успешно, таблица существует
-            assert count is not None
-        except SQLAlchemyError:
-            # Некоторые таблицы могут не существовать в тестовой среде - это нормально
-            pass  # Просто пропускаем
+        result = await test_db_session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+        count = result.scalar()
+        assert count is not None, f'table "{table_name}" is not exist'
 
 
 async def test_fastapi_database_dependency_works(authenticated_client_with_db):
     """Тест проверяет, что FastAPI dependency для базы данных работает"""
     # Создаем тестовый маршрут, который использует базу данных
     # Для этого делаем простой запрос, который задействует репозиторий
-    try:
-        # Запрашиваем список цветов (пустой, но это проверит соединение)
-        response = await authenticated_client_with_db.get("/colors/")
-        # Даже если таблица пустая, запрос должен пройти успешно
-        assert response.status_code in [200, 500]  # 500 если таблица не существует
-        # Если получили 500, проверяем, что это не ошибка соединения
-        if response.status_code == 500:
-            error_detail = response.json().get('detail', '')
-            # Ошибка соединения будет содержать специфичные сообщения
-            assert 'connection' not in error_detail.lower()
-            assert 'database' not in error_detail.lower() or 'not found' in error_detail.lower()
-
-    except Exception as e:
-        # Проверяем, что ошибка не связана с соединением
-        error_str = str(e).lower()
-        assert 'connection' not in error_str
-        assert 'timeout' not in error_str
+    response = await authenticated_client_with_db.get("/colors")
+    # Даже если таблица пустая, запрос должен пройти успешно
+    assert response.status_code == 200
 
 
 async def test_database_session_is_active(authenticated_client_with_db, test_db_session):

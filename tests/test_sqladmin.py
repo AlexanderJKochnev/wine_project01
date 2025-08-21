@@ -6,10 +6,10 @@ pytestmark = pytest.mark.asyncio
 
 
 # Тесты
-async def test_admin_login_page_access(admin_client):
+async def test_admin_login_page_access(authenticated_client_with_db):
     """Тест доступа к странице логина админки"""
     try:
-        response = await admin_client.get("/admin/login")
+        response = await authenticated_client_with_db.get("/admin/login")
         assert response.status_code == 200
         # Проверяем, что страница содержит форму логина
         content = response.text.lower()
@@ -18,7 +18,7 @@ async def test_admin_login_page_access(admin_client):
         pytest.skip(f"Admin login page not available: {e}")
 
 
-async def test_admin_login_success(admin_client):
+async def test_admin_login_success(authenticated_client_with_db):
     """Тест успешного логина в админку"""
     # Мокаем зависимость для избежания реальных вызовов
     with patch('app.admin.auth.AsyncSessionLocal') as mock_session_local, patch(
@@ -51,7 +51,7 @@ async def test_admin_login_success(admin_client):
         assert "admin_token" in mock_request.session
 
 
-async def test_admin_login_invalid_credentials(admin_client):
+async def test_admin_login_invalid_credentials(authenticated_client_with_db):
     """Тест логина с неверными учетными данными"""
     with patch('app.admin.auth.AsyncSessionLocal') as mock_session_local, patch(
         'app.admin.auth.UserRepository'
@@ -76,10 +76,10 @@ async def test_admin_login_invalid_credentials(admin_client):
         assert result is False
 
 
-async def test_admin_access_without_auth(admin_client):
+async def test_admin_access_without_auth(authenticated_client_with_db):
     """Тест доступа к админке без аутентификации"""
     try:
-        response = await admin_client.get("/admin/")
+        response = await authenticated_client_with_db.get("/admin/")
         # Должен перенаправить на логин или вернуть 401/403
         assert response.status_code in [200, 302, 303, 307, 401, 403]
     except Exception:
@@ -87,10 +87,10 @@ async def test_admin_access_without_auth(admin_client):
         pytest.skip("Admin page not accessible")
 
 
-async def test_admin_logout(admin_client):  # (admin_login_session):
+async def test_admin_logout(authenticated_client_with_db):  # (admin_login_session):
     """Тест выхода из админки"""
     try:
-        response = await admin_client.post("/admin/logout")
+        response = await authenticated_client_with_db.post("/admin/logout")
         # Проверяем, что выход успешен
         assert response.status_code in [200, 302, 303, 307]
     except Exception as e:

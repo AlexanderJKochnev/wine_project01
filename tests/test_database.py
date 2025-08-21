@@ -112,16 +112,16 @@ async def test_table_relationships_exist(mock_engine):
                     pytest.fail(f"Table relationship check failed for {child_table} -> {parent_table}: {e}")
 
 
-async def test_superuser_exist(test_db_session, create_superuser, super_user):
+async def test_superuser_exist(test_db_session, create_super_user, super_user_data):
     """  проверяет наличие пользователя с правами суперюзера"""
-    username = super_user.get('username')
+    username = super_user_data.get('username')
     stmt = select(User).where(User.username == username)
     result = await test_db_session.execute(stmt)
     admin_user = result.scalar_one_or_none()
 
     assert admin_user is not None, "Superuser 'admin' should exist in test database"
-    assert admin_user.username == super_user.get("username")
-    assert admin_user.email == super_user.get('email')
+    assert admin_user.username == super_user_data.get("username")
+    assert admin_user.email == super_user_data.get('email')
     assert admin_user.is_active is True
     assert admin_user.is_superuser is True
     assert admin_user.hashed_password is not None
