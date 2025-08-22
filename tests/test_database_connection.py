@@ -10,11 +10,15 @@ pytestmark = pytest.mark.asyncio
 async def test_database_connection_established(test_db_session):
     """Тест проверяет, что соединение с тестовой базой данных установлено"""
     # Проверяем, что сессия существует
-    assert test_db_session is not None
-    # Выполняем простой запрос к базе данных
-    result = await test_db_session.execute(text("SELECT 1"))
-    value = result.scalar()
-    assert value == 1
+    """Тест проверяет, что соединение с базой данных установлено"""
+    try:
+        # Выполняем простой запрос
+        result = await test_db_session.execute(text("SELECT 1"))
+        value = result.scalar()
+        assert value == 1, f"Expected 1, got {value}"
+        print("✅ Database connection successful")
+    except Exception as e:
+        pytest.fail(f"Database connection failed: {e}")
 
 
 async def test_database_tables_accessible(authenticated_client_with_db, test_db_session):

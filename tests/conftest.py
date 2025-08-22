@@ -1,16 +1,19 @@
 # tests/conftest.py
 import pytest
 import asyncio
+import docker
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import text
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.auth.models import User
 from app.main import app, get_db
 # from app.auth.repository import UserRepository
+import logging
 
+logger = logging.getLogger(__name__)
 
 scope = 'session'
 
@@ -55,39 +58,51 @@ def super_user_data():
 
 
 # ---- DATABASE MOCK ----
+
 @pytest.fixture(scope=scope)
 def mock_db_url():
     """URL для тестовой базы данных SQLite"""
-    return "sqlite+aiosqlite:///:memory:"
+    # return "sqlite+aiosqlite:///:memory:"
+    """URL для тесвтовой базы данных POSTGRESQL"""
+    return 'postgresql+asyncpg://test_user:test@localhost:5435/test_db'
 
 
 @pytest.fixture(scope=scope)
-async def mock_engine(mock_db_url):
-    """Создает асинхронный движок для тестовой базы данных"""
+def mock_engine(mock_db_url):
+    """Создает движок для подключения к тестовой PostgreSQL в Docker"""
+    # URL для подключения к вашей запущенной PostgreSQL
+    DATABASE_URL = mock_db_url
+
     engine = create_async_engine(
-        mock_db_url,
-        connect_args={"check_same_thread": False,
-                      # "prepared_statement_cache_size": 0
-                      },  # это решает проблемы id sqlite
-        echo=False,
-        pool_pre_ping=True
+        DATABASE_URL, echo=False,  # Установите True для отладки SQL запросов
+        pool_pre_ping=True, pool_recycle=300
     )
-    # Создает все таблицы в базе данных
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    await engine.dispose()
+
+    # Создаем таблицы
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.create_all)
+
+    return engine
+
+    # Очищаем таблицы после тестов
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+
+    # await engine.dispose()
 
 
 @pytest.fixture(scope=scope)
 async def test_db_session(mock_engine):
     """Создает сессию для тестовой базы данных"""
-    AsyncSessionLocal = sessionmaker(
+    """Создает сессию для каждого теста"""
+    async_session_factory = sessionmaker(
         bind=mock_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
     )
 
-    async with AsyncSessionLocal() as session:
+    async with async_session_factory() as session:
         yield session
+        # Откатываем транзакцию после каждого теста
+        await session.rollback()
         await session.close()
 
 
