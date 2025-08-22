@@ -102,7 +102,7 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 class BaseAt:
-    __abstarct__ = True
+    __abstract__ = True
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
     # description: Mapped[descr]
@@ -112,12 +112,16 @@ class BaseAt:
 
 
 class BaseEn:
-    __abstarct__ = True
+    __abstract__ = True
     description: Mapped[descr]
     name: Mapped[str_uniq]
 
 
 class BaseLang:
-    __abstarct__ = True
+    __abstract__ = True
     name_ru: Mapped[str_null_index]
     description_ru: Mapped[descr]
+
+
+class BaseShort(BaseEn, BaseLang, Base):
+    __abstract__ = True

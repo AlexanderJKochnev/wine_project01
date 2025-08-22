@@ -1,6 +1,6 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar
+from typing import Type, Any, List, TypeVar, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,23 +53,39 @@ class BaseRouter:
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
-        self.router.add_api_route("/{item_id}", self.get_one, methods=["GET"], response_model=self.read_schema)
-        self.router.add_api_route("/{item_id}", self.update, methods=["PATCH"], response_model=self.read_schema)
-        self.router.add_api_route("/{item_id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
+        self.router.add_api_route("/one", self.get_one, methods=["GET"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.update, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
-    async def get_one(self, id: int, session: AsyncSession = Depends(get_db)) -> Any:
+    async def get_one(self,
+                      id: Optional[int] = Query(..., description="ID", gt=0),
+                      session: AsyncSession = Depends(get_db)) -> Any:
         try:
+            if id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Параметр 'id' обязателен"
+                )
+                # Проверяем валидность ID
+            if id <= 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="ID должен быть положительным числом"
+                )
             obj = await self.repo.get_by_id(id, session)
             if not obj:
-                raise HTTPException(status_code=404, detail=f"{self.model.__name__} not found")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=f"{self.model.__name__} not found"
+                )
             return obj
-        except ValueError:
+        except HTTPException:
+            # Перевыбрасываем уже обработанные HTTP исключения
+            raise
+        except ValueError as e:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ID format"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid ID format. {e}"
             )
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error: {str(e)}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error. {e}"
             )
 
     async def get(self, page: int = Query(1, ge=1),

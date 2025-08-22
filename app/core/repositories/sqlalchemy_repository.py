@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import select, func, insert
+from sqlalchemy import select, func
 
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)

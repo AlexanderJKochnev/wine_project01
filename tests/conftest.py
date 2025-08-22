@@ -4,14 +4,14 @@ import asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-
+from faker import Faker
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.auth.models import User
 from app.main import app, get_db
 # from app.auth.repository import UserRepository
 
-
+fake = Faker('en-US')
 scope = 'session'
 
 
@@ -59,6 +59,7 @@ def super_user_data():
 def mock_db_url():
     """URL для тестовой базы данных SQLite"""
     return "sqlite+aiosqlite:///:memory:"
+    # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
 
 
 @pytest.fixture(scope=scope)
@@ -66,10 +67,7 @@ async def mock_engine(mock_db_url):
     """Создает асинхронный движок для тестовой базы данных"""
     engine = create_async_engine(
         mock_db_url,
-        connect_args={"check_same_thread": False,
-                      # "prepared_statement_cache_size": 0
-                      },  # это решает проблемы id sqlite
-        echo=False,
+        echo=True,
         pool_pre_ping=True
     )
     # Создает все таблицы в базе данных
@@ -177,3 +175,5 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
         ac._test_user_db = create_super_user
         ac._access_token = access_token
         yield ac
+
+# -----------data generator------------------

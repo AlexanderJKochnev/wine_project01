@@ -33,7 +33,6 @@ async def test_all_tables_created(mock_engine):
             # Для PostgreSQL/MySQL
             result = await conn.execute(text("SELECT tablename FROM pg_tables WHERE schemaname = 'public';"))
             tables = [row[0] for row in result.fetchall()]
-
         # Проверяем наличие всех ожидаемых таблиц
         expected_tables = {'categories', 'drinks', 'countries', 'customers',
                            'warehouses', 'foods', 'items', 'regions',
@@ -63,7 +62,7 @@ async def test_all_tables_created(mock_engine):
                     assert len(columns) > 0, f"Table {table_name} has no columns"
                 except Exception as e:
                     # Некоторые таблицы могут не существовать в тестовой среде
-                    print(f"Warning: Could not check table {table_name}: {e}")
+                    assert False, f"Warning: Could not check table {table_name}: {e}"
 
 
 async def test_database_metadata_consistency(mock_engine):
