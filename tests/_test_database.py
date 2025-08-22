@@ -1,4 +1,4 @@
-# tests/test_database.py
+# tests/_test_database.py
 import pytest
 from sqlalchemy import text
 from app.core.models.base_model import Base

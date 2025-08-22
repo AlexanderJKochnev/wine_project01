@@ -1,7 +1,6 @@
 # tests/conftest.py
 import pytest
 import asyncio
-import docker
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -63,16 +62,27 @@ def super_user_data():
 def mock_db_url():
     """URL для тестовой базы данных SQLite"""
     # return "sqlite+aiosqlite:///:memory:"
-    """URL для тесвтовой базы данных POSTGRESQL"""
-    return 'postgresql+asyncpg://test_user:test@localhost:5435/test_db'
+    """URL для тестовой базы данных POSTGRESQL"""
+    return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
+
+
+@pytest.fixture(scope=scope)
+async def async_db_engine(mock_db_url):
+    """ тестовый двигатель для базы данных """
+    engine = create_async_engine(mock_db_url, echo=True, pool_pre_ping=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        yield engine
+        await conn.run_sync(Base.metadata.drop_all)
+        await engine.dispose()
 
 
 @pytest.fixture(scope=scope)
 def mock_engine(mock_db_url):
     """Создает движок для подключения к тестовой PostgreSQL в Docker"""
     # URL для подключения к вашей запущенной PostgreSQL
-    DATABASE_URL = mock_db_url
-
+    # DATABASE_URL = mock_db_url
+    DATABASE_URL = "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
     engine = create_async_engine(
         DATABASE_URL, echo=False,  # Установите True для отладки SQL запросов
         pool_pre_ping=True, pool_recycle=300

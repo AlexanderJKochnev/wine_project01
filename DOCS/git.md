@@ -23,7 +23,7 @@ linux - на этой стороне ничего не менять
 8. Нажмите Add SSH key.
 9. Проверка подключения ssh -T git@github.com
 10. git config --global url."git@github.com:".insteadOf "https://github.com/"
-11. git clone git@github.com:username/repo.git
+11. git clone git@github.com:AlexanderJKochnev/wine_project01.git
 12. git branch -M main  # Убедитесь, что локальная ветка имеет правильное имя 
 13. git pull origin main  # Обновите её из удалённого репозитория
 14. если ветка поменалась
