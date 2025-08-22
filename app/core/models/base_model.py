@@ -6,7 +6,7 @@
 """
 from datetime import datetime
 from typing import Annotated
-from sqlalchemy import func, text, Text
+from sqlalchemy import func, text, Text, Integer
 from sqlalchemy.orm import (DeclarativeBase, Mapped,
                             declared_attr, mapped_column)
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -18,7 +18,7 @@ from decimal import Decimal
 # annotation of some types of alchemy's fields
 
 # primary key
-int_pk = Annotated[int, mapped_column(primary_key=True)]
+int_pk = Annotated[int, mapped_column(Integer, primary_key=True, autoincrement=True)]
 
 # datetime field with default value now()
 created_at = Annotated[datetime, mapped_column(server_default=func.now())]

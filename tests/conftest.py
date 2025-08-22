@@ -65,7 +65,13 @@ def mock_db_url():
 async def mock_engine(mock_db_url):
     """Создает асинхронный движок для тестовой базы данных"""
     engine = create_async_engine(
-        mock_db_url, echo=False, pool_pre_ping=True, )
+        mock_db_url,
+        connect_args={"check_same_thread": False,
+                      # "prepared_statement_cache_size": 0
+                      },  # это решает проблемы id sqlite
+        echo=False,
+        pool_pre_ping=True
+    )
     # Создает все таблицы в базе данных
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

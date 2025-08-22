@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import select, func
+from sqlalchemy import select, func, insert
 
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -23,9 +23,13 @@ class Repository(Generic[ModelType]):
 
     async def create(self, data: Dict[str, Any], session: AsyncSession) -> ModelType:
         """ create & return record """
+        # stmt = insert(self.model).values(**data).returning(self.model)
+        # result = await session.execute(stmt)
+        # obj = result.scalar_one()
+
         obj = self.model(**data)
         session.add(obj)
-        # await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
+        await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
         await session.commit()
         await session.refresh(obj)
         return obj

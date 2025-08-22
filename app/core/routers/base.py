@@ -98,11 +98,11 @@ class BaseRouter:
 
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
+            # if isinstance(data, dict):
+            #     data_dict = {key: val for key, val in data.items() if val}
+            # else:
             data_dict = data.model_dump(exclude_unset=True)
-            print(f"Attempting to create: {data_dict}")
-            print(f'{data_dict=}')
-            obj = await self.repo.create(data.model_dump(exclude_unset=True), session)
-            print(f"Successfully created: {obj}")
+            obj = await self.repo.create(data_dict, session)
             return obj
         except IntegrityError:
             raise HTTPException(
@@ -110,7 +110,8 @@ class BaseRouter:
             )
         except ValidationError as e:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {str(e)}"
+                status_code=401, detail=f"Validation error: {str(e)}"
+                # status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {str(e)}"
             )
         except Exception as e:
             raise HTTPException(

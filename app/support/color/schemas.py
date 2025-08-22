@@ -1,6 +1,7 @@
 # app/support/color/schemas.py
 
 from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
+# from typing import Optional
 
 
 class ColorCustom:
@@ -11,7 +12,7 @@ class ColorShort(ShortSchema):
     pass
 
 
-class ColorRead(BaseSchema, ColorCustom):
+class ColorRead(FullSchema):  # BaseSchema, ColorCustom):
     pass
 
 
