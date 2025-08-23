@@ -28,11 +28,11 @@ class CustomSchema:
 
 
 class CustomUpdSchema:
-    category: Optional[CategoryShort] = None
-    food: Optional[FoodShort] = None
-    color: Optional[ColorShort] = None
-    sweetness: Optional[SweetnessShort] = None
-    region: Optional[RegionShort] = None
+    category_id: Optional[CategoryShort] = None
+    food_id: Optional[FoodShort] = None
+    color_id: Optional[ColorShort] = None
+    sweetness_id: Optional[SweetnessShort] = None
+    region_id: Optional[RegionShort] = None
     subtitle: Optional[str] = None
     alcohol: Optional[Decimal] = None
     sugar: Optional[Decimal] = None

@@ -101,3 +101,15 @@ app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(image_router)
+
+from tests.utility.data_generators import (print_test_cases,
+                                           generate_test_data,
+                                           get_request_models_from_routes,
+                                           prepare_test_cases)
+from app.support.category.schemas import CreateSchema
+print('-----------------------------')
+x = prepare_test_cases(app)
+print('-----------------------------')
+for key in x:
+    print(f'========{key}')
+# print_test_cases(app)
