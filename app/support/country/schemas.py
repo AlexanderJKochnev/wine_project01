@@ -1,28 +1,37 @@
 # app/support/country/schemas.py
 
-from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
+
+from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 
 
-
-class CountryCustom:
+class CustomSchema:
     pass
+
+
+class CustomCreateSchema:
+    pass
+
+
+class CustomUpdSchema:
+    pass
+
 
 class CountryShort(ShortSchema):
     pass
 
 
-class CountryRead(BaseSchema):
+class CountryRead(ReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 
-class CountryCreate(BaseSchema, CountryCustom):
+class CountryCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+
+
+class CountryUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class CountryUpdate(UpdateSchema, CountryCustom):
-    pass
-
-
-class CountryFull(FullSchema, CountryCustom):
+class CountryFull(FullSchema, CustomSchema):
     pass

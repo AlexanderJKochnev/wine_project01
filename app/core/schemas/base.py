@@ -10,38 +10,53 @@ PyModel = NewType("PyModel", BaseModel)
 T = TypeVar("T")
 
 
-class ShortSchema(BaseModel):
+class PkSchema(BaseModel):
+    id: int
+
+
+class UniqueSchema(BaseModel):
+    name: str
+
+
+class ShortSchema(UniqueSchema):
     """
         поля для представления во вложенных схемах
         ...языковой модуль
     """
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-    name: str
+
+
+class LangSchema(BaseModel):
+    """ добавлять поля на других языках """
     name_ru: Optional[str] = None
 
 
-class BaseSchema(ShortSchema):
-    """
-    стандартные поля для read/create
-    """
+class DescriptionSchema(BaseModel):
+    """ добавлять поля описаний на других языках """
     description: Optional[str] = None
     description_ru: Optional[str] = None
 
 
-class FullSchema(BaseSchema):
-    """
-        все стандартные поля
-    """
-    id: int
-    created_at: datetime
-    updated_at: datetime
+class DateSchema(BaseModel):
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
-class UpdateSchema(BaseSchema):
-    """
-        все поля редактируемые
-    """
+class ReadSchema(ShortSchema, LangSchema, DescriptionSchema, PkSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class CreateSchema(LangSchema, DescriptionSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class UpdateSchema(ShortSchema, LangSchema, DescriptionSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
     name: Optional[str] = None
+
+
+class FullSchema(ReadSchema, DateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 class ListResponse(BaseModel, Generic[T]):

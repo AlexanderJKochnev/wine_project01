@@ -1,31 +1,37 @@
 # app/support/template/schemas.py
 
-from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
-from app.support.country.schemas import CountryShort
+from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
+from app.support.country.schemas import CountryShort
+from typing import Optional
+
+class CustomSchema:
+    country: CountryShort
 
 
-class RegionCustom:
+class CustomCreateSchema:
     country_id: int
 
 
+class CustomUpdSchema:
+    country_id: Optional[int] = None
+
+
 class RegionShort(ShortSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-    country: CountryShort
-
-
-class RegionRead(BaseSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-    country: CountryShort
-
-
-class RegionCreate(BaseSchema, RegionCustom):
     pass
 
 
-class RegionUpdate(UpdateSchema, RegionCustom):
+class RegionRead(ReadSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+
+
+class RegionCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+
+
+class RegionUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class RegionFull(FullSchema, RegionCustom):
+class RegionFull(FullSchema, CustomSchema):
     pass

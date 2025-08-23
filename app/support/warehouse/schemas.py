@@ -1,42 +1,36 @@
 # app/support/warehouse/schemas.py
-from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
-from app.support.customer.schemas import CustomerShort
+from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 from typing import Optional
 
-"""
-Custom - нестандартные поля характерные для этой формы. Если их нет - оставить pass.
-         модель полностью не удалять.
-Short - короткая форма которая будет отражаться в связанном поле связанной таблицы
-Read - модель для чтения - все поля кроме id, created_at, updated_at
-Create - поля котоые должны и могут быть заполнены для записи в базу данных.
-    При отсутсвии обязательных данных будеит выдана ошибка
-Update - все поля как и в Create, НО ЗАПОЛНЯТЬ НУЖНО ТОЛЬКО ТЕ ПОЛЯ КОТОРЫЕ МЕНЯЮТСЯ
-Full - все поля включая системные и скрытые
-"""
+
+class CustomSchema:
+    address: Optional[str] = None
 
 
-class WarehouseCustom:
-    customer_id: Optional[int]
-    address: Optional[str]
+class CustomCreateSchema:
+    address: Optional[str] = None
+
+
+class CustomUpdSchema:
+    address: Optional[str] = None
 
 
 class WarehouseShort(ShortSchema):
     pass
 
 
-class WarehouseRead(BaseSchema):
+class WarehouseRead(ReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-    customer: CustomerShort
 
 
-class WarehouseCreate(BaseSchema, WarehouseCustom):
+class WarehouseCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+
+
+class WarehouseUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class WarehouseUpdate(UpdateSchema, WarehouseCustom):
-    pass
-
-
-class WarehouseFull(FullSchema, WarehouseCustom):
+class WarehouseFull(FullSchema, CustomSchema):
     pass

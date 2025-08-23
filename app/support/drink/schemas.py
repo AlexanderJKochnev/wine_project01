@@ -1,6 +1,6 @@
 # app/support/drink/schemas.py
 
-from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
+from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from app.support.category.schemas import CategoryShort
 from app.support.food.schemas import FoodShort
 from app.support.color.schemas import ColorShort
@@ -11,35 +11,63 @@ from app.support.sweetness.schemas import SweetnessShort
 
 from pydantic import ConfigDict
 from typing import Optional  # , List
+from decimal import Decimal
 
 
-class DrinkCustom:
+class CustomSchema:
+    category: CategoryShort
+    food: Optional[FoodShort] = None
+    color: Optional[ColorShort] = None
+    sweetness: Optional[SweetnessShort] = None
+    region: RegionShort
+    subtitle: Optional[str] = None
+    alcohol: Optional[Decimal] = None
+    sugar: Optional[Decimal] = None
+    aging: Optional[int] = None
+    sparkling: Optional[bool] = False
+
+
+class CustomUpdSchema:
+    category: Optional[CategoryShort] = None
+    food: Optional[FoodShort] = None
+    color: Optional[ColorShort] = None
+    sweetness: Optional[SweetnessShort] = None
+    region: Optional[RegionShort] = None
+    subtitle: Optional[str] = None
+    alcohol: Optional[Decimal] = None
+    sugar: Optional[Decimal] = None
+    aging: Optional[int] = None
+    sparkling: Optional[bool] = False
+
+
+class CustomCreateSchema:
     category_id: int
-    region_id: Optional[int]
+    food_id: Optional[int] = None
+    color_id: Optional[int] = None
+    sweetness_id: Optional[int] = None
+    region_id: int
+    subtitle: Optional[str] = None
+    alcohol: Optional[Decimal] = None
+    sugar: Optional[Decimal] = None
+    aging: Optional[int] = None
+    sparkling: Optional[bool] = False
 
 
 class DrinkShort(ShortSchema):
     pass
 
 
-class DrinkRead(BaseSchema):
+class DrinkRead(ReadSchema, CustomSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-    category: CategoryShort
-    food: Optional[FoodShort]
-    color: Optional[ColorShort]
-    sweetness: Optional[SweetnessShort]
-    region: RegionShort
-    # country: CountryShort
-    # image_url: Optional[str] = None  # Добавляем поле для URL изображения
 
 
-class DrinkCreate(BaseSchema, DrinkCustom):
+class DrinkCreate(CreateSchema, CustomCreateSchema):
     pass
 
 
-class DrinkUpdate(UpdateSchema, DrinkCustom):
+class DrinkUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class DrinkFull(FullSchema, DrinkCustom):
+class DrinkFull(FullSchema, CustomSchema):
     pass

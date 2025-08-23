@@ -8,14 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
-from app.core.schemas.base import BaseSchema
+from app.core.schemas.base import ReadSchema
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
+from app.auth.dependencies import get_current_active_user
+
 
 paging = get_paging
-TCreate = TypeVar("TCreate", bound=BaseSchema)
-TUpdate = TypeVar("TUpdate", bound=BaseSchema)
-TRead = TypeVar("TRead", bound=BaseSchema)
+TCreate = TypeVar("TCreate", bound=ReadSchema)
+TUpdate = TypeVar("TUpdate", bound=ReadSchema)
+TRead = TypeVar("TRead", bound=ReadSchema)
 
 
 class BaseRouter:
@@ -28,9 +30,9 @@ class BaseRouter:
         self,
         model: Type[Any],
         repo: Type[Any],
-        create_schema: Type[BaseSchema],
-        update_schema: Type[BaseSchema],
-        read_schema: Type[BaseSchema],
+        create_schema: Type[ReadSchema],
+        update_schema: Type[ReadSchema],
+        read_schema: Type[ReadSchema],
         prefix: str,
         tags: List[str]
         # session: AsyncSession = Depends(get_db)
@@ -42,7 +44,7 @@ class BaseRouter:
         self.read_schema = read_schema
         self.prefix = prefix
         self.tags = tags
-        self.router = APIRouter(prefix=prefix, tags=tags)
+        self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
         # self.session = session  # будет установлен через зависимости
         self.paginated_response = create_model(f"Paginated{read_schema.__name__}",
                                                __base__=PaginatedResponse[read_schema])

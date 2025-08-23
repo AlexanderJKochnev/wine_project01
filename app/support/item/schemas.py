@@ -1,41 +1,36 @@
 # app/support/item/schemas.py
 
-from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
-from app.support.category.schemas import CategoryShort
+from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 
-"""
-Custom - нестандартные поля характерные для этой формы. Если их нет - оставить pass.
-         модель полностью не удалять.
-Short - короткая форма которая будет отражаться в связанном поле связанной таблицы
-Read - модель для чтения - все поля кроме id, created_at, updated_at
-Create - поля котоые должны и могут быть заполнены для записи в базу данных.
-    При отсутсвии обязательных данных будеит выдана ошибка
-Update - все поля как и в Create, НО ЗАПОЛНЯТЬ НУЖНО ТОЛЬКО ТЕ ПОЛЯ КОТОРЫЕ МЕНЯЮТСЯ
-Full - все поля включая системные и скрытые
-"""
+
+class CustomSchema:
+    pass
 
 
-class ItemCustom:
-    drink_id: int
+class CustomCreateSchema:
+    pass
+
+
+class CustomUpdSchema:
+    pass
 
 
 class ItemShort(ShortSchema):
     pass
 
 
-class ItemRead(BaseSchema):
+class ItemRead(ReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-    category: CategoryShort
 
 
-class ItemCreate(BaseSchema, ItemCustom):
+class ItemCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+
+
+class ItemUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class ItemUpdate(UpdateSchema, ItemCustom):
-    pass
-
-
-class ItemFull(FullSchema, ItemCustom):
+class ItemFull(FullSchema, CustomSchema):
     pass

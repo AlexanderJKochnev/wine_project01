@@ -113,8 +113,8 @@ class BaseAt:
 
 class BaseEn:
     __abstract__ = True
-    description: Mapped[descr]
     name: Mapped[str_uniq]
+    description: Mapped[descr]
 
 
 class BaseLang:
@@ -124,4 +124,8 @@ class BaseLang:
 
 
 class BaseShort(BaseEn, BaseLang, Base):
+    __abstract__ = True
+
+
+class BaseFull(BaseShort, BaseAt):
     __abstract__ = True

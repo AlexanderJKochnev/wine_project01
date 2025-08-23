@@ -1,5 +1,4 @@
-# app/support/category/auth.py
-
+# app/support/category/router.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_async import get_db
