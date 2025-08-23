@@ -9,10 +9,20 @@ from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.auth.models import User
 from app.main import app, get_db
-# from app.auth.repository import UserRepository
+from fastapi.routing import APIRoute
+from typing import List
 
 fake = Faker('en-US')
 scope = 'session'
+
+
+def get_routers(method: str = 'GET') -> List[APIRoute]:
+    """  список роутеров, содержащих указанный метод """
+    # prefix содердитсс в a.path
+    exc_route = ('/', '/auth/token', '/wait')
+    return [a for a in app.routes
+            if all((isinstance(a, APIRoute), a.path not in exc_route)) and all((hasattr(a, 'methods'),
+                                                                                'GET' in a.methods))]
 
 
 @pytest.fixture(scope=scope)
@@ -33,6 +43,31 @@ def event_loop(request):
 @pytest.fixture(scope=scope)
 def base_url():
     return "http://testserver"
+
+
+@pytest.fixture(scope=scope)
+def routers_get_one() -> List[str]:
+    return [x.path for x in get_routers('GET') if x.name == 'get_one']
+
+
+@pytest.fixture(scope=scope)
+def routers_get_all() -> List[str]:
+    return [x.path for x in get_routers('GET') if x.name == 'get']
+
+
+@pytest.fixture(scope=scope)
+def routers_post() -> List[str]:
+    return [x.path for x in get_routers('POST')]
+
+
+@pytest.fixture(scope=scope)
+def routers_patch() -> List[str]:
+    return [x.path for x in get_routers('PATCH')]
+
+
+@pytest.fixture(scope=scope)
+def routers_delete() -> List[str]:
+    return [x.path for x in get_routers('DELETE')]
 
 
 @pytest.fixture(scope=scope)
@@ -67,7 +102,7 @@ async def mock_engine(mock_db_url):
     """Создает асинхронный движок для тестовой базы данных"""
     engine = create_async_engine(
         mock_db_url,
-        echo=True,
+        echo=False,
         pool_pre_ping=True
     )
     # Создает все таблицы в базе данных

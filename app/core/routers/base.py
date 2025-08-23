@@ -55,39 +55,47 @@ class BaseRouter:
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
-        self.router.add_api_route("/one", self.get_one, methods=["GET"], response_model=self.read_schema)
-        self.router.add_api_route("/{id}", self.update, methods=["PATCH"], response_model=self.read_schema)
-        self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
+        self.router.add_api_route("/a", self.get_one, methods=["GET"], response_model=self.read_schema)
+        self.router.add_api_route("/a", self.update, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/a", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def get_one(self,
                       id: Optional[int] = Query(..., description="ID", gt=0),
                       session: AsyncSession = Depends(get_db)) -> Any:
+        """
+            Получение одной записи по ID с четким разделением ошибок:
+            - 400: Неверный формат ID или параметры
+            - 404: Запись не найдена
+            - 500: Внутренняя ошибка сервера
+            """
         try:
-            if id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Параметр 'id' обязателен"
-                )
-                # Проверяем валидность ID
-            if id <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="ID должен быть положительным числом"
-                )
+            # Получаем объект из репозитория
             obj = await self.repo.get_by_id(id, session)
-            if not obj:
+            # Четкое разделение: объект не найден = 404
+            if obj is None:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail=f"{self.model.__name__} not found"
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"{self.model.__name__} с ID {id} не найден"
                 )
             return obj
-        except HTTPException:
-            # Перевыбрасываем уже обработанные HTTP исключения
-            raise
+        except HTTPException as he:
+            # Логируем HTTP ошибки (кроме 404, которые могут быть частыми)
+            if he.status_code != status.HTTP_404_NOT_FOUND:
+                # logger.warning(f"HTTP error in get_one: {he.detail}")
+                raise he
+
         except ValueError as e:
+            # Ошибки валидации (неверный формат данных)
+            # logger.warning(f"Validation error in get_one: {e}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid ID format. {e}"
-            )
-        except Exception as e:
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Неверный формат параметров: {e}")
+        except Exception:
+            # Все остальные ошибки = внутренняя ошибка сервера
+            # logger.error(f"Unexpected error in get_one: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error. {e}"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Внутренняя ошибка сервера. Попробуйте позже."
             )
 
     async def get(self, page: int = Query(1, ge=1),

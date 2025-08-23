@@ -35,7 +35,7 @@ async def protected_route(current_user: User = Depends(get_current_active_user))
     return {"message": f"Hello {current_user.username}"}
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/a", response_model=UserResponse)
 async def read_user(user_id: int, db: AsyncSession = Depends(get_db),
                     current_user: User = Depends(get_current_active_user)):
     """Получение пользователя по ID"""
@@ -45,7 +45,7 @@ async def read_user(user_id: int, db: AsyncSession = Depends(get_db),
     return user
 
 
-@router.put("/{user_id}", response_model=UserResponse)
+@router.put("/a", response_model=UserResponse)
 async def update_user(
     user_id: int, user_update: UserUpdate, db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)

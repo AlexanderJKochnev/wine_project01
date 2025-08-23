@@ -2,6 +2,7 @@
 import pytest
 
 pytestmark = pytest.mark.asyncio
+""" тесты на создание пользователей и доступ к защищенным роутерам"""
 
 
 async def test_create_user(authenticated_client_with_db):
