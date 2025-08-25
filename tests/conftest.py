@@ -4,16 +4,18 @@ import asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from faker import Faker
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.auth.models import User
 from app.main import app, get_db
 from fastapi.routing import APIRoute
 from typing import List
+from tests.utility.data_generators import FieldsData
 
-fake = Faker('en-US')
+
 scope = 'session'
+scopeinner = 'function'
+example_count = 50      # количество тестовых записей - рекомедуется >20 для paging test
 
 
 def get_routers(method: str = 'GET') -> List[APIRoute]:
@@ -46,12 +48,39 @@ def base_url():
 
 
 @pytest.fixture(scope=scope)
+def get_fields_type():
+    """
+        Подготавливает списки полей и их типов для всех POST/PATCH маршрутов
+        {
+        route: /example,
+        method: 'POST' | 'PATCH'
+        model_name: 'DrinkCreate' (schema name)
+        test_data {required_only: {field: value ...},
+                   all_fields: {field: value ...}
+        }
+    """
+    x = FieldsData(app)
+    return x()
+
+
+@pytest.fixture(scope=scope)
+def fakedata_generator(get_fields_type) -> List:
+    """
+    возвращает словарь генераторов данных для тестовых записей
+    :return:
+    :rtype:
+    """
+    pass
+
+@pytest.fixture(scope=scope)
 def routers_get_one() -> List[str]:
+    """ список роутеров GET get_by_id"""
     return [x.path for x in get_routers('GET') if x.name == 'get_one']
 
 
 @pytest.fixture(scope=scope)
 def routers_get_all() -> List[str]:
+    """ список роутеров GET get_all"""
     return [x.path for x in get_routers('GET') if x.name == 'get']
 
 

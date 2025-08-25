@@ -9,18 +9,13 @@ passlib==1.7.4
 pytest
 pytest-asyncio
 pytest-cov
-# minio
 pillow
 psycopg2-binary
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 bcrypt==4.0.1
-itsdangerous>=2.1.0
 
-#  fastapi==0.95.0
-# uvicorn
-# sqlalchemy==2.0.5
-# aiobotocore
-# ==2.4.2
-# aiohttp
+# for testing purpose only
+Faker
+itsdangerous>=2.1.0

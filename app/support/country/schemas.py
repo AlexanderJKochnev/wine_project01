@@ -1,9 +1,12 @@
 # app/support/country/schemas.py
 
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
+from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema, PkSchema
 from pydantic import ConfigDict
 
+class CountryPk(PkSchema):
+    pass
+    
 
 class CustomSchema:
     pass

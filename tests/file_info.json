@@ -1,11 +1,12 @@
+[]
+
 {'route': '/drinks',
   'method': 'POST',
   'model_name': 'DrinkCreate',
   'test_data': {'required_only': {'category_id': 1,
 								  'region_id': 1},
 				'all_fields': {'category_id': 1,
-				  				'food_id': FieldInfo(annotation=Union[int, NoneType],
-													 required=False, default=None),
+				  				'food_id': FieldInfo(annotation=Union[int, NoneType],required=False, default=None),
 								'color_id': FieldInfo(annotation=Union[int, NoneType],
 								required=False, default=None),
 								'sweetness_id': FieldInfo(annotation=Union[int, NoneType],

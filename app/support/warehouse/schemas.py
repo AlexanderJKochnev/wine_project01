@@ -10,6 +10,7 @@ class CustomSchema:
 
 class CustomCreateSchema:
     address: Optional[str] = None
+    customer_id: int
 
 
 class CustomUpdSchema:

@@ -46,7 +46,7 @@ class ReadSchema(ShortSchema, LangSchema, DescriptionSchema, PkSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-class CreateSchema(LangSchema, DescriptionSchema):
+class CreateSchema(UniqueSchema, LangSchema, DescriptionSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
