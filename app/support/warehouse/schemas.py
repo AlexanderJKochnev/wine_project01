@@ -1,16 +1,18 @@
 # app/support/warehouse/schemas.py
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
-from pydantic import ConfigDict
+from app.core.schemas.base import CreateSchema, ShortSchema, UpdateSchema, FullSchema
+from pydantic import ConfigDict, BaseModel, Field
 from typing import Optional
+from app.support.customer.schemas import CustomerShort
 
 
 class CustomSchema:
     address: Optional[str] = None
+    customer: CustomerShort
 
 
 class CustomCreateSchema:
     address: Optional[str] = None
-    customer_id: int
+    customer_id: int = Field(..., description="customer ID (Customer.id) для связи Many-to-One")
 
 
 class CustomUpdSchema:
@@ -18,10 +20,11 @@ class CustomUpdSchema:
 
 
 class WarehouseShort(ShortSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    login: int
 
 
-class WarehouseRead(ReadSchema):
+class WarehouseRead(BaseModel):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 

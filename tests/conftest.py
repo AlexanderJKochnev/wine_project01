@@ -9,11 +9,11 @@ from app.core.models.base_model import Base
 from app.auth.models import User
 from app.main import app, get_db
 from fastapi.routing import APIRoute
-from typing import List
-from tests.utility.data_generators import FieldsData
+from typing import List, Dict, Any
+from tests.utility.data_generators import FakeData
 
 
-scope = 'session'
+scope = 'function'
 scopeinner = 'function'
 example_count = 50      # количество тестовых записей - рекомедуется >20 для paging test
 
@@ -48,29 +48,45 @@ def base_url():
 
 
 @pytest.fixture(scope=scope)
-def get_fields_type():
+def get_fields_type() -> Dict[str, Any]:
     """
-        Подготавливает списки полей и их типов для всех POST/PATCH маршрутов
+        Подготавливает спиcок имен полей и генераторов их значений для всех POST/PATCH
+        маршрутов, отсортированных по очередности заполнения
         {
         route: /example,
         method: 'POST' | 'PATCH'
         model_name: 'DrinkCreate' (schema name)
-        test_data {required_only: {field: value ...},
-                   all_fields: {field: value ...}
+        test_data {required_only: {field: generator ...},
+                   all_fields: {field: generator ...}
         }
     """
-    x = FieldsData(app)
+    x = FakeData(app, 1)
     return x()
 
 
 @pytest.fixture(scope=scope)
-def fakedata_generator(get_fields_type) -> List:
+async def fakedata_generator(authenticated_client_with_db, test_db_session, get_fields_type):
     """
-    возвращает словарь генераторов данных для тестовых записей
+    проходит по списку роутеров и заполняет таблицы данными
     :return:
     :rtype:
     """
-    pass
+    client = authenticated_client_with_db
+    counts = 10
+    for key, val in get_fields_type.items():
+        for n in range(counts):
+            route = key
+            if 2 == 1:
+                data = {k2: v2() for k2, v2 in val['required_only'].items()}
+            else:
+                try:
+                    data = {k2: f'{v2()}_{n}' if isinstance(v2(), str)
+                    else v2() for n, (k2, v2) in enumerate(val['all_fields'].items())}
+                except Exception as e:
+                    print(f'ошибка {e}  {val['all_fields']}')
+            response = await client.post(f'{route}', json=data)
+            assert response.status_code == 200, f'{route=} {data=} {key=}'
+
 
 @pytest.fixture(scope=scope)
 def routers_get_one() -> List[str]:
@@ -122,8 +138,9 @@ def super_user_data():
 @pytest.fixture(scope=scope)
 def mock_db_url():
     """URL для тестовой базы данных SQLite"""
-    return "sqlite+aiosqlite:///:memory:"
+    # return "sqlite+aiosqlite:///:memory:"
     # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
+    return "sqlite+aiosqlite:///:memory:?cache=shared"
 
 
 @pytest.fixture(scope=scope)
@@ -141,7 +158,7 @@ async def mock_engine(mock_db_url):
     await engine.dispose()
 
 
-@pytest.fixture(scope=scope)
+@pytest.fixture(scope=scopeinner)
 async def test_db_session(mock_engine):
     """Создает сессию для тестовой базы данных"""
     AsyncSessionLocal = sessionmaker(
@@ -153,7 +170,7 @@ async def test_db_session(mock_engine):
         await session.close()
 
 
-@pytest.fixture(scope=scope)
+@pytest.fixture(scope=scopeinner)
 async def create_test_user(test_db_session, test_user_data):
     """Создает тестового пользователя в базе данных"""
     # Создаем пользователя напрямую в БД
@@ -169,7 +186,7 @@ async def create_test_user(test_db_session, test_user_data):
     return db_user
 
 
-@pytest.fixture(scope=scope)
+@pytest.fixture(scope=scopeinner)
 async def create_super_user(test_db_session, super_user_data):
     """Создает суперпользователя в базе данных"""
     hashed_password = get_password_hash(super_user_data["password"])
@@ -195,13 +212,13 @@ async def override_app_dependencies():
     app.dependency_overrides.update(original_overrides)
 
 
-@pytest.fixture(scope=scope)
+@pytest.fixture(scope=scopeinner)
 async def get_test_db(test_db_session, create_test_user, create_super_user):
     """Dependency override для получения тестовой сессии БД"""
     yield test_db_session
 
 
-@pytest.fixture(scope=scope)
+@pytest.fixture(scope=scopeinner)
 async def client(test_db_session, override_app_dependencies, get_test_db, base_url):
     """Базовый клиент без авторизации"""
     # Переопределяем зависимость get_db
@@ -215,7 +232,7 @@ async def client(test_db_session, override_app_dependencies, get_test_db, base_u
         yield ac
 
 
-@pytest.fixture(scope=scope)
+@pytest.fixture(scope=scopeinner)
 async def authenticated_client_with_db(test_db_session, super_user_data,
                                        override_app_dependencies, base_url, get_test_db):
     """ Аутентифицированный клиент с тестовой базой данных """

@@ -2,26 +2,32 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import inspect
-from typing import Dict, Any, List, get_origin, Union, get_args
+from typing import Dict, Any, List, get_origin, Union, get_args, Iterator
 import json
 from faker import Faker
-# from decimal import Decimal
+from decimal import Decimal
 # import random
 
 fake = Faker('en-US')
 
 
 class FieldsData():
-    def __init__(self, app: FastAPI):
-        self.exclude_list = ('/auth/token', '/users/')
+    def __init__(self, app: FastAPI, counts: int = 50, percentage: float = 0.5, *args, **kwargs):
+        self.exclude_list = ('/auth/token', '/users/', '/customers', '/warehouses', '/items')
+        self.counts = counts
+        self.percenrage = percentage
         self.list_fields_types = self.prepare_test_cases(app, self.exclude_list)
         self.sorted_list = []
-        self.outres(self.list_fields_types)
+        self.outres(self.list_fields_types)  # make self.sorted_list
+        # self.prod_list = self.product(self.sorted_list, self.list_fields_types)
+        for n, key in enumerate(self.list_fields_types):
+            print(f'{n} :: {key}')
 
     def __call__(self):
         """ результат """
         # return self.topological_sort_with_keys(self.outres(self.list_fields_types))
         return self.product(self.sorted_list, self.list_fields_types)
+        # return FakeData(self.prod_list, self.counts, self.percenrage)
 
     def get_request_models_from_routes(self, app: FastAPI, exclude_list: List[str]) -> Dict[str, Dict[str, Any]]:
         """
@@ -164,11 +170,11 @@ class FieldsData():
                     test_cases.append(test_case)
         return test_cases
 
-    def print_test_cases(self, app: FastAPI):
+    def print_test_cases(self):
         """
         Выводит подготовленные тестовые данные
         """
-        test_cases = self.prepare_test_cases(app)
+        test_cases = self.list_fields_types
 
         print(f"Найдено {len(test_cases)} маршрутов для тестирования:\n")
 
@@ -232,7 +238,9 @@ class FieldsData():
 
 
 class FakeData():
-    def __init__(self, source: List[Dict[str, Any]], counts: int = 50, percentage: float = 0.5, *args, **kwargs):
+    def __init__(self, app: FastAPI,
+                 # source: List[Dict[str, Any]],
+                 counts: int = 50, percentage: float = 0.5, *args, **kwargs):
         """
 
         :param source: источник данных
@@ -246,8 +254,55 @@ class FakeData():
         :param kwargs: tbd
         :type kwargs: dict
         """
-        self.source = [a for a in source if a['method'] == 'POST']
-        faker = Faker('en_US')
+        # отбираем только POST
+        source = FieldsData(app)
+        self.source: list = [a for a in source() if a['method'] == 'POST']
+        # инициация генератора тестовых данных
+        self.faker = Faker('en_US')
+        # кол-во генерируемых записей - желательно от 20 до 50 что бы протестировать
+        # pagination, но не сильно грузить систему
+        self.counts = counts
+        # какя доля неполных (минимально необходимых данных) будет из общего числа
+        self.percentage: float = percentage
+        self.dict_res: dict  # словарь генераторов
 
-    def __fake(self):
-        pass
+    def __fake_data__(self, field_name: str, field_type: Any):
+        """
+        по имени поля и его типу генерирует fake data
+        """
+        if all((field_name.startswith('name'), field_type == str)):
+            return self.faker.name
+        if all((field_name.startswith('description'), field_type == str)):
+            return self.faker.text
+        if all((field_name.endswith('_id'), field_type == int)):
+            return self.faker.random_int(1, self.counts)
+        if field_type == Decimal:
+            return self.faker.pydecimal(
+                left_digits=1,  # максимум 3 цифры до запятой (0-999)
+                right_digits=2,
+                positive=True
+            )
+        if field_type == bool:
+            return self.faker.pybool(truth_probability=20)
+        return self.faker.city
+
+    def __single_data_generator__(self, single: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+         создает генератор данных для одной записи одной схемы
+        :param single: {route:..., 'test_data': {'required_only': dict(name: type), 'all_fields': ..}
+        :type single: dict
+        :return: {path: {field_name: value ...}
+        :rtype:
+        """
+        # route = single['route']
+        test_data = single['test_data']
+        result: dict = {}
+        for item in ('required_only', 'all_fields'):
+            result[item] = {key: self.__fake_data__(key, val) for key, val in test_data[item].items()}
+        return result
+
+    def __data_generator__(self, source: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return {val['route']: self.__single_data_generator__(val) for val in source}
+
+    def __call__(self):
+        return self.__data_generator__(self.source)

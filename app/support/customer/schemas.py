@@ -1,40 +1,45 @@
 # app/support/customer/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
-from pydantic import ConfigDict
+from app.core.schemas.base import DateSchema
+from pydantic import ConfigDict, BaseModel
 from typing import Optional
-from app.support.warehouse.schemas import WarehouseShort
+# from app.support.warehouse.schemas import WarehouseShort
 
 
 class CustomSchema:
+    login: str
     firstname: Optional[str]
     lastname: Optional[str]
     account: Optional[str]
 
 
-class CustomCreateSchema:
+class CustomCreateSchema(CustomSchema):
     pass
 
 
 class CustomUpdSchema:
-    pass
+    login: Optional[str]
+    firstname: Optional[str]
+    lastname: Optional[str]
+    account: Optional[str]
 
 
-class CustomerShort(ShortSchema):
-    pass
+class CustomerShort(BaseModel):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+    login: str
 
 
-class CustomerRead(ReadSchema):
+class CustomerRead(BaseModel, CustomSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 
-class CustomerCreate(CreateSchema, CustomCreateSchema):
+class CustomerCreate(BaseModel, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 
-class CustomerUpdate(UpdateSchema, CustomUpdSchema):
+class CustomerUpdate(BaseModel, CustomUpdSchema):
     pass
 
 
-class CustomerFull(FullSchema, CustomSchema):
-    pass
+# class CustomerFull(BaseModel, DateSchema, CustomSchema):
+#     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)

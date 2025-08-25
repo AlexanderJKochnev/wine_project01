@@ -102,19 +102,17 @@ app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(image_router)
 
-from tests.utility.data_generators import FieldsData
+from tests.utility.data_generators import FieldsData, FakeData
 
-print('-----------------------------')
 # x = prepare_test_cases(app)
 # x = get_request_models_from_routes(app)
-y = FieldsData(app)
-print('-----------------------')
+y = FakeData(app)
 
 x = y()
 if isinstance(x, dict):
     for key, val in x.items():
+        print('-------------------------------------------')
         print(f'{key} = {val}')
 else:
     for key in x:
         print(f'=={key}')
-# print_test_cases(app)

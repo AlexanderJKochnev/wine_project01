@@ -1,4 +1,4 @@
-# app/support/customer/auth.py
+# app/support/customer/router.py
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
