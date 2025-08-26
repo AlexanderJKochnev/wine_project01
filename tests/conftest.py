@@ -4,6 +4,7 @@ import asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.auth.models import User
@@ -13,8 +14,8 @@ from typing import List, Dict, Any
 from tests.utility.data_generators import FakeData
 
 
-scope = 'function'
-scopeinner = 'function'
+scope = 'session'
+scope2 = 'session'
 example_count = 50      # количество тестовых записей - рекомедуется >20 для paging test
 
 
@@ -33,6 +34,7 @@ def event_loop(request):
     Создаём отдельный event loop для всей сессии тестов.
     Это предотвращает ошибку "Event loop is closed".
     """
+    """
     policy = asyncio.get_event_loop_policy()
     loop = policy.new_event_loop()
     try:
@@ -40,7 +42,10 @@ def event_loop(request):
     finally:
         if not loop.is_closed():
             loop.close()
-
+    """
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 @pytest.fixture(scope=scope)
 def base_url():
@@ -140,7 +145,8 @@ def mock_db_url():
     """URL для тестовой базы данных SQLite"""
     # return "sqlite+aiosqlite:///:memory:"
     # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
-    return "sqlite+aiosqlite:///:memory:?cache=shared"
+    return "postgresql+psycopg_async://test_user:test@localhost:2345/test_db"
+    # return "sqlite+aiosqlite:///:memory:?cache=shared"
 
 
 @pytest.fixture(scope=scope)
@@ -153,24 +159,25 @@ async def mock_engine(mock_db_url):
     )
     # Создает все таблицы в базе данных
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
 
 
-@pytest.fixture(scope=scopeinner)
+@pytest.fixture(scope=scope2)
 async def test_db_session(mock_engine):
     """Создает сессию для тестовой базы данных"""
     AsyncSessionLocal = sessionmaker(
         bind=mock_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
     )
-
+    # async with mock_engine.connect() as session:
     async with AsyncSessionLocal() as session:
         yield session
         await session.close()
 
 
-@pytest.fixture(scope=scopeinner)
+@pytest.fixture(scope=scope2)
 async def create_test_user(test_db_session, test_user_data):
     """Создает тестового пользователя в базе данных"""
     # Создаем пользователя напрямую в БД
@@ -186,7 +193,7 @@ async def create_test_user(test_db_session, test_user_data):
     return db_user
 
 
-@pytest.fixture(scope=scopeinner)
+@pytest.fixture(scope=scope2)
 async def create_super_user(test_db_session, super_user_data):
     """Создает суперпользователя в базе данных"""
     hashed_password = get_password_hash(super_user_data["password"])
@@ -212,13 +219,13 @@ async def override_app_dependencies():
     app.dependency_overrides.update(original_overrides)
 
 
-@pytest.fixture(scope=scopeinner)
+@pytest.fixture(scope=scope2)
 async def get_test_db(test_db_session, create_test_user, create_super_user):
     """Dependency override для получения тестовой сессии БД"""
     yield test_db_session
 
 
-@pytest.fixture(scope=scopeinner)
+@pytest.fixture(scope=scope2)
 async def client(test_db_session, override_app_dependencies, get_test_db, base_url):
     """Базовый клиент без авторизации"""
     # Переопределяем зависимость get_db
@@ -232,7 +239,7 @@ async def client(test_db_session, override_app_dependencies, get_test_db, base_u
         yield ac
 
 
-@pytest.fixture(scope=scopeinner)
+@pytest.fixture(scope=scope2)
 async def authenticated_client_with_db(test_db_session, super_user_data,
                                        override_app_dependencies, base_url, get_test_db):
     """ Аутентифицированный клиент с тестовой базой данных """
