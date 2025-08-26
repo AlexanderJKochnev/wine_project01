@@ -21,11 +21,11 @@ class CategoryShort(ShortSchema):
 
 
 class CategoryRead(ReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class CategoryCreate(CreateSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class CategoryUpdate(UpdateSchema, CustomUpdSchema):

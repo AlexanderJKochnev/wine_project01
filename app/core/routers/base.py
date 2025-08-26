@@ -53,7 +53,7 @@ class BaseRouter:
 
     def setup_routes(self):
         """Настраивает маршруты"""
-        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_schema)
+        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/a", self.get_one, methods=["GET"], response_model=self.read_schema)
         self.router.add_api_route("/a", self.update, methods=["PATCH"], response_model=self.read_schema)

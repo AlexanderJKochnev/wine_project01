@@ -21,7 +21,7 @@ class FoodShort(ShortSchema):
 
 
 class FoodRead(ReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class FoodCreate(CreateSchema, CustomCreateSchema):

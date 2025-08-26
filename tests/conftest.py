@@ -12,6 +12,7 @@ from app.main import app, get_db
 from fastapi.routing import APIRoute
 from typing import List, Dict, Any
 from tests.utility.data_generators import FakeData
+from tests.utility.find_models import discover_models, discover_schemas2
 
 
 scope = 'session'
@@ -47,6 +48,65 @@ def event_loop(request):
     yield loop
     loop.close()
 
+
+@pytest.fixture(scope="session")
+def test_models():
+    """Автоматически обнаруживает все модели для тестирования"""
+    return discover_models()
+
+
+@pytest.fixture(scope=scope)
+def get_schemas():
+    sssss = discover_schemas2(app)
+    schemas = {}
+    for name, obj in sssss.items():
+        if name.endswith('Create'):
+            model_name = name[:-6]
+            if model_name not in schemas:
+                schemas[model_name] = {}
+            schemas[model_name]['create'] = obj
+        elif name.endswith('Update'):
+            model_name = name[:-6]
+            if model_name not in schemas:
+                schemas[model_name] = {}
+            schemas[model_name]['update'] = obj
+        elif name.endswith('Read'):
+            model_name = name[:-4]
+            if model_name not in schemas:
+                schemas[model_name] = {}
+            schemas[model_name]['read'] = obj
+    return schemas
+
+@pytest.fixture(scope="session")
+async def test_schemas(authenticated_client_with_db, test_db_session):
+    client = authenticated_client_with_db
+    schemas = {}
+    response = await client.get("/openapi.json")
+    assert response.status_code == 200
+    openapi = response.json()
+    # Все компоненты (включая схемы)
+    tmp = openapi["components"]["schemas"]
+    # print("Все модели в OpenAPI:")
+    for name, obj in tmp.items():
+        # print(f"- {schema_name}: {schema_def.get('description', '')} {type(schemas)}")
+        if name.endswith('Create'):
+            model_name = name[:-6]
+            if model_name not in schemas:
+                schemas[model_name] = {}
+            schemas[model_name]['create'] = obj
+        elif name.endswith('Update'):
+            model_name = name[:-6]
+            if model_name not in schemas:
+                schemas[model_name] = {}
+            schemas[model_name]['update'] = obj
+        elif name.endswith('Read'):
+            model_name = name[:-4]
+            if model_name not in schemas:
+                schemas[model_name] = {}
+            schemas[model_name]['read'] = obj
+    return schemas
+
+
 @pytest.fixture(scope=scope)
 def base_url():
     return "http://testserver"
@@ -77,7 +137,7 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session, get_
     :rtype:
     """
     client = authenticated_client_with_db
-    counts = 10
+    counts = 1
     for key, val in get_fields_type.items():
         for n in range(counts):
             route = key

@@ -30,11 +30,11 @@ class CustomerShort(BaseModel):
 
 
 class CustomerRead(BaseModel, CustomSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class CustomerCreate(BaseModel, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class CustomerUpdate(BaseModel, CustomUpdSchema):
@@ -42,4 +42,4 @@ class CustomerUpdate(BaseModel, CustomUpdSchema):
 
 
 # class CustomerFull(BaseModel, DateSchema, CustomSchema):
-#     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+#     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

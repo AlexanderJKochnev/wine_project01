@@ -23,12 +23,12 @@ class RegionShort(ShortSchema):
 
 
 class RegionRead(ReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class RegionCreate(CreateSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    country_id: int = Field(..., description="ID страны (Country.id) для связи Many-to-One")
 
 class RegionUpdate(UpdateSchema, CustomUpdSchema):
     pass
