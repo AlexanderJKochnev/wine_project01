@@ -101,7 +101,7 @@ app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(image_router)
-
+"""
 from tests.utility.data_generators import FieldsData, FakeData
 
 # x = prepare_test_cases(app)
@@ -116,3 +116,4 @@ if isinstance(x, dict):
 else:
     for key in x:
         print(f'=={key}')
+"""

@@ -2,18 +2,32 @@
 
 from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
+from app.support.drink.schemas import ShortSchema as DrinkShort
+from app.support.warehouse.schemas import ShortSchema as WarehouseShort
+from decimal import Decimal
+from typing import Optional
 
 
 class CustomSchema:
-    pass
+    drink: DrinkShort
+    warehoise: WarehouseShort
+    volume: Optional[Decimal] = None
+    price: Optional[Decimal] = None
+
 
 
 class CustomCreateSchema:
-    pass
+    drink_id: int
+    warehouse_id: int
+    volume: Optional[Decimal] = None
+    price: Optional[Decimal] = None
 
 
 class CustomUpdSchema:
-    pass
+    drink_id: Optional[int] = None
+    warehouse_id: Optional[int] = None
+    volume: Optional[Decimal] = None
+    price: Optional[Decimal] = None
 
 
 class ItemShort(ShortSchema):

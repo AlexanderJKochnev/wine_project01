@@ -15,7 +15,6 @@ from sqlalchemy.orm import class_mapper
 from sqlalchemy import DECIMAL
 from decimal import Decimal
 
-# annotation of some types of alchemy's fields
 
 # primary key
 int_pk = Annotated[int, mapped_column(Integer, primary_key=True, autoincrement=True)]

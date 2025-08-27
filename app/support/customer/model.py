@@ -12,7 +12,7 @@ from typing import List
 
 class Customer(Base, BaseAt):
     login: Mapped[str_uniq]
-    fisrtname: Mapped[str_null_true]
+    firstname: Mapped[str_null_true]
     lastname: Mapped[str_null_true]
     account: Mapped[str_null_index]
 

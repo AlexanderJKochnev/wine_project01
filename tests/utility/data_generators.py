@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import inspect
-from typing import Dict, Any, List, get_origin, Union, get_args, Iterator
+from typing import Dict, Any, List, get_origin, Union, get_args
 import json
 from faker import Faker
 from decimal import Decimal
@@ -13,19 +13,20 @@ fake = Faker('en-US')
 
 class FieldsData():
     def __init__(self, app: FastAPI, counts: int = 50, percentage: float = 0.5, *args, **kwargs):
-        self.exclude_list = ('/auth/token', '/users/', '/customers', '/warehouses', '/items')
+        self.exclude_list = ('/auth/token', '/users/')
         self.counts = counts
         self.percenrage = percentage
         self.list_fields_types = self.prepare_test_cases(app, self.exclude_list)
         self.sorted_list = []
         self.outres(self.list_fields_types)  # make self.sorted_list
         # self.prod_list = self.product(self.sorted_list, self.list_fields_types)
-        for n, key in enumerate(self.list_fields_types):
-            print(f'{n} :: {key}')
+        # for n, key in enumerate(self.list_fields_types):
+        #    print(f'{n} :: {key}')
 
     def __call__(self):
         """ результат """
         # return self.topological_sort_with_keys(self.outres(self.list_fields_types))
+        # self.print_test_cases()
         return self.product(self.sorted_list, self.list_fields_types)
         # return FakeData(self.prod_list, self.counts, self.percenrage)
 
@@ -270,20 +271,31 @@ class FakeData():
         """
         по имени поля и его типу генерирует fake data
         """
+        def random_int(min: int = 1, max: int = self.counts):
+            return self.faker.random_int(min=min, max=3)
+
+        def random_decimal(left_digits: int = 1,
+                           right_digits: int = 2,
+                           positive: bool = True):
+            return self.faker.pyfloat(left_digits=left_digits,
+                                      right_digits=right_digits,
+                                      positive=positive)
+
+        def random_bool(truth_probability: int = 20):
+            return self.faker.pybool(truth_probability=truth_probability)
+
         if all((field_name.startswith('name'), field_type == str)):
             return self.faker.name
         if all((field_name.startswith('description'), field_type == str)):
             return self.faker.text
         if all((field_name.endswith('_id'), field_type == int)):
-            return self.faker.random_int(1, self.counts)
+            return random_int
         if field_type == Decimal:
-            return self.faker.pydecimal(
-                left_digits=1,  # максимум 3 цифры до запятой (0-999)
-                right_digits=2,
-                positive=True
-            )
+            return random_decimal
+        if field_type == int:
+            return random_int
         if field_type == bool:
-            return self.faker.pybool(truth_probability=20)
+            return random_bool
         return self.faker.city
 
     def __single_data_generator__(self, single: Dict[str, Any]) -> List[Dict[str, Any]]:

@@ -1,16 +1,18 @@
 # app/support/customer/schemas.py
 
-from app.core.schemas.base import DateSchema
-from pydantic import ConfigDict, BaseModel
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
+
 # from app.support.warehouse.schemas import WarehouseShort
 
 
 class CustomSchema:
     login: str
-    firstname: Optional[str]
-    lastname: Optional[str]
-    account: Optional[str]
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    account: Optional[str] = None
 
 
 class CustomCreateSchema(CustomSchema):
@@ -18,10 +20,10 @@ class CustomCreateSchema(CustomSchema):
 
 
 class CustomUpdSchema:
-    login: Optional[str]
-    firstname: Optional[str]
-    lastname: Optional[str]
-    account: Optional[str]
+    login: Optional[str] = None
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    account: Optional[str] = None
 
 
 class CustomerShort(BaseModel):
@@ -33,7 +35,7 @@ class CustomerRead(BaseModel, CustomSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class CustomerCreate(BaseModel, CustomCreateSchema):
+class CustomerCreate(BaseModel, CustomCreateSchema):  # , CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

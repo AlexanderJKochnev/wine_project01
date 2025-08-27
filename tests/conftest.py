@@ -22,11 +22,11 @@ example_count = 50      # количество тестовых записей -
 
 def get_routers(method: str = 'GET') -> List[APIRoute]:
     """  список роутеров, содержащих указанный метод """
-    # prefix содердитсс в a.path
+    # prefix содердится в a.path
     exc_route = ('/', '/auth/token', '/wait')
     return [a for a in app.routes
             if all((isinstance(a, APIRoute), a.path not in exc_route)) and all((hasattr(a, 'methods'),
-                                                                                'GET' in a.methods))]
+                                                                                method in a.methods))]
 
 
 @pytest.fixture(scope=scope)
@@ -86,9 +86,7 @@ async def test_schemas(authenticated_client_with_db, test_db_session):
     openapi = response.json()
     # Все компоненты (включая схемы)
     tmp = openapi["components"]["schemas"]
-    # print("Все модели в OpenAPI:")
     for name, obj in tmp.items():
-        # print(f"- {schema_name}: {schema_def.get('description', '')} {type(schemas)}")
         if name.endswith('Create'):
             model_name = name[:-6]
             if model_name not in schemas:
@@ -137,7 +135,7 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session, get_
     :rtype:
     """
     client = authenticated_client_with_db
-    counts = 1
+    counts = 5
     for key, val in get_fields_type.items():
         for n in range(counts):
             route = key

@@ -12,7 +12,7 @@ class CustomSchema:
 
 class CustomCreateSchema:
     address: Optional[str] = None
-    customer_id: int = Field(..., description="customer ID (Customer.id) для связи Many-to-One")
+    customer_id: int  # = Field(..., description="customer ID (Customer.id) для связи Many-to-One")
 
 
 class CustomUpdSchema:

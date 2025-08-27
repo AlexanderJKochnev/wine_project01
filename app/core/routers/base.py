@@ -1,10 +1,10 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar, Optional
+from typing import Type, Any, List, TypeVar
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy import select, func
+
 from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
@@ -55,12 +55,13 @@ class BaseRouter:
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
-        self.router.add_api_route("/a", self.get_one, methods=["GET"], response_model=self.read_schema)
-        self.router.add_api_route("/a", self.update, methods=["PATCH"], response_model=self.read_schema)
-        self.router.add_api_route("/a", self.delete, methods=["DELETE"], response_model=self.delete_response)
+        self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.update, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def get_one(self,
-                      id: Optional[int] = Query(..., description="ID", gt=0),
+                      # id: int = Query(..., description="ID", gt=0),
+                      id: int,
                       session: AsyncSession = Depends(get_db)) -> Any:
         """
             Получение одной записи по ID с четким разделением ошибок:
@@ -71,6 +72,7 @@ class BaseRouter:
         try:
             # Получаем объект из репозитория
             obj = await self.repo.get_by_id(id, session)
+
             # Четкое разделение: объект не найден = 404
             if obj is None:
                 raise HTTPException(
@@ -90,11 +92,13 @@ class BaseRouter:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Неверный формат параметров: {e}")
+
         except Exception:
             # Все остальные ошибки = внутренняя ошибка сервера
             # logger.error(f"Unexpected error in get_one: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=307,
+                # status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Внутренняя ошибка сервера. Попробуйте позже."
             )
 

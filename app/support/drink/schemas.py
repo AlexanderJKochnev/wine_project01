@@ -1,6 +1,7 @@
 # app/support/drink/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
+from app.core.schemas.base import (CreateSchema, ReadSchema, ShortSchema,
+                                   UpdateSchema, FullSchema, PkSchema, DateSchema)
 from app.support.category.schemas import CategoryShort
 from app.support.food.schemas import FoodShort
 from app.support.color.schemas import ColorShort
@@ -21,8 +22,8 @@ class CustomSchema:
     sweetness: Optional[SweetnessShort] = None
     region: RegionShort
     subtitle: Optional[str] = None
-    alcohol: Optional[Decimal] = None
-    sugar: Optional[Decimal] = None
+    alcohol: Optional[float] = None
+    sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
 
@@ -62,12 +63,16 @@ class DrinkRead(ReadSchema, CustomSchema):
 
 
 class DrinkCreate(CreateSchema, CustomCreateSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class DrinkUpdate(UpdateSchema, CustomUpdSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class DrinkFull(FullSchema, CustomSchema):
+    pass
+
+
+class DrinkCreateResponseSchema(DrinkCreate, PkSchema, DateSchema):
     pass
