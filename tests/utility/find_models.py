@@ -1,24 +1,15 @@
 # tests/utility/find_models.py
 
-import sys
-from sqlalchemy.orm import DeclarativeBase
-from pydantic import BaseModel
-import pytest
-import asyncio
-import inspect
-from typing import Dict, List, Any, Type, Set
-from unittest.mock import AsyncMock, MagicMock
-from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import MetaData
-from faker import Faker
-import tempfile
-from pathlib import Path
-from httpx import AsyncClient
 import importlib
+import inspect
 import sys
+
 from fastapi import FastAPI
 from fastapi.routing import APIRoute, APIRouter
-from app.main import app, get_db
+from pydantic import BaseModel
+from sqlalchemy.orm import DeclarativeBase
+
+from app.main import app
 
 
 def find_sqlalchemy_bases():
@@ -26,12 +17,10 @@ def find_sqlalchemy_bases():
     bases = []
     for module in list(sys.modules.values()):
         for name, obj in inspect.getmembers(module):
-            if (
-                inspect.isclass(obj)
-                and issubclass(obj, DeclarativeBase)
-                and obj != DeclarativeBase
-                and hasattr(obj, "registry")  # у Base есть registry
-            ):
+            if all((inspect.isclass(obj),
+                    issubclass(obj, DeclarativeBase),
+                    obj != DeclarativeBase,
+                    hasattr(obj, "registry"))):  # у Base есть registry
                 bases.append(obj)
     return bases
 

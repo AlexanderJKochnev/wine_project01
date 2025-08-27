@@ -13,6 +13,7 @@ class CustomSchema:
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     account: Optional[str] = None
+    # id: int
 
 
 class CustomCreateSchema(CustomSchema):

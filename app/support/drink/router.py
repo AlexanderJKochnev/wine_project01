@@ -32,7 +32,6 @@ class DrinkRouter(BaseRouter):
 
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
         result = await super().create(data, session)
-        print(f'{result=}')
         return result
 
     async def update(self, id: int, data: DrinkUpdate,

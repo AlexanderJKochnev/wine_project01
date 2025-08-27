@@ -35,26 +35,26 @@ async def protected_route(current_user: User = Depends(get_current_active_user))
     return {"message": f"Hello {current_user.username}"}
 
 
-@router.get("/a", response_model=UserResponse)
-async def read_user(user_id: int, db: AsyncSession = Depends(get_db),
+@router.get("/{id}", response_model=UserResponse)
+async def read_user(id: int, db: AsyncSession = Depends(get_db),
                     current_user: User = Depends(get_current_active_user)):
     """Получение пользователя по ID"""
-    user = await user_repo.get_by_id(user_id=user_id, session=db)
+    user = await user_repo.get_by_id(user_id=id, session=db)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
-@router.put("/a", response_model=UserResponse)
+@router.put("/{id}", response_model=UserResponse)
 async def update_user(
-    user_id: int, user_update: UserUpdate, db: AsyncSession = Depends(get_db),
+    id: int, user_update: UserUpdate, db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """Обновление пользователя"""
-    if current_user.id != user_id and current_user.disabled:
+    if current_user.id != id and current_user.disabled:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    db_user = await user_repo.update(user_id, user_update, db)
+    db_user = await user_repo.update(id, user_update, db)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user

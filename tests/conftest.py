@@ -139,12 +139,11 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session, get_
     for key, val in get_fields_type.items():
         for n in range(counts):
             route = key
-            if 2 == 1:
+            if n % 2 == 0:
                 data = {k2: v2() for k2, v2 in val['required_only'].items()}
             else:
                 try:
-                    data = {k2: f'{v2()}_{n}' if isinstance(v2(), str)
-                    else v2() for n, (k2, v2) in enumerate(val['all_fields'].items())}
+                    data = {k2: v2() for n, (k2, v2) in enumerate(val['all_fields'].items())}
                 except Exception as e:
                     print(f'ошибка {e}  {val['all_fields']}')
             response = await client.post(f'{route}', json=data)
@@ -158,7 +157,7 @@ def routers_get_one() -> List[str]:
 
 
 @pytest.fixture(scope=scope)
-def routers_get_all() -> List[str]:
+def routers_get_all() -> List[APIRoute]:
     """ список роутеров GET get_all"""
     return [x.path for x in get_routers('GET') if x.name == 'get']
 
