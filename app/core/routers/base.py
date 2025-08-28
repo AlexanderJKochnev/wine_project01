@@ -1,6 +1,6 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar, Optional
+from typing import Type, Any, List, TypeVar
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,6 @@ from app.core.schemas.base import ReadSchema
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
-from app.core.services.logger import logger
 
 
 paging = get_paging
@@ -150,20 +149,12 @@ class BaseRouter:
 
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
-        try:
-            result = await self.repo.delete(id, session)
-            if not result:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"{self.model.__name__} with id {id} not found"
-                )
-            return {'success': result,
-                    'deleted_count': 1 if result else 0,
-                    'message': f'{self.model.__name__} with id {id} has been deleted'}
-            # return Response(status_code=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            print(f"Error deleting {self.model.__name__}: {str(e)}")
+        result = await self.repo.delete(id, session)
+        if not result:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error deleting {self.model.__name__}: {str(e)}"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"{self.model.__name__} with id {id} not found"
             )
+        return {'success': result,
+                'deleted_count': 1 if result else 0,
+                'message': f'{self.model.__name__} with id {id} has been deleted'}

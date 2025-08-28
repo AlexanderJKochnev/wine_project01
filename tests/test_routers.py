@@ -70,3 +70,24 @@ async def test_fakedata_generator(authenticated_client_with_db, test_db_session,
             # if he.status_code != 409:
             #     # logger.warning(f"HTTP error in get_one: {he.detail}")
             assert False, f'error {he=}, {response.status_code=} {key}::{data}'
+
+
+async def test_update(authenticated_client_with_db, test_db_session, fakedata_generator):
+    from app.support.category.router import CategoryRouter as Router
+    router = Router()
+    prefix = router.prefix
+    create_schema = router.create_schema
+    update_schema = router.update_schema
+    data = {'name': 'updated_name', 'name_ru': 'новое имя'}
+    try:
+        _ = create_schema(**data)  # валидация входных данных
+    except Exception as e:
+        assert False, f'data validation error. {e}'
+"""
+    client = authenticated_client_with_db
+    response = await client.post(f'{prefix}', json = data)
+    assert response.status_code == 200
+    result = response.json()
+    for key, val in data.items():
+        assert result.get(key) == val
+"""

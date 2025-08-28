@@ -37,3 +37,14 @@ async def test_delete(authenticated_client_with_db, test_db_session,
             assert resp.status_code == 404, instance
         else:
             assert False, 'генератор тестовых данных не сработал на {prefix}. см. test_routers.py'
+
+
+async def test_fault_delete(authenticated_client_with_db, test_db_session,
+                            routers_get_all, fakedata_generator):
+    """ тестирует методы DELETE (update) - c проверкой id """
+    client = authenticated_client_with_db
+    routers = routers_get_all
+    for prefix in reversed(routers):
+        id = 10000
+        resp = await client.delete(f'{prefix}/{id}')
+        assert resp.status_code == 404, resp
