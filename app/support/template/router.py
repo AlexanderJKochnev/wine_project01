@@ -23,7 +23,7 @@ class TemplateRouter(BaseRouter):
             model=Template,
             repo=TemplateRepository,
             create_schema=TemplateCreate,
-            update_schema=TemplateUpdate,
+            patch_schema=TemplateUpdate,
             read_schema=TemplateRead,
             prefix="/templates",
             tags=["templates"]
@@ -33,9 +33,9 @@ class TemplateRouter(BaseRouter):
     async def create(self, data: TemplateCreate, session: AsyncSession = Depends(get_db)) -> TemplateRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: TemplateUpdate,
+    async def patch(self, id: int, data: TemplateUpdate,
                      session: AsyncSession = Depends(get_db)) -> TemplateRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = TemplateRouter().router

@@ -15,7 +15,7 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
             model=Category,
             repo=CategoryRepository,
             create_schema=CategoryCreate,
-            update_schema=CategoryUpdate,
+            patch_schema=CategoryUpdate,
             read_schema=CategoryRead,
             prefix="/categories",
             tags=["categories"]
@@ -25,16 +25,16 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
         async def create(self, data: CategoryCreate, session: AsyncSession = Depends(get_db)) -> CategoryRead:
             return await super().create(data, session)
 
-        async def update(
+        async def patch(
                 self, id: int, data: CategoryUpdate, session: AsyncSession = Depends(get_db)) -> CategoryRead:
-            return await super().update(id, data, session)
+            return await super().patch(id, data, session)
 
     async def create(self, data: CategoryCreate, session: AsyncSession = Depends(get_db)) -> CategoryCreate:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: CategoryUpdate,
+    async def patch(self, id: int, data: CategoryUpdate,
                      session: AsyncSession = Depends(get_db)) -> CategoryRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = CategoryRouter().router

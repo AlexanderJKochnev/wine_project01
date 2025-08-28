@@ -23,7 +23,7 @@ class WarehouseRouter(BaseRouter):
             model=Warehouse,
             repo=WarehouseRepository,
             create_schema=WarehouseCreate,
-            update_schema=WarehouseUpdate,
+            patch_schema=WarehouseUpdate,
             read_schema=WarehouseRead,
             prefix="/warehouses",
             tags=["warehouses"]
@@ -33,9 +33,9 @@ class WarehouseRouter(BaseRouter):
     async def create(self, data: WarehouseCreate, session: AsyncSession = Depends(get_db)) -> WarehouseRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: WarehouseUpdate,
-                     session: AsyncSession = Depends(get_db)) -> WarehouseRead:
-        return await super().update(id, data, session)
+    async def patch(self, id: int, data: WarehouseUpdate,
+                    session: AsyncSession = Depends(get_db)) -> WarehouseRead:
+        return await super().patch(id, data, session)
 
 
 router = WarehouseRouter().router

@@ -51,7 +51,7 @@ class Repository(Generic[ModelType]):
         items = result.scalars().all()
         return items
 
-    async def update(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
+    async def patch(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
         obj = await self.get_by_id(id, session)
         if not obj:
             return None

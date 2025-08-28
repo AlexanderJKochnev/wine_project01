@@ -15,7 +15,7 @@ class CustomerRouter(BaseRouter):
             model=Customer,
             repo=CustomerRepository,
             create_schema=CustomerCreate,
-            update_schema=CustomerUpdate,
+            patch_schema=CustomerUpdate,
             read_schema=CustomerRead,
             prefix="/customers",
             tags=["customers"]
@@ -25,9 +25,9 @@ class CustomerRouter(BaseRouter):
     async def create(self, data: CustomerCreate, session: AsyncSession = Depends(get_db)) -> CustomerRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: CustomerUpdate,
+    async def patch(self, id: int, data: CustomerUpdate,
                      session: AsyncSession = Depends(get_db)) -> CustomerRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = CustomerRouter().router

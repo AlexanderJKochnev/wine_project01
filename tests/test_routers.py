@@ -3,7 +3,7 @@
     - генератора тестовых данных
     - роутеров
     - схем
-    рекомендуется запускать если будут падать тесты test_create, test_update, test_get_one, test_delete
+    рекомендуется запускать если будут падать тесты test_create, test_patch, test_get_one, test_delete
     pytest tests/test_routers.py --tb=auto --disable-warnings -vv --capture=no
 """
 
@@ -72,20 +72,27 @@ async def test_fakedata_generator(authenticated_client_with_db, test_db_session,
             assert False, f'error {he=}, {response.status_code=} {key}::{data}'
 
 
-async def test_update(authenticated_client_with_db, test_db_session, fakedata_generator):
+async def test_patch(authenticated_client_with_db, test_db_session, fakedata_generator):
     from app.support.category.router import CategoryRouter as Router
     router = Router()
     prefix = router.prefix
     # create_schema = router.create_schema
-    update_schema = router.update_schema
-    data = {'name': 'updated_name', 'name_ru': 'новое имя'}
+    patch_schema = router.patch_schema
+    data = {'description': 'changed_Now hour institution situation. '
+                           'Training heart stand adult large health risk. '
+                           'Do thought personal before try letter.',
+            'description_ru': 'changed_Range important several short box picture. '
+                              'Executive up hold push everything hotel. Professor source threat power. '
+                              'Cover my middle.',
+            'name_ru': 'changed_Christopher King',
+            'name': 'changed_Anna Barton'}
     try:
-        _ = update_schema(**data)  # валидация входных данных
+        _ = patch_schema(**data)  # валидация входных данных
     except Exception as e:
         assert False, f'data validation error. {e}'
-
+    id = 1
     client = authenticated_client_with_db
-    response = await client.post(f'{prefix}', json=data)
+    response = await client.patch(f'{prefix}/{id}', json=data)
     assert response.status_code == 200
     result = response.json()
     for key, val in data.items():

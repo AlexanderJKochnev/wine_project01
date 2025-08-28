@@ -15,7 +15,7 @@ class FoodRouter(BaseRouter):
             model=Food,
             repo=FoodRepository,
             create_schema=FoodCreate,
-            update_schema=FoodUpdate,
+            patch_schema=FoodUpdate,
             read_schema=FoodRead,
             prefix="/foods",
             tags=["foods"]
@@ -25,9 +25,9 @@ class FoodRouter(BaseRouter):
     async def create(self, data: FoodCreate, session: AsyncSession = Depends(get_db)) -> FoodRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: FoodUpdate,
+    async def patch(self, id: int, data: FoodUpdate,
                      session: AsyncSession = Depends(get_db)) -> FoodRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = FoodRouter().router

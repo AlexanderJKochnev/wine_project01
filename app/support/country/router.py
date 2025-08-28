@@ -15,7 +15,7 @@ class CountryRouter(BaseRouter):
             model=Country,
             repo=CountryRepository,
             create_schema=CountryCreate,
-            update_schema=CountryUpdate,
+            patch_schema=CountryUpdate,
             read_schema=CountryRead,
             prefix="/countries",
             tags=["countries"]
@@ -25,9 +25,9 @@ class CountryRouter(BaseRouter):
     async def create(self, data: CountryCreate, session: AsyncSession = Depends(get_db)) -> CountryRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: CountryUpdate,
-                     session: AsyncSession = Depends(get_db)) -> CountryRead:
-        return await super().update(id, data, session)
+    async def patch(self, id: int, data: CountryUpdate,
+                    session: AsyncSession = Depends(get_db)) -> CountryRead:
+        return await super().patch(id, data, session)
 
 
 router = CountryRouter().router

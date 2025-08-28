@@ -15,7 +15,7 @@ class RegionRouter(BaseRouter):
             model=Region,
             repo=RegionRepository,
             create_schema=RegionCreate,
-            update_schema=RegionUpdate,
+            patch_schema=RegionUpdate,
             read_schema=RegionRead,
             prefix="/regions",
             tags=["regions"]
@@ -25,9 +25,9 @@ class RegionRouter(BaseRouter):
     async def create(self, data: RegionCreate, session: AsyncSession = Depends(get_db)) -> RegionRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: RegionUpdate,
+    async def patch(self, id: int, data: RegionUpdate,
                      session: AsyncSession = Depends(get_db)) -> RegionRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = RegionRouter().router

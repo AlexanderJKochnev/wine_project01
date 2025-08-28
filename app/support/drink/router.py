@@ -14,7 +14,7 @@ class DrinkRouter(BaseRouter):
             model=Drink,
             repo=DrinkRepository,
             create_schema=DrinkCreate,
-            update_schema=DrinkUpdate,
+            patch_schema=DrinkUpdate,
             read_schema=DrinkRead,
             prefix="/drinks",
             tags=["drinks"]
@@ -27,16 +27,16 @@ class DrinkRouter(BaseRouter):
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
-        self.router.add_api_route("/{id}", self.update, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
         result = await super().create(data, session)
         return result
 
-    async def update(self, id: int, data: DrinkUpdate,
+    async def patch(self, id: int, data: DrinkUpdate,
                      session: AsyncSession = Depends(get_db)) -> DrinkRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = DrinkRouter().router

@@ -15,7 +15,7 @@ class SweetnessRouter(BaseRouter):
             model=Sweetness,
             repo=SweetnessRepository,
             create_schema=SweetnessCreate,
-            update_schema=SweetnessUpdate,
+            patch_schema=SweetnessUpdate,
             read_schema=SweetnessRead,
             prefix="/sweetnesses",
             tags=["sweetnesses"]
@@ -25,9 +25,9 @@ class SweetnessRouter(BaseRouter):
     async def create(self, data: SweetnessCreate, session: AsyncSession = Depends(get_db)) -> SweetnessRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: SweetnessUpdate,
+    async def patch(self, id: int, data: SweetnessUpdate,
                      session: AsyncSession = Depends(get_db)) -> SweetnessRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = SweetnessRouter().router

@@ -15,7 +15,7 @@ class ColorRouter(BaseRouter):
             model=Color,
             repo=ColorRepository,
             create_schema=ColorCreate,
-            update_schema=ColorUpdate,
+            patch_schema=ColorUpdate,
             read_schema=ColorRead,
             prefix="/colors",
             tags=["colors"]
@@ -25,9 +25,9 @@ class ColorRouter(BaseRouter):
     async def create(self, data: ColorCreate, session: AsyncSession = Depends(get_db)) -> ColorRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: ColorUpdate,
+    async def patch(self, id: int, data: ColorUpdate,
                      session: AsyncSession = Depends(get_db)) -> ColorRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = ColorRouter().router

@@ -12,6 +12,7 @@ from app.core.schemas.base import ReadSchema
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
+from app.core.services.logger import logger
 
 
 paging = get_paging
@@ -31,7 +32,7 @@ class BaseRouter:
         model: Type[Any],
         repo: Type[Any],
         create_schema: Type[ReadSchema],
-        update_schema: Type[ReadSchema],
+        patch_schema: Type[ReadSchema],
         read_schema: Type[ReadSchema],
         prefix: str,
         tags: List[str]
@@ -40,7 +41,7 @@ class BaseRouter:
         self.model = model
         self.repo = repo()
         self.create_schema = create_schema
-        self.update_schema = update_schema
+        self.patch_schema = patch_schema
         self.read_schema = read_schema
         self.prefix = prefix
         self.tags = tags
@@ -62,7 +63,7 @@ class BaseRouter:
                                   self.get_one, methods=["GET"],
                                   response_model=self.read_schema,
                                   responses=self.responses)
-        self.router.add_api_route("/{id}", self.update, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def get_one(self,
@@ -130,23 +131,15 @@ class BaseRouter:
                 detail=f"Error creating {self.model.__name__}: {str(e)}"
             )
 
-    async def update(self, id: int, data: TUpdate,
-                     session: AsyncSession = Depends(get_db)) -> TRead:
+    async def patch(self, id: int, data: TUpdate,
+                    session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.repo.update(id, data.model_dump(exclude_unset=True), session)
+            obj = await self.repo.patch(id, data.model_dump(exclude_unset=True), session)
             if not obj:
                 raise HTTPException(status_code=404, detail="Not found")
             return obj
-        except ValidationError as e:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {str(e)}"
-            )
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error updating {self.model.__name__}: {str(e)}"
-            )
-
+            logger.warning(f"HTTP error PATCH: {e}")
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
         result = await self.repo.delete(id, session)

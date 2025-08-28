@@ -15,7 +15,7 @@ class ItemRouter(BaseRouter):
             model=Item,
             repo=ItemRepository,
             create_schema=ItemCreate,
-            update_schema=ItemUpdate,
+            patch_schema=ItemUpdate,
             read_schema=ItemRead,
             prefix="/items",
             tags=["items"]
@@ -25,9 +25,9 @@ class ItemRouter(BaseRouter):
     async def create(self, data: ItemCreate, session: AsyncSession = Depends(get_db)) -> ItemRead:
         return await super().create(data, session)
 
-    async def update(self, id: int, data: ItemUpdate,
+    async def patch(self, id: int, data: ItemUpdate,
                      session: AsyncSession = Depends(get_db)) -> ItemRead:
-        return await super().update(id, data, session)
+        return await super().patch(id, data, session)
 
 
 router = ItemRouter().router
