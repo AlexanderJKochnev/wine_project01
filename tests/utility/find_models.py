@@ -70,7 +70,7 @@ def discover_schemas():
 def discover_schemas2(app: FastAPI = app) -> dict[str, type[BaseModel]]:
     """
     Извлекает все Pydantic-модели (и request, и response) из всех маршрутов FastAPI.
-    Поддерживает все HTTP-методы (GET, POST, PUT и т.д.).
+    только read and paginated/delete response
     Возвращает словарь: {имя_модели: класс_модели}.
     """
     models: dict[str, type[BaseModel]] = {}

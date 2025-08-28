@@ -76,18 +76,17 @@ async def test_update(authenticated_client_with_db, test_db_session, fakedata_ge
     from app.support.category.router import CategoryRouter as Router
     router = Router()
     prefix = router.prefix
-    create_schema = router.create_schema
+    # create_schema = router.create_schema
     update_schema = router.update_schema
     data = {'name': 'updated_name', 'name_ru': 'новое имя'}
     try:
-        _ = create_schema(**data)  # валидация входных данных
+        _ = update_schema(**data)  # валидация входных данных
     except Exception as e:
         assert False, f'data validation error. {e}'
-"""
+
     client = authenticated_client_with_db
-    response = await client.post(f'{prefix}', json = data)
+    response = await client.post(f'{prefix}', json=data)
     assert response.status_code == 200
     result = response.json()
     for key, val in data.items():
         assert result.get(key) == val
-"""

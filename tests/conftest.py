@@ -56,10 +56,18 @@ def test_models():
 
 
 @pytest.fixture(scope=scope)
-def get_schemas():
-    sssss = discover_schemas2(app)
+def get_schemas(discovery_schemas):
+    """only read schemas and paginated / delete responses
+        получает словарь {schema_name: obj} и преобрузет в словарь
+        {model_name:{'create': obj,
+                     'update': obj,
+                     'read': obj
+                     }
+        }
+    """
+    tmp = discover_schemas2(app)
     schemas = {}
-    for name, obj in sssss.items():
+    for name, obj in tmp.items():
         if name.endswith('Create'):
             model_name = name[:-6]
             if model_name not in schemas:
@@ -76,6 +84,12 @@ def get_schemas():
                 schemas[model_name] = {}
             schemas[model_name]['read'] = obj
     return schemas
+
+
+@pytest.fixture(scope=scope)
+def discovery_schemas():
+    return discover_schemas2(app)
+
 
 @pytest.fixture(scope="session")
 async def test_schemas(authenticated_client_with_db, test_db_session):
