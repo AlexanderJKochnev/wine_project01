@@ -1,6 +1,6 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar
+from typing import Type, Any, List, TypeVar, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,7 @@ from app.core.schemas.base import ReadSchema
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
+from app.core.services.logger import logger
 
 
 paging = get_paging
@@ -49,13 +50,19 @@ class BaseRouter:
         self.paginated_response = create_model(f"Paginated{read_schema.__name__}",
                                                __base__=PaginatedResponse[read_schema])
         self.delete_response = DeleteResponse
+        self.responses = {404: {"description": "Record not found",
+                                "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
+
         # self.setup_routes()
 
     def setup_routes(self):
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
-        self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}",
+                                  self.get_one, methods=["GET"],
+                                  response_model=self.read_schema,
+                                  responses=self.responses)
         self.router.add_api_route("/{id}", self.update, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
@@ -69,38 +76,13 @@ class BaseRouter:
             - 404: Запись не найдена
             - 500: Внутренняя ошибка сервера
             """
-        try:
-            # Получаем объект из репозитория
-            obj = await self.repo.get_by_id(id, session)
-
-            # Четкое разделение: объект не найден = 404
-            if obj is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"{self.model.__name__} с ID {id} не найден"
-                )
-            return obj
-        except HTTPException as he:
-            # Логируем HTTP ошибки (кроме 404, которые могут быть частыми)
-            if he.status_code != status.HTTP_404_NOT_FOUND:
-                # logger.warning(f"HTTP error in get_one: {he.detail}")
-                raise he
-
-        except ValueError as e:
-            # Ошибки валидации (неверный формат данных)
-            # logger.warning(f"Validation error in get_one: {e}")
+        obj = await self.repo.get_by_id(id, session)
+        if obj is None:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Неверный формат параметров: {e}")
-
-        except Exception:
-            # Все остальные ошибки = внутренняя ошибка сервера
-            # logger.error(f"Unexpected error in get_one: {e}")
-            raise HTTPException(
-                status_code=307,
-                # status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Внутренняя ошибка сервера. Попробуйте позже."
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"{self.model.__name__} с ID {id} не найден"
             )
+        return obj
 
     async def get(self, page: int = Query(1, ge=1),
                   page_size: int = Query(paging.get('def', 20),
@@ -176,10 +158,11 @@ class BaseRouter:
                     detail=f"{self.model.__name__} with id {id} not found"
                 )
             return {'success': result,
-                    'deleted_count': 1,
+                    'deleted_count': 1 if result else 0,
                     'message': f'{self.model.__name__} with id {id} has been deleted'}
             # return Response(status_code=status.HTTP_204_NO_CONTENT)
         except Exception as e:
+            print(f"Error deleting {self.model.__name__}: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error deleting {self.model.__name__}: {str(e)}"

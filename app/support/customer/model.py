@@ -19,3 +19,6 @@ class Customer(Base, BaseAt):
     warehouses: Mapped[List["Warehouse"]] = relationship("Warehouse",  # noqa F821
                                                          back_populates="customer",
                                                          cascade="all, delete-orphan")
+
+    def __str__(self):
+        return self.login

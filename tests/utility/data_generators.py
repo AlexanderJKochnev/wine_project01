@@ -274,6 +274,10 @@ class FakeData():
         def random_int(min: int = 1, max: int = self.counts):
             return self.faker.random_int(min=min, max=3)
 
+        def fixed_int():
+            """ для foreign key для удобства тестировать удаление """
+            return 1
+
         def random_decimal(left_digits: int = 1,
                            right_digits: int = 2,
                            positive: bool = True):
@@ -289,7 +293,7 @@ class FakeData():
         if all((field_name.startswith('description'), field_type == str)):
             return self.faker.text
         if all((field_name.endswith('_id'), field_type == int)):
-            return random_int
+            return fixed_int
         if field_type == Decimal:
             return random_decimal
         if field_type == int:

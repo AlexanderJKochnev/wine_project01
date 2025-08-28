@@ -1,6 +1,6 @@
 # tests/test_routers.py
 """
-    тестируем все методы GET ( get all with pagination, get_one)
+    тестируем все методы POST и GET ( get all with pagination, get_one)
     новые методы добавляются автоматически
     добавить get_by_field
 """
@@ -60,3 +60,14 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
         else:
             resp = await client.get(f'{prefix}/1')
             assert resp.status_code in [200, 404]
+
+
+async def test_fault_get_one(authenticated_client_with_db, test_db_session,
+                             routers_get_all, fakedata_generator):
+    """ тестирует методы get one - несуществующий id """
+    client = authenticated_client_with_db
+    routers = routers_get_all
+    for prefix in routers:
+        id = 1000
+        response = await client.get(f'{prefix}/{id}')
+        assert response.status_code == 404

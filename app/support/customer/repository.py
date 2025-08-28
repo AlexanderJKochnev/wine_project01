@@ -2,9 +2,6 @@
 
 from app.support.customer.model import Customer
 from app.core.repositories.sqlalchemy_repository import Repository
-# from sqlalchemy.orm import selectinload
-# from sqlalchemy import select
-# from app.core.config.database.db_noclass import get_db
 
 
 # CustomerRepository = RepositoryFactory.get_repository(Customer)

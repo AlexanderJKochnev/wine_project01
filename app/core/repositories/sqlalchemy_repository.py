@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, Optional, TypeVar, Generic
 from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy import select, func
+from app.core.services.logger import logger
 
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -62,13 +63,16 @@ class Repository(Generic[ModelType]):
         return obj
 
     async def delete(self, id: Any, session: AsyncSession) -> bool:
-        obj = await self.get_by_id(id, session)
-        print(f'{obj=}')
-        if not obj:
+        try:
+            obj = await self.get_by_id(id, session)
+            if not obj:
+                return False
+            await session.delete(obj)
+            await session.commit()
+            return True
+        except Exception as e:
+            logger.error(f'ошибка удаления записи: {e}')
             return False
-        await session.delete(obj)
-        await session.commit()
-        return True
 
     async def get_by_field(self, field_name: str, field_value: Any, session: AsyncSession):
         stmt = select(self.model).where(getattr(self.model, field_name) == field_value)

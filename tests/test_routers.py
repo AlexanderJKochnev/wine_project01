@@ -8,9 +8,6 @@
 """
 
 import pytest
-# from app.support.category.model import Category
-# from app.support.category.schemas import CategoryCreate, CategoryRead
-from app.support.category.router import CategoryRouter
 
 pytestmark = pytest.mark.asyncio
 
@@ -56,38 +53,6 @@ async def test_create(authenticated_client_with_db, test_db_session):
         assert result.get(key) == val
 
 
-async def test_category_get_one(authenticated_client_with_db, test_db_session):
-    router = CategoryRouter()
-    prefix = router.prefix
-    client = authenticated_client_with_db
-    data = {'name': 'test_name2'}
-    response = await client.post(f'{prefix}', json=data)
-    assert response.status_code == 200
-    res = response.json()
-    id = res.get('id')
-    response = await client.get(f'{prefix}/{id}')
-    assert response.status_code == 200, response
-    result = response.json()
-    # сравниваем результат с ожижаемым ответом
-    assert result.get('id') == id
-    for key, val in data.items():
-        assert result.get(key) == val, result
-
-
-async def test_category_get_all(authenticated_client_with_db, test_db_session):
-    router = CategoryRouter()
-    prefix = router.prefix
-    client = authenticated_client_with_db
-    data: dict = {'name': 'test_name'}
-    tmp: dict = {}
-    for n in range(5):
-        tmp['name'] = f'{data["name"]}_{n}'
-        response = await client.post(f'{prefix}', json=tmp)
-        assert response.status_code == 200
-    response = await client.get(f'{prefix}')
-    assert response.status_code == 200, response
-
-
 async def test_fakedata_generator(authenticated_client_with_db, test_db_session, get_fields_type):
     client = authenticated_client_with_db
     counts = 10
@@ -105,15 +70,3 @@ async def test_fakedata_generator(authenticated_client_with_db, test_db_session,
             # if he.status_code != 409:
             #     # logger.warning(f"HTTP error in get_one: {he.detail}")
             assert False, f'error {he=}, {response.status_code=} {key}::{data}'
-
-
-@pytest.mark.skip
-async def test_category_get(authenticated_client_with_db, test_db_session, fakedata_generator):
-    router = CategoryRouter()
-    prefix = router.prefix
-    client = authenticated_client_with_db
-    response = await client.get(f'{prefix}')
-    assert response.status_code == 200
-    assert False, response.json()
-    # result = response.json()
-    """добавить проверку содержимого"""

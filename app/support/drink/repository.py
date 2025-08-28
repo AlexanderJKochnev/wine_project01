@@ -4,7 +4,7 @@ from sqlalchemy import select
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink
 from app.support.region.model import Region
-from app.core.utils.image_utils import ImageService
+# from app.core.utils.image_utils import ImageService
 
 
 # DrinkRepository = RepositoryFactory.get_repository(Drink)
@@ -26,6 +26,8 @@ class DrinkRepository(Repository):
                                      joinedload(Drink.sweetness),
                                      )
 
+
+"""
     async def create(self, data: dict, session):
         # Обрабатываем изображение если оно есть
         if 'image_file' in data:
@@ -67,3 +69,4 @@ class DrinkRepository(Repository):
         if obj and obj.image_path:
             ImageService.delete_image(obj.image_path)
         return await super().delete(id, session)
+"""
