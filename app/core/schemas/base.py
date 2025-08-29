@@ -63,7 +63,20 @@ class ReadSchemaWithRealtionships(ReadSchema):
         if hasattr(data, '__dict__') or hasattr(data, '__class__'):
             # Это ORM-объект
             result = {}
-            for key in cls.model_fields:
+            for field_name in cls.model_fields:
+                if field_name == 'region' and hasattr(data, 'region') and data.region is not None:
+                    result['region'] = data.region.name
+                elif field_name == 'country' and hasattr(data, 'region') and data.region is not None:
+                    result['country'] = data.region.country.name if data.region.country else None
+                else:
+                    value = getattr(data, field_name, None)
+                    # Обычные связанные объекты (category, food и т.д.)
+                    if hasattr(value, '_sa_instance_state') and hasattr(value, 'name'):
+                        result[field_name] = value.name
+                    else:
+                        result[field_name] = value
+            return result
+            """
                 value = getattr(data, key, None)
                 if value is None:
                     result[key] = None
@@ -81,7 +94,7 @@ class ReadSchemaWithRealtionships(ReadSchema):
                     result[key] = value
             return result
 
-
+            """
 class CreateSchema(UniqueSchema, LangSchema, DescriptionSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
