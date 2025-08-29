@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
-from app.support.template.model import Template
-from app.support.template.repository import TemplateRepository
-from app.support.template.schemas import TemplateRead, TemplateCreate, TemplateUpdate
+from app.support.region.model import Template
+from app.support.region.repository import TemplateRepository
+from app.support.region.schemas import TemplateRead, TemplateCreate, TemplateUpdate, TemplateCreateResponseSchema
 
 
 class TemplateRouter(BaseRouter):
@@ -25,16 +25,25 @@ class TemplateRouter(BaseRouter):
             create_schema=TemplateCreate,
             patch_schema=TemplateUpdate,
             read_schema=TemplateRead,
-            prefix="/templates",
-            tags=["templates"]
+            prefix="/regions",
+            tags=["regions"]
         )
+        self.create_response_schema = TemplateCreateResponseSchema
         self.setup_routes()
+
+    def setup_routes(self):
+        """Настраивает маршруты"""
+        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
+        self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
+        self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def create(self, data: TemplateCreate, session: AsyncSession = Depends(get_db)) -> TemplateRead:
         return await super().create(data, session)
 
     async def patch(self, id: int, data: TemplateUpdate,
-                     session: AsyncSession = Depends(get_db)) -> TemplateRead:
+                    session: AsyncSession = Depends(get_db)) -> TemplateRead:
         return await super().patch(id, data, session)
 
 

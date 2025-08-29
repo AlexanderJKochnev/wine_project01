@@ -5,17 +5,15 @@
     ЕСЛИ ТАКИХ ПОЛЕЙ НЕТ - УДАЛИ ЭТУ ПРОЦЕДУРУ ПОЛНОСТЬЮ
 """
 
-from app.support.template.model import Template
+from app.support.region.model import Template
 from app.core.repositories.sqlalchemy_repository import Repository
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 from sqlalchemy import select
-# from app.core.config.database.db_noclass import get_db
 
 
-# TemplateRepository = RepositoryFactory.get_repository(Template)
 class TemplateRepository(Repository):
     model = Template
 
     def get_query(self):
         # Добавляем загрузку связи с relationships
-        return select(Template).options(selectinload(Template.category))
+        return select(Template).options(joinedload(Template.country))

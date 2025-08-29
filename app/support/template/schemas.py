@@ -1,14 +1,4 @@
 # app/support/template/schemas.py
-"""
-    После замен как указано в главной инструкции сделай следующее:
-    1.
-
-"""
-
-
-from app.core.schemas.base import BaseSchema, FullSchema, UpdateSchema, ShortSchema
-from app.support.category.schemas import CategoryShort
-from pydantic import ConfigDict
 
 """
 Custom - нестандартные поля характерные для этой формы. Если их нет - оставить pass.
@@ -21,27 +11,58 @@ Update - все поля как и в Create, НО ЗАПОЛНЯТЬ НУЖНО
 Full - все поля включая системные и скрытые
 """
 
+# app/support/region/schemas.py
 
-class TemplateCustom:
+from typing import Optional
+
+from pydantic import ConfigDict, Field
+
+from app.core.schemas.base import (CreateSchema, PkSchema, ReadSchema,
+                                   ShortSchema, UpdateSchema, DateSchema)
+from app.support.country.schemas import CountryShort
+
+
+class CustomSchema:
+    country: CountryShort
+
+
+class CustomCreateSchema:
+    country_id: int = Field(..., description="ID страны (Country.id) для связи Many-to-One")
+
+
+class CustomUpdSchema:
+    country_id: Optional[int] = None
+
+
+class TemplateShort(ShortSchema, CustomSchema):
     pass
 
 
-class TemplateShort(ShortSchema):
-    pass
+class TemplateRead(ReadSchema, CustomSchema):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              # populate_by_name=True,
+                              )  # , exclude_none=True)
 
 
-class TemplateRead(BaseSchema):
+"""    def dict(self, **kwargs):
+        # Переопределяем dict() чтобы получить плоскую структуру
+        result = super().dict(**kwargs)
+        for key, val in result.items():
+            if not isinstance(val, dict):
+                continue
+            val = 'тест'
+"""
+
+
+class TemplateCreate(CreateSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
-    category: CategoryShort
+    # country_id: int = Field(..., description="ID страны (Country.id) для связи Many-to-One")
 
 
-class TemplateCreate(BaseSchema, TemplateCustom):
+class TemplateUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class TemplateUpdate(UpdateSchema, TemplateCustom):
-    pass
-
-
-class TemplateFull(FullSchema, TemplateCustom):
+class TemplateCreateResponseSchema(TemplateCreate, PkSchema, DateSchema):
     pass

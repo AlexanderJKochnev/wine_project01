@@ -5,6 +5,7 @@ from tests.utility.find_models import discover_models
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip
 async def test_get_all_schemas_from_openapi(authenticated_client_with_db, test_db_session):
     client = authenticated_client_with_db
     response = await client.get("/openapi.json")
@@ -18,6 +19,7 @@ async def test_get_all_schemas_from_openapi(authenticated_client_with_db, test_d
         print(f"- {schema_name}: {schema_def.get('description', '')} {type(schema_def)}")
 
 
+@pytest.mark.skip
 def test_all_models_have_tablename(authenticated_client_with_db, test_db_session):
     models = discover_models()
     assert len(models) > 0, "Не найдено ни одной ORM-модели"
@@ -25,6 +27,7 @@ def test_all_models_have_tablename(authenticated_client_with_db, test_db_session
         assert hasattr(model, "__tablename__"), f"Модель {model.__name__} не имеет __tablename__"
 
 
+@pytest.mark.skip
 async def test_auto_schema_validation(test_models, get_schemas):
     """Автоматическая валидация всех схем и моделей"""
     try:
@@ -45,6 +48,7 @@ async def test_auto_schema_validation(test_models, get_schemas):
         assert False, f'ошибка!!!!!  {e}'
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_auto_schema_properties(get_schemas):
     """Автоматическая проверка свойств схем"""

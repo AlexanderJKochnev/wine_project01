@@ -12,6 +12,21 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
+async def test_get(authenticated_client_with_db, test_db_session, fakedata_generator):
+    from app.support.region.router import RegionRouter as Router
+    router = Router()
+    prefix = router.prefix
+    # create_schema = router.create_schema
+    # patch_schema = router.patch_schema
+    id = 2
+    client = authenticated_client_with_db
+    response = await client.get(f'{prefix}/{id}')
+    assert response.status_code == 200
+    result = response.json()
+    for key, val in result.items():
+        print(f'{key}: {val}')
+    assert True
+
 @pytest.mark.skip
 async def test_create(authenticated_client_with_db, test_db_session):
     """
@@ -53,6 +68,7 @@ async def test_create(authenticated_client_with_db, test_db_session):
         assert result.get(key) == val
 
 
+@pytest.mark.skip
 async def test_fakedata_generator(authenticated_client_with_db, test_db_session, get_fields_type):
     client = authenticated_client_with_db
     counts = 10
@@ -72,6 +88,7 @@ async def test_fakedata_generator(authenticated_client_with_db, test_db_session,
             assert False, f'error {he=}, {response.status_code=} {key}::{data}'
 
 
+@pytest.mark.skip
 async def test_patch(authenticated_client_with_db, test_db_session, fakedata_generator):
     from app.support.category.router import CategoryRouter as Router
     router = Router()

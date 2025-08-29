@@ -42,7 +42,7 @@ class DateSchema(BaseModel):
     updated_at: Optional[datetime] = None
 
 
-class ReadSchema(ShortSchema, LangSchema, DescriptionSchema, PkSchema, DateSchema):
+class ReadSchema(ShortSchema, LangSchema, DescriptionSchema, PkSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
