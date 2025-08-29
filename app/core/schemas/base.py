@@ -2,8 +2,8 @@
 """
 Базовые Pydantic схемы для валидации данных (включают поля из app/core/models/base_model/Base
 """
-from typing import NewType, Generic, TypeVar, List, Optional
-from pydantic import BaseModel, ConfigDict
+from typing import NewType, Generic, TypeVar, List, Optional, Any
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
 
 PyModel = NewType("PyModel", BaseModel)
@@ -44,6 +44,42 @@ class DateSchema(BaseModel):
 
 class ReadSchema(ShortSchema, LangSchema, DescriptionSchema, PkSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class ReadSchemaWithRealtionships(ReadSchema):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extr='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
+
+    @model_validator(mode='before')
+    @classmethod
+    def flatten_relationships(cls, data: Any):
+        """
+            Принимает ORM-объект, возвращает словарь с плоскими значениями.
+            Никакой модификации исходного объекта!
+        """
+        if hasattr(data, '__dict__') or hasattr(data, '__class__'):
+            # Это ORM-объект
+            result = {}
+            for key in cls.model_fields:
+                value = getattr(data, key, None)
+                if value is None:
+                    result[key] = None
+                elif hasattr(value, '_sa_instance_state'):
+                    # Это ORM-объект (не примитив) → извлекаем .name
+                    if hasattr(value, 'name'):
+                        result[key] = value.name
+                    elif key == 'region' and hasattr(value, 'country'):
+                        country_name = value.country.name if value.country else ""
+                        result[key] = f"{value.name} - {country_name}".strip(" - ")
+                    else:
+                        result[key] = str(value)
+                else:
+                    # Простое значение (int, str, bool и т.д.)
+                    result[key] = value
+            return result
 
 
 class CreateSchema(UniqueSchema, LangSchema, DescriptionSchema):
