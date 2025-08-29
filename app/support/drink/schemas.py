@@ -75,6 +75,7 @@ class DrinkRead(ReadSchemaWithRealtionships):
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
+    country: Optional[str] = None  # region.country.name
 
 
 class DrinkCreate(CreateSchema, CustomCreateSchema):

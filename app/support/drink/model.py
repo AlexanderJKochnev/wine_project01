@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.support.region.model import Region
     from app.support.category.model import Category
     from app.support.item.model import Item
+    from app.support.country.model import Country
 
 
 class Drink(Base, BaseLang, BaseEn, BaseAt):
