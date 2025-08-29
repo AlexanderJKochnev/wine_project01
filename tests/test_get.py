@@ -47,7 +47,6 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
         assert response.status_code == 200, 'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, 'метод GET для пути "{prefix}" возвращает некорректные данные'
         tmp = response.json()
-        # assert False, tmp.keys()
         total = len(tmp['items'])
         if total > 0:
             id = 1  # randint(1, total)

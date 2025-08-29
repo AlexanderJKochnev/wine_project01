@@ -64,37 +64,38 @@ class ReadSchemaWithRealtionships(ReadSchema):
             # Это ORM-объект
             result = {}
             for field_name in cls.model_fields:
-                if field_name == 'region' and hasattr(data, 'region') and data.region is not None:
-                    result['region'] = data.region.name
-                elif field_name == 'country' and hasattr(data, 'region') and data.region is not None:
-                    result['country'] = data.region.country.name if data.region.country else None
-                else:
-                    value = getattr(data, field_name, None)
-                    # Обычные связанные объекты (category, food и т.д.)
-                    if hasattr(value, '_sa_instance_state') and hasattr(value, 'name'):
+                value = getattr(data, field_name, None)
+
+                # 1. Если это список (many-to-many или many-to-one)
+                if isinstance(value, list):
+                    # Берём .name у каждого элемента, если есть
+                    result[field_name] = [item.name for item in value if
+                                          hasattr(item, 'name') and isinstance(getattr(item, 'name'), str)]
+
+                # 2. Если это ORM-объект (одиночное отношение)
+                elif hasattr(value, '_sa_instance_state'):  # это ORM-объект
+                    if hasattr(value, 'name') and isinstance(value.name, str):
                         result[field_name] = value.name
+
+                    # 3. Вложенные связи: region.country.name
+                    elif hasattr(value, 'country') and hasattr(value.country, 'name'):
+                        country_name = value.country.name if isinstance(value.country.name, str) else ""
+                        if isinstance(value.name, str):
+                            result[field_name] = f"{value.name} - {country_name}".strip(" - ")
+                        else:
+                            result[field_name] = country_name
+
+                    # 4. Другие вложенные шаблоны можно добавить здесь
                     else:
-                        result[field_name] = value
-            return result
-            """
-                value = getattr(data, key, None)
-                if value is None:
-                    result[key] = None
-                elif hasattr(value, '_sa_instance_state'):
-                    # Это ORM-объект (не примитив) → извлекаем .name
-                    if hasattr(value, 'name'):
-                        result[key] = value.name
-                    elif key == 'region' and hasattr(value, 'country'):
-                        country_name = value.country.name if value.country else ""
-                        result[key] = f"{value.name} - {country_name}".strip(" - ")
-                    else:
-                        result[key] = str(value)
+                        result[field_name] = str(value)
+
+                # 5. Простое значение (str, int, bool и т.д.)
                 else:
-                    # Простое значение (int, str, bool и т.д.)
-                    result[key] = value
+                    result[field_name] = value
+
             return result
 
-            """
+
 class CreateSchema(UniqueSchema, LangSchema, DescriptionSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 

@@ -1,18 +1,20 @@
 # app/support/drink/schemas.py
 
-from app.core.schemas.base import (CreateSchema, ReadSchema, ShortSchema, ReadSchemaWithRealtionships,
-                                   UpdateSchema, PkSchema, DateSchema)
+from decimal import Decimal
+from typing import List, Optional
+
+from pydantic import ConfigDict
+
+from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships, ShortSchema,
+                                   UpdateSchema)
 from app.support.category.schemas import CategoryShort
-from app.support.food.schemas import FoodShort
 from app.support.color.schemas import ColorShort
 from app.support.region.schemas import RegionShort
 from app.support.sweetness.schemas import SweetnessShort
+
+
 # from app.support.country.schemas import CountryShort
 # from app.support.item.schemas import ItemShort
-
-from pydantic import ConfigDict
-from typing import Optional  # , List
-from decimal import Decimal
 
 
 class CustomSchema:
@@ -43,7 +45,6 @@ class CustomUpdSchema:
 
 class CustomCreateSchema:
     category_id: int
-    # food_id: Optional[int] = None
     color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
     region_id: int
@@ -52,6 +53,7 @@ class CustomCreateSchema:
     sugar: Optional[Decimal] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
+    food: List[str] = []
 
 
 class DrinkShort(ShortSchema):
@@ -76,6 +78,7 @@ class DrinkRead(ReadSchemaWithRealtionships):
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     country: Optional[str] = None  # region.country.name
+    food: List[str] = []
 
 
 class DrinkCreate(CreateSchema, CustomCreateSchema):
