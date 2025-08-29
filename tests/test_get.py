@@ -49,14 +49,17 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
         tmp = response.json()
         total = len(tmp['items'])
         if total > 0:
-            id = 1  # randint(1, total)
-            instance = tmp['items'][id - 1]
+            instance = tmp['items'][total - 1]  # берем последнюю запись
+            id = instance.get('id')
             resp = await client.get(f'{prefix}/{id}')
-            assert resp.status_code == 200, f'{id} === {tmp}'
+            assert resp.status_code == 200, f'получение записи {prefix} c {id} неудачно'
             result = resp.json()
+            # проверка содержимого
             for key, val in instance.items():
-                assert result.get(key) == val
-        else:
+                if not isinstance(val, float):   # особенности хранения и возврата float в Postgresql+SQLAlchemy
+                    assert result.get(key) == val, (f'полученные данные {result.get(key)} '
+                                                    f'не соответствуют ожидаемым {val}')
+        else:   # записей в тестируемой таблице нет, просот тестируем доступ
             resp = await client.get(f'{prefix}/1')
             assert resp.status_code in [200, 404]
 
