@@ -1,7 +1,7 @@
 # app/support/drink/schemas.py
 
-from app.core.schemas.base import (CreateSchema, ReadSchema, ShortSchema,
-                                   UpdateSchema, FullSchema, PkSchema, DateSchema)
+from app.core.schemas.base import (CreateSchema, ReadSchema, ShortSchema, ReadSchemaWithRealtionships,
+                                   UpdateSchema, PkSchema, DateSchema)
 from app.support.category.schemas import CategoryShort
 from app.support.food.schemas import FoodShort
 from app.support.color.schemas import ColorShort
@@ -16,11 +16,11 @@ from decimal import Decimal
 
 
 class CustomSchema:
-    category: CategoryShort
-    food: Optional[FoodShort] = None
-    color: Optional[ColorShort] = None
-    sweetness: Optional[SweetnessShort] = None
-    region: RegionShort
+    category: Optional[str] = None
+    food: Optional[str] = None
+    color: Optional[str] = None
+    sweetness: Optional[str] = None
+    region: Optional[str] = None
     subtitle: Optional[str] = None
     alcohol: Optional[float] = None
     sugar: Optional[float] = None
@@ -58,8 +58,23 @@ class DrinkShort(ShortSchema):
     pass
 
 
-class DrinkRead(ReadSchema, CustomSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+class DrinkRead(ReadSchemaWithRealtionships):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extra='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
+
+    category: Optional[str] = None
+    food: Optional[str] = None
+    color: Optional[str] = None
+    sweetness: Optional[str] = None
+    region: Optional[str] = None
+    subtitle: Optional[str] = None
+    alcohol: Optional[float] = None
+    sugar: Optional[float] = None
+    aging: Optional[int] = None
+    sparkling: Optional[bool] = False
 
 
 class DrinkCreate(CreateSchema, CustomCreateSchema):
@@ -68,10 +83,6 @@ class DrinkCreate(CreateSchema, CustomCreateSchema):
 
 class DrinkUpdate(UpdateSchema, CustomUpdSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
-
-
-class DrinkFull(FullSchema, CustomSchema):
-    pass
 
 
 class DrinkCreateResponseSchema(DrinkCreate, PkSchema, DateSchema):
