@@ -82,7 +82,7 @@ class BaseRouter:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"{self.model.__name__} с ID {id} не найден"
             )
-        return obj
+        return obj  # self.read_schema.model_validate(obj)
 
     async def get(self, page: int = Query(1, ge=1),
                   page_size: int = Query(paging.get('def', 20),
@@ -140,6 +140,7 @@ class BaseRouter:
             return obj
         except Exception as e:
             logger.warning(f"HTTP error PATCH: {e}")
+
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
         result = await self.repo.delete(id, session)

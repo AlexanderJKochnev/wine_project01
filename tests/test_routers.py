@@ -23,6 +23,7 @@ async def test_get(authenticated_client_with_db, test_db_session, fakedata_gener
     response = await client.get(f'{prefix}/{id}')
     assert response.status_code == 200
     result = response.json()
+    print(f'====={result.keys()}=====')
     for key, val in result.items():
         print(f'{key}: {val}')
     assert True
