@@ -13,4 +13,4 @@ class Color(Base, BaseLang, BaseEn, BaseAt):
                                                  back_populates="color",
                                                  cascade="all, delete-orphan")
     """
-    drinks = relationship("Drink", back_populates="color", lazy="select")
+    drinks = relationship("Drink", back_populates="color")

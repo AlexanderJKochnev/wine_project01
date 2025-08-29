@@ -14,4 +14,4 @@ class Region(Base, BaseLang, BaseEn, BaseAt):
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
     country: Mapped["Country"] = relationship(back_populates="regions")
 
-    drinks = relationship("Drink", back_populates="region", lazy="select")
+    drinks = relationship("Drink", back_populates="region")

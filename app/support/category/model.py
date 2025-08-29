@@ -6,4 +6,4 @@ from app.core.models.base_model import BaseFull
 
 class Category(BaseFull):
     # Обратная связь: один ко многим
-    drinks = relationship("Drink", back_populates="category", lazy="select")
+    drinks = relationship("Drink", back_populates="category")

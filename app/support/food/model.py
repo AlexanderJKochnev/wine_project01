@@ -9,4 +9,7 @@ class Food(Base, BaseLang, BaseEn, BaseAt):
     """drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
                                                  back_populates="food", cascade="all, delete-orphan")
     """
-    drinks = relationship("Drink", back_populates="food", lazy="select")
+    # drinks = relationship("Drink", back_populates="food", lazy="select")
+
+    # Обратная связь (опционально)
+    drink_associations = relationship("DrinkFood", back_populates="food", cascade="all, delete-orphan")

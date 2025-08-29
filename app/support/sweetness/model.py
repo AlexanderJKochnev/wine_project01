@@ -10,4 +10,4 @@ class Sweetness(Base, BaseLang, BaseEn, BaseAt):
                                                  back_populates="sweetness",
                                                  cascade="all, delete-orphan")
     """
-    drinks = relationship("Drink", back_populates="sweetness", lazy="select")
+    drinks = relationship("Drink", back_populates="sweetness")

@@ -17,7 +17,7 @@ from decimal import Decimal
 
 class CustomSchema:
     category: Optional[str] = None
-    food: Optional[str] = None
+    # food: Optional[str] = None
     color: Optional[str] = None
     sweetness: Optional[str] = None
     region: Optional[str] = None
@@ -30,7 +30,7 @@ class CustomSchema:
 
 class CustomUpdSchema:
     category_id: Optional[CategoryShort] = None
-    food_id: Optional[FoodShort] = None
+    # food_id: Optional[FoodShort] = None
     color_id: Optional[ColorShort] = None
     sweetness_id: Optional[SweetnessShort] = None
     region_id: Optional[RegionShort] = None
@@ -43,7 +43,7 @@ class CustomUpdSchema:
 
 class CustomCreateSchema:
     category_id: int
-    food_id: Optional[int] = None
+    # food_id: Optional[int] = None
     color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
     region_id: int
@@ -66,7 +66,7 @@ class DrinkRead(ReadSchemaWithRealtionships):
                               exclude_none=True)
 
     category: Optional[str] = None
-    food: Optional[str] = None
+    # food: Optional[str] = None
     color: Optional[str] = None
     sweetness: Optional[str] = None
     region: Optional[str] = None
