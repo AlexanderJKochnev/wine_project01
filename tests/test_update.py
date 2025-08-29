@@ -17,6 +17,8 @@ async def test_patch(authenticated_client_with_db, test_db_session,
     client = authenticated_client_with_db
     routers = routers_get_all
     response_keys = ListResponse.model_fields.keys()
+    # all foireign field name add to remove list
+    remove_list: tuple = ('id', 'created_at', 'updated_at', 'country')
     for prefix in routers:
         if prefix == '/drinks':
             continue
@@ -26,14 +28,13 @@ async def test_patch(authenticated_client_with_db, test_db_session,
         tmp = response.json()
         total = len(tmp['items'])
         if total > 0:       # записи есть
-            id = 2  # берем первую
+            id = 2  # берем 2-ю
             instance = tmp['items'][id - 1]
             for key, val in instance.items():  # изменяем
                 if isinstance(val, str):
                     instance[key] = f'changed_{val}'
                 else:
                     instance[key] = None
-            remove_list: tuple = ('id', 'created_at', 'updated_at')
             for x in remove_list:  # удаляем pk и
                 instance.pop(x, None)
             instance_patchd = {key: val for key, val in instance.items() if val}
