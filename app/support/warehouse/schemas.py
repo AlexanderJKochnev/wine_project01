@@ -1,13 +1,14 @@
 # app/support/warehouse/schemas.py
-from app.core.schemas.base import CreateSchema, ShortSchema, UpdateSchema, FullSchema
-from pydantic import ConfigDict, BaseModel, Field
+from app.core.schemas.base import (CreateSchema, ShortSchema, UpdateSchema,
+                                   FullSchema, ReadSchema)
+from pydantic import ConfigDict
 from typing import Optional
-from app.support.customer.schemas import CustomerShort
 
 
 class CustomSchema:
     address: Optional[str] = None
-    customer: CustomerShort
+    # customer: Optional[str] = None
+    id: int
 
 
 class CustomCreateSchema:
@@ -24,8 +25,8 @@ class WarehouseShort(ShortSchema):
     login: int
 
 
-class WarehouseRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+class WarehouseRead(ReadSchema, CustomSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 class WarehouseCreate(CreateSchema, CustomCreateSchema):

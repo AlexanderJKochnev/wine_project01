@@ -18,8 +18,8 @@ async def test_get_all(authenticated_client_with_db, test_db_session, routers_ge
     client = authenticated_client_with_db
     for prefix in routers:
         response = await client.get(f'{prefix}')
-        assert response.status_code == 200, 'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == x, 'метод GET для пути "{prefix}" возвращает некорректные данные'
+        assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
+        assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
 
 
 async def test_get_one(authenticated_client_with_db, test_db_session,
@@ -44,12 +44,12 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
     x = ListResponse.model_fields.keys()
     for prefix in routers:
         response = await client.get(f'{prefix}')
-        assert response.status_code == 200, 'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == x, 'метод GET для пути "{prefix}" возвращает некорректные данные'
+        assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
+        assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
         tmp = response.json()
         total = len(tmp['items'])
         if total > 0:
-            instance = tmp['items'][total - 1]  # берем последнюю запись
+            instance = tmp['items'][-1]  # берем последнюю запись
             id = instance.get('id')
             resp = await client.get(f'{prefix}/{id}')
             assert resp.status_code == 200, f'получение записи {prefix} c {id} неудачно'

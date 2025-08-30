@@ -178,7 +178,7 @@ def routers_get_all() -> List[APIRoute]:
 
 @pytest.fixture(scope=scope)
 def routers_post() -> List[str]:
-    return [x.path for x in get_routers('POST')]
+    return [x for x in get_routers('POST')]
 
 
 @pytest.fixture(scope=scope)

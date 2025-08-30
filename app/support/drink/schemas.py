@@ -53,7 +53,7 @@ class CustomCreateSchema:
     sugar: Optional[Decimal] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
-    food: List[str] = []
+    # food: List[str] = []
 
 
 class DrinkShort(ShortSchema):
@@ -78,7 +78,7 @@ class DrinkRead(ReadSchemaWithRealtionships):
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     country: Optional[str] = None  # region.country.name
-    food: List[str] = []
+    food: Optional[List[str]] = []
 
 
 class DrinkCreate(CreateSchema, CustomCreateSchema):

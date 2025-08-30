@@ -13,7 +13,8 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_get(authenticated_client_with_db, test_db_session, fakedata_generator):
-    from app.support.drink.router import DrinkRouter as Router
+    # from app.support.drink.router import DrinkRouter as Router
+    from app.support.warehouse.router import WarehouseRouter as Router
     router = Router()
     prefix = router.prefix
     # create_schema = router.create_schema
@@ -36,11 +37,11 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
     при необходимости - заменить импорт и data на то, что в ошибках выдаст test_fakedata_generator
     """
     from app.support.drink.router import DrinkRouter  # noqa: F401
-    from app.support.category.router import CategoryRouter
-    from app.support.country.router import CountryRouter
-    from app.support.region.router import RegionRouter
-    from app.support.color.router import ColorRouter
-    from app.support.sweetness.router import SweetnessRouter
+    from app.support.category.router import CategoryRouter  # noqa: F401
+    from app.support.country.router import CountryRouter  # noqa: F401
+    from app.support.region.router import RegionRouter  # noqa: F401
+    from app.support.color.router import ColorRouter  # noqa: F401
+    from app.support.sweetness.router import SweetnessRouter  # noqa: F401
     from app.support.warehouse.router import WarehouseRouter  # noqa: F401
     from app.support.customer.router import CustomerRouter  # noqa: F401
 
@@ -64,7 +65,8 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
                               'Which parent whose talk discuss care size. One poor car. '
                               'Thus election section including on.',
             'name_ru': 'Хорошее испанское вино',
-            'name': 'Good spanish wine'}
+            'name': 'Good spanish wine',
+            'food': ['Ellenfurt',]}
     subdata: dict = {}
     for Router in router_list:
         router = Router()
@@ -152,3 +154,49 @@ async def test_patch(authenticated_client_with_db, test_db_session, fakedata_gen
     result = response.json()
     for key, val in data.items():
         assert result.get(key) == val
+
+
+async def test_greenlet(authenticated_client_with_db, test_db_session):
+    """ тестирование one_to_many relationships"""
+    from app.support.customer.router import CustomerRouter as RouterMain
+    from app.support.warehouse.router import WarehouseRouter as RouterSlave
+    client = authenticated_client_with_db
+    master: dict = {'login': 'name',
+                    'firstname': 'name_ru',
+                    'lastname': 'last_name'}
+    slave: dict = {'customer_id': 1,
+                   'name': 'name'}
+    router_main = RouterMain()
+    router_slave = RouterSlave()
+    prefix_main = router_main.prefix
+    prefix_slave = router_slave.prefix
+    create_master = router_main.create_schema
+    create_slave = router_slave.create_schema
+    count = 3
+    # валидация данных :
+    try:
+        _ = create_master(**master)
+    except Exception as e:
+        assert False, f'валидация мастер не прошла {e}'
+    try:
+        _ = create_slave(**slave)
+    except Exception as e:
+        assert False, f'валидация slave не прошла {e}'
+    # генератор данных master
+    data_master = [{key: f'{val}_{n}' for key, val in master.items()} for n in range(count)]
+    for data in data_master:
+        response = await client.post(f'{prefix_main}', json=data)
+        assert response.status_code == 200, f'create for data_master error {data}'
+    response = await client.get(f'{prefix_main}')
+    assert response.status_code == 200, 'get for data_master error'
+    result = response.json()
+
+    # генератор данных slave
+    for x in result['items']:
+        try:
+            data = {key: f'{val}_{x['id']}' for key, val in slave.items()}
+            data['customer_id'] = 1
+            response = await client.post(f'{prefix_slave}', json=data)
+            assert response.status_code == 200, f'create for data_slave error {data}'
+        except Exception as e:
+            assert False, f'{e} {data=} {x['id']=}'

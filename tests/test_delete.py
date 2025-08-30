@@ -19,8 +19,8 @@ async def test_delete(authenticated_client_with_db, test_db_session,
     x = ListResponse.model_fields.keys()
     for prefix in reversed(routers):
         response = await client.get(f'{prefix}')
-        assert response.status_code == 200, 'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == x, 'метод GET для пути "{prefix}" возвращает некорректные данные'
+        assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
+        assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
         tmp = response.json()
         total = len(tmp['items'])
         if total > 0:       # записи есть

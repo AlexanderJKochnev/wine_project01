@@ -112,32 +112,6 @@ class FieldsData():
             if field_name.endswith('_id'):
                 dependence.append(field_name[0:-3].title())
             continue
-            """
-            # Генерируем тестовые значения в зависимости от типа
-            field_type = field_info.annotation if hasattr(field_info, 'annotation') else field_info.type_
-            if field_type == str:
-                data[field_name] = f"test_{field_name}"
-            elif field_type == int:
-                data[field_name] = 1
-            elif field_type == float:
-                data[field_name] = 1.0
-            elif field_type == bool:
-                data[field_name] = True
-            elif field_type == list:
-                data[field_name] = []
-            elif field_type == dict:
-                data[field_name] = {}
-            # elif get_origin(field_type)
-            # Для сложных типов пробуем создать экземпляр или используем None
-            else:
-                try:
-                    if hasattr(field_type, 'model_fields'):
-                        data[field_name] = self.generate_test_data(field_type, required_only)
-                    else:
-                        data[field_name] = field_info
-                except Exception:
-                    data[field_name] = 'some thing else'  # data[field_name] = field_type
-            """
         return data, dependence
 
     def prepare_test_cases(self, app: FastAPI, exclude_list: List[str]) -> List[Dict[str, Any]]:
