@@ -1,11 +1,11 @@
 # app/support/region/schemas.py
 
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import computed_field, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field
 
-from app.core.schemas.base import (CreateSchema, DateSchema, ReadSchemaWithRealtionships,
-                                   PkSchema, ReadSchema, ShortSchema, UpdateSchema)
+from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships, ShortSchema,
+                                   UpdateSchema)
 from app.support.country.schemas import CountryShort
 
 

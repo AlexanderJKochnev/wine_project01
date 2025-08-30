@@ -1,6 +1,6 @@
 # app/support/warehouse/schemas.py
 from app.core.schemas.base import (CreateSchema, ShortSchema, UpdateSchema,
-                                   FullSchema, ReadSchema)
+                                   FullSchema, ReadSchema, ReadSchemaWithRealtionships)
 from pydantic import ConfigDict
 from typing import Optional
 
@@ -18,6 +18,7 @@ class CustomCreateSchema:
 
 class CustomUpdSchema:
     address: Optional[str] = None
+    customer_id: Optional[int] = None
 
 
 class WarehouseShort(ShortSchema):
@@ -25,9 +26,16 @@ class WarehouseShort(ShortSchema):
     login: int
 
 
-class WarehouseRead(ReadSchema, CustomSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-
+class WarehouseRead(ReadSchemaWithRealtionships):
+    # model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              # protected_namespaces=('_',),
+                              extr='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
+    
+    customer: Optional[str] = None
 
 class WarehouseCreate(CreateSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

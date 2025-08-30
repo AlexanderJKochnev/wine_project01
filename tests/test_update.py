@@ -18,7 +18,7 @@ async def test_patch(authenticated_client_with_db, test_db_session,
     routers = routers_get_all
     response_keys = ListResponse.model_fields.keys()
     # all foireign field name add to remove list
-    remove_list: tuple = ('id', 'created_at', 'updated_at', 'country')
+    remove_list: tuple = ('id', 'created_at', 'updated_at', 'country', 'customer')
     for prefix in routers:
         if prefix == '/drinks':
             continue
@@ -28,8 +28,8 @@ async def test_patch(authenticated_client_with_db, test_db_session,
         tmp = response.json()
         total = len(tmp['items'])
         if total > 0:       # записи есть
-            id = 2  # берем 2-ю
-            instance = tmp['items'][id - 1]
+            instance = tmp['items'][-1]
+            id = instance['id']
             for key, val in instance.items():  # изменяем
                 if isinstance(val, str):
                     instance[key] = f'changed_{val}'
@@ -42,6 +42,6 @@ async def test_patch(authenticated_client_with_db, test_db_session,
             assert resp.status_code == 200, f'{instance_patchd=}, {prefix}'
             result = resp.json()
             for key, val in instance_patchd.items():
-                assert result.get(key) == val
+                assert result.get(key) == val, f'{prefix=}, {result=} {instance_patchd=}'
         else:
             assert False, 'генератор тестовых данных не сработал на {prefix}. см. test_routers.py'

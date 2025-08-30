@@ -9,6 +9,10 @@
              from app.support.customer.model import Customer
       4. lazy="selectin" так как ниже:
          1. customer: Mapped["Customer"] = relationship(back_populates="warehouses", lazy="selectin")
-   2. в schemas.py
+   2. в repository.py добавить def get_query(self) со следующим содержимым: 
+      1. return select(Warehouse).options(joinedload(Warehouse.customer))
+   3. в schemas.py
+      1. схему ..Read унаследовать от ReadSchemaWithRealtionships
+      2. поле relationships обозначить как Optional[str] = None
 4. ddd
 5. 
