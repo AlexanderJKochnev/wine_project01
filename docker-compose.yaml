@@ -1,4 +1,5 @@
 # docker-compose.yaml
+version: '3.8'
 services:
   wine_host: # this is the name of the service and name of the host (POSTGRES_HOST)
     restart: unless-stopped
@@ -18,7 +19,7 @@ services:
         aliases:
           - ${POSTGRES_HOST}
     healthcheck:
-      test: [ "CMD", "pg_isready -h postgres_db"]
+      test: [ "CMD-SHELL", "pg_isready", "-h", "localhost", "-p", "${POSTGRES_PORT}", "-U", "${POSTGRES_USER}" ]
       # add -h dd in order to avoid message FATAL: role 'root' doesnot exist
       interval: 10s # 1m30s
       timeout: 10s
@@ -33,6 +34,9 @@ services:
     environment:
       - ADMINER_PLUGINS=tables-filter enum-option enum-types
       - ADMINER_DESIGN=nette
+    depends_on:
+      wine_host:
+        condition: service_healthy
     ports:
       - "${ADMINER_PORTS}"
     networks:
@@ -44,7 +48,8 @@ services:
     restart: no  # unless-stopped
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
-      - wine_host
+      wine_host:
+        condition: service_healthy
     ports:
       - ${API_PORT}:${API_PORT}
     environment:
