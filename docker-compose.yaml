@@ -62,7 +62,10 @@ services:
       - pgnetwork
 
   mongodb:
-    image: mongo:6-jammy
+    image: mongo:5.0
+    # command: [--wiredTigerCacheSizeGB, "0.5", --maxConns, "100"]
+    # image заменить на более новый на новом сервере - этот не поддерживает CPU with AVX support
+    # command убрать или поменять настройки - эти для слабого сервера
     container_name: ${MONGO_HOST}
     depends_on:
       wine_host:

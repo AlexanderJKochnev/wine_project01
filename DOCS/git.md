@@ -60,3 +60,17 @@ git reset --hard HEAD
     после перебазирования сделать rebase
     git checkout <branche_1>
     git merge <branche_2>
+
+# Забрать все обновления с удалённого репозитория (включая новые ветки)
+git fetch origin
+# Посмотреть, какие ветки доступны
+git branch -a
+# Переключиться напрямую (Git 2.23+)
+git switch mongo
+# Использовать checkout
+git checkout mongo
+
+# Посмотреть какие неотслеживаниемые фалы будут удалены
+git clean -fdn
+# Удалить неотслеживаемые файлы
+git clean -fd
