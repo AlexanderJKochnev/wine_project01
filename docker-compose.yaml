@@ -47,7 +47,7 @@ services:
     restart: no  # unless-stopped
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
-      wine_host:
+      mongodb:
         condition: service_healthy
     ports:
       - ${API_PORT}:${API_PORT}
