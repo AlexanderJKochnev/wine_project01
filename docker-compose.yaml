@@ -25,7 +25,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
-      start_interval: 5s
   
   adminer:
     container_name: pg_admin
@@ -62,11 +61,52 @@ services:
     networks:
       - pgnetwork
 
+  mongodb:
+    image: mongo:6-jammy
+    container_name: ${MONGO_HOST}
+    depends_on:
+      wine_host:
+        condition: service_healthy
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    ports:
+      - "${MONGO_PORT}:${MONGO_PORT}"
+    healthcheck:
+      test: [ "CMD-SHELL", "mongosh --host localhost --port ${MONGO_PORT} --eval \"db.adminCommand('ping')\" --quiet || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - mongodb_data:/data/db
+      # - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - pgnetwork
+  
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_URL: ${MONGODB_URL}
+      ME_CONFIG_BASICAUTH_ENABLED: true
+      ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
+      ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
+    networks:
+      - pgnetwork
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
 networks:
   pgnetwork:
     driver: bridge
 
 volumes:
-  migration_volume: # alembic migrations
-  pg_data: # postgresql data
-  pg_dump: # postgres dump/restore
+  migration_volume:  # alembic migrations
+  pg_data:  # postgresql data
+  pg_dump:  # postgres dump/restore
+  mongodb_data:  # mongodb volume
