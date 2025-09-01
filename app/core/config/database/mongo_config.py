@@ -39,4 +39,4 @@ class ConfigDataBase(BaseSettings):
         )
 
 
-settings_db = ConfigDataBase()
+settings = ConfigDataBase()

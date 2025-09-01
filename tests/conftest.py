@@ -1,19 +1,23 @@
 # tests/conftest.py
-import pytest
 import asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from typing import Any, Dict, List
+
+import pytest
+from fastapi.routing import APIRoute
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
+from motor.motor_asyncio import AsyncIOMotorClient  # , AsyncIOMotorClientSession
+from pymongo.errors import OperationFailure
+
+from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
-from app.auth.models import User
 from app.main import app, get_db
-from fastapi.routing import APIRoute
-from typing import List, Dict, Any
+from app.core.config.database.mongodb import MongoDB
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
-
+from tests.config import settings
 
 scope = 'session'
 scope2 = 'session'
@@ -30,20 +34,7 @@ def get_routers(method: str = 'GET') -> List[APIRoute]:
 
 
 @pytest.fixture(scope=scope)
-def event_loop(request):
-    """
-    Создаём отдельный event loop для всей сессии тестов.
-    Это предотвращает ошибку "Event loop is closed".
-    """
-    """
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    try:
-        yield loop
-    finally:
-        if not loop.is_closed():
-            loop.close()
-    """
+def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -335,4 +326,55 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
         ac._access_token = access_token
         yield ac
 
-# -----------data generator------------------
+# -----------mongo db------------------
+
+
+@pytest.fixture(scope=scope)
+def mongo_url():
+    """ создает строку подключения """
+    # 'mongodb://mongouser:mongopassword@localhost:27017/myapp_mongodb?authSource=admin'
+    return settings.mogodb_url
+
+
+async def mongo_teardown(db, client):
+    """
+    Очистка и удаление тестовой базы дагнных mongo
+    """
+    try:
+        for collection_name in await db.list_collection_names():
+            collection = db[collection_name]
+            # Do not delete any of Mongo "system" collections
+            if not collection.name.startswith('system.'):
+                # pass
+                await collection.drop_indexes()
+                await collection.drop()
+    except OperationFailure:
+        pass  # расскомменировать строку ниже если нужно вести логи
+        # logger.error("Error happen during dropping mongo db  # collections", exc_info=ex)
+    try:
+        await client.drop_database(settings.MONGO_DB_NAME)
+    except OperationFailure:
+        pass  # logger.error("Error happen during dropping mongo db  # collections", exc_info=ex)
+
+
+@pytest.fixture(scope='function')
+async def mongo_client():
+    try:
+        client = AsyncIOMotorClient('localhost:27017',
+                                    username=settings.MONGODB_USER_NAME,
+                                    password=settings.MONGODB_USER_PASSWORD,
+                                    authSource='admin',
+                                    replicaSet='rs0',
+                                    maxPoolSize=10,
+                                    minPoolSize=5,
+                                    directConnection=True)
+        # Проверяем соединение
+        await client.admin.command('ping')
+        yield client
+    except Exception as e:
+        pytest.fail(f'Ошибка соединения с MongoDB: {e}')
+    finally:
+        if client:
+            client.close()
+
+

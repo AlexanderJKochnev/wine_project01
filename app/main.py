@@ -23,7 +23,7 @@ from app.core.routers.image_router import router as image_router
 
 from app.admin.auth import authentication_backend
 
-app = FastAPI()
+app = FastAPI(title='Wine App')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -101,19 +101,3 @@ app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(image_router)
-"""
-from tests.utility.data_generators import FieldsData, FakeData
-
-# x = prepare_test_cases(app)
-# x = get_request_models_from_routes(app)
-y = FakeData(app)
-
-x = y()
-if isinstance(x, dict):
-    for key, val in x.items():
-        print('-------------------------------------------')
-        print(f'{key} = {val}')
-else:
-    for key in x:
-        print(f'=={key}')
-"""
