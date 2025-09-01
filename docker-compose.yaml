@@ -68,8 +68,8 @@ services:
       - "${MONGODB_PORT}:${MONGODB_PORT}"
     volumes:
       - ./mongodb_data:/data/db
-      - ./mongo/docker-entrypoint.sh:/docker-entrypoint.sh:ro
-    entrypoint: ["/docker-entrypoint.sh"]
+      # - ./mongo/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    # entrypoint: ["/docker-entrypoint.sh"]
     environment:
       MONGODB_USER_NAME: ${MONGODB_USER_NAME}
       MONGODB_USER_PASSWORD: ${MONGODB_USER_PASSWORD}

@@ -23,7 +23,7 @@ MANIFEST
 pg_data/
 seaweed_data/
 migration_volume/
-
+mongodb_data/
 # Virtual environment
 .venv/
 env/

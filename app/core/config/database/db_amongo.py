@@ -1,48 +1,41 @@
 # app/core/config/database/db_amongo.py
-# асинхронное соедиение с mongodb
+# database.py
 from typing import AsyncGenerator
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from fastapi import Depends, HTTPException
-import os
-from app.core.config.database.mongo_config import settings
+from app.core.config.database.mongo_config import settings  # твой файл с настройками
 
-# Настройки подключения
-# MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://admin:password@localhost:27017/admin")
-DATABASE_NAME = settings.MONGODB_DATABASE
-HOST = f'localhost:{settings.MONGODB_PORT}'
 
+# --- Глобальные переменные ---
 _client: AsyncIOMotorClient | None = None
-_db: AsyncIOMotorDatabase | None = None
 
 
 # --- Фабрика клиента ---
-async def get_mongo_client(username: str = settings.MONGODB_USER_NAME,
-                           password: str = settings.MONGODB_USER_PASSWORD,
-                           authSource: str = 'admin',
-                           replicaSet: str = 'rs0',
-                           maxPoolSize: int = 10,
-                           minPoolSize: int = 5,
-                           directConnection: bool = True,
-                           # uuidRepresentation="standard"
-                           ) -> AsyncIOMotorClient:
+async def get_mongo_client() -> AsyncIOMotorClient:
     """
-    Создаёт и возвращает клиент MongoDB.
-    Можно внедрить в зависимости, если нужен доступ к клиенту.
+    Возвращает единый экземпляр AsyncIOMotorClient.
+    Использует те же параметры, что и в рабочих тестах.
     """
     global _client
     if _client is None:
-        # Используем directConnection=true для подключения к Replica Set с хоста
         _client = AsyncIOMotorClient(
-            HOST,
-            username=username,
-            password=password,
-            authSource=authSource,
-            replicaSet=replicaSet,
-            maxPoolSize=maxPoolSize,
-            minPoolSize=minPoolSize,
-            directConnection=directConnection,
-            # uuidRepresentation=uuidRepresentation
+            host='localhost',  # например, 'localhost'
+            port=settings.MONGODB_PORT,  # например, 27019
+            username=settings.MONGODB_USER_NAME,
+            password=settings.MONGODB_USER_PASSWORD,
+            authSource='admin',
+            # replicaSet=settings.MONGODB_REPLICA_SET,  # 'rs0'
+            # directConnection=True,  # 🔥 Критично: иначе — ошибка с DNS
+            maxPoolSize=10,
+            minPoolSize=5,
+            serverSelectionTimeoutMS=10000,
+            uuidRepresentation="standard"
         )
+        # Проверяем подключение
+        try:
+            await _client.admin.command("ping")
+        except Exception as e:
+            raise ConnectionError(f"Cannot connect to MongoDB: {e}")
     return _client
 
 
@@ -50,36 +43,11 @@ async def get_mongo_client(username: str = settings.MONGODB_USER_NAME,
 async def get_mongodb() -> AsyncGenerator[AsyncIOMotorDatabase, None]:
     """
     Зависимость для получения базы данных.
-    Используется в эндпоинтах через Depends.
+    Используется в FastAPI-роутах через Depends.
     """
-    global _db
-    if _db is None:
-        client = await get_mongo_client()
-        _db = client[DATABASE_NAME]
+    client = await get_mongo_client()
+    db = client[settings.MONGODB_DATABASE_NAME]
     try:
-        yield _db
+        yield db
     except Exception as e:
-        # Логирование (здесь упрощённо)
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-
-# -------------------------------
-
-
-async def get_mongo_client1():
-    try:
-        client = AsyncIOMotorClient(f'localhost:{settings.MONGODB_PORT}',
-                                    username=settings.MONGODB_USER_NAME,
-                                    password=settings.MONGODB_USER_PASSWORD,
-                                    authSource='admin',
-                                    replicaSet='rs0',
-                                    maxPoolSize=10,
-                                    minPoolSize=5,
-                                    directConnection=True)
-        # Проверяем соединение
-        # await client.admin.command('ping')
-        return client
-    except Exception as e:
-        print(f'Ошибка соединения с MongoDB: {e}')
-    finally:
-        if client:
-            client.close()
