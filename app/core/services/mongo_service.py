@@ -1,5 +1,5 @@
 # app/core/services/mongo_service.py
-from app.core.config.database.mongodb import get_mongo_db
+from app.core.config.database.db_amongo import get_mongodb
 from app.core.config.database.mongo_config import settings
 from bson import ObjectId
 from typing import Optional, Dict, Any
@@ -13,7 +13,7 @@ class MongoService:
     async def save_document(
         self, file_data: bytes, filename: str, content_type: str, metadata: Optional[Dict[str, Any]] = None
     ) -> str:
-        db = get_mongo_db()
+        db = get_mongodb()
         collection = db[self.collection_name]
 
         document = {"filename": filename,
@@ -26,7 +26,7 @@ class MongoService:
         return str(result.inserted_id)
 
     async def get_document(self, document_id: str) -> Optional[Dict]:
-        db = get_mongo_db()
+        db = get_mongodb()
         collection = db[self.collection_name]
 
         if not ObjectId.is_valid(document_id):
@@ -40,7 +40,7 @@ class MongoService:
         return document
 
     async def delete_document(self, document_id: str) -> bool:
-        db = get_mongo_db()
+        db = get_mongodb()
         collection = db[self.collection_name]
 
         if not ObjectId.is_valid(document_id):

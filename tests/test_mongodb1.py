@@ -1,15 +1,20 @@
 # tests/test_mongodb1.py
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
+from fastapi import FastAPI, Depends, HTTPException
+from tests.config import settings
+# from app.core.config.database.db_amongo import get_mongodb
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_mongodb_connection_string(mongo_url):
+async def test_mongodb_connection_string():
     """Тест строки соединения с MongoDB"""
     client = None
     try:
-        client = AsyncIOMotorClient('localhost:27017',
+        client = AsyncIOMotorClient('localhost:27019',
                                     username='admin',
                                     password='password',
                                     authSource='admin',
@@ -92,3 +97,36 @@ async def test_mongo_transaction(mongo_client):
         await test_collection.delete_many({"transaction": "test"})
 
 
+async def test_transaction(mongo_client, mongo_database):
+    database = mongo_client[f'{mongo_database}']
+    test_collection = database["test_collection2"]
+    # session = get_session
+    await test_collection.insert_one(
+        {"transaction": "test", "value": 1})
+    # Проверяем, что данные доступны в транзакции
+    doc = await test_collection.find_one(
+        {"transaction": "test"})
+    assert doc is not None
+    assert doc["value"] == 1
+
+
+async def test_getmongo_db(get_mongodb0):
+    test_collection = get_mongodb0["test_collection2"]
+    # session = get_session
+    await test_collection.insert_one(
+        {"transaction": "restt", "value": 41})
+    # Проверяем, что данные доступны в транзакции
+    doc = await test_collection.find_one(
+        {"transaction": "restt"})
+    assert doc is not None
+    assert doc["value"] == 41
+
+
+async def test_getmongodb(get_mongodb):
+    try:
+        database = get_mongodb
+        # test_collection = get_mongodb["test_collection2"]
+        await database.command("ping")
+        assert True
+    except Exception as e:
+        assert False, f'{test_getmongodb}. {e}'

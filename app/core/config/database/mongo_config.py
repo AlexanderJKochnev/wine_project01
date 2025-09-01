@@ -15,11 +15,15 @@ class ConfigDataBase(BaseSettings):
                                       env_file_encoding='utf-8',
                                       extra='ignore')
 
-    MONGO_DB_NAME: str      # myapp_mongodb
-    MONGO_USER: str         # mongouser
-    MONGO_PASSWORD: str     # mongopassword
-    MONGO_HOST: str         # mongodb
-    MONGO_PORT: int         # 27017
+    # MongoDB
+    MONGODB_USER_NAME: str
+    MONGODB_USER_PASSWORD: str
+    MONGODB_DATABASE_AUTH_NAME: str
+    MONGODB_REPLICA_SET: str
+    MONGODB_REPLICA_SET_HOST: str  # ← Имя сервиса в docker-compose
+    MONGODB_PORT: int
+    MONGODB_DATABASE: str
+
     # probable secirity issue:
     SECRET_KEY: str
     ALGORITHM: str
@@ -31,12 +35,7 @@ class ConfigDataBase(BaseSettings):
         :return:
         :rtype:
         """
-        return (
-            f"mongodb://{self.MONGO_USER}:"
-            f"{self.MONGO_PASSWORD}@{self.MONGO_HOST}:"
-            f"{self.MONGO_PORT}/{self.MONGO_DB_NAME}"
-            f"?authSource=admin"
-        )
+        return None
 
 
 settings = ConfigDataBase()

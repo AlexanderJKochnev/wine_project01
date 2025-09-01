@@ -1,41 +1,84 @@
 # app/core/config/database/mongodb.py
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config.database.mongo_config import settings
-import logging
+# import logging
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
-class MongoDB:
-    client: AsyncIOMotorClient = None
-    database = None
+async def mongo_client(host: str = 'localhost',
+                       port: int = settings.MONGODB_PORT,
+                       username: str = settings.MONGODB_USER_NAME,
+                       password: str = settings.MONGODB_USER_PASSWORD,
+                       authSource: str = 'admin',
+                       replicaSet: str = 'rs0',
+                       maxPoolSize: int = 10,
+                       minPoolSize: int = 5,
+                       directConnection: bool = True,
+                       database: str = settings.MONGODB_DATABASE):
+    try:
+        client = AsyncIOMotorClient(f'{host}:{port}',
+                                    username=username,
+                                    password=password,
+                                    authSource=authSource,
+                                    replicaSet=replicaSet,
+                                    maxPoolSize=maxPoolSize,
+                                    minPoolSize=minPoolSize,
+                                    directConnection=directConnection)
+        # Проверяем соединение
+        await client.admin.command('ping')
+        yield client
+    except Exception as e:
+        print(f'Ошибка соединения с MongoDB: {e}')
+    finally:
+        if client:
+            client.close()
+
+
+async def get_mongodb(mongo_database: str = settings.MONGODB_DATABASE, **kwargs):
+    client = mongo_client(**kwargs)
+    async with await client.start_session():
+        yield client[f'{mongo_database}']
+# ===============================
+
+
+class MongoDB():
+    """ дать описание """
+    def __init__(self, *args,
+                 host: str = 'localhost',
+                 port: int = settings.MONGODB_PORT,
+                 username: str = settings.MONGODB_USER_NAME,
+                 password: str = settings.MONGODB_USER_PASSWORD,
+                 authSource: str = 'admin',
+                 replicaSet: str = 'rs0',
+                 maxPoolSize: int = 10,
+                 minPoolSize: int = 5,
+                 directConnection: bool = True,
+                 database: str = settings.MONGODB_DATABASE):
+        self.client: AsyncIOMotorClient = None
+        self.database: str = database
+        self.motorini: dict = locals().copy()
+        h = self.motorini.pop('host', '')
+        p = self.motorini.pop('port', '')
+        self.host: dict = f'{h}:{p}'
+
+    def __get_client__(self, motorini: dict):
+        self.client = AsyncIOMotorClient(self.host)
+
+    async def get_client(self):
+        try:
+            client = self.client
+            await client.admin.command('ping')
+            yield client
+        except Exception as e:
+            print(f'Ошибка соединения с MongoDB: {e}')
+        finally:
+            if client:
+                client.close()
+
+    async def get_mongo(self):
+        async with await self.get_client.start_session():
+            yield self.client[f'{self.database_name}']
 
 
 mongodb = MongoDB()
-
-
-async def connect_to_mongo():
-    try:
-        mongodb.client = AsyncIOMotorClient(settings.mongodb_url,
-                                            maxPoolSize=10,
-                                            minPoolSize=5)
-        mongodb.database = mongodb.client[settings.MONGO_DB_NAME]
-        logger.info("Connected to MongoDB successfully")
-
-        # Проверяем соединение
-        await mongodb.client.admin.command('ping')
-        logger.info("MongoDB ping successful")
-
-    except Exception as e:
-        logger.error(f"Could not connect to MongoDB: {e}")
-        raise
-
-
-async def close_mongo_connection():
-    if mongodb.client:
-        mongodb.client.close()
-        logger.info("MongoDB connection closed")
-
-
-def get_mongo_db():
-    return mongodb.database

@@ -3,18 +3,21 @@ import asyncio
 from typing import Any, Dict, List
 
 import pytest
+from typing import AsyncGenerator
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from fastapi import Depends, HTTPException
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from motor.motor_asyncio import AsyncIOMotorClient  # , AsyncIOMotorClientSession
+# from motor.motor_asyncio import AsyncIOMotorClient  # , AsyncIOMotorClientSession
 from pymongo.errors import OperationFailure
 
 from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.main import app, get_db
-from app.core.config.database.mongodb import MongoDB
+# from app.core.config.database.mongodb import MongoDB
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
 from tests.config import settings
@@ -286,15 +289,22 @@ async def get_test_db(test_db_session, create_test_user, create_super_user):
     """Dependency override для получения тестовой сессии БД"""
     yield test_db_session
 
+async def get_test_mongodb(get_mongodb):
+    yield get_mongodb
+
 
 @pytest.fixture(scope=scope2)
-async def client(test_db_session, override_app_dependencies, get_test_db, base_url):
+async def client(test_db_session, override_app_dependencies, get_test_db, base_url, get_mongodb):
     """Базовый клиент без авторизации"""
     # Переопределяем зависимость get_db
     async def get_test_db():
         yield test_db_session
-    app.dependency_overrides[get_db] = get_test_db
 
+    async def get_test_mongodb():
+        yield get_mongodb
+
+    app.dependency_overrides[get_db] = get_test_db
+    app.dependency_overrides[get_mongodb] = get_test_mongodb
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url=base_url
     ) as ac:
@@ -326,14 +336,13 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
         ac._access_token = access_token
         yield ac
 
-# -----------mongo db------------------
+# -----------mongo db--------------------------
 
 
 @pytest.fixture(scope=scope)
-def mongo_url():
-    """ создает строку подключения """
-    # 'mongodb://mongouser:mongopassword@localhost:27017/myapp_mongodb?authSource=admin'
-    return settings.mogodb_url
+def mongo_database():
+    """ возвращает имя базы данных mongodb """
+    return settings.MONGODB_DATABASE
 
 
 async def mongo_teardown(db, client):
@@ -360,7 +369,7 @@ async def mongo_teardown(db, client):
 @pytest.fixture(scope='function')
 async def mongo_client():
     try:
-        client = AsyncIOMotorClient('localhost:27017',
+        client = AsyncIOMotorClient('localhost:27019',
                                     username=settings.MONGODB_USER_NAME,
                                     password=settings.MONGODB_USER_PASSWORD,
                                     authSource='admin',
@@ -378,3 +387,23 @@ async def mongo_client():
             client.close()
 
 
+@pytest.fixture(scope='function')
+async def get_mongodb0(mongo_client, mongo_database):
+    """ удалить """
+    async with await mongo_client.start_session():
+        yield mongo_client[f'{mongo_database}']
+
+
+@pytest.fixture(scope='function')
+async def get_mongodb(mongo_client, mongo_database) -> AsyncGenerator[AsyncIOMotorDatabase, None]:
+    """
+    Зависимость для получения базы данных.
+    Используется в эндпоинтах через Depends.
+    """
+    client = mongo_client
+    _db = client[mongo_database]
+    try:
+        yield _db
+    except Exception as e:
+        # Логирование (здесь упрощённо)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")

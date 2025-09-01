@@ -62,44 +62,52 @@ services:
 
   mongodb:
     image: mongo:4.4.20
-    # command: [--wiredTigerCacheSizeGB, "0.5", --maxConns, "100"]
-    # image заменить на более новый на новом сервере - этот не поддерживает CPU with AVX support
-    # command убрать или поменять настройки - эти для слабого сервера
-    container_name: ${MONGO_HOST}
-    depends_on:
-      wine_host:
-        condition: service_healthy
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    container_name: ${MONGODB_REPLICA_SET_HOST}
+    hostname: ${MONGODB_REPLICA_SET_HOST}
     ports:
-      - "${MONGO_PORT}:${MONGO_PORT}"
-    healthcheck:
-      test: [ "CMD-SHELL", "mongo --host localhost --port ${MONGO_PORT} --eval \"db.adminCommand('ping')\" --quiet || exit 1" ]
-      # для версий 5+ использовать mongosh вместо mongo
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+      - "${MONGODB_PORT}:${MONGODB_PORT}"
     volumes:
       - ./mongodb_data:/data/db
-      # - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    networks:
-      - pgnetwork
-  
+      - ./mongo/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    entrypoint: ["/docker-entrypoint.sh"]
+    environment:
+      MONGODB_USER_NAME: ${MONGODB_USER_NAME}
+      MONGODB_USER_PASSWORD: ${MONGODB_USER_PASSWORD}
+      MONGODB_REPLICA_SET: ${MONGODB_REPLICA_SET}
+      MONGODB_REPLICA_SET_HOST: ${MONGODB_REPLICA_SET_HOST}
+      MONGODB_PORT: ${MONGODB_PORT}
+      MONGODB_DATABASE_AUTH_NAME: ${MONGODB_DATABASE_AUTH_NAME}
+    healthcheck:
+      test: >
+        mongo --eval "
+          try {
+            rs.status().ok === 1 || db.adminCommand('ping').ok === 1
+          } catch(e) {
+            print('Health check failed:', e);
+            exit(1);
+          }
+        " -u ${MONGODB_USER_NAME} -p ${MONGODB_USER_PASSWORD} --authenticationDatabase ${MONGODB_DATABASE_AUTH_NAME} || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
   mongo-express:
     image: mongo-express
-    restart: always
+    container_name: mongo-express
     ports:
-      - 8081:8081
+      - "${MONGO_EXPRESS_PORT}:8081"
     environment:
-      ME_CONFIG_MONGODB_URL: ${MONGODB_URL}
-      ME_CONFIG_BASICAUTH_ENABLED: true
-      ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
-      ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
-    networks:
-      - pgnetwork
+      ME_CONFIG_BASICAUTH_ENABLED: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGODB_USER_NAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGODB_USER_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${MONGODB_REPLICA_SET_HOST}
+      ME_CONFIG_MONGODB_PORT: ${MONGODB_PORT}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_USER_NAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_USER_PASSWORD}
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_MONGODB_REPLICA: ${MONGODB_REPLICA_SET}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGODB_USER_NAME}:${MONGODB_USER_PASSWORD}@${MONGODB_REPLICA_SET_HOST}:${MONGODB_PORT}/${MONGODB_DATABASE_AUTH_NAME}?replicaSet=${MONGODB_REPLICA_SET}&authSource=${MONGODB_DATABASE_AUTH_NAME}
     depends_on:
       mongodb:
         condition: service_healthy
