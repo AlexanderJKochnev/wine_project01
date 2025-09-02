@@ -1,5 +1,4 @@
 # app/admin/sqladmin.md
-# from wtforms.widgets import TextArea
 from app.admin.core import AutoModelView, BaseAdmin
 # --------подключение моделей-----------
 from app.support.drink.model import Drink
