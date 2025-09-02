@@ -23,6 +23,7 @@ class ConfigDataBase(BaseSettings):
     MONGODB_REPLICA_SET_HOST: str  # ← Имя сервиса в docker-compose
     MONGODB_PORT: int
     MONGODB_DATABASE: str
+    MONGODB_REPLICA_SET_HOST: str
 
     # probable secirity issue:
     SECRET_KEY: str

@@ -25,7 +25,7 @@ async def get_mongo_client() -> AsyncIOMotorClient:
             password=settings.MONGODB_USER_PASSWORD,
             authSource='admin',
             # replicaSet=settings.MONGODB_REPLICA_SET,  # 'rs0'
-            # directConnection=True,  # 🔥 Критично: иначе — ошибка с DNS
+            directConnection=True,  # 🔥 Критично: иначе — ошибка с DNS
             maxPoolSize=10,
             minPoolSize=5,
             serverSelectionTimeoutMS=10000,
