@@ -7,6 +7,7 @@
 # pytest tests/test_sqladmin.py tests/test_fastapi.py tests/test_database.py tests/test_database_connection.py --tb=auto --disable-warnings -vv --capture=no
 # pytest -m 'not docker' --tb=no --disable-warnings -vv
 pytest tests/test_auth.py \
+       tests/test_configs.py \
        tests/test_database.py \
        tests/test_database_connection.py \
        tests/test_fastapi.py \

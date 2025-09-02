@@ -149,7 +149,7 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session, get_
     :rtype:
     """
     client = authenticated_client_with_db
-    counts = 5
+    counts = example_count
     for key, val in get_fields_type.items():
         for n in range(counts):
             route = key

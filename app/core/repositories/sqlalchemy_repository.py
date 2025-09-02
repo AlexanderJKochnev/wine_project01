@@ -1,12 +1,13 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any, Dict, Optional, TypeVar, Generic
-from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import select, func
-from app.core.services.logger import logger
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
+from sqlalchemy import func, select, or_, and_, text
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import DeclarativeMeta
+
+from app.core.services.logger import logger
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -84,3 +85,21 @@ class Repository(Generic[ModelType]):
         count_result = await session.execute(count_stmt)
         total = count_result.scalar()
         return total
+
+    async def search_in_main_table(self,
+                                   search_query: Optional[str], text_fields: List[str],
+                                   session: AsyncSession) -> List[Any]:
+        """Поиск по всем заданным текстовым полям основной таблицы"""
+        model = self.model
+        if not search_query:
+            return []
+        query = session.query(model)
+        conditions = []
+
+        for field in text_fields:
+            if hasattr(model, field):
+                conditions.append(getattr(model, field).ilike(f"%{search_query}%"))
+        if conditions:
+            query = query.filter(or_(*conditions))
+        result = await session.execute(query)
+        return result.scalars().all()

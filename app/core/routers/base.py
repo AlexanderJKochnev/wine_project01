@@ -1,6 +1,6 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar
+from typing import Type, Any, List, TypeVar, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,7 @@ from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
 from app.core.services.logger import logger
+# from app.core.services.serevice_layer import Service
 
 
 paging = get_paging
@@ -65,6 +66,15 @@ class BaseRouter:
                                   responses=self.responses)
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
+        self.router.add_api_route("/search",
+                                  self.search, methods=["GET"],
+                                  response_model=self.paginated_response)
+        self.router.add_api_route("/deepsearch",
+                                  self.deep_search, methods=["GET"],
+                                  response_model=self.paginated_response)
+        self.router.add_api_route("/advsearch",
+                                  self.advanced_search, methods=["GET"],
+                                  response_model=self.paginated_response)
 
     async def get_one(self,
                       # id: int = Query(..., description="ID", gt=0),
@@ -152,3 +162,23 @@ class BaseRouter:
         return {'success': result,
                 'deleted_count': 1 if result else 0,
                 'message': f'{self.model.__name__} with id {id} has been deleted'}
+
+    async def search(self, query: Optional[str] = Query(None),
+                     text_fields: List[str] = ['name', 'name_ru', 'description', 'description_ru'],
+                     session: AsyncSession = Depends(get_db)) -> dict:
+        """Поиск по всем текстовым полям основной таблицы"""
+        return await self.repo.search_in_main_table(query, text_fields, session)
+
+    async def deep_search(self, query: Optional[str] = Query(None),
+                          # service: ItemService = Depends(),
+                          session: AsyncSession = Depends(get_db)) -> dict:
+        """Поиск по текстовым полям основной таблицы и связанных таблиц"""
+        # return await service.deep_search_in_main_table(query)
+        pass
+
+    async def advanced_search(self, query: Optional[str] = Query(None),
+                              # service: Service = Depends(),
+                              session: AsyncSession = Depends(get_db)) -> dict:
+        """Расширенный поиск по произвольным текстовым полям"""
+        # return await service.advanced_search_in_main_table(query)
+        pass
