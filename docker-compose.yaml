@@ -29,12 +29,13 @@ services:
     container_name: pg_admin
     image: adminer:4.8.1
     restart: unless-stopped
-    environment:
-      - ADMINER_PLUGINS=tables-filter enum-option enum-types
-      - ADMINER_DESIGN=nette
     depends_on:
       wine_host:
         condition: service_healthy
+    environment:
+      - ADMINER_PLUGINS=tables-filter enum-option enum-types
+      - ADMINER_DESIGN=nette
+    
     ports:
       - "${ADMINER_PORTS}"
     networks:
@@ -68,9 +69,11 @@ services:
       - "${MONGODB_PORT}:${MONGODB_PORT}"
     volumes:
       - ./mongodb_data:/data/db
-      # - ./mongo/docker-entrypoint.sh:/docker-entrypoint.sh:ro
-    # entrypoint: ["/docker-entrypoint.sh"]
+      - ./mongo/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    entrypoint: ["/docker-entrypoint.sh"]
     environment:
+      # инициализация через перегруженный docker-entrypoint.sh
+      # поэтому переменные называются нестандартно
       MONGODB_USER_NAME: ${MONGODB_USER_NAME}
       MONGODB_USER_PASSWORD: ${MONGODB_USER_PASSWORD}
       MONGODB_REPLICA_SET: ${MONGODB_REPLICA_SET}
