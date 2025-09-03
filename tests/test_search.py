@@ -20,8 +20,8 @@ async def test_search(authenticated_client_with_db, test_db_session,
     x = ListResponse.model_fields.keys()
     counter = 0
     for prefix in routers:          # перебирает существующие роутеры
-        if prefix == '/warehouses':
-            continue
+        # if prefix == '/warehouses':
+        #     continue
         response = await client.get(f'{prefix}')   # получает все записи (1 страница)
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
