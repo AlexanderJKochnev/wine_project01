@@ -57,7 +57,7 @@ class ReadSchemaWithRealtionships(ReadSchema):
     @classmethod
     def flatten_relationships(cls, data: Any):
         """
-            Принимает ORM-объект, возвращает словарь с плоскими значениями.
+            Принимает ORM-объект, возвращает словарь с плоскими значениями (deep levle 2)
             Никакой модификации исходного объекта!
         """
         if hasattr(data, '__dict__') or hasattr(data, '__class__'):
@@ -84,10 +84,6 @@ class ReadSchemaWithRealtionships(ReadSchema):
                                 continue
                             deep[key] = str(val)
                             print(f'{field_name}==={key}: {str(val)} {type(val)=}')
-                            # if key in cls.model_fields and not isinstance(val, Union[str, int, float]):
-                            #     print(f'{field_name}: {key=} {val} {type(val)=}')
-                        # tmp = {key: val for key, val in value.__dict__.items() if key in cls.model_fields}
-                # 3. Простое значение (str, int, bool и т.д.)
                 else:
                     result[field_name] = value
             # 4. переопределяем relationships поля

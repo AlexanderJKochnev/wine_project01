@@ -14,6 +14,7 @@ pytestmark = pytest.mark.asyncio
 async def test_search(authenticated_client_with_db, test_db_session,
                       routers_get_all, fakedata_generator):
     """ тестирует методы get one - c проверкой id """
+    from random import randint
     client = authenticated_client_with_db
     routers = routers_get_all
     x = ListResponse.model_fields.keys()
@@ -24,29 +25,31 @@ async def test_search(authenticated_client_with_db, test_db_session,
         response = await client.get(f'{prefix}')   # получает все записи (1 страница)
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
-        tmp = response.json()
-        total = len(tmp['items'])
-        if total > 0:
-            instance = tmp['items'][-1]  # берем последнюю запись
-            id = instance.get('id')
-            dump: List[str] = []
-            for key, val in instance.items():
-                if isinstance(val, str) and key not in ['category', 'color', 'sweetness', 'region']:
-                    dump.append(val)
-            search_query = dump[-1].split(' ')[0]  # предпоследнее слово
-            params = {'query': search_query}
-            resp = await client.get(f'{prefix}/search', params=params)
-            assert resp.status_code == 200, (f'получение записи {prefix} c {id} неудачно {search_query=} '
-                                             f'выполнено {counter} тестов успешно, '
-                                             f'Expected 200, got {resp.status_code}, body: {resp.text}')
-            result = resp.json()
-            items = result.get('items')
-            assert len(items) > 0, (f'поиск по слову {search_query} не удался в таблице {prefix}, '
-                                    f'выполнено {counter} тестов успешно'
-                                    f'{items=} \\n '
-                                    f'{prefix=} \\n '
-                                    f'{dump=}'
-                                    )
-        else:   # записей в тестируемой таблице нет, пропускаем
-            print(f'{prefix} записей в тестируемой таблице нет, пропускаем')
+
+        tmp: List[dict] = response.json().get('items')
+        tmp2: dict = {}
+        for value in tmp:
+            key = value.get('id')
+            # формирует строку из слов из всех текстовых полей без повтров
+            data = ' '.join({val.replace('.', ' ').
+                            replace('  ', '^ ').
+                            replace('^', '') for val in value.values()
+                             if isinstance(val, str)}).split(' ')
+            tmp2[key] = data
+        try:
+            bgstring = (val for val in tmp2.values())
+            bgstring = set(sum(bgstring, []))
+            bigstring = list(bgstring)
+        except Exception as e:
+            assert False, f'{tmp2}, {e}'
+
+        query = bigstring[randint(0, len(bigstring) - 1)]
+        # список id содержащий искомое слово
+        expected_answer = [key for key, val in tmp2.items() if query in val]
+        params = {'query': query}
+        response = await client.get(f'{prefix}/search', params=params)
+        assert response.status_code == 200, response.text
+        result = response.json().get('items')
+        answer = [item.get('id') for item in result]
+        assert set(answer) == set(expected_answer), f'результат неверный {query} {prefix}'
         counter += 1

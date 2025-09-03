@@ -206,5 +206,22 @@ async def test_greenlet(authenticated_client_with_db, test_db_session):
             assert False, f'{e} {data=} {x['id']=}'
 
 
-async def test_search(authenticated_client_with_db, test_db_session, fakedata_generator):
-    pass
+async def test_search(authenticated_client_with_db, test_db_session, create_drink):
+    """ тестирование поиска в drink """
+    from random import randint
+    client = authenticated_client_with_db
+    prefix = '/drinks'
+    id = create_drink
+    response = await client.get(f'{prefix}/{id}')
+    assert response.status_code == 200, response.text
+    tmp = response.json()
+    data = ' '.join((val.replace('.', ' ').replace('  ', '^ ').replace('^', '')
+                     for val in tmp.values() if isinstance(val, str))).split(' ')
+    query = data[randint(0, len(data) - 1)]
+    assert query in data, f'{query} not in record investgated'
+    params = {'query': query}
+    response = await client.get(f'{prefix}/search', params=params)
+    assert response.status_code == 200, response.text
+    result = response.json().get('items')
+    resp = [item for item in result if item.get('id') == id]
+    assert resp, 'поиск выполнен неверно'
