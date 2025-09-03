@@ -34,12 +34,13 @@ class Drink(Base, BaseLang, BaseEn, BaseAt):
 
     # Relationships fierlds
     items: Mapped[List["Item"]] = relationship("Item", back_populates="drink",
-                                               cascade="all, delete-orphan")
-    region: Mapped["Region"] = relationship(back_populates="drinks")
-    category: Mapped["Category"] = relationship(back_populates="drinks")
+                                               cascade="all, delete-orphan",
+                                               lazy="selectin")
+    region: Mapped["Region"] = relationship(back_populates="drinks", lazy="selectin")
+    category: Mapped["Category"] = relationship(back_populates="drinks", lazy="selectin")
     # food: Mapped["Food"] = relationship(back_populates="drinks")
-    color: Mapped["Color"] = relationship(back_populates="drinks")
-    sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
+    color: Mapped["Color"] = relationship(back_populates="drinks", lazy="selectin")
+    sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks", lazy="selectin")
 
     # Связь через промежуточную модель
     food_associations = relationship("DrinkFood", back_populates="drink", cascade="all, delete-orphan")

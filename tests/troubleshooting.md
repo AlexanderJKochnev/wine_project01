@@ -1,6 +1,8 @@
 Распространенные ошибки
 1. <Response [409 Conflict]>: в схеме Create стоят автоинкрементные поля (id, pk) убрать
-2. <Response [422 Unprocessable Entity]> AssertionError: получение записи: в схеме Read отсутствует id, добавить
+2. <Response [422 Unprocessable Entity]> AssertionError: 
+   1. получение записи: в схеме Read отсутствует id, добавить
+   2. Порядок роутеров - сначала статические затем динамические
 3. Error extracting attribute: MissingGreenlet: 
    1. в model.py добавить
       1. from __future__ import annotations

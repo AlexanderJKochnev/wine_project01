@@ -60,21 +60,19 @@ class BaseRouter:
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
+        self.router.add_api_route("/search", self.search, methods=["GET"],
+                                  response_model=self.paginated_response)
+        self.router.add_api_route("/deepsearch", self.deep_search, methods=["GET"],
+                                  response_model=self.paginated_response)
+        self.router.add_api_route("/advsearch", self.advanced_search, methods=["GET"],
+                                  response_model=self.paginated_response)
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
                                   response_model=self.read_schema,
-                                  responses=self.responses)
+                                  # responses=self.responses
+                                  )
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
-        self.router.add_api_route("/search",
-                                  self.search, methods=["GET"],
-                                  response_model=self.paginated_response)
-        self.router.add_api_route("/deepsearch",
-                                  self.deep_search, methods=["GET"],
-                                  response_model=self.paginated_response)
-        self.router.add_api_route("/advsearch",
-                                  self.advanced_search, methods=["GET"],
-                                  response_model=self.paginated_response)
 
     async def get_one(self,
                       # id: int = Query(..., description="ID", gt=0),
@@ -163,14 +161,19 @@ class BaseRouter:
                 'deleted_count': 1 if result else 0,
                 'message': f'{self.model.__name__} with id {id} has been deleted'}
 
-    async def search(self, query: Optional[str] = Query(None),
-                     text_fields: List[str] = ['name', 'name_ru', 'description', 'description_ru'],
+    async def search(self, query: str = Query(...),
+                     page: int = Query(1, ge=1),
+                     page_size: int = Query(paging.get('def', 20),
+                                            ge=paging.get('min', 1),
+                                            le=paging.get('max', 1000)),
                      session: AsyncSession = Depends(get_db)) -> dict:
         """Поиск по всем текстовым полям основной таблицы"""
-        return await self.repo.search_in_main_table(query, text_fields, session)
+        print(f'==============={query}===========')
+        items = await self.repo.search_in_main_table(query, page, page_size, session=session)
+        result = self.paginated_response(**items)
+        return result
 
     async def deep_search(self, query: Optional[str] = Query(None),
-                          # service: ItemService = Depends(),
                           session: AsyncSession = Depends(get_db)) -> dict:
         """Поиск по текстовым полям основной таблицы и связанных таблиц"""
         # return await service.deep_search_in_main_table(query)

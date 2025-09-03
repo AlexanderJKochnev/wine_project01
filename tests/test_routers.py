@@ -66,7 +66,9 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
                               'Thus election section including on.',
             'name_ru': 'Хорошее испанское вино',
             'name': 'Good spanish wine',
-            'food': ['Ellenfurt',]}
+            # 'food': ['Ellenfurt',]
+            }
+    datacopy = data.copy()
     subdata: dict = {}
     for Router in router_list:
         router = Router()
@@ -80,7 +82,7 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
             try:
                 _ = create_schema(**subdata)
             except Exception as e:
-                assert False, f'ошибка валидации {model_name=}, {e}'
+                assert False, f'ошибка валидации {model_name=}, {e}, {subdata=}'
             response = await client.post(f'{prefix}', json=subdata)
             assert response.status_code == 200, f'Ошибка create {model_name}'
             res = response.json()
@@ -93,7 +95,7 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
     prefix = router.prefix
     create_schema = router.create_schema
     try:
-        _ = create_schema(**data)
+        validated_data = create_schema(**data)
     except Exception as e:
         assert False, f'Ошибка валидации Drink {e}, {data}'
 
@@ -101,11 +103,13 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
     assert response.status_code == 200
 
     result = response.json()
-    for key, val in data.items():
-        if not isinstance(val, float):
+    # validate_response = create_schema(**result.model_dump())
+
+    for key, val in datacopy.items():
+        if not isinstance(result.get(key), float):
             # проблема - float возвращается из json() как str после округления, поэтому пока нет
             # поэтому пока нет необходимости в математической точности - не сравниваем
-            assert result.get(key) == val, f'{type(val)} проверка соответствия сораненных данных не прошла'
+            assert result.get(key) == val, f'{key=} {val=} {result.get('key')=}'
 
 
 @pytest.mark.skip

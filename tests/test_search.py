@@ -1,49 +1,25 @@
-# tests/test_routers.py
+# tests/test_search.py
 """
-    тестируем все методы POST и GET ( get all with pagination, get_one)
+    тестируем все методы SEARCH
     новые методы добавляются автоматически
-    добавить get_by_field
 """
 
 import pytest
+from typing import List
 from app.core.schemas.base import ListResponse
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_get_all(authenticated_client_with_db, test_db_session, routers_get_all, fakedata_generator):
-    """ тестирует методы get all - с проверкой формата ответа """
-    routers = routers_get_all
-    x = ListResponse.model_fields.keys()
-    client = authenticated_client_with_db
-    for prefix in routers:
-        response = await client.get(f'{prefix}')
-        assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
-
-
-async def test_get_one(authenticated_client_with_db, test_db_session,
-                       routers_get_all, fakedata_generator):
+async def test_search(authenticated_client_with_db, test_db_session,
+                      routers_get_all, fakedata_generator):
     """ тестирует методы get one - c проверкой id """
     client = authenticated_client_with_db
     routers = routers_get_all
-    """
-    tmp = [(a.path.lstrip('/').split('/')[0], a)
-           for a in app.routes
-           if all((isinstance(a, APIRoute), a.path not in ('/', '/auth/token', '/wait')))]
-    for n, a in tmp:
-        print(f'{n}: {a}')
-    from collections import defaultdict
-    result = defaultdict(set)
-    for key, value in tmp:
-        result[key].add(value)
-    result = dict(result)
-
-    assert False
-    """
     x = ListResponse.model_fields.keys()
-    for prefix in routers:
-        response = await client.get(f'{prefix}')
+    counter = 0
+    for prefix in routers:          # перебирает существующие роутеры
+        response = await client.get(f'{prefix}')   # получает все записи (1 страница)
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
         tmp = response.json()
@@ -51,25 +27,22 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
         if total > 0:
             instance = tmp['items'][-1]  # берем последнюю запись
             id = instance.get('id')
-            resp = await client.get(f'{prefix}/{id}')
-            assert resp.status_code == 200, f'получение записи {prefix} c {id} неудачно'
-            result = resp.json()
-            # проверка содержимого
+            dump: List[str] = []
             for key, val in instance.items():
-                if not isinstance(val, float):   # особенности хранения и возврата float в Postgresql+SQLAlchemy
-                    assert result.get(key) == val, (f'полученные данные {result.get(key)} '
-                                                    f'не соответствуют ожидаемым {val}')
-        else:   # записей в тестируемой таблице нет, просот тестируем доступ
-            resp = await client.get(f'{prefix}/1')
-            assert resp.status_code in [200, 404]
-
-
-async def test_fault_get_one(authenticated_client_with_db, test_db_session,
-                             routers_get_all, fakedata_generator):
-    """ тестирует методы get one - несуществующий id """
-    client = authenticated_client_with_db
-    routers = routers_get_all
-    for prefix in routers:
-        id = 1000
-        response = await client.get(f'{prefix}/{id}')
-        assert response.status_code == 404
+                if isinstance(val, str) and key not in ['category', 'color', 'sweetness', 'region']:
+                    dump.append(val)
+            search_query = dump[-1].split(' ')[0]  # предпоследнее слово
+            params = {'query': search_query}
+            resp = await client.get(f'{prefix}/search', params=params)
+            print("Status:", resp.status_code)
+            print("Response body:", resp.json())  # или response.text
+            assert resp.status_code == 200, (f'получение записи {prefix} c {id} неудачно {search_query=} '
+                                             f'выполнено {counter} тестов успешно, '
+                                             f'Expected 200, got {resp.status_code}, body: {resp.text}')
+            result = resp.json()
+            res = [instance for instance in result if instance.get('id') == id]
+            assert res > 0, (f'поиск по слову {search_query} не удался в таблице {prefix}, '
+                             f'выполнено {counter} тестов успешно')
+        else:   # записей в тестируемой таблице нет, пропускаем
+            print(f'{prefix} записей в тестируемой таблице нет, пропускаем')
+        counter += 1

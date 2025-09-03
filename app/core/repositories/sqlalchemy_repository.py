@@ -6,7 +6,7 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 from sqlalchemy import func, select, or_, and_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta
-
+from app.core.utils.common_utils import get_text_model_fields
 from app.core.services.logger import logger
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -87,19 +87,37 @@ class Repository(Generic[ModelType]):
         return total
 
     async def search_in_main_table(self,
-                                   search_query: Optional[str], text_fields: List[str],
+                                   search_query: str,
+                                   page: int,
+                                   page_size: int,
                                    session: AsyncSession) -> List[Any]:
         """Поиск по всем заданным текстовым полям основной таблицы"""
-        model = self.model
-        if not search_query:
-            return []
-        query = session.query(model)
-        conditions = []
-
-        for field in text_fields:
-            if hasattr(model, field):
-                conditions.append(getattr(model, field).ilike(f"%{search_query}%"))
-        if conditions:
-            query = query.filter(or_(*conditions))
-        result = await session.execute(query)
-        return result.scalars().all()
+        items = []
+        skip = (page - 1) * page_size
+        total = 0
+        try:
+            query = self.get_query()     # все записи
+            text_fields = get_text_model_fields(self.model)
+            conditions = []
+            for field in text_fields:
+                conditions.append(getattr(self.model, field).ilike(f"%{search_query}%"))
+            if conditions:
+                query = query.filter(or_(*conditions))
+            # total_query = select(func.count()).select_from(query)
+            total_tmp = await session.execute(select(func.count()).select_from(query))
+            total = total_tmp.scalar()
+            
+            query = query.offset(skip).limit(page_size)
+            result = await session.execute(query)
+            items = result.scalars().all()
+            has_next = skip + len(items) < total
+        except Exception as e:
+            logger.error(f'ошибка search_in_main_table: {e}')
+        finally:
+            result = {"items": items,
+                      "total": total,
+                      "page": page,
+                      "page_size": page_size,
+                      "has_next": has_next,
+                      "has_prev": page > 1}
+            return result

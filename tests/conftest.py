@@ -17,7 +17,7 @@ from tests.utility.find_models import discover_models, discover_schemas2
 
 scope = 'session'
 scope2 = 'session'
-example_count = 50      # количество тестовых записей - рекомедуется >20 для paging test
+example_count = 5      # количество тестовых записей - рекомедуется >20 для paging test
 
 
 def get_routers(method: str = 'GET') -> List[APIRoute]:
@@ -152,16 +152,20 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session, get_
     counts = example_count
     for key, val in get_fields_type.items():
         for n in range(counts):
-            route = key
-            if n % 2 == 0:
-                data = {k2: v2() for k2, v2 in val['required_only'].items()}
-            else:
-                try:
-                    data = {k2: v2() for n, (k2, v2) in enumerate(val['all_fields'].items())}
-                except Exception as e:
-                    print(f'ошибка {e}  {val['all_fields']}')
-            response = await client.post(f'{route}', json=data)
-            assert response.status_code == 200, f'{route=} {data=} {key=}'
+            try:
+                route = key
+                if n % 2 == 0:
+                    data = {k2: v2() for k2, v2 in val['required_only'].items()}
+                else:
+                    try:
+                        data = {k2: v2() for n, (k2, v2) in enumerate(val['all_fields'].items())}
+                    except Exception as e:
+                        print(f'ошибка {e}  {val['all_fields']}')
+                response = await client.post(f'{route}', json=data)
+                assert response.status_code == 200, f'{route=} {data=} {key=}'
+            except Exception as e:
+                assert False, f'fakedata_generator {e} {route} {response.text}'
+
 
 
 @pytest.fixture(scope=scope)

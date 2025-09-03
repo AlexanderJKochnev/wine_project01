@@ -7,7 +7,9 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
 from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty
 from sqlalchemy import inspect
-from sqlalchemy.sql.sqltypes import String, Text, Boolean
+# from sqlalchemy.sql.sqltypes import String, Text, Boolean
+from sqlalchemy import String, Text, Unicode, UnicodeText, Boolean
+from sqlalchemy.dialects.postgresql import CITEXT  # если используешь PostgreSQL
 
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -270,3 +272,9 @@ def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
     if detail_view:
         columns = [a for a in columns if all((not a.endswith('_id'), a != 'image_path'))]
     return columns
+
+
+def get_text_model_fields(model: ModelType) -> List[str]:
+    # Список типов, которые считаем "текстовыми"
+    text_types = (String, Text, Unicode, UnicodeText, CITEXT)
+    return [col.name for col in model.__table__.columns if isinstance(col.type, text_types)]
