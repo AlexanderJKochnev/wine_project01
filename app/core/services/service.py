@@ -5,6 +5,8 @@ from sqlalchemy.orm import DeclarativeMeta
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.models.base_model import Base
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from app.core.schemas.base import DeleteResponse
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -45,6 +47,16 @@ class Service:
         obj = await self.repository.patch(id, data_dict, session)
         return obj
 
+    async def delete(self, id: Any, session: AsyncSession) -> bool:
+        result = await self.repository.delete(id, session)
+        if not result:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"{self.model.__name__} with id {id} not found")
+
+        resu = {'success': result,
+                'deleted_count': 1 if result else 0,
+                'message': f'{self.model.__name__} with id {id} has been deleted'}
+        return DeleteResponse(**resu)
 
 # -------------------
     async def search_in_main_table(self,

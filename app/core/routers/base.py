@@ -138,15 +138,7 @@ class BaseRouter:
 
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
-        result = await self.repo.delete(id, session)
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{self.model.__name__} with id {id} not found"
-            )
-        return {'success': result,
-                'deleted_count': 1 if result else 0,
-                'message': f'{self.model.__name__} with id {id} has been deleted'}
+        return await self.service.delete(id, session)
 
     async def search(self, query: str = Query(...),
                      page: int = Query(1, ge=1),
