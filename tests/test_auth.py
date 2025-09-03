@@ -10,7 +10,7 @@ async def test_create_user(authenticated_client_with_db):
     user_data = {"username": "newuser", "email": "newuser@example.com",
                  "password": "newpassword123"}
     client = authenticated_client_with_db
-    response = await client.post("/users/", json=user_data)
+    response = await client.post("/users", json=user_data)
     print(f"Create user response: {response.status_code} - {response.text}")
     # Проверяем успешное создание
     assert response.status_code in [200, 201], f"Expected 200 or 201, got {response.status_code}"

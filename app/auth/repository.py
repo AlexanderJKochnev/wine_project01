@@ -31,7 +31,8 @@ class UserRepository(Repository):
 
     async def create(self, data: dict, session):
         data["hashed_password"] = self.get_password_hash(data.pop("password"))
-        return await super().create(data, session)
+        verified_data = self.model(**data)
+        return await super().create(verified_data, session)
 
     async def get_superuser_by_username(self, username: str, session: AsyncSession):
         from sqlalchemy import select
