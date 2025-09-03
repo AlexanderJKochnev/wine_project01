@@ -40,6 +40,11 @@ class Service:
                   "has_prev": page > 1}
         return result
 
+    async def patch(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
+        obj = await self.repo.patch(id, data.model_dump(exclude_unset=True), session)
+        return obj
+
+
 # -------------------
     async def search_in_main_table(self,
                                    query: str,
