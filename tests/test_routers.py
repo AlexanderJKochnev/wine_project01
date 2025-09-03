@@ -95,7 +95,7 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
     prefix = router.prefix
     create_schema = router.create_schema
     try:
-        validated_data = create_schema(**data)
+        _ = create_schema(**data)
     except Exception as e:
         assert False, f'Ошибка валидации Drink {e}, {data}'
 
@@ -204,3 +204,7 @@ async def test_greenlet(authenticated_client_with_db, test_db_session):
             assert response.status_code == 200, f'create for data_slave error {data}'
         except Exception as e:
             assert False, f'{e} {data=} {x['id']=}'
+
+
+async def test_search(authenticated_client_with_db, test_db_session, fakedata_generator):
+    pass

@@ -24,14 +24,15 @@ class RegionRouter(BaseRouter):
         self.create_response_schema = RegionCreateResponseSchema
         self.setup_routes()
 
+    """
     def setup_routes(self):
-        """Настраивает маршруты"""
+        # Настраивает маршруты
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
-
+    """
     async def create(self, data: RegionCreate, session: AsyncSession = Depends(get_db)) -> RegionRead:
         return await super().create(data, session)
 

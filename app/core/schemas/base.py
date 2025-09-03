@@ -61,38 +61,37 @@ class ReadSchemaWithRealtionships(ReadSchema):
             Никакой модификации исходного объекта!
         """
         if hasattr(data, '__dict__') or hasattr(data, '__class__'):
+            deep_seep_exclude = tuple(ReadSchema.model_fields.keys())
+            deep: dict = {}
             # Это ORM-объект
-            result = {}
+            result: dict = {}
             for field_name in cls.model_fields:
                 value = getattr(data, field_name, None)
-
                 # 1. Если это список (many-to-many или many-to-one)
                 if isinstance(value, list):
                     # Берём .name у каждого элемента, если есть
                     result[field_name] = [item.name for item in value if
                                           hasattr(item, 'name') and isinstance(getattr(item, 'name'), str)]
-
                 # 2. Если это ORM-объект (одиночное отношение)
                 elif hasattr(value, '_sa_instance_state'):  # это ORM-объект
                     if hasattr(value, 'name') and isinstance(value.name, str):
                         result[field_name] = value.name
-
-                    # 3. Вложенные связи: region.country.name
-                    elif hasattr(value, 'country') and hasattr(value.country, 'name'):
-                        country_name = value.country.name if isinstance(value.country.name, str) else ""
-                        if isinstance(value.name, str):
-                            result[field_name] = f"{value.name} - {country_name}".strip(" - ")
-                        else:
-                            result[field_name] = country_name
-
-                    # 4. Другие вложенные шаблоны можно добавить здесь
-                    else:
-                        result[field_name] = str(value)
-
-                # 5. Простое значение (str, int, bool и т.д.)
+                        # далее при наличи свойства '_sa_instance_state' ищем поля relationships
+                        for key, val in value.__dict__.items():
+                            if key in deep_seep_exclude:
+                                continue
+                            if key not in cls.model_fields:
+                                continue
+                            deep[key] = str(val)
+                            print(f'{field_name}==={key}: {str(val)} {type(val)=}')
+                            # if key in cls.model_fields and not isinstance(val, Union[str, int, float]):
+                            #     print(f'{field_name}: {key=} {val} {type(val)=}')
+                        # tmp = {key: val for key, val in value.__dict__.items() if key in cls.model_fields}
+                # 3. Простое значение (str, int, bool и т.д.)
                 else:
                     result[field_name] = value
-
+            # 4. переопределяем relationships поля
+            result.update(deep)
             return result
 
 

@@ -3,7 +3,7 @@
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships, ShortSchema,
                                    UpdateSchema)
@@ -67,17 +67,20 @@ class DrinkRead(ReadSchemaWithRealtionships):
                               populate_by_name=True,
                               exclude_none=True)
 
-    category: Optional[str] = None
-    # food: Optional[str] = None
-    color: Optional[str] = None
-    sweetness: Optional[str] = None
-    region: Optional[str] = None
+    # simple fields
     subtitle: Optional[str] = None
     alcohol: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
-    country: Optional[str] = None  # region.country.name
+    country: Optional[str] = Field(..., json_schema_extra={'parent': 'region'},
+                                   description='это поле унаследовано от region.country'
+                                   )  # region.country.name
+    category: Optional[str] = None
+    # relationships field
+    color: Optional[str] = None
+    sweetness: Optional[str] = None
+    region: Optional[str] = None
     food: Optional[List[str]] = []
 
 

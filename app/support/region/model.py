@@ -12,6 +12,6 @@ if TYPE_CHECKING:
 
 class Region(Base, BaseLang, BaseEn, BaseAt):
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    country: Mapped["Country"] = relationship(back_populates="regions")
+    country: Mapped["Country"] = relationship(back_populates="regions", lazy="selectin")
 
-    drinks = relationship("Drink", back_populates="region")
+    drinks = relationship("Drink", back_populates="region", lazy="selectin")

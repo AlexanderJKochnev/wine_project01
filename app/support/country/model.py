@@ -5,6 +5,6 @@ from sqlalchemy.orm import relationship
 
 
 class Country(BaseFull):
-    regions = relationship("Region", back_populates="country")
+    regions = relationship("Region", back_populates="country", lazy="selectin")
 
     # drinks = relationship("Drink", back_populates="category", lazy="select")
