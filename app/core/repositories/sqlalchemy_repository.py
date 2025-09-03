@@ -23,13 +23,12 @@ class Repository(Generic[ModelType]):
         """
         return select(self.model)
 
-    async def create(self, data: Dict[str, Any], session: AsyncSession) -> ModelType:
-        """ create & return record """
+    async def create(self, obj: ModelType, session: AsyncSession) -> ModelType:
+        """
+        create & return record """
         # stmt = insert(self.model).values(**data).returning(self.model)
         # result = await session.execute(stmt)
         # obj = result.scalar_one()
-
-        obj = self.model(**data)
         session.add(obj)
         await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
         await session.commit()
@@ -45,12 +44,13 @@ class Repository(Generic[ModelType]):
         obj = result.scalar_one_or_none()
         return obj
 
-    async def get_all(self, skip, limit, session: AsyncSession, ) -> dict:
+    async def get_all(self, skip, limit, session: AsyncSession, ) -> tuple:
         # Запрос с загрузкой связей и пагинацией
         stmt = self.get_query().offset(skip).limit(limit)
+        total = await self.get_count(session)
         result = await session.execute(stmt)
         items = result.scalars().all()
-        return items
+        return items, total
 
     async def patch(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
         obj = await self.get_by_id(id, session)

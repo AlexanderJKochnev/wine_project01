@@ -85,7 +85,7 @@ class BaseRouter:
             - 404: Запись не найдена
             - 500: Внутренняя ошибка сервера
             """
-        obj = await self.repo.get_by_id(id, session)
+        obj = await self.service.get_by_id(id, session)
         if obj is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -99,18 +99,8 @@ class BaseRouter:
                                          le=paging.get('max', 1000)),
                   session: AsyncSession = Depends(get_db)) -> dict:
         try:
-            skip = (page - 1) * page_size
-            items = await self.repo.get_all(skip=skip, limit=page_size, session=session)
-            # Подсчёт общего количества
-            total = await self.repo.get_count(session)
-            page = (skip // page_size) + 1
-            retu = {"items": items,
-                    "total": total,
-                    "page": page,
-                    "page_size": page_size,
-                    "has_next": skip + len(items) < total,
-                    "has_prev": page > 1}
-            result = self.paginated_response(**retu)
+            response = await self.service.get_all(page, page_size, session)
+            result = self.paginated_response(**response)
             return result
         except Exception as e:
             raise HTTPException(
@@ -119,8 +109,7 @@ class BaseRouter:
 
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            data_dict = data.model_dump(exclude_unset=True)
-            obj = await self.repo.create(data_dict, session)
+            obj = await self.service.create(data, session)
             return obj
         except IntegrityError:
             raise HTTPException(
