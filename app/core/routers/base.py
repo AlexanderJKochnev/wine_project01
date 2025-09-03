@@ -129,7 +129,7 @@ class BaseRouter:
     async def patch(self, id: int, data: TUpdate,
                     session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.repo.patch(id, data.model_dump(exclude_unset=True), session)
+            obj = await self.service.patch(id, data, session)
             if not obj:
                 raise HTTPException(status_code=404, detail="Not found")
             return obj

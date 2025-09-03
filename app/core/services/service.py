@@ -40,8 +40,9 @@ class Service:
                   "has_prev": page > 1}
         return result
 
-    async def patch(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
-        obj = await self.repo.patch(id, data.model_dump(exclude_unset=True), session)
+    async def patch(self, id: Any, data: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        data_dict = data.model_dump(exclude_unset=True)
+        obj = await self.repository.patch(id, data_dict, session)
         return obj
 
 
