@@ -13,7 +13,7 @@ from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
 from app.core.services.logger import logger
-# from app.core.services.serevice_layer import Service
+from app.core.services.service import Service
 
 
 paging = get_paging
@@ -41,6 +41,7 @@ class BaseRouter:
     ):
         self.model = model
         self.repo = repo()
+        self.service = Service(self.repo, self.model)
         self.create_schema = create_schema
         self.patch_schema = patch_schema
         self.read_schema = read_schema
@@ -118,9 +119,6 @@ class BaseRouter:
 
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            # if isinstance(data, dict):
-            #     data_dict = {key: val for key, val in data.items() if val}
-            # else:
             data_dict = data.model_dump(exclude_unset=True)
             obj = await self.repo.create(data_dict, session)
             return obj
@@ -168,8 +166,7 @@ class BaseRouter:
                                             le=paging.get('max', 1000)),
                      session: AsyncSession = Depends(get_db)) -> dict:
         """Поиск по всем текстовым полям основной таблицы"""
-        print(f'==============={query}===========')
-        items = await self.repo.search_in_main_table(query, page, page_size, session=session)
+        items = await self.service.search_in_main_table(query, page, page_size, session=session)
         result = self.paginated_response(**items)
         return result
 

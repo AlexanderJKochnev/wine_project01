@@ -90,10 +90,10 @@ class Repository(Generic[ModelType]):
                                    search_query: str,
                                    page: int,
                                    page_size: int,
+                                   skip: int,
                                    session: AsyncSession) -> List[Any]:
         """Поиск по всем заданным текстовым полям основной таблицы"""
         items = []
-        skip = (page - 1) * page_size
         total = 0
         try:
             query = self.get_query()     # все записи
