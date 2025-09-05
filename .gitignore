@@ -24,6 +24,8 @@ pg_data/
 seaweed_data/
 migration_volume/
 mongodb_data/
+DOCS/
+DOCS/git.md
 
 # Virtual environment
 .venv/

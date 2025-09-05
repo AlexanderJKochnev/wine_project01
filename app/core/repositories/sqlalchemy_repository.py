@@ -1,13 +1,14 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Tuple
 
-from sqlalchemy import func, select, or_, and_, text
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta
-from app.core.utils.common_utils import get_text_model_fields
+
 from app.core.services.logger import logger
+from app.core.utils.common_utils import get_text_model_fields
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -106,7 +107,7 @@ class Repository(Generic[ModelType]):
             # total_query = select(func.count()).select_from(query)
             total_tmp = await session.execute(select(func.count()).select_from(query))
             total = total_tmp.scalar()
-            
+
             query = query.offset(skip).limit(page_size)
             result = await session.execute(query)
             items = result.scalars().all()
@@ -121,3 +122,64 @@ class Repository(Generic[ModelType]):
                       "has_next": has_next,
                       "has_prev": page > 1}
             return result
+
+
+"""
+    async def search_with_relations(
+            self, search_query: Optional[str], main_text_fields: Optional[List[str]] = None,
+            relation_fields: Optional[Dict[str, List[str]]] = None, page: int = 1, page_size: int = 20
+            ) -> Tuple[List[Item], int]:
+        # Поиск по текстовым полям основной таблицы и связанных таблиц с пагинацией
+        if not search_query:
+            stmt = select(Item)
+            count_stmt = select(func.count()).select_from(Item)
+        else:
+            main_text_fields = main_text_fields or ['name', 'description']
+            relation_fields = relation_fields or {}
+
+            conditions = []
+
+            # Поля основной таблицы
+            for field in main_text_fields:
+                if hasattr(Item, field):
+                    conditions.append(getattr(Item, field).ilike(f"%{search_query}%"))
+
+            # Поля связанных таблиц
+            for relation_name, fields in relation_fields.items():
+                if hasattr(Item, relation_name):
+                    relation_attr = getattr(Item, relation_name)
+                    rel_model = relation_attr.property.mapper.class_
+
+                    for field in fields:
+                        if hasattr(rel_model, field):
+                            # Создаем подзапрос для связанной таблицы
+                            subquery = select(Item.id).join(
+                                    rel_model, getattr(Item, f"{relation_name}_id") == rel_model.id
+                                    ).where(
+                                    getattr(rel_model, field).ilike(f"%{search_query}%")
+                                    )
+                            conditions.append(Item.id.in_(subquery))
+
+            if not conditions:
+                return [], 0
+
+            stmt = select(Item).where(or_(*conditions))
+            count_stmt = select(func.count()).select_from(Item).where(or_(*conditions))
+
+        # Загружаем связанные данные
+        stmt = stmt.options(
+                selectinload(Item.category), selectinload(Item.tags)
+                )
+
+        # Пагинация
+        offset = (page - 1) * page_size
+        stmt = stmt.offset(offset).limit(page_size)
+
+        result = await self.session.execute(stmt)
+        items = result.scalars().all()
+
+        count_result = await self.session.execute(count_stmt)
+        total_count = count_result.scalar()
+
+        return items, total_count
+"""

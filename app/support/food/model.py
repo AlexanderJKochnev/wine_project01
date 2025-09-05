@@ -1,15 +1,24 @@
 # app/support/food/model.py
+from __future__ import annotations
+from sqlalchemy.orm import relationship, Mapped
+from typing import List, TYPE_CHECKING
+from app.core.models.base_model import Base, BaseAt, BaseEn, BaseLang
 
-from app.core.models.base_model import Base, BaseLang, BaseEn, BaseAt
-
-from sqlalchemy.orm import relationship
+if TYPE_CHECKING:
+    from app.support.drink.model import DrinkFood
 
 
 class Food(Base, BaseLang, BaseEn, BaseAt):
-    """drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
-                                                 back_populates="food", cascade="all, delete-orphan")
-    """
-    # drinks = relationship("Drink", back_populates="food", lazy="select")
 
-    # Обратная связь (опционально)
-    drink_associations = relationship("DrinkFood", back_populates="food", cascade="all, delete-orphan")
+    # Связь с промежуточной таблицей
+    drink_associations: Mapped[List["DrinkFood"]] = relationship("DrinkFood",
+                                                                 back_populates="food",
+                                                                 cascade="all, delete-orphan")
+    drinks = relationship("Drink", secondary="drink_food_associations", back_populates="foods",
+                          lazy="selectin")
+
+    """ alternative version
+    @property
+    def drinks(self):
+        return [association.drink for association in self.drink_associations]
+    """

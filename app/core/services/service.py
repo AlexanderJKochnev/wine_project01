@@ -28,6 +28,7 @@ class Service:
         get one record by id
         """
         obj = await self.repository.get_by_id(id, session)
+        # print(f'{self.repository=}')
         return obj
 
     async def get_all(self, page: int, page_size: int, session: AsyncSession, ) -> List[dict]:

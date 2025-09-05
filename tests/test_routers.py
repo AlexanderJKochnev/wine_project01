@@ -89,7 +89,8 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
             data[f'{model_name.lower()}_id'] = res['id']
             subdata = {}
     for key, val in data.items():
-        print(f'            {key}::{val}')
+        # print(f'            {key}::{val}')
+        pass
 
     router = DrinkRouter()
     prefix = router.prefix
@@ -107,9 +108,14 @@ async def test_create_drink(authenticated_client_with_db, test_db_session):
 
     for key, val in datacopy.items():
         if not isinstance(result.get(key), float):
-            # проблема - float возвращается из json() как str после округления, поэтому пока нет
+            # проверка идентичности входных значений и сохраннх данных
+            # проблема - float возвращается из json() как str после округления,
             # поэтому пока нет необходимости в математической точности - не сравниваем
             assert result.get(key) == val, f'{key=} {val=} {result.get('key')=}'
+    id = result.get('id')
+
+    response = await client.get(f'{prefix}/{id}')
+    assert response.status_code == 200, response.text
 
 
 @pytest.mark.skip

@@ -83,7 +83,7 @@ class ReadSchemaWithRealtionships(ReadSchema):
                             if key not in cls.model_fields:
                                 continue
                             deep[key] = str(val)
-                            print(f'{field_name}==={key}: {str(val)} {type(val)=}')
+                            # print(f'{field_name}==={key}: {str(val)} {type(val)=}')
                 else:
                     result[field_name] = value
             # 4. переопределяем relationships поля

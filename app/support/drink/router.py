@@ -1,11 +1,15 @@
-# app/support/drink/auth.py
-from sqlalchemy.ext.asyncio import AsyncSession
+# app/support/drink/router.py
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
-from app.support.drink.schemas import DrinkRead, DrinkCreate, DrinkUpdate, DrinkCreateResponseSchema
+from app.support.drink.schemas import DrinkCreate, DrinkCreateResponseSchema, DrinkRead, DrinkUpdate
+from app.support.drink.drink_food_repo import DrinkFoodRepository
+from app.support.drink.drink_food_service import DrinkFoodService
+from app.support.drink.service import DrinkService
 
 
 class DrinkRouter(BaseRouter):
@@ -17,25 +21,22 @@ class DrinkRouter(BaseRouter):
             patch_schema=DrinkUpdate,
             read_schema=DrinkRead,
             prefix="/drinks",
-            tags=["drinks"]
+            tags=["drinks"],
+            service=DrinkService
         )
         self.create_response_schema = DrinkCreateResponseSchema
         self.setup_routes()
 
-    """def setup_routes(self):
-        # Настраивает маршрутs
-        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
-        self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
-        self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
-        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
-        self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
-"""
+    def get_drink_food_service(session: AsyncSession) -> DrinkFoodService:
+        repo = DrinkFoodRepository(session)
+        return DrinkFoodService(repo)
+
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
         result = await super().create(data, session)
         return result
 
     async def patch(self, id: int, data: DrinkUpdate,
-                     session: AsyncSession = Depends(get_db)) -> DrinkRead:
+                    session: AsyncSession = Depends(get_db)) -> DrinkRead:
         return await super().patch(id, data, session)
 
 

@@ -2,15 +2,13 @@
 # some useful utilits
 
 from pathlib import Path
-from typing import Dict, List, TypeVar
-from sqlalchemy.orm import selectinload
-from sqlalchemy.sql.selectable import Select
-from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty
-from sqlalchemy import inspect
-# from sqlalchemy.sql.sqltypes import String, Text, Boolean
-from sqlalchemy import String, Text, Unicode, UnicodeText, Boolean
-from sqlalchemy.dialects.postgresql import CITEXT  # если используешь PostgreSQL
+from typing import Any, Dict, List, Optional, Set, TypeVar
 
+# from sqlalchemy.sql.sqltypes import String, Text, Boolean
+from sqlalchemy import Boolean, inspect, String, Text, Unicode, UnicodeText
+from sqlalchemy.dialects.postgresql import CITEXT  # если используешь PostgreSQL
+from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty, selectinload
+from sqlalchemy.sql.selectable import Select
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -206,6 +204,7 @@ def print_model_schema(model, title=None):
 def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
                      list_view: bool = False,
                      detail_view: bool = False) -> List[str]:
+    """ список полей модели отсортированный по типу и алфавиту"""
     mapper = inspect(model)
     columns = []
 
@@ -275,6 +274,79 @@ def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
 
 
 def get_text_model_fields(model: ModelType) -> List[str]:
+    """
+    получаем список имен текстовых полей модели
+    :param model:  model
+    :type model:   model type
+    :return:       список имен текстовых поелй модели
+    :rtype:        List[str]
+    """
     # Список типов, которые считаем "текстовыми"
     text_types = (String, Text, Unicode, UnicodeText, CITEXT)
     return [col.name for col in model.__table__.columns if isinstance(col.type, text_types)]
+
+
+def flatten_dict(
+    d: Dict[str, Any],
+    priority_fields: List[str],
+    seen: Optional[Set[int]] = None,
+    result: Optional[Dict[str, Any]] = None,
+    parent_key: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Рекурсивно проходит по вложенному словарю и "поднимает" все словари,
+    содержащие поля из priority_fields, как отдельные записи в плоском словаре.
+
+    Пример:
+        region: { name: "Catalonia", country: { name: "Spain" } }
+        →
+        { "region": "Catalonia", "country": "Spain" }
+
+    :param d: исходный словарь
+    :param priority_fields: приоритетные поля для извлечения значения (например, ['name', 'name_ru'])
+    :param seen: защита от циклов
+    :param result: аккумулятор результата
+    :param parent_key: имя ключа на предыдущем уровне (для отладки/логики)
+    :return: плоский словарь
+    """
+    if seen is None:
+        seen = set()
+    if result is None:
+        result = {}
+
+    obj_id = id(d)
+    if obj_id in seen:
+        return result
+    seen.add(obj_id)
+
+    for key, value in d.items():
+        current_key = key  # Имя ключа, через которое доступен объект
+
+        if isinstance(value, dict) and value:
+            # Попробуем извлечь значение для этого словаря
+            extracted = None
+            for field in priority_fields:
+                if field in value:
+                    val = value[field]
+                    if val not in [None, "", " ", []]:
+                        extracted = val
+                        break
+
+            # Если извлекли — добавляем в результат по ключу `key`
+            if extracted is not None:
+                result[current_key] = extracted
+
+            # Всё равно рекурсивно обходим вложенные структуры
+            flatten_dict(value, priority_fields, seen, result, parent_key=current_key)
+
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    flatten_dict(item, priority_fields, seen, result, parent_key=current_key)
+
+        # Простые значения: оставляем в исходных ключах (но не перезаписываем, если уже есть)
+        elif key not in result:  # чтобы не перебивать name-значения
+            result[key] = value
+
+    seen.discard(obj_id)
+    return result

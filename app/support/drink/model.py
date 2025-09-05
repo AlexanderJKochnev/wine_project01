@@ -1,19 +1,16 @@
 # app/support/drink/model.py
 from __future__ import annotations
-from sqlalchemy import String, Text, text, ForeignKey, Integer, Column   # noqa: F401
-from sqlalchemy.orm import (relationship,
-                            Mapped, mapped_column)
+
 from typing import List, TYPE_CHECKING
-# from app.core.models.image_mixin import ImageMixin
-from app.core.models.base_model import (Base, BaseLang, BaseEn, BaseAt,
-                                        str_null_true, volume, ion, boolnone)
-from sqlalchemy.orm import (DeclarativeBase, Mapped,
-                            declared_attr, mapped_column)
+
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, text  # noqa: F401
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.models.base_model import (Base, BaseAt, BaseEn, BaseLang, boolnone, ion, str_null_true, volume)
 
 if TYPE_CHECKING:
     from app.support.sweetness.model import Sweetness
     from app.support.color.model import Color
-    from app.support.food.model import Food
     from app.support.region.model import Region
     from app.support.category.model import Category
     from app.support.item.model import Item
@@ -43,12 +40,28 @@ class Drink(Base, BaseLang, BaseEn, BaseAt):
     sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks", lazy="selectin")
 
     # Связь через промежуточную модель
+    # food_associations = relationship("DrinkFood", back_populates="drink", cascade="all, delete-orphan")
+    # foods = relationship("Food", secondary="drink_food_associations", viewonly=True, lazy="selectin")
+
+    # Прямые связи с промежуточной таблицей
     food_associations = relationship("DrinkFood", back_populates="drink", cascade="all, delete-orphan")
-    foods = relationship("Food", secondary="drink_food_associations", viewonly=True, lazy="selectin")
+    foods = relationship("Food",
+                         secondary="drink_food_associations",
+                         back_populates="drinks",
+                         lazy="selectin",
+                         viewonly=False  # чтобы можно было использовать в form
+                         )
+    # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
+
+    """ ALTERNATIVE VERSION
+    @property
+    def foods(self):
+        return [association.food for association in self.food_associations]
+    """
 
 
 class DrinkFood(Base):
-    # __tablename__ = "drink_food_associations"
+    __tablename__ = "drink_food_associations"
 
     drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
     food_id = Column(Integer, ForeignKey("foods.id"), primary_key=True)
@@ -60,7 +73,5 @@ class DrinkFood(Base):
     drink = relationship("Drink", back_populates="food_associations")
     food = relationship("Food", back_populates="drink_associations")
 
-
-    @declared_attr.directive
-    def __tablename__(cls) -> str:
-        return "drink_food_associations"
+    def __str__(self):
+        return f"Drink {self.drink_id} - Food {self.food_id} (Priority: {self.priority})"

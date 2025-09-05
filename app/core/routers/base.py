@@ -36,12 +36,13 @@ class BaseRouter:
         patch_schema: Type[ReadSchema],
         read_schema: Type[ReadSchema],
         prefix: str,
-        tags: List[str]
+        tags: List[str],
+        service: Service = Service
         # session: AsyncSession = Depends(get_db)
     ):
         self.model = model
         self.repo = repo()
-        self.service = Service(self.repo, self.model)
+        self.service = service(self.repo, self.model)
         self.create_schema = create_schema
         self.patch_schema = patch_schema
         self.read_schema = read_schema
@@ -76,7 +77,6 @@ class BaseRouter:
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def get_one(self,
-                      # id: int = Query(..., description="ID", gt=0),
                       id: int,
                       session: AsyncSession = Depends(get_db)) -> Any:
         """

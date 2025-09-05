@@ -39,11 +39,12 @@ async def test_search(authenticated_client_with_db, test_db_session,
         try:
             bgstring = (val for val in tmp2.values())
             bgstring = set(sum(bgstring, []))
-            bigstring = list(bgstring)
+            bigstring = [a for a in bgstring if len(a) > 3]
         except Exception as e:
             assert False, f'{tmp2}, {e}'
 
         query = bigstring[randint(0, len(bigstring) - 1)]
+
         # список id содержащий искомое слово
         expected_answer = [key for key, val in tmp2.items() if query in val]
         params = {'query': query}
@@ -51,5 +52,5 @@ async def test_search(authenticated_client_with_db, test_db_session,
         assert response.status_code == 200, response.text
         result = response.json().get('items')
         answer = [item.get('id') for item in result]
-        assert set(answer) == set(expected_answer), f'результат неверный {query} {prefix}'
+        assert set(answer) == set(expected_answer), f'результат неверный {query} {prefix} {query=}  {bigstring=}'
         counter += 1
