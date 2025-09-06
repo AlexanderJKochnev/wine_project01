@@ -1,16 +1,11 @@
 # app/support/country/schemas.py
 
-
 from pydantic import ConfigDict
 
-from app.core.schemas.base import CreateSchema, FullSchema, PkSchema, ReadSchema, ShortSchema, UpdateSchema
+from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema
 
 
-class CountryPk(PkSchema):
-    pass
-    
-
-class CustomSchema:
+class CustomReadSchema:
     pass
 
 
@@ -22,11 +17,7 @@ class CustomUpdSchema:
     pass
 
 
-class CountryShort(ShortSchema):
-    pass
-
-
-class CountryRead(ReadSchema):
+class CountryRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
@@ -35,8 +26,8 @@ class CountryCreate(CreateSchema, CustomCreateSchema):
 
 
 class CountryUpdate(UpdateSchema, CustomUpdSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class CountryFull(FullSchema, CustomSchema):
-    pass
+class CountryFull(FullSchema, CustomReadSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

@@ -1,4 +1,4 @@
-# app/support/region/schemas.py
+# app/support/subregion/schemas.py
 
 from typing import Optional
 
@@ -20,23 +20,23 @@ class CustomUpdSchema:
     country_id: Optional[int] = None
 
 
-class RegionRead(ReadSchema, CustomReadSchema):
+class SubregionRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class RegionCreate(CreateSchema, CustomCreateSchema):
+class SubregionCreate(CreateSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class RegionUpdate(UpdateSchema, CustomUpdSchema):
+class SubregionUpdate(UpdateSchema, CustomUpdSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class RegionFull(FullSchema, CustomReadSchema):
+class SubregionFull(FullSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class RegionRead1(ReadSchemaWithRealtionships):
+class SubregionRead1(ReadSchemaWithRealtionships):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               # protected_namespaces=('_',),

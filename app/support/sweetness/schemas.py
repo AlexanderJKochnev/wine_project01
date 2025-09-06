@@ -1,10 +1,11 @@
 # app/support/sweetness/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 
+from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema
 
-class CustomSchema:
+
+class CustomReadSchema:
     pass
 
 
@@ -16,11 +17,7 @@ class CustomUpdSchema:
     pass
 
 
-class SweetnessShort(ShortSchema):
-    pass
-
-
-class SweetnessRead(ReadSchema):
+class SweetnessRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
@@ -29,8 +26,8 @@ class SweetnessCreate(CreateSchema, CustomCreateSchema):
 
 
 class SweetnessUpdate(UpdateSchema, CustomUpdSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class SweetnessFull(FullSchema, CustomSchema):
-    pass
+class SweetnessFull(FullSchema, CustomReadSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

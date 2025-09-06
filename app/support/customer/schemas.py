@@ -2,18 +2,18 @@
 
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
-
+from pydantic import ConfigDict
+from app.core.schemas.base import DateSchema, BaseModel
 
 # from app.support.warehouse.schemas import WarehouseShort
 
 
-class CustomSchema:
+class CustomReadSchema:
+    id: int
     login: str
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     account: Optional[str] = None
-    id: int
 
 
 class CustomCreateSchema:
@@ -30,22 +30,17 @@ class CustomUpdSchema:
     account: Optional[str] = None
 
 
-class CustomerShort(BaseModel):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-    login: str
-
-
-class CustomerRead(BaseModel, CustomSchema):
+class CustomerRead(BaseModel, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class CustomerCreate(BaseModel, CustomCreateSchema):  # , CustomCreateSchema):
+class CustomerCreate(BaseModel, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class CustomerUpdate(BaseModel, CustomUpdSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-# class CustomerFull(BaseModel, DateSchema, CustomSchema):
-#     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+class CustomerFull(CustomerRead, DateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

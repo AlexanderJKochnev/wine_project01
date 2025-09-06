@@ -1,6 +1,14 @@
 # app/core/schemas/base.py
 """
 Базовые Pydantic схемы для валидации данных (включают поля из app/core/models/base_model/Base
+# CreateSchema - все поля кроме id и timestamp, обязательныен поля обязательные
+# UpdateSchema - все поля кроме id и timestamp, обязательныен поля необязательные
+# DeleteResponse -
+ReadSchema - все поля кроме tiimestamp
+FullSchema - все поля
+PaginatedResponse - см ниже на базе ReadSchema
+ListResponse - тоже что и Pagianted только без Pagianted
+
 """
 from typing import NewType, Generic, TypeVar, List, Optional, Any
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -11,30 +19,9 @@ T = TypeVar("T")
 
 
 class PkSchema(BaseModel):
+    """ только счетчик """
     id: int
-
-
-class UniqueSchema(BaseModel):
-    name: str
-
-
-class ShortSchema(UniqueSchema):
-    """
-        поля для представления во вложенных схемах
-        ...языковой модуль
-    """
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-
-
-class LangSchema(BaseModel):
-    """ добавлять поля на других языках """
-    name_ru: Optional[str] = None
-
-
-class DescriptionSchema(BaseModel):
-    """ добавлять поля описаний на других языках """
-    description: Optional[str] = None
-    description_ru: Optional[str] = None
+    model_config = ConfigDict(from_attributes = True, arbitrary_types_allowed = True)
 
 
 class DateSchema(BaseModel):
@@ -42,11 +29,55 @@ class DateSchema(BaseModel):
     updated_at: Optional[datetime] = None
 
 
-class ReadSchema(ShortSchema, LangSchema, DescriptionSchema, PkSchema):
+class UniqueSchema(BaseModel):
+    """ только уникальные поля """
+    name_en: str
+
+
+class DescriptionSchema(BaseModel):
+    """ добавлять поля описаний на других языках """
+    description_en: Optional[str] = None
+    description_ru: Optional[str] = None
+    description_fr: Optional[str] = None
+
+
+class LangSchema(DescriptionSchema):
+    """ добавлять поля на других языках """
+    name_ru: Optional[str] = None
+    name_fr: Optional[str] = None
+
+
+class CreateSchema(LangSchema, UniqueSchema):
+    """
+    остальные поля добавить через CustomCreateSchema
+    """
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class UpdateSchema(LangSchema):
+    """
+    остальные поля добавить через CustomUpdateSchema
+    """
+    name_en: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class ReadSchema(PkSchema, LangSchema):
+    """
+    остальные поля добавить через CustomReadSchema
+    """
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class FullSchema(ReadSchema, DateSchema):
+    """
+    образец - неиспользовать делать DrinkFullSchema(DrinkRead, LangSchema)
+    """
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 class ReadSchemaWithRealtionships(ReadSchema):
+    """ должен возвращаьтб плоские словари есть альтернтива через сервисе """
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extr='allow',
@@ -91,31 +122,26 @@ class ReadSchemaWithRealtionships(ReadSchema):
             return result
 
 
-class CreateSchema(UniqueSchema, LangSchema, DescriptionSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-
-
-class UpdateSchema(ShortSchema, LangSchema, DescriptionSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-    name: Optional[str] = None
-
-
-class FullSchema(ReadSchema, DateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-
-
 class ListResponse(BaseModel, Generic[T]):
+    """
+    просто список instances без пагнинации
+    использовать в endpoints - вместо Generic[T] подствлять <model>Read
+    """
+    items: List[T]
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """
+    использовать в endpoints - вместо Generic[T] подствлять <model>Read
+    """
     items: List[T]
     total: Optional[int] = None
     page: Optional[int] = None
     page_size: Optional[int] = None
     has_next: Optional[int] = None
     has_prev: Optional[int] = None
-
-
-class PaginatedResponse(ListResponse[T]):
-    pass
-
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 class DeleteResponse(BaseModel):
     success: bool

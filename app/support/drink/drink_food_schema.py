@@ -1,7 +1,8 @@
 # app/support/drink/drink_food_schema.py
 
-from pydantic import BaseModel
 from typing import List
+
+from pydantic import BaseModel
 
 
 class DrinkFoodLinkCreate(BaseModel):

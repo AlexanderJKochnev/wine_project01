@@ -1,4 +1,4 @@
-# app/support/region/auth.py
+# app/support/region/router.py
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +7,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.region.model import Region
 from app.support.region.repository import RegionRepository
-from app.support.region.schemas import RegionCreate, RegionCreateResponseSchema, RegionRead, RegionUpdate
+from app.support.region.schemas import RegionCreate, RegionRead, RegionUpdate
 
 
 class RegionRouter(BaseRouter):
@@ -21,7 +21,7 @@ class RegionRouter(BaseRouter):
             prefix="/regions",
             tags=["regions"]
         )
-        self.create_response_schema = RegionCreateResponseSchema
+        self.create_response_schema = RegionRead
         self.setup_routes()
 
     """

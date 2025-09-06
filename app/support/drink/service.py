@@ -1,7 +1,9 @@
 # app.support.drink.service.py
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from app.core.services.service import Service, ModelType
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.services.service import ModelType, Service
 from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import flatten_dict
 

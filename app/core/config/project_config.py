@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10  # * 1024 * 1024  # 10MB
     ALLOWED_EXTENSIONS: str = "png, jpg, jpeg, gif, webp"  # shall be converted to set
+    # RELATIONSHIPS
+    LAZY: str = 'selectin'
+    CASCADE: str = 'all, delete-orphan'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

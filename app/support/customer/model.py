@@ -1,9 +1,11 @@
 # app/support/customer/model.py
 from __future__ import annotations
-from sqlalchemy import String, Text, text, ForeignKey   # noqa: F401
-from sqlalchemy.orm import (relationship, Mapped, mapped_column)    # noqa: F401
-from app.core.models.base_model import (Base, BaseAt, str_uniq,
-                                        str_null_true, str_null_index)
+
+from sqlalchemy.orm import (Mapped, relationship)
+
+from app.core.models.base_model import (Base, BaseAt, str_null_index, str_null_true, str_uniq)
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import plural
 
 
 class Customer(Base, BaseAt):

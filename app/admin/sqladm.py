@@ -11,39 +11,10 @@ from app.support.item.model import Item
 from app.support.region.model import Region
 from app.support.color.model import Color
 from app.support.sweetness.model import Sweetness
+from app.support.subregion.model import Subregion
 
 
 class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
-    """
-    column_list = ['name']
-    column_searchable_list = [Drink.name]
-    column_sortable_list = [Drink.id, Drink.name, Drink.alcohol]
-    column_labels = {
-        Drink.name: "Название",
-        "image_preview": "Изображение"
-    }
-
-    form_columns = [
-        Drink.name, Drink.subtitle, Drink.alcohol, Drink.sugar,
-        Drink.aging, Drink.sparkling, Drink.category_id, Drink.food_id,
-        Drink.region_id, Drink.color_id, Drink.sweetness_id, "image_path"
-    ]
-
-    def get_list_value(self, model, column):
-        if column.key == "image_preview":
-            if model.image_path:
-                return f'<img src="/images/{model.image_path}" style="max-width: 100px; max-height: 100px;" />'
-            return "Нет изображения"
-        return super().get_list_value(model, column)
-
-    def get_detail_value(self, model, column):
-        if column.key == "image_path" and model.image_path:
-            return f'<img src="/images/{model.image_path}" style="max-width: 300px;" />'
-        return super().get_detail_value(model, column)
-    """
-    # column_list = ['name', 'name_ru']
-    # column_details_list =
-    # form_columns =
     pass
 
 
@@ -74,6 +45,10 @@ class ItemAdmin(AutoModelView, BaseAdmin, model=Item):
 
 
 class RegionAdmin(AutoModelView, BaseAdmin, model=Region):
+    pass
+
+
+class SubregionAdmin(AutoModelView, BaseAdmin, model=Subregion):
     pass
 
 

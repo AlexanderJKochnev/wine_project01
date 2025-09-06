@@ -1,4 +1,4 @@
-# app/support/region/model.py
+# app/support/subregion/model.py
 from __future__ import annotations
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import (relationship,
@@ -9,17 +9,17 @@ from app.core.config.project_config import settings
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
-    from app.support.country.model import Country
+    from app.support.country.model import Region
 
 
-class Region(BaseFull):
+class Subregion(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    name = 'region'
+    name = 'subregion'
     plural_name = plural(name)
-    country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable=False)
-    country: Mapped["Country"] = relationship(back_populates=plural_name, lazy=lazy)
+    region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
+    region: Mapped["Region"] = relationship(back_populates=plural_name, lazy=lazy)
 
-    subregions = relationship("Subregion", back_populates=name,
+    drinks = relationship("Drink", back_populates=name,
                               cascade=cascade,
                               lazy=lazy)

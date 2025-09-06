@@ -5,40 +5,39 @@ from typing import List, Optional
 
 from pydantic import ConfigDict, Field
 
-from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships, ShortSchema,
-                                   UpdateSchema)
-from app.support.category.schemas import CategoryShort
-from app.support.color.schemas import ColorShort
-from app.support.region.schemas import RegionShort
-from app.support.sweetness.schemas import SweetnessShort
+from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships,
+                                   UpdateSchema, ReadSchema)
+from app.support.category.schemas import CategoryRead
+from app.support.color.schemas import ColorRead
+from app.support.subregion.schemas import SubregionRead
+from app.support.sweetness.schemas import SweetnessRead
 
 
-# from app.support.country.schemas import CountryShort
-# from app.support.item.schemas import ItemShort
+# from app.support.country.schemas import CountryRead
+# from app.support.item.schemas import ItemRead
 
 
-class CustomSchema:
-    category: Optional[str] = None
-    # food: Optional[str] = None
-    color: Optional[str] = None
-    sweetness: Optional[str] = None
-    region: Optional[str] = None
+class CustomReadSchema:
+    category_id: Optional[CategoryRead] = None
+    # food_id: Optional[FoodRead] = None
+    color_id: Optional[ColorRead] = None
+    sweetness_id: Optional[SweetnessRead] = None
+    subregion_id: Optional[SubregionRead] = None
     subtitle: Optional[str] = None
-    alcohol: Optional[float] = None
-    sugar: Optional[float] = None
+    alcohol: Optional[Decimal] = None
+    sugar: Optional[Decimal] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
 
 
 class CustomUpdSchema:
-    category_id: Optional[CategoryShort] = None
-    # food_id: Optional[FoodShort] = None
-    color_id: Optional[ColorShort] = None
-    sweetness_id: Optional[SweetnessShort] = None
-    region_id: Optional[RegionShort] = None
+    category: Optional[int] = None
+    color: Optional[int] = None
+    sweetness: Optional[str] = None
+    subregion: Optional[str] = None
     subtitle: Optional[str] = None
-    alcohol: Optional[Decimal] = None
-    sugar: Optional[Decimal] = None
+    alcohol: Optional[float] = None
+    sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
 
@@ -47,7 +46,7 @@ class CustomCreateSchema:
     category_id: int
     color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
-    region_id: int
+    subregion_id: int
     subtitle: Optional[str] = None
     alcohol: Optional[Decimal] = None
     sugar: Optional[Decimal] = None
@@ -56,11 +55,16 @@ class CustomCreateSchema:
     # food: List[str] = []
 
 
-class DrinkShort(ShortSchema):
+class DrinkRead(ReadSchema, CustomReadSchema):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extra='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
     pass
 
 
-class DrinkRead(ReadSchemaWithRealtionships):
+class DrinkRead1(ReadSchemaWithRealtionships):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',
@@ -73,14 +77,14 @@ class DrinkRead(ReadSchemaWithRealtionships):
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
-    country: Optional[str] = Field(..., json_schema_extra={'parent': 'region'},
-                                   description='это поле унаследовано от region.country'
-                                   )  # region.country.name
+    country: Optional[str] = Field(..., json_schema_extra={'parent': 'subregion'},
+                                   description='это поле унаследовано от subregion.country'
+                                   )  # subregion.country.name
     category: Optional[str] = None
     # relationships field
     color: Optional[str] = None
     sweetness: Optional[str] = None
-    region: Optional[str] = None
+    subregion: Optional[str] = None
     food: Optional[List[str]] = []
 
 

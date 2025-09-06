@@ -2,13 +2,16 @@
 from __future__ import annotations
 from sqlalchemy.orm import relationship, Mapped
 from typing import List, TYPE_CHECKING
-from app.core.models.base_model import Base, BaseAt, BaseEn, BaseLang
+from app.core.models.base_model import BaseFull
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import plural
+
 
 if TYPE_CHECKING:
     from app.support.drink.model import DrinkFood
 
 
-class Food(Base, BaseLang, BaseEn, BaseAt):
+class Food(BaseFull):
 
     # Связь с промежуточной таблицей
     drink_associations: Mapped[List["DrinkFood"]] = relationship("DrinkFood",

@@ -7,6 +7,7 @@ from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 
 from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
@@ -233,7 +234,10 @@ async def mock_engine(mock_db_url):
     )
     # Создает все таблицы в базе данных
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # await conn.run_sync(Base.metadata.drop_all, checkfirst=False, cascade=True)
+        await conn.execute(text("DROP SCHEMA public CASCADE;"))
+        await conn.execute(text("CREATE SCHEMA public;"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
@@ -351,6 +355,7 @@ async def create_drink(authenticated_client_with_db, test_db_session):
     from app.support.category.router import CategoryRouter  # noqa: F401
     from app.support.country.router import CountryRouter  # noqa: F401
     from app.support.region.router import RegionRouter  # noqa: F401
+    from app.support.subregion.router import SubregionRouter  # noqa: F401
     from app.support.color.router import ColorRouter  # noqa: F401
     from app.support.sweetness.router import SweetnessRouter  # noqa: F401
     from app.support.warehouse.router import WarehouseRouter  # noqa: F401
@@ -364,6 +369,7 @@ async def create_drink(authenticated_client_with_db, test_db_session):
             'color': 'Red',
             'sweetness': 'Dry',
             'region': 'Catalonia',
+            'subregion': 'Rioja',
             'subtitle': 'Port Steven',
             'alcohol': 7.45,
             'sugar': 0.57,

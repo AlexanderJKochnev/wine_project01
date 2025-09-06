@@ -1,7 +1,8 @@
 # app/support/drink/drink_food_repo.py
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
 from app.support.drink.model import Drink, DrinkFood
 from app.support.food.model import Food
 

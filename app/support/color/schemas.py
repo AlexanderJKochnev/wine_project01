@@ -1,11 +1,11 @@
 # app/support/color/schemas.py
 
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 
 
-class CustomSchema:
+class CustomReadSchema:
     pass
 
 
@@ -17,11 +17,7 @@ class CustomUpdSchema:
     pass
 
 
-class ColorShort(ShortSchema):
-    pass
-
-
-class ColorRead(ReadSchema):
+class ColorRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
@@ -30,8 +26,8 @@ class ColorCreate(CreateSchema, CustomCreateSchema):
 
 
 class ColorUpdate(UpdateSchema, CustomUpdSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class ColorFull(FullSchema, CustomSchema):
-    pass
+class ColorFull(FullSchema, CustomReadSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

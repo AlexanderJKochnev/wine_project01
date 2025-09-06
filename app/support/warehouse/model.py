@@ -1,26 +1,31 @@
 # app/support/warehouse/model.py
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, List
+
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from typing import TYPE_CHECKING
-from app.core.models.base_model import Base, BaseLang, BaseEn, BaseAt, str_null_true
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.models.base_model import str_null_true, BaseFull
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
     from app.support.customer.model import Customer
-    # from app.support.item.model import Item
+    from app.support.item.model import Item
 
 
-class Warehouse(Base, BaseLang, BaseEn, BaseAt):
+class Warehouse(BaseFull):
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    name = 'warehouse'
+    plural_name = plural(name)
     address: Mapped[str_null_true]
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), nullable=False)
 
     customer: Mapped["Customer"] = relationship(back_populates="warehouses", lazy="selectin")
 
-    items = relationship("Item", back_populates="warehouse", cascade="all, delete-orphan")
-    """
-    country_id: Mapped[int] = mapped_column(ForeignKey("countries.id"), nullable = False)
-    country: Mapped["Country"] = relationship(back_populates = "regions")
-
-    drinks = relationship("Drink", back_populates = "region")
-    """
+    # items = relationship("Item", back_populates="warehouse", cascade="all, delete-orphan")
+    items: Mapped[List["Item"]] = relationship("Item", back_populates=name,
+                                               cascade=cascade,
+                                               lazy=lazy)

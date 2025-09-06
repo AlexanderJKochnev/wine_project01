@@ -4,11 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
+from app.support.drink.drink_food_repo import DrinkFoodRepository
+from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import DrinkCreate, DrinkCreateResponseSchema, DrinkRead, DrinkUpdate
-from app.support.drink.drink_food_repo import DrinkFoodRepository
-from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.service import DrinkService
 
 

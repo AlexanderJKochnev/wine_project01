@@ -1,19 +1,22 @@
 # app/support/item/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
-from pydantic import ConfigDict
-from app.support.drink.schemas import ShortSchema as DrinkShort
-from app.support.warehouse.schemas import ShortSchema as WarehouseShort
 from decimal import Decimal
 from typing import Optional
 
+from pydantic import ConfigDict
 
-class CustomSchema:
-    drink: DrinkShort
-    warehoise: WarehouseShort
+from app.core.schemas.base import BaseModel, DateSchema, FullSchema
+from app.support.drink.schemas import DrinkRead
+from app.support.warehouse.schemas import WarehouseRead
+
+
+class CustomReadSchema:
+    id: int
+    drink: DrinkRead
+    warehoise: WarehouseRead
     volume: Optional[Decimal] = None
     price: Optional[Decimal] = None
-
+    count: Optional[int] = 0
 
 
 class CustomCreateSchema:
@@ -21,6 +24,7 @@ class CustomCreateSchema:
     warehouse_id: int
     volume: Optional[Decimal] = None
     price: Optional[Decimal] = None
+    count: Optional[int] = 0
 
 
 class CustomUpdSchema:
@@ -28,23 +32,24 @@ class CustomUpdSchema:
     warehouse_id: Optional[int] = None
     volume: Optional[Decimal] = None
     price: Optional[Decimal] = None
+    count: Optional[int] = 0
 
 
-class ItemShort(ShortSchema):
+class CustomFullSchema(CustomReadSchema, DateSchema):
     pass
 
 
-class ItemRead(ReadSchema):
+class ItemRead(BaseModel, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class ItemCreate(CreateSchema, CustomCreateSchema):
+class ItemCreate(BaseModel, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class ItemUpdate(UpdateSchema, CustomUpdSchema):
+class ItemUpdate(BaseModel, CustomUpdSchema):
     pass
 
 
-class ItemFull(FullSchema, CustomSchema):
-    pass
+class ItemFull(FullSchema, CustomReadSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)

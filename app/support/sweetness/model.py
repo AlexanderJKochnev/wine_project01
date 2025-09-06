@@ -1,13 +1,21 @@
 # app/support/sweetness/model.py
 
 from sqlalchemy.orm import relationship
-from app.core.models.base_model import Base, BaseLang, BaseEn, BaseAt
+from app.core.models.base_model import BaseFull
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import plural
 
 
-class Sweetness(Base, BaseLang, BaseEn, BaseAt):
+class Sweetness(BaseFull):
     # Обратная связь: один ко многим
     """drinks: Mapped[List["Drink"]] = relationship("Drink",  # noqa F821
                                                  back_populates="sweetness",
                                                  cascade="all, delete-orphan")
     """
-    drinks = relationship("Drink", back_populates="sweetness")
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    name = 'sweetness'
+    plural_name = plural(name)
+    drinks = relationship("Drink", back_populates=name,
+                          cascade=cascade,
+                          lazy=lazy)

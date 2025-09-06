@@ -350,3 +350,21 @@ def flatten_dict(
 
     seen.discard(obj_id)
     return result
+
+
+def plural(single: str) -> str:
+    """
+    :param single:  single name
+    :type name:     str
+    :return:        plural name
+    :rtype:         str
+    """
+    name = single.lower()
+    if name.endswith('model'):
+        name = name[0:-5]
+    if not name.endswith('s'):
+        if name.endswith('y'):
+            name = f'{name[0:-1]}ies'
+        else:
+            name = f'{name}s'
+    return name

@@ -1,10 +1,11 @@
 # app/support/category/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, ShortSchema, UpdateSchema, FullSchema
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 
 
-class CustomSchema:
+class CustomReadSchema:
+    """ кастомные поля """
     pass
 
 
@@ -16,11 +17,7 @@ class CustomUpdSchema:
     pass
 
 
-class CategoryShort(ShortSchema):
-    pass
-
-
-class CategoryRead(ReadSchema):
+class CategoryRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
@@ -29,8 +26,8 @@ class CategoryCreate(CreateSchema, CustomCreateSchema):
 
 
 class CategoryUpdate(UpdateSchema, CustomUpdSchema):
-    pass
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class CategoryFull(FullSchema, CustomSchema):
-    pass
+class CategoryFull(FullSchema, CustomReadSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

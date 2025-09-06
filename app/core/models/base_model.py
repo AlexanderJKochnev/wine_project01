@@ -14,6 +14,8 @@ from sqlalchemy.orm import class_mapper
 # from sqlalchemy.dialects.postgresql import MONEY
 from sqlalchemy import DECIMAL
 from decimal import Decimal
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import plural
 
 
 # primary key
@@ -55,27 +57,21 @@ boolnone = Annotated[bool | None, mapped_column(nullable=True)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
-    """ clear model with
-        id only,
-        common methods,
-        table name
+    """ clear model with id only,
+        common methods and properties, table name
     """
     __abstarct__ = True
 
     id: Mapped[int_pk]
-    # created_at: Mapped[created_at]
-    # updated_at: Mapped[updated_at]
-    # description: Mapped[descr]
-    # description_ru: Mapped[descr]
-    # name: Mapped[str_uniq]
-    # name_ru: Mapped[str_null_index]
 
     @declared_attr.directive
     def __tablename__(cls) -> str:
-        """ Table name for postgresql is based on model name formatted
-        as bellow
+        """
+        имя таблицы в бд - имя модели во множ числе по правилам англ языка
         """
         name = cls.__name__.lower()
+        return plural(name)
+        """
         if name.endswith('model'):
             name = name[0:-5]
         if not name.endswith('s'):
@@ -84,8 +80,10 @@ class Base(AsyncAttrs, DeclarativeBase):
             else:
                 name = f'{name}s'
         return name
+        """
 
     def __str__(self):
+        # переоопределять в особенных формах
         return self.name
 
     def __repr__(self):
@@ -101,6 +99,7 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 class BaseAt:
+    """ время создания/изменения записи """
     __abstract__ = True
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
@@ -111,20 +110,32 @@ class BaseAt:
 
 
 class BaseEn:
+    """ общие поля для всех таблиц на англ. языке """
     __abstract__ = True
-    name: Mapped[str_uniq]
-    description: Mapped[descr]
+    name_en: Mapped[str_uniq]
 
 
-class BaseLang:
+class BaseDescription:
+    """ общие поля для всех таблиц на разных языках
+        добавлять по мере необходимости
+        <имя поля>_<2х значный код страны/языка>
+    """
     __abstract__ = True
-    name_ru: Mapped[str_null_index]
     description_ru: Mapped[descr]
+    description_en: Mapped[descr]
+    description_fr: Mapped[descr]
 
 
-class BaseShort(BaseEn, BaseLang, Base):
+class BaseLang(BaseDescription):
+    """
+    общие поля для всех таблиц на разных языках
+    """
     __abstract__ = True
+    name_ru: Mapped[str_null_true]
+    name_fr: Mapped[str_null_true]
+    name_en: Mapped[str_uniq]
 
 
-class BaseFull(BaseShort, BaseAt):
+class BaseFull(Base, BaseAt, BaseLang):
     __abstract__ = True
+    pass
