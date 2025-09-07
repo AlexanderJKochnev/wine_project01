@@ -1,11 +1,13 @@
 # app.core.service/service_layer.py
 
-from typing import Optional, List, Any, TypeVar, Dict
-from sqlalchemy.orm import DeclarativeMeta
-from app.core.repositories.sqlalchemy_repository import Repository
-from app.core.models.base_model import Base
+from typing import Any, List, Optional, TypeVar
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import DeclarativeMeta
+
+from app.core.models.base_model import Base
+from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import DeleteResponse
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -28,7 +30,6 @@ class Service:
         get one record by id
         """
         obj = await self.repository.get_by_id(id, session)
-        # print(f'{self.repository=}')
         return obj
 
     async def get_all(self, page: int, page_size: int, session: AsyncSession, ) -> List[dict]:

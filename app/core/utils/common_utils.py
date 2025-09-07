@@ -212,7 +212,9 @@ def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
     str_fields = []    # текстовые обязательные поля
     str_null_fields = []    # текстовые необязательные поля
     bool_fields = []
-    rel_fields = []     # relation fields
+    rel_fields = []     # relation fields MANYTOONE (выпадающий список)
+    back_fields = []     # relation fields ONETOMANY (List[str]?)
+    many_fields = []     # relation fields MANYTOMANY (check boxes)
     memo_fields = []    # memo fields
     other_fields = []   # остальные поля
     other_null_fields = []
@@ -224,6 +226,11 @@ def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
         if isinstance(attr, RelationshipProperty):
             if attr.direction.name == "MANYTOONE":
                 rel_fields.append(attr.key)
+            elif attr.direction.name == "ONETOMANY":
+                back_fields.append(attr.key)
+            elif attr.direction.name == "MANYTOMANY":
+                many_fields.append(attr.key)
+
             continue
 
         if hasattr(attr, "columns"):
@@ -267,6 +274,8 @@ def get_model_fields(model: ModelType, exclude_columns: List[str] = [],
         columns.extend(sort_strings_by_alphabet_and_length(other_null_fields))
         columns.extend(sort_strings_by_alphabet_and_length(bool_fields))
         columns.extend(sort_strings_by_alphabet_and_length(rel_fields))
+        columns.extend(sort_strings_by_alphabet_and_length(many_fields))
+        columns.extend(sort_strings_by_alphabet_and_length(back_fields))
         columns.extend(sort_strings_by_alphabet_and_length(memo_fields))
     if detail_view:
         columns = [a for a in columns if all((not a.endswith('_id'), a != 'image_path'))]

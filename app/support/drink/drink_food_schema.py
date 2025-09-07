@@ -1,5 +1,5 @@
 # app/support/drink/drink_food_schema.py
-
+#
 from typing import List
 
 from pydantic import BaseModel
@@ -15,6 +15,7 @@ class DrinkFoodLinkUpdate(BaseModel):
 
 
 class DrinkDetailResponse(BaseModel):
+    """ not used """
     id: int
     name: str
     # ... другие поля ...

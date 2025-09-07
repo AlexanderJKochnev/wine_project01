@@ -1,7 +1,15 @@
 # app/admin/sqladmin.md
+from sqladmin import ModelView
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select, delete
+from typing import List, Any
+import asyncio
+
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select, delete
 from app.admin.core import AutoModelView, BaseAdmin
 # --------подключение моделей-----------
-from app.support.drink.model import Drink
+from app.support.drink.model import Drink, DrinkFood
 from app.support.category.model import Category
 from app.support.country.model import Country
 from app.support.customer.model import Customer
@@ -15,7 +23,45 @@ from app.support.subregion.model import Subregion
 
 
 class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
-    pass
+    form_ajax_refs = {'foods':
+                          {'fields': ('name',), 'order_by': 'name', 'widget': 'checkbox'  # Это ключевой параметр!
+            }}
+
+    async def on_model_change(self, data, model, is_created):
+        # Сохраняем основную модель сначала
+        await super().on_model_change(data, model, is_created)
+        
+        # Обрабатываем связи many-to-many
+        if 'foods' in data:
+            food_ids = [int(food_id) for food_id in data['foods']]
+            
+            # Удаляем старые связи
+            await self.session.execute(
+                    delete(DrinkFood).where(DrinkFood.drink_id == model.id)
+                    )
+            
+            # Добавляем новые связи
+            for food_id in food_ids:
+                self.session.add(DrinkFood(drink_id = model.id, food_id = food_id))
+            
+            await self.session.commit()
+    
+    async def on_model_delete(self, model):
+        # Удаляем связи перед удалением напитка
+        await self.session.execute(
+                delete(DrinkFood).where(DrinkFood.drink_id == model.id)
+                )
+        await super().on_model_delete(model)
+    
+    async def get_one_form(self, obj):
+        # Загружаем объект с привязанными food
+        stmt = select(Drink).where(Drink.id == obj.id).options(selectinload(Drink.foods))
+        result = await self.session.execute(stmt)
+        drink = result.scalar_one()
+        
+        return {"name": drink.name, "subtitle": drink.subtitle, "alcohol": drink.alcohol,
+                "foods": [str(food.id) for food in drink.foods]  # список ID для чекбоксов
+                }
 
 
 class CategoryAdmin(AutoModelView, BaseAdmin, model=Category):

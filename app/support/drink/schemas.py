@@ -6,7 +6,7 @@ from typing import List, Optional
 from pydantic import ConfigDict, Field
 
 from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships,
-                                   UpdateSchema, ReadSchema)
+                                   UpdateSchema, ReadSchema, BaseModel)
 from app.support.category.schemas import CategoryRead
 from app.support.color.schemas import ColorRead
 from app.support.subregion.schemas import SubregionRead
@@ -28,6 +28,7 @@ class CustomReadSchema:
     sugar: Optional[Decimal] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
+    foods: List[str]
 
 
 class CustomUpdSchema:
@@ -98,3 +99,12 @@ class DrinkUpdate(UpdateSchema, CustomUpdSchema):
 
 class DrinkCreateResponseSchema(DrinkCreate, PkSchema, DateSchema):
     pass
+
+
+class DrinkFoodLinkCreate(BaseModel):
+    drink_id: int
+    food_ids: List[int]  # полный список ID для связи
+
+
+class DrinkFoodLinkUpdate(BaseModel):
+    food_ids: List[int]

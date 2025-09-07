@@ -8,7 +8,8 @@ from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
-from app.support.drink.schemas import DrinkCreate, DrinkCreateResponseSchema, DrinkRead, DrinkUpdate
+from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, DrinkRead,
+                                       DrinkUpdate, DrinkFoodLinkUpdate)
 from app.support.drink.service import DrinkService
 
 
@@ -27,9 +28,22 @@ class DrinkRouter(BaseRouter):
         self.create_response_schema = DrinkCreateResponseSchema
         self.setup_routes()
 
+    def setup_routes(self):
+        super().setup_routes()
+        self.router.add_api_route("/{id}/foods", self.update_drink_foods,
+                                  methods=["PATCH"])
+
     def get_drink_food_service(session: AsyncSession) -> DrinkFoodService:
         repo = DrinkFoodRepository(session)
         return DrinkFoodService(repo)
+
+    async def update_drink_foods(self, id: int,
+                                 data: DrinkFoodLinkUpdate,
+                                 session: AsyncSession = Depends(get_db)):
+        """ обновление many to many """
+        service = self.get_drink_food_service(session)
+        await service.set_drink_foods(id, data.food_ids)
+        return {"status": "success"}
 
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
         result = await super().create(data, session)

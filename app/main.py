@@ -40,7 +40,7 @@ async def authenticate(username: str, password: str):
         return True
     return False
 """
-
+authentication_backend = authentication_backend
 admin = Admin(
     app,
     engine,
