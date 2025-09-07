@@ -14,8 +14,8 @@ class Color(BaseFull):
     """
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    name = 'color'
-    plural_name = plural(name)
-    drinks = relationship("Drink", back_populates=name,
+    single_name = 'color'
+    plural_name = plural(single_name)
+    drinks = relationship("Drink", back_populates=single_name,
                           cascade=cascade,
                           lazy=lazy)

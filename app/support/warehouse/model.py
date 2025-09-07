@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 class Warehouse(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    name = 'warehouse'
-    plural_name = plural(name)
+    single_name = 'warehouse'
+    plural_name = plural(single_name)
     address: Mapped[str_null_true]
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), nullable=False)
 
     customer: Mapped["Customer"] = relationship(back_populates="warehouses", lazy="selectin")
 
     # items = relationship("Item", back_populates="warehouse", cascade="all, delete-orphan")
-    items: Mapped[List["Item"]] = relationship("Item", back_populates=name,
+    items: Mapped[List["Item"]] = relationship("Item", back_populates=single_name,
                                                cascade=cascade,
                                                lazy=lazy)

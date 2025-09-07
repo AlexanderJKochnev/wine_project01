@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 class Subregion(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    name = 'subregion'
-    plural_name = plural(name)
+    single_name = 'subregion'
+    plural_name = plural(single_name)
     region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
     region: Mapped["Region"] = relationship(back_populates=plural_name, lazy=lazy)
 
-    drinks = relationship("Drink", back_populates=name,
+    drinks = relationship("Drink", back_populates=single_name,
                               cascade=cascade,
                               lazy=lazy)

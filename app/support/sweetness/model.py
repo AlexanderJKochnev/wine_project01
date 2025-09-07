@@ -14,8 +14,8 @@ class Sweetness(BaseFull):
     """
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    name = 'sweetness'
-    plural_name = plural(name)
-    drinks = relationship("Drink", back_populates=name,
+    single_name = 'sweetness'
+    plural_name = plural(single_name)
+    drinks = relationship("Drink", back_populates=single_name,
                           cascade=cascade,
                           lazy=lazy)

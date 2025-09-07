@@ -23,14 +23,14 @@ if TYPE_CHECKING:
 class Drink(Base, BaseDescription, BaseAt):
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    name = 'drink'
-    plural_name = plural(name)
+    single_name = 'drink'
+    plural_name = plural(single_name)
     # наименование на языке производителя
     title_native: Mapped[str_null_true]
     subtitle_native: Mapped[str_null_true]
-    # наименование на англ языке
-    title_en: Mapped[str_uniq]
-    subtitle_en: Mapped[str_null_true]
+    # наименование на международном (англ) языке
+    title: Mapped[str_uniq]
+    subtitle: Mapped[str_null_true]
 
     alc: Mapped[volume]
     sugar: Mapped[volume]
@@ -49,7 +49,7 @@ class Drink(Base, BaseDescription, BaseAt):
     sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
 
     # обратная связь
-    items = relationship("Item", back_populates=name,
+    items = relationship("Item", back_populates=single_name,
                          cascade=cascade,
                          lazy=lazy)
 
@@ -58,13 +58,16 @@ class Drink(Base, BaseDescription, BaseAt):
     # foods = relationship("Food", secondary="drink_food_associations", viewonly=True, lazy="selectin")
 
     # Прямые связи с промежуточной таблицей
-    food_associations = relationship("DrinkFood", back_populates="drink", cascade="all, delete-orphan")
+    food_associations = relationship("DrinkFood",
+                                     back_populates="drink",
+                                     cascade="all, delete-orphan",
+                                     overlaps="foods")
     foods = relationship("Food",
                          secondary="drink_food_associations",
                          back_populates="drinks",
                          lazy="selectin",
-                         viewonly=False  # чтобы можно было использовать в form
-                         )
+                         viewonly=False,  # чтобы можно было использовать в form
+                         overlaps="food_associations,drink")
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
 
     """ ALTERNATIVE VERSION
@@ -87,8 +90,8 @@ class DrinkFood(Base):
     priority = Column(Integer, default=0)
 
     # Relationships
-    drink = relationship("Drink", back_populates="food_associations")
-    food = relationship("Food", back_populates="drink_associations")
+    drink = relationship("Drink", back_populates="food_associations", overlaps='foods')
+    food = relationship("Food", back_populates="drink_associations", overlaps='drinks,foods')
 
     def __str__(self):
         return f"Drink {self.drink_id} - Food {self.food_id} (Priority: {self.priority})"

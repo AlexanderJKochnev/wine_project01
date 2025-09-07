@@ -34,6 +34,8 @@ services:
     environment:
       - ADMINER_PLUGINS=tables-filter enum-option enum-types
       - ADMINER_DESIGN=nette
+    depends_on:
+      - wine_host
     ports:
       - "${ADMINER_PORTS}"
     networks:

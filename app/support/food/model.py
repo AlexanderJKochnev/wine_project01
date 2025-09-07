@@ -16,9 +16,10 @@ class Food(BaseFull):
     # Связь с промежуточной таблицей
     drink_associations: Mapped[List["DrinkFood"]] = relationship("DrinkFood",
                                                                  back_populates="food",
-                                                                 cascade="all, delete-orphan")
+                                                                 cascade="all, delete-orphan",
+                                                                 overlaps="drinks,foods")
     drinks = relationship("Drink", secondary="drink_food_associations", back_populates="foods",
-                          lazy="selectin")
+                          lazy="selectin", overlaps="drink_associations,food,drink,food_associations")
 
     """ alternative version
     @property

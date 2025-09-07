@@ -30,19 +30,6 @@ class CustomReadSchema:
     sparkling: Optional[bool] = False
 
 
-class CustomCreateSchema:
-    category_id: CategoryRead
-    # food_id: Optional[FoodRead] = None
-    color_id: Optional[ColorRead] = None
-    sweetness_id: Optional[SweetnessRead] = None
-    subregion_id: Optional[SubregionRead] = None
-    subtitle: Optional[str] = None
-    alcohol: Optional[Decimal] = None
-    sugar: Optional[Decimal] = None
-    aging: Optional[int] = None
-    sparkling: Optional[bool] = False
-
-
 class CustomUpdSchema:
     category: Optional[int] = None
     color: Optional[int] = None
@@ -55,7 +42,7 @@ class CustomUpdSchema:
     sparkling: Optional[bool] = False
 
 
-class CustomCreateSchema1:
+class CustomCreateSchema:
     category_id: int
     color_id: Optional[int] = None
     sweetness_id: Optional[int] = None

@@ -14,7 +14,7 @@ from sqlalchemy.orm import class_mapper
 # from sqlalchemy.dialects.postgresql import MONEY
 from sqlalchemy import DECIMAL
 from decimal import Decimal
-from app.core.config.project_config import settings
+# from app.core.config.project_config import settings
 from app.core.utils.common_utils import plural
 
 
@@ -136,6 +136,6 @@ class BaseLang(BaseDescription):
     # name_en: Mapped[str_uniq]
 
 
-class BaseFull(Base, BaseAt, BaseLang, BaseInt):
+class BaseFull(Base, BaseInt, BaseAt, BaseLang):
     __abstract__ = True
     pass

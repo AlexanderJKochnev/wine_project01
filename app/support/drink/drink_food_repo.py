@@ -11,26 +11,28 @@ class DrinkFoodRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_drink_with_foods(self, drink_id: int, session: AsyncSession):
-        stmt = (select(Drink).where(Drink.id == drink_id)
-                .options(selectinload(Drink.food_associations).joinedload(DrinkFood.food)))
-        result = await session.execute(stmt)
+    async def get_drink_with_foods(self, drink_id: int):
+        result = await self.session.execute(
+            select(Drink)
+            .where(Drink.id == drink_id)
+            .options(selectinload(Drink.food_associations).joinedload(DrinkFood.food))
+        )
         return result.scalar_one_or_none()
 
-    async def get_food_with_drinks(self, food_id: int, session: AsyncSession):
-        stmt = (select(Food)
-                .where(Food.id == food_id)
-                .options(selectinload(Food.drink_associations)
-                         .joinedload(DrinkFood.drink)))
-        result = await session.execute(stmt)
+    async def get_food_with_drinks(self, food_id: int):
+        result = await self.session.execute(
+            select(Food)
+            .where(Food.id == food_id)
+            .options(selectinload(Food.drink_associations).joinedload(DrinkFood.drink))
+        )
         return result.scalar_one_or_none()
 
     async def add_food_to_drink(self, drink_id: int, food_id: int, priority: int, session: AsyncSession):
         association = DrinkFood(drink_id=drink_id, food_id=food_id, priority=priority)
         session.add(association)
         await self.session.commit()
-        await self.session.refresh()
-        return association
+        # await self.session.refresh()
+        # return association
 
     async def remove_food_from_drink(self, drink_id: int, food_id: int, session: AsyncSession):
         stmt = select(DrinkFood).where(DrinkFood.drink_id == drink_id, DrinkFood.food_id == food_id)
