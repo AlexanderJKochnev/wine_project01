@@ -109,10 +109,11 @@ class BaseAt:
     # name_ru: Mapped[str_null_index]
 
 
-class BaseEn:
+class BaseInt:
     """ общие поля для всех таблиц на англ. языке """
     __abstract__ = True
-    name_en: Mapped[str_uniq]
+    name: Mapped[str_uniq]
+    description: Mapped[descr]
 
 
 class BaseDescription:
@@ -122,7 +123,6 @@ class BaseDescription:
     """
     __abstract__ = True
     description_ru: Mapped[descr]
-    description_en: Mapped[descr]
     description_fr: Mapped[descr]
 
 
@@ -133,9 +133,9 @@ class BaseLang(BaseDescription):
     __abstract__ = True
     name_ru: Mapped[str_null_true]
     name_fr: Mapped[str_null_true]
-    name_en: Mapped[str_uniq]
+    # name_en: Mapped[str_uniq]
 
 
-class BaseFull(Base, BaseAt, BaseLang):
+class BaseFull(Base, BaseAt, BaseLang, BaseInt):
     __abstract__ = True
     pass

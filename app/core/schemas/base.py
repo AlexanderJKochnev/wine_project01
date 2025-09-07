@@ -8,7 +8,6 @@ ReadSchema - все поля кроме tiimestamp
 FullSchema - все поля
 PaginatedResponse - см ниже на базе ReadSchema
 ListResponse - тоже что и Pagianted только без Pagianted
-
 """
 from typing import NewType, Generic, TypeVar, List, Optional, Any
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -21,7 +20,7 @@ T = TypeVar("T")
 class PkSchema(BaseModel):
     """ только счетчик """
     id: int
-    model_config = ConfigDict(from_attributes = True, arbitrary_types_allowed = True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 class DateSchema(BaseModel):
@@ -31,7 +30,7 @@ class DateSchema(BaseModel):
 
 class UniqueSchema(BaseModel):
     """ только уникальные поля """
-    name_en: str
+    name: str
 
 
 class DescriptionSchema(BaseModel):
@@ -58,11 +57,11 @@ class UpdateSchema(LangSchema):
     """
     остальные поля добавить через CustomUpdateSchema
     """
-    name_en: Optional[str] = None
+    name: Optional[str] = None
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-class ReadSchema(PkSchema, LangSchema):
+class ReadSchema(PkSchema, LangSchema, UniqueSchema):
     """
     остальные поля добавить через CustomReadSchema
     """
@@ -142,6 +141,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     has_next: Optional[int] = None
     has_prev: Optional[int] = None
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
 
 class DeleteResponse(BaseModel):
     success: bool

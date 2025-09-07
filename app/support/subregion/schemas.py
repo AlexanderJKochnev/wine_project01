@@ -6,18 +6,19 @@ from pydantic import ConfigDict
 
 from app.core.schemas.base import (CreateSchema, ReadSchema, ReadSchemaWithRealtionships,
                                    UpdateSchema, FullSchema)
+from app.support.region.schemas import RegionRead
 
 
 class CustomReadSchema:
-    country: Optional[str] = None
+    region: Optional[RegionRead] = None
 
 
 class CustomCreateSchema:
-    country_id: int
+    region_id: int
 
 
 class CustomUpdSchema:
-    country_id: Optional[int] = None
+    region_id: Optional[int] = None
 
 
 class SubregionRead(ReadSchema, CustomReadSchema):
@@ -34,14 +35,3 @@ class SubregionUpdate(UpdateSchema, CustomUpdSchema):
 
 class SubregionFull(FullSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
-
-
-class SubregionRead1(ReadSchemaWithRealtionships):
-    model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True,
-                              # protected_namespaces=('_',),
-                              extr='allow',
-                              populate_by_name=True,
-                              exclude_none=True)
-
-    country: Optional[str] = None

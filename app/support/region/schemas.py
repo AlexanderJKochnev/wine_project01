@@ -6,10 +6,11 @@ from pydantic import ConfigDict
 
 from app.core.schemas.base import (CreateSchema, ReadSchema, ReadSchemaWithRealtionships,
                                    UpdateSchema, FullSchema)
+from app.support.country.schemas import CountryRead
 
 
 class CustomReadSchema:
-    country: Optional[str] = None
+    country: Optional[CountryRead] = None
 
 
 class CustomCreateSchema:
