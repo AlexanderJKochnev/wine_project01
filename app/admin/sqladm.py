@@ -1,8 +1,6 @@
 # app/admin/sqladmin.md
 from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
-from wtforms import Field
-from wtforms.widgets import HiddenInput
 
 from app.admin.core import AutoModelView, BaseAdmin
 from app.support.category.model import Category
@@ -19,47 +17,16 @@ from app.support.sweetness.model import Sweetness
 from app.support.warehouse.model import Warehouse
 
 
-class CheckboxListField(Field):
-    widget = HiddenInput()  # Чтобы не рендерилось стандартно
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def _value(self):
-        return self.data
-
-
 class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
     can_view_details = True
-    
-    async def get_form(self, obj=None):
-        # Получаем оригинальную форму
-        form_cls = await super().get_form(obj)
-        
-        original_field = getattr(form_cls, "foods", None)
-        if not original_field:
-            return form_cls
-        
-        # Подготавливаем data как список строк (для шаблона)
-        if obj:
-            stmt = select(Food.id).join(DrinkFood).where(DrinkFood.drink_id == obj.id)
-            result = await self.session.execute(stmt)
-            selected_ids = [str(r[0]) for r in result.all()]
-        else:
-            selected_ids = []
-        
-        # Заменяем поле на кастомное
-        form_cls.foods = CheckboxListField(
-                label = "Foods", choices = original_field.choices, data = selected_ids,  # список строк ID
-                )
-        return form_cls
-    
+
+
     async def on_model_change(self, data, model, is_created):
         # Удаляем старые связи
         await self.session.execute(
                 delete(DrinkFood).where(DrinkFood.drink_id == model.id)
                 )
-        
+
         # Добавляем новые
         food_ids = data.get("foods", [])
         if isinstance(food_ids, str):
@@ -68,7 +35,7 @@ class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
             if food_id:
                 assoc = DrinkFood(drink_id = model.id, food_id = int(food_id))
                 self.session.add(assoc)
-    
+
     def is_field_skipped(self, model, name):
         # Не пропускаем foods — будем рендерить кастомно
         return False
