@@ -42,10 +42,10 @@ async def authenticate(username: str, password: str):
 """
 authentication_backend = authentication_backend
 admin = Admin(
-    app,
-    engine,
+    app=app,
+    engine=engine,
     authentication_backend=authentication_backend,
-    templates_dir="templates"
+    templates_dir="/app/templates"
 )
 # --------------подключение админ панели------------------
 admin.add_view(sqladm.CategoryAdmin)

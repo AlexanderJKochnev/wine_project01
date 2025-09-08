@@ -1,0 +1,20 @@
+<div class="mb-3 form-group row">
+  <label class="form-label col-sm-2 col-form-label" for="foods">Foods</label>
+  <div class="col-sm-10">
+    {% for choice, label in field.choices %}
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          name="{{ field.name }}"
+          value="{{ choice }}"
+          id="foods_{{ choice }}"
+          {% if choice in field.data %}checked{% endif %}
+        >
+        <label class="form-check-label" for="foods_{{ choice }}">
+          {{ label }}
+        </label>
+      </div>
+    {% endfor %}
+  </div>
+</div>

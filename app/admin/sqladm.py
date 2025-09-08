@@ -1,32 +1,83 @@
 # app/admin/sqladmin.md
-from sqladmin import ModelView
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select, delete
-from typing import List, Any
-import asyncio
+from wtforms import Field
+from wtforms.widgets import HiddenInput
 
-from sqlalchemy.orm import selectinload
-from sqlalchemy import select, delete
 from app.admin.core import AutoModelView, BaseAdmin
-# --------подключение моделей-----------
-from app.support.drink.model import Drink, DrinkFood
 from app.support.category.model import Category
+from app.support.color.model import Color
 from app.support.country.model import Country
 from app.support.customer.model import Customer
-from app.support.warehouse.model import Warehouse
+# --------подключение моделей-----------
+from app.support.drink.model import Drink, DrinkFood
 from app.support.food.model import Food
 from app.support.item.model import Item
 from app.support.region.model import Region
-from app.support.color.model import Color
-from app.support.sweetness.model import Sweetness
 from app.support.subregion.model import Subregion
+from app.support.sweetness.model import Sweetness
+from app.support.warehouse.model import Warehouse
+
+
+class CheckboxListField(Field):
+    widget = HiddenInput()  # Чтобы не рендерилось стандартно
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _value(self):
+        return self.data
 
 
 class DrinkAdmin(AutoModelView, BaseAdmin, model=Drink):
-    form_ajax_refs = {'foods':
-                          {'fields': ('name',), 'order_by': 'name', 'widget': 'checkbox'  # Это ключевой параметр!
-            }}
+    can_view_details = True
+    
+    async def get_form(self, obj=None):
+        # Получаем оригинальную форму
+        form_cls = await super().get_form(obj)
+        
+        original_field = getattr(form_cls, "foods", None)
+        if not original_field:
+            return form_cls
+        
+        # Подготавливаем data как список строк (для шаблона)
+        if obj:
+            stmt = select(Food.id).join(DrinkFood).where(DrinkFood.drink_id == obj.id)
+            result = await self.session.execute(stmt)
+            selected_ids = [str(r[0]) for r in result.all()]
+        else:
+            selected_ids = []
+        
+        # Заменяем поле на кастомное
+        form_cls.foods = CheckboxListField(
+                label = "Foods", choices = original_field.choices, data = selected_ids,  # список строк ID
+                )
+        return form_cls
+    
+    async def on_model_change(self, data, model, is_created):
+        # Удаляем старые связи
+        await self.session.execute(
+                delete(DrinkFood).where(DrinkFood.drink_id == model.id)
+                )
+        
+        # Добавляем новые
+        food_ids = data.get("foods", [])
+        if isinstance(food_ids, str):
+            food_ids = [food_ids]
+        for food_id in food_ids:
+            if food_id:
+                assoc = DrinkFood(drink_id = model.id, food_id = int(food_id))
+                self.session.add(assoc)
+    
+    def is_field_skipped(self, model, name):
+        # Не пропускаем foods — будем рендерить кастомно
+        return False
+    
+    def get_template_rules(self):
+        return {"foods": "admin/form/foods_field.html",  # Кастомный шаблон
+                }
 
+    # ==================
     async def on_model_change(self, data, model, is_created):
         # Сохраняем основную модель сначала
         await super().on_model_change(data, model, is_created)
