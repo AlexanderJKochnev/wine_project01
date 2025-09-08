@@ -1,16 +1,16 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+# from sqlalchemy import pool
+# from sqlalchemy.engine import Connection
+# from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 import sys
 from os.path import dirname, abspath
+from app.core.config.database.db_sync import engine_sync as app_engine
 
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
-
 from app.core.models.base_model import Base  # noqa: F401, E402
 # -------model import----------------
 from app.support.drink.model import Drink  # noqa: F401, E402
@@ -83,6 +83,29 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table":
+        if name.startswith("auth_") or name.startswith("django_") or name.startswith("directus_"):
+            return False
+    return True
+
+
+def run_migrations_online():
+    connectable = app_engine
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,
+            compare_type=True,
+        )
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+run_migrations_online()
+
+"""
 def do_run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata)
 
@@ -91,10 +114,6 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
 
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
@@ -109,7 +128,6 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
 
     asyncio.run(run_async_migrations())
 
@@ -118,3 +136,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+"""
