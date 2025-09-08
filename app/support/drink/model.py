@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from typing import List, TYPE_CHECKING
-
+from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, text  # noqa: F401
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models.base_model import (Base, BaseAt, BaseDescription,
+from app.core.models.base_model import (Base, BaseAt, BaseDescription, int_pk,
                                         boolnone, ion, str_null_true, str_uniq, volume)
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import plural
@@ -82,9 +82,11 @@ class Drink(Base, BaseDescription, BaseAt):
 
 class DrinkFood(Base):
     __tablename__ = "drink_food_associations"
+    id = Mapped[int_pk]
+    drink_id = Column(Integer, ForeignKey("drinks.id"))
+    food_id = Column(Integer, ForeignKey("foods.id"))
 
-    drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
-    food_id = Column(Integer, ForeignKey("foods.id"), primary_key=True)
+    __table_args__ = (PrimaryKeyConstraint('drink_id', 'food_id'),)
 
     # Пример дополнительного поля (можно расширять)
     priority = Column(Integer, default=0)

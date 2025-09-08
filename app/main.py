@@ -2,9 +2,9 @@
 from fastapi import FastAPI
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
-from sqladmin import Admin
+#  from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware
-from app.admin import sqladm
+# from app.admin import sqladm
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.auth.routers import user_router, auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -22,7 +22,7 @@ from app.support.subregion.router import router as subregion_router
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
-from app.admin.auth import authentication_backend
+# from app.admin.auth import authentication_backend
 
 app = FastAPI()
 app.add_middleware(
@@ -34,11 +34,6 @@ app.add_middleware(
 )
 # app.add_middleware(AuthMiddleware)
 
-"""
-async def authenticate(username: str, password: str):
-    if username == "admin" and password == "password":
-        return True
-    return False
 """
 authentication_backend = authentication_backend
 admin = Admin(
@@ -60,6 +55,8 @@ admin.add_view(sqladm.ColorAdmin)
 admin.add_view(sqladm.SweetnessAdmin)
 admin.add_view(sqladm.SubregionAdmin)
 
+"""
+
 
 @app.get("/")
 async def read_root():
@@ -71,25 +68,6 @@ async def wait_some_time(seconds: float):
     await asyncio.sleep(seconds)  # Не блокирует поток
     return {"waited": seconds}
 
-# --------подлкючение защищенных роутеров ----------
-"""
-protected_routers = [
-    drink_router,
-    category_router,
-    country_router,
-    customer_router,
-    warehouse_router,
-    food_router,
-    item_router,
-    region_router,
-    color_router,
-    sweetness_router,
-    image_router]
-
-for router in protected_routers:
-    app.include_router(router, dependencies=[Depends(get_current_active_user)])
-"""
-# --------подключение незащищенных роутеров ---------
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(drink_router)

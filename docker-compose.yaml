@@ -59,6 +59,43 @@ services:
       - ./migration_volume:/app/app/migration/versions
     networks:
       - pgnetwork
+  
+  directus:
+    container_name: wine_directus
+    image: directus/directus:11.11.0
+    # image: directus/directus:11.3.1
+    restart: unless-stopped
+    environment:
+      KEY: ${DIRECTUS_KEY:-directus-key-dev}
+      SECRET: ${DIRECTUS_SECRET:-directus-secret-dev}
+      
+      # Подключение к БД (внутри Docker-сети)
+      DB_CLIENT: pg
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_PORT}
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_EXCLUDE_TABLES: ""
+      
+      # Админ пользователя
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      
+      # URL (для ассетов и редиректов)
+      PUBLIC_URL: http://localhost:8093
+      PORT: ${DIRECTUS_PORT}
+      
+      # Отключить встроенный API, если не нужен
+      # DISABLE_DEFAULT_ROUTE: "true"
+    ports:
+      - "8093:${DIRECTUS_PORT}"
+    volumes:
+      - ./directus/uploads:/directus/uploads  # файлы и изображения
+    depends_on:
+      - wine_host
+    networks:
+      - pgnetwork
 
 networks:
   pgnetwork:
