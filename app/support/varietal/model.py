@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, relationship
 from app.core.models.base_model import BaseFull
 
 if TYPE_CHECKING:
-    from app.support.drink.model import DrinkVarietal
+    from app.support.drink.model import DrinkVarietal, Drink
 
 
 class Varietal(BaseFull):

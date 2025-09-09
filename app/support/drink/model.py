@@ -109,7 +109,7 @@ class DrinkVarietal(Base):
     __tablename__ = "drink_varietal_associations"
 
     drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
-    varietal_id = Column(Integer, ForeignKey("varietal.id"), primary_key=True)
+    varietal_id = Column(Integer, ForeignKey("varietals.id"), primary_key=True)
 
     percentage = Column(DECIMAL(3, 2), default=1, nullable=True)
     __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 1',
