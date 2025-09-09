@@ -19,7 +19,6 @@ from app.support.sweetness.schemas import SweetnessRead
 
 class CustomReadSchema:
     category_id: Optional[CategoryRead] = None
-    # food_id: Optional[FoodRead] = None
     color_id: Optional[ColorRead] = None
     sweetness_id: Optional[SweetnessRead] = None
     subregion_id: Optional[SubregionRead] = None
@@ -29,6 +28,7 @@ class CustomReadSchema:
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     foods: List[str]
+    varietals: List[str]
 
 
 class CustomUpdSchema:
@@ -53,7 +53,6 @@ class CustomCreateSchema:
     sugar: Optional[Decimal] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
-    # food: List[str] = []
 
 
 class DrinkRead(ReadSchema, CustomReadSchema):
@@ -86,7 +85,8 @@ class DrinkRead1(ReadSchemaWithRealtionships):
     color: Optional[str] = None
     sweetness: Optional[str] = None
     subregion: Optional[str] = None
-    food: Optional[List[str]] = []
+    foods: Optional[List[str]] = []
+    varietals: Optional[List[str]] = []
 
 
 class DrinkCreate(CreateSchema, CustomCreateSchema):
@@ -108,3 +108,12 @@ class DrinkFoodLinkCreate(BaseModel):
 
 class DrinkFoodLinkUpdate(BaseModel):
     food_ids: List[int]
+
+
+class DrinkVarietalLinkCreate(BaseModel):
+    drink_id: int
+    varietal_ids: List[int]  # полный список ID для связи
+
+
+class DrinkVarietalLinkUpdate(BaseModel):
+    varietal_ids: List[int]

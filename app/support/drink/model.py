@@ -1,9 +1,9 @@
 # app/support/drink/model.py
 from __future__ import annotations
-
+from sqlalchemy.types import DECIMAL
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text, text  # noqa: F401
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
@@ -67,6 +67,15 @@ class Drink(Base, BaseDescription, BaseAt):
                          lazy="selectin",
                          viewonly=False,  # чтобы можно было использовать в form
                          overlaps="food_associations,drink")
+
+    varietal_associations = relationship(
+        "DrinkVarietal", back_populates="drink", cascade="all, delete-orphan", overlaps="varietals"
+    )
+    varietals = relationship("Varietal",
+                             secondary="drink_varietal_associations",
+                             back_populates="drinks",
+                             lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
+
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
 
     """ ALTERNATIVE VERSION
@@ -94,3 +103,22 @@ class DrinkFood(Base):
 
     def __str__(self):
         return f"Drink {self.drink_id} - Food {self.food_id} (Priority: {self.priority})"
+
+
+class DrinkVarietal(Base):
+    __tablename__ = "drink_varietal_associations"
+
+    drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
+    varietal_id = Column(Integer, ForeignKey("varietal.id"), primary_key=True)
+
+    percentage = Column(DECIMAL(3, 2), default=1, nullable=True)
+    __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 1',
+                                      name='check_percentage_range'),)
+
+    # Relationships
+    drink = relationship("Drink", back_populates="varietal_associations", overlaps='varietalss')
+    varietal = relationship("Varietal", back_populates="drink_associations", overlaps='drinks,varietals')
+
+    def __str__(self):
+        # return f"Drink {self.drink_id} - Varietal {self.food_id} (Percentage: {self.percentage})"
+        return f"Varietal {self.varietal_id} (Percentage: {self.percentage})"
