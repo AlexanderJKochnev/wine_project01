@@ -144,9 +144,9 @@ class DrinkVarietal(models.Model):
         db_table = 'drink_varietal_associations'
         unique_together = ('drink', 'varietal')
         managed = False  # Только чтение структуры
-        verbose_name = _("Drink-Varietable Association")
-        verbose_name_plural = _("Drink-Varietables Associations")
+        verbose_name = _("Drink-Varietale Association")
+        verbose_name_plural = _("Drink-Varietales Associations")
         managed = False
 
     def __str__(self):
-        return f"{self.drink} - {self.varietal} (Prio: {self.percentage})"
+        return f"{self.drink} - {self.varietal} (Percentage: {self.percentage})"
