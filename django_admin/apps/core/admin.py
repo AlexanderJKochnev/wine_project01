@@ -8,7 +8,7 @@ from django.core.files.base import ContentFile
 from PIL import Image
 import os
 
-from .models import Drink, Food, Category, Color, Country, Region, Subregion, Sweetness
+from .models import Drink, Food, DrinkFood, Category, Color, Country, Region, Subregion, Sweetness
 
 
 class ImageUploadWidget(forms.ClearableFileInput):
@@ -47,20 +47,33 @@ class DrinkAdminForm(forms.ModelForm):
         return instance
 
 
+class DrinkFoodInline(admin.TabularInline):
+    model = DrinkFood
+    extra = 1
+    autocomplete_fields = ('food',)
+
+
 @admin.register(Drink)
 class DrinkAdmin(admin.ModelAdmin):
     form = DrinkAdminForm
-    list_display = ('title', 'alc', 'category', 'image_tag')
+    list_display = ('title', 'alc', 'category', 'image_tag', 'get_foods')
     list_filter = ('category', 'color', 'sweetness')
     search_fields = ('title', 'title_native', 'subtitle')
     filter_horizontal = ()  # Отключаем, так как используем CheckboxSelectMultiple в форме
     readonly_fields = ('image_tag',)
+
+    filter_horizontal = ()  # Не работает с `through`, поэтому используем inlines
+    inlines = [DrinkFoodInline]  # ← Управление связями через вложенную форму
 
     def image_tag(self, obj):
         if obj.image:
             return format_html('<img src="{}" style="width: 100px; height: auto;" />', obj.image.url)
         return "-"
     image_tag.short_description = 'Image'
+
+    def get_foods(self, obj):
+        return ", ".join([f.name for f in obj.foods.all()])
+    get_foods.short_description = "Foods"
 
 
 @admin.register(Food)
