@@ -1,13 +1,13 @@
 # django_admin/apps/core/models.py
+from apps.base.abstract_models import BaseFull
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+
 # from django.core.files.storage import default_storage
 # from PIL import Image
 # from io import BytesIO
 # import os
-
-from apps.base.abstract_models import BaseFull, BaseAt, BaseDescription, BaseLang
-from apps.base.fields import MongoFileField
 
 
 class Category(BaseFull):
@@ -70,6 +70,14 @@ class Food(BaseFull):
         managed = False
 
 
+class Varietal(BaseFull):
+    class Meta:
+        db_table = 'varietals'
+        verbose_name = _("Varietal")
+        verbose_name_plural = _("Varietals")
+        managed = False
+
+
 class Drink(models.Model):
     title_native = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Title Native"))
     subtitle_native = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Subtitle Native"))
@@ -92,10 +100,8 @@ class Drink(models.Model):
     description_fr = models.TextField(null=True, blank=True, verbose_name=_("Description (FR)"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
-    # ManyToMany с Food
-    # foods = models.ManyToManyField(Food, through='DrinkFood', related_name='drinks',
-    # db_table='drink_food_associations')
-    foods = models.ManyToManyField(Food, through='DrinkFood', related_name='drinks')
+    foods = models.ManyToManyField('Food', related_name='drinks', blank=True)
+    varietals = models.ManyToManyField(Varietal, through='DrinkVarietal', related_name='drinks')
     # OneToOne с файлом в MongoDB (ссылка в Postgres)
     # image = MongoFileField(upload_to='drink_images/', null=True, blank=True, verbose_name=_("Image"))
 
@@ -125,3 +131,22 @@ class DrinkFood(models.Model):
 
     def __str__(self):
         return f"{self.drink} - {self.food} (Prio: {self.priority})"
+
+
+class DrinkVarietal(models.Model):
+    drink = models.ForeignKey(Drink, on_delete=models.DO_NOTHING,
+                              db_column='drink_id', related_name='varietal_associations')
+    varietal = models.ForeignKey(Varietal, on_delete=models.DO_NOTHING,
+                                 db_column='varietal_id', related_name='drink_associations')
+    percentage = models.IntegerField(default=1, verbose_name=_("Percentage"))
+
+    class Meta:
+        db_table = 'drink_varietal_associations'
+        unique_together = ('drink', 'varietal')
+        managed = False  # Только чтение структуры
+        verbose_name = _("Drink-Varietable Association")
+        verbose_name_plural = _("Drink-Varietables Associations")
+        managed = False
+
+    def __str__(self):
+        return f"{self.drink} - {self.varietal} (Prio: {self.percentage})"

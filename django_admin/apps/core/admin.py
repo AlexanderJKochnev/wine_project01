@@ -8,7 +8,8 @@ from django.core.files.base import ContentFile
 from PIL import Image
 import os
 
-from .models import Drink, Food, DrinkFood, Category, Color, Country, Region, Subregion, Sweetness
+from .models import (Drink, Food, DrinkFood, Category, Color, Varietal,
+                     Country, Region, Subregion, Sweetness, DrinkVarietal)
 
 
 class ImageUploadWidget(forms.ClearableFileInput):
@@ -53,6 +54,12 @@ class DrinkFoodInline(admin.TabularInline):
     autocomplete_fields = ('food',)
 
 
+class DrinkVarietalInline(admin.TabularInline):
+    model = DrinkVarietal
+    extra = 1
+    autocomplete_fields = ('varietal',)
+
+
 @admin.register(Drink)
 class DrinkAdmin(admin.ModelAdmin):
     form = DrinkAdminForm
@@ -62,8 +69,12 @@ class DrinkAdmin(admin.ModelAdmin):
     filter_horizontal = ()  # Отключаем, так как используем CheckboxSelectMultiple в форме
     readonly_fields = ('image_tag',)
 
-    filter_horizontal = ()  # Не работает с `through`, поэтому используем inlines
-    inlines = [DrinkFoodInline]  # ← Управление связями через вложенную форму
+    # filter_horizontal = ()  # Не работает с `through`, поэтому используем inlines
+    # inlines = [DrinkFoodInline]  # ← Управление связями через вложенную форму
+    filter_horizontal = ('foods',)  # ← Появятся чекбоксы
+    list_display = ('title', 'get_foods')
+
+    inlines = [DrinkVarietalInline]
 
     def image_tag(self, obj):
         if obj.image:
@@ -78,6 +89,12 @@ class DrinkAdmin(admin.ModelAdmin):
 
 @admin.register(Food)
 class FoodAdmin(admin.ModelAdmin):
+    list_display = ('name', 'name_ru', 'name_fr')
+    search_fields = ('name', 'name_ru', 'name_fr')
+
+
+@admin.register(Varietal)
+class VarietalAdmin(admin.ModelAdmin):
     list_display = ('name', 'name_ru', 'name_fr')
     search_fields = ('name', 'name_ru', 'name_fr')
 
