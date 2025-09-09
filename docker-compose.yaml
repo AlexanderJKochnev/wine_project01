@@ -13,10 +13,10 @@ services:
     volumes:
       - ./pg_data:/var/lib/postgresql/data
       - ./pg_dump:/tmp
-    networks:
-      pgnetwork:
-        aliases:
-          - ${POSTGRES_HOST}
+  #   networks:
+  #     - pgnetwork
+      #   aliases:
+      #     - ${POSTGRES_HOST}
     healthcheck:
       test: |
         sh -c 'pg_isready -h localhost -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}'
@@ -38,8 +38,8 @@ services:
       - wine_host
     ports:
       - "${ADMINER_PORTS}"
-    networks:
-      - pgnetwork
+#     networks:
+#       - pgnetwork
 
   app:
     container_name: app
@@ -57,12 +57,30 @@ services:
     volumes:
       - ./templates:/app/templates
       - ./migration_volume:/app/app/migration/versions
-    networks:
-      - pgnetwork
+  #   networks:
+  #     - pgnetwork
+  
+  django:
+    # build: ./django_admin
+    build:
+      context: .
+      dockerfile: django_admin/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${DJANGO_PORT}:8000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      # ADMIN_EMAIL: ${ADMIN_EMAIL}
+      # ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    depends_on:
+      - wine_host
+#     networks:
+#       - pgnetwork
 
-networks:
-  pgnetwork:
-    driver: bridge
+# networks:
+#   pgnetwork:
+#     driver: bridge
 
 volumes:
   migration_volume: # alembic migrations

@@ -1,13 +1,13 @@
 # app/support/Item/model.py
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from app.core.models.base_model import BaseFull, money, volume, ion, BaseAt, Base
-from app.core.config.project_config import settings
-from app.core.utils.common_utils import plural
 
+from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.models.base_model import Base, BaseAt, ion, money, volume
 
 if TYPE_CHECKING:
     from app.support.drink.model import Drink

@@ -4,8 +4,6 @@ from __future__ import annotations
 from sqlalchemy.orm import (Mapped, relationship)
 
 from app.core.models.base_model import (Base, BaseAt, str_null_index, str_null_true, str_uniq)
-from app.core.config.project_config import settings
-from app.core.utils.common_utils import plural
 
 
 class Customer(Base, BaseAt):

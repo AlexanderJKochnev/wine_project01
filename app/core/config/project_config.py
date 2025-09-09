@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # RELATIONSHIPS
     LAZY: str = 'selectin'
     CASCADE: str = 'all, delete-orphan'
+    DJANGO_PORT: int = 8093
+    ADMIN_EMAIL: str
+    ADMIN_PASSWORD: str
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

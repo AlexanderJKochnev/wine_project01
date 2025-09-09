@@ -1,0 +1,1 @@
+# django_admin/apps/base/__init__.py

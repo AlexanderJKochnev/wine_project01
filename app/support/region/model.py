@@ -1,11 +1,13 @@
 # app/support/region/model.py
 from __future__ import annotations
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import (relationship,
-                            Mapped, mapped_column)
+
 from typing import TYPE_CHECKING
-from app.core.models.base_model import BaseFull
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import (Mapped, mapped_column, relationship)
+
 from app.core.config.project_config import settings
+from app.core.models.base_model import BaseFull
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:

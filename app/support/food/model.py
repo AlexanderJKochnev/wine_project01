@@ -1,11 +1,11 @@
 # app/support/food/model.py
 from __future__ import annotations
-from sqlalchemy.orm import relationship, Mapped
-from typing import List, TYPE_CHECKING
-from app.core.models.base_model import BaseFull
-from app.core.config.project_config import settings
-from app.core.utils.common_utils import plural
 
+from typing import List, TYPE_CHECKING
+
+from sqlalchemy.orm import Mapped, relationship
+
+from app.core.models.base_model import BaseFull
 
 if TYPE_CHECKING:
     from app.support.drink.model import DrinkFood

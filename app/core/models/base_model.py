@@ -1,22 +1,16 @@
 # app/core/models/base_model.py
 
-"""
-    Base Model for SqlAlchemy
-    в случае изменения модели Base внести соответствующие изменения в app/core/schemas/base.py
-"""
 from datetime import datetime
-from typing import Annotated
-from sqlalchemy import func, text, Text, Integer
-from sqlalchemy.orm import (DeclarativeBase, Mapped,
-                            declared_attr, mapped_column)
-from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import class_mapper
-# from sqlalchemy.dialects.postgresql import MONEY
-from sqlalchemy import DECIMAL
 from decimal import Decimal
+from typing import Annotated
+
+# from sqlalchemy.dialects.postgresql import MONEY
+from sqlalchemy import DECIMAL, func, Integer, text, Text
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import class_mapper, DeclarativeBase, declared_attr, Mapped, mapped_column
+
 # from app.core.config.project_config import settings
 from app.core.utils.common_utils import plural
-
 
 # primary key
 int_pk = Annotated[int, mapped_column(Integer, primary_key=True, autoincrement=True)]

@@ -1,13 +1,13 @@
 # app/support/warehouse/model.py
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import List, TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models.base_model import str_null_true, BaseFull
 from app.core.config.project_config import settings
+from app.core.models.base_model import BaseFull, str_null_true
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:

@@ -17,6 +17,7 @@
 !/requirements.txt
 !/pyproject.toml
 !/setup.py
+!/django_admin/
 
 # Исключить ненужные файлы в разрешённых директориях
 */__pycache__

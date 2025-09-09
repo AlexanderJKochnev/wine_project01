@@ -37,6 +37,19 @@ class ConfigDataBase(BaseSettings):
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
+    @property
+    def django_database_url(self) -> Optional[PostgresDsn]:
+        """
+        выводит строку подключения
+        :return:
+        :rtype:
+        """
+        return (
+            f"postgresql://{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
 
 settings_db = ConfigDataBase()
 

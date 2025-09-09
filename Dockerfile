@@ -11,8 +11,8 @@ WORKDIR /app
 COPY requirements.txt .
 ENV PYTHONUNBUFFERED=1
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+COPY ./app ./app
+COPY .env .
 EXPOSE $APP_PORT
-# EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "$APP_HOST", "--port", "$APP_PORT", "--reload"]
