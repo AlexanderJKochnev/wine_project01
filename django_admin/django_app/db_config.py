@@ -36,6 +36,8 @@ class ConfigDataBase:
         self.POSTGRES_PORT = os.getenv('POSTGRES_PORT', '')
         self.POSTGRES_DB = os.getenv('POSTGRES_DB', '')
         self.DB_ECHO_LOG = os.getenv('DB_ECHO_LOG', 'False').lower() == 'true'
+        self.ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@admin.com')
+        self.ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'password')
 
         # Настройки аутентификации
         self.SECRET_KEY = os.getenv('SECRET_KEY', '')

@@ -2,7 +2,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-
 class BaseAt(models.Model):
     """Время создания/изменения"""
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))

@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 # from io import BytesIO
 # import os
 
-from apps.base.abstract_models import BaseFull
+from apps.base.abstract_models import BaseFull, BaseAt, BaseDescription, BaseLang
 from apps.base.fields import MongoFileField
 
 
@@ -63,7 +63,7 @@ class Food(BaseFull):
         verbose_name_plural = _("Foods")
 
 
-class Drink(BaseFull):
+class Drink(BaseAt, BaseDescription, BaseLang):
     title_native = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Title Native"))
     subtitle_native = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Subtitle Native"))
     title = models.CharField(max_length=255, unique=True, db_index=True, verbose_name=_("Title"))
@@ -92,6 +92,9 @@ class Drink(BaseFull):
         db_table = 'drinks'
         verbose_name = _("Drink")
         verbose_name_plural = _("Drinks")
+
+    def __str__(self):
+        return self.title or f"Drink {self.id}"
 
 
 class DrinkFood(models.Model):
