@@ -149,4 +149,4 @@ class DrinkVarietal(models.Model):
         managed = False
 
     def __str__(self):
-        return f"{self.drink} - {self.varietal} (Percentage: {self.percentage})"
+        return f"{self.drink} - {self.varietal} (Percentage {self.percentage})"
