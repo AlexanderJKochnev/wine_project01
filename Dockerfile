@@ -12,6 +12,7 @@ COPY requirements.txt .
 ENV PYTHONUNBUFFERED=1
 RUN pip install --no-cache-dir -r requirements.txt
 COPY ./app ./app
+COPY alembic.ini .
 COPY .env .
 EXPOSE $APP_PORT
 

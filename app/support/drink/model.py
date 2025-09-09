@@ -1,22 +1,20 @@
 # app/support/drink/model.py
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, text  # noqa: F401
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models.base_model import (Base, BaseAt, BaseDescription,
-                                        boolnone, ion, str_null_true, str_uniq, volume)
 from app.core.config.project_config import settings
+from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone, descr, ion, str_null_true, str_uniq,
+                                        volume)
 from app.core.utils.common_utils import plural
-
 
 if TYPE_CHECKING:
     from app.support.sweetness.model import Sweetness
     from app.support.color.model import Color
     from app.support.category.model import Category
-    from app.support.item.model import Item
     from app.support.subregion.model import Subregion
 
 
@@ -31,7 +29,8 @@ class Drink(Base, BaseDescription, BaseAt):
     # наименование на международном (англ) языке
     title: Mapped[str_uniq]
     subtitle: Mapped[str_null_true]
-
+    # описание на международном (англ) языке (остальные через BaseDescription)
+    description: Mapped[descr]
     alc: Mapped[volume]
     sugar: Mapped[volume]
     aging: Mapped[ion]

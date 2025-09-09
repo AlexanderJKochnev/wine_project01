@@ -15,6 +15,7 @@ class Category(BaseFull):
         db_table = 'categories'
         verbose_name = _("Category")
         verbose_name_plural = _("Categories")
+        managed = False
 
 
 class Color(BaseFull):
@@ -22,6 +23,7 @@ class Color(BaseFull):
         db_table = 'colors'
         verbose_name = _("Color")
         verbose_name_plural = _("Colors")
+        managed = False
 
 
 class Country(BaseFull):
@@ -29,6 +31,7 @@ class Country(BaseFull):
         db_table = 'countries'
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+        managed = False
 
 
 class Region(BaseFull):
@@ -38,6 +41,7 @@ class Region(BaseFull):
         db_table = 'regions'
         verbose_name = _("Region")
         verbose_name_plural = _("Regions")
+        managed = False
 
 
 class Subregion(BaseFull):
@@ -47,6 +51,7 @@ class Subregion(BaseFull):
         db_table = 'subregions'
         verbose_name = _("Subregion")
         verbose_name_plural = _("Subregions")
+        managed = False
 
 
 class Sweetness(BaseFull):
@@ -54,6 +59,7 @@ class Sweetness(BaseFull):
         db_table = 'sweetness'
         verbose_name = _("Sweetness")
         verbose_name_plural = _("Sweetnesses")
+        managed = False
 
 
 class Food(BaseFull):
@@ -61,9 +67,10 @@ class Food(BaseFull):
         db_table = 'foods'
         verbose_name = _("Food")
         verbose_name_plural = _("Foods")
+        managed = False
 
 
-class Drink(BaseAt, BaseDescription, BaseLang):
+class Drink(models.Model):
     title_native = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Title Native"))
     subtitle_native = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Subtitle Native"))
     title = models.CharField(max_length=255, unique=True, db_index=True, verbose_name=_("Title"))
@@ -80,18 +87,23 @@ class Drink(BaseAt, BaseDescription, BaseLang):
                               db_column='color_id', null=True, related_name='drinks')
     sweetness = models.ForeignKey(Sweetness, on_delete=models.DO_NOTHING,
                                   db_column='sweetness_id', null=True, related_name='drinks')
-
+    description = models.TextField(null=True, blank=True, verbose_name=_("Description"))
+    description_ru = models.TextField(null=True, blank=True, verbose_name=_("Description (RU)"))
+    description_fr = models.TextField(null=True, blank=True, verbose_name=_("Description (FR)"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
     # ManyToMany с Food
     # foods = models.ManyToManyField(Food, through='DrinkFood', related_name='drinks',
     # db_table='drink_food_associations')
     foods = models.ManyToManyField(Food, through='DrinkFood', related_name='drinks')
     # OneToOne с файлом в MongoDB (ссылка в Postgres)
-    image = MongoFileField(upload_to='drink_images/', null=True, blank=True, verbose_name=_("Image"))
+    # image = MongoFileField(upload_to='drink_images/', null=True, blank=True, verbose_name=_("Image"))
 
     class Meta:
         db_table = 'drinks'
         verbose_name = _("Drink")
         verbose_name_plural = _("Drinks")
+        managed = False
 
     def __str__(self):
         return self.title or f"Drink {self.id}"
@@ -109,6 +121,7 @@ class DrinkFood(models.Model):
         managed = False  # Только чтение структуры
         verbose_name = _("Drink-Food Association")
         verbose_name_plural = _("Drink-Food Associations")
+        managed = False
 
     def __str__(self):
         return f"{self.drink} - {self.food} (Prio: {self.priority})"
