@@ -12,18 +12,18 @@ from app.support.drink.schemas import DrinkCreateRelations, DrinkCreateResponseS
 class DrinkService(Service):
     """ переписываем методы для обрабоки manytomany relationships """
 
-    async def get_by_id(self, id: int, session: AsyncSession) -> Optional[ModelType]:
-        result = await super().get_by_id(id, session)
+    async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        result = await super().get_by_id(id, model, session)
         subresult = model_to_dict(result)
         flatresult = flatten_dict(subresult, ['name', 'name_ru'])
         print(f'{subresult}')
         for key, val in subresult.items():
             print(f'    {key}: {val}')
-        print('-------------------')
         for key, val in flatresult.items():
             print(f'    {key}: {val}')
         return result
 
-    async def create_relation(self, data: DrinkCreateRelations, session: AsyncSession) -> DrinkCreateResponseSchema:
-        result = super().create_relation(data, session)
+    async def create_relation(self, data: DrinkCreateRelations, model: ModelType, session: AsyncSession) -> (
+            DrinkCreateResponseSchema):
+        result = super().create_relation(data, model, session)
         return result

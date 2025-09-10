@@ -1,7 +1,7 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Tuple
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,40 +16,41 @@ ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 class Repository(Generic[ModelType]):
     model: ModelType
 
-    def get_query(self):
+    def get_query(self, model: ModelType):
         """
         Переопределяемый метод.
         Возвращает select() с нужными selectinload.
         По умолчанию — без связей.
         """
-        return select(self.model)
+        return select(model)
 
-    async def create(self, obj: ModelType, session: AsyncSession) -> ModelType:
+    async def create(self, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         session.add(obj)
         await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
         await session.commit()
         await session.refresh(obj)
         return obj
 
-    async def get_by_id(self, id: int, session: AsyncSession) -> Optional[ModelType]:
+    async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """
         get one record by id
         """
-        stmt = self.get_query().where(self.model.id == id)
+        stmt = self.get_query(model).where(model.id == id)
         result = await session.execute(stmt)
         obj = result.scalar_one_or_none()
         return obj
 
-    async def get_all(self, skip, limit, session: AsyncSession, ) -> tuple:
+    async def get_all(self, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
         # Запрос с загрузкой связей и пагинацией
-        stmt = self.get_query().offset(skip).limit(limit)
+        stmt = self.get_query(model).offset(skip).limit(limit)
         total = await self.get_count(session)
         result = await session.execute(stmt)
         items = result.scalars().all()
         return items, total
 
-    async def patch(self, id: Any, data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
-        obj = await self.get_by_id(id, session)
+    async def patch(self, id: Any, data: Dict[str, Any],
+                    model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        obj = await self.get_by_id(id, model, session)
         if not obj:
             return None
         for k, v in data.items():
@@ -59,9 +60,9 @@ class Repository(Generic[ModelType]):
         await session.refresh(obj)
         return obj
 
-    async def delete(self, id: Any, session: AsyncSession) -> bool:
+    async def delete(self, id: Any, model: ModelType, session: AsyncSession) -> bool:
         try:
-            obj = await self.get_by_id(id, session)
+            obj = await self.get_by_id(id, model, session)
             if not obj:
                 return False
             await session.delete(obj)
@@ -71,13 +72,13 @@ class Repository(Generic[ModelType]):
             logger.error(f'ошибка удаления записи: {e}')
             return False
 
-    async def get_by_field(self, field_name: str, field_value: Any, session: AsyncSession):
-        stmt = select(self.model).where(getattr(self.model, field_name) == field_value)
+    async def get_by_field(self, field_name: str, field_value: Any, model: ModelType, session: AsyncSession):
+        stmt = select(model).where(getattr(model, field_name) == field_value)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_count(self, session: AsyncSession) -> int:
-        count_stmt = select(func.count()).select_from(self.model)
+    async def get_count(self, model: ModelType, session: AsyncSession) -> int:
+        count_stmt = select(func.count()).select_from(model)
         count_result = await session.execute(count_stmt)
         total = count_result.scalar()
         return total
@@ -87,16 +88,17 @@ class Repository(Generic[ModelType]):
                                    page: int,
                                    page_size: int,
                                    skip: int,
+                                   model: ModelType,
                                    session: AsyncSession) -> List[Any]:
         """Поиск по всем заданным текстовым полям основной таблицы"""
         items = []
         total = 0
         try:
-            query = self.get_query()     # все записи
-            text_fields = get_text_model_fields(self.model)
+            query = self.get_query(model)     # все записи
+            text_fields = get_text_model_fields(model)
             conditions = []
             for field in text_fields:
-                conditions.append(getattr(self.model, field).ilike(f"%{search_query}%"))
+                conditions.append(getattr(model, field).ilike(f"%{search_query}%"))
             if conditions:
                 query = query.filter(or_(*conditions))
             # total_query = select(func.count()).select_from(query)

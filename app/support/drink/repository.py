@@ -2,7 +2,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.repositories.sqlalchemy_repository import Repository, ModelType
 from app.support.drink.model import Drink, DrinkFood
 from app.support.subregion.model import Subregion
 from app.support.region.model import Region
@@ -11,7 +11,7 @@ from app.support.region.model import Region
 class DrinkRepository(Repository):
     model = Drink
 
-    def get_query(self):
+    def get_query(self, model: ModelType):
         # Добавляем загрузку связи с relationships
         return select(Drink).options(selectinload(Drink.subregion).
                                      selectinload(Subregion.region),

@@ -19,41 +19,41 @@ class Service:
         self.repository = repositiory
         self.model = model
 
-    async def create(self, data: ModelType, session: AsyncSession) -> ModelType:
+    async def create(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ create & return record """
         # удаляет пустые поля
         data_dict = data.model_dump(exclude_unset=True)
-        obj = self.model(**data_dict)
-        return await self.repository.create(obj, session)
+        obj = model(**data_dict)
+        return await self.repository.create(obj, model, session)
 
-    async def get_or_create(self, data: ModelType, session: Session):
+    async def get_or_create(self, data: ModelType, model: ModelType, session: Session):
 
-        stmt = select(self.model).filter_by(data)
+        stmt = select(model).filter_by(data)
         result = await session.execute(stmt).scalar()
         if result:
             return result, False
         else:
-            instance = model(**kwargs)
+            instance = model(data)
             session.add(instance)
             session.flush()  # чтобы получить ID
             return instance, True
 
-    async def create_relation(self, data: ModelType, session: AsyncSession) -> ModelType:
+    async def create_relation(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ create & return record with all relations"""
         # shall be implemented for each model
         return data
 
-    async def get_by_id(self, id: int, session: AsyncSession) -> Optional[ModelType]:
+    async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """
         get one record by id
         """
-        obj = await self.repository.get_by_id(id, session)
+        obj = await self.repository.get_by_id(id, model, session)
         return obj
 
-    async def get_all(self, page: int, page_size: int, session: AsyncSession, ) -> List[dict]:
+    async def get_all(self, page: int, page_size: int, model: ModelType, session: AsyncSession, ) -> List[dict]:
         # Запрос с загрузкой связей и пагинацией
         skip = (page - 1) * page_size
-        items, total = await self.repository.get_all(skip, page_size, session)
+        items, total = await self.repository.get_all(skip, page_size, model, session)
         result = {"items": items,
                   "total": total,
                   "page": page,
@@ -62,20 +62,20 @@ class Service:
                   "has_prev": page > 1}
         return result
 
-    async def patch(self, id: Any, data: ModelType, session: AsyncSession) -> Optional[ModelType]:
+    async def patch(self, id: Any, data: ModelType, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         data_dict = data.model_dump(exclude_unset=True)
-        obj = await self.repository.patch(id, data_dict, session)
+        obj = await self.repository.patch(id, data_dict, model, session)
         return obj
 
-    async def delete(self, id: Any, session: AsyncSession) -> bool:
-        result = await self.repository.delete(id, session)
+    async def delete(self, id: Any, model: ModelType, session: AsyncSession) -> bool:
+        result = await self.repository.delete(id, model, session)
         if not result:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"{self.model.__name__} with id {id} not found")
+                                detail=f"{model.__name__} with id {id} not found")
 
         resu = {'success': result,
                 'deleted_count': 1 if result else 0,
-                'message': f'{self.model.__name__} with id {id} has been deleted'}
+                'message': f'{model.__name__} with id {id} has been deleted'}
         return DeleteResponse(**resu)
 
 # -------------------
@@ -83,6 +83,7 @@ class Service:
                                    query: str,
                                    page: int,
                                    page_size: int,
+                                   model: ModelType,
                                    session: AsyncSession) -> List[Any]:
         skip = (page - 1) * page_size
         return await self.repository.search_in_main_table(query, page, page_size, skip, session)

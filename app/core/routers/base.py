@@ -88,7 +88,7 @@ class BaseRouter:
             - 404: Запись не найдена
             - 500: Внутренняя ошибка сервера
             """
-        obj = await self.service.get_by_id(id, session)
+        obj = await self.service.get_by_id(id, self.model, session)
         if obj is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -102,7 +102,7 @@ class BaseRouter:
                                          le=paging.get('max', 1000)),
                   session: AsyncSession = Depends(get_db)) -> dict:
         try:
-            response = await self.service.get_all(page, page_size, session)
+            response = await self.service.get_all(page, page_size, self.model, session)
             result = self.paginated_response(**response)
             return result
         except Exception as e:
@@ -112,7 +112,7 @@ class BaseRouter:
 
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.service.create(data, session)
+            obj = await self.service.create(data, self.model, session)
             return obj
         except IntegrityError:
             raise HTTPException(
@@ -131,7 +131,7 @@ class BaseRouter:
 
     async def create_relation(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.service.create_relation(data, session)
+            obj = await self.service.create_relation(data, self.model, session)
             return obj
         except IntegrityError:
             raise HTTPException(
@@ -151,7 +151,7 @@ class BaseRouter:
     async def patch(self, id: int, data: TUpdate,
                     session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.service.patch(id, data, session)
+            obj = await self.service.patch(id, data, self.model, session)
             if not obj:
                 raise HTTPException(status_code=404, detail="Not found")
             return obj
@@ -160,7 +160,7 @@ class BaseRouter:
 
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
-        return await self.service.delete(id, session)
+        return await self.service.delete(id, self.model, session)
 
     async def search(self, query: str = Query(...),
                      page: int = Query(1, ge=1),
@@ -169,7 +169,7 @@ class BaseRouter:
                                             le=paging.get('max', 1000)),
                      session: AsyncSession = Depends(get_db)) -> dict:
         """Поиск по всем текстовым полям основной таблицы"""
-        items = await self.service.search_in_main_table(query, page, page_size, session=session)
+        items = await self.service.search_in_main_table(query, page, page_size, self.model, session=session)
         result = self.paginated_response(**items)
         return result
 
