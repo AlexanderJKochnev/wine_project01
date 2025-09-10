@@ -1,12 +1,11 @@
 # app.core.service/service_layer.py
 
-from typing import Any, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeMeta
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeMeta, Session
+
 from app.core.models.base_model import Base
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import DeleteResponse
@@ -26,17 +25,33 @@ class Service:
         obj = model(**data_dict)
         return await self.repository.create(obj, model, session)
 
-    async def get_or_create(self, data: ModelType, model: ModelType, session: Session):
-
-        stmt = select(model).filter_by(data)
-        result = await session.execute(stmt).scalar()
+    async def get_or_create(self, data: ModelType, model: ModelType, session: Session) -> ModelType:
+        """ использовать вместо create """
+        data_dict = data.model_dump(exclude_unset=True)
+        result = await self.repository.get_by_obj(data_dict, model, session)
         if result:
-            return result, False
+            return result
         else:
-            instance = model(data)
-            session.add(instance)
-            session.flush()  # чтобы получить ID
-            return instance, True
+            obj = model(**data_dict)
+            return await self.repository.create(obj, model, session)
+
+    async def update_or_create(self,
+                               lookup: Dict[str, Any],
+                               defaults: Dict[str, Any],
+                               model: ModelType,
+                               session: Session) -> ModelType:
+        """ ищет запись по lookup и обновляет значениями default,
+            если не находит - создает со значениями lookup + default
+            замена patch? - нужно сделать схемы
+        """
+        result = await self.repository.get_by_obj(lookup, model, session)
+        if result:
+            id = result['id']
+            return await self.repository.patch(id, defaults, model, session)
+        else:
+            data = {**lookup, **defaults}
+            obj = model(**data)
+            return await self.repository.create(obj, model, session)
 
     async def create_relation(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ create & return record with all relations"""

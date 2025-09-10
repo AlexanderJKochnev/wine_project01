@@ -69,8 +69,9 @@ class BaseRouter:
                                   response_model=self.paginated_response)
         self.router.add_api_route("/deepsearch", self.deep_search, methods=["GET"],
                                   response_model=self.paginated_response)
-        self.router.add_api_route("/advsearch", self.advanced_search, methods=["GET"],
-                                  response_model=self.paginated_response)
+        self.router.add_api_route(
+            "/advsearch", self.advanced_search, methods=["GET"], response_model=self.paginated_response
+        )
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
                                   response_model=self.read_schema,
@@ -112,7 +113,8 @@ class BaseRouter:
 
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.service.create(data, self.model, session)
+            # obj = await self.service.create(data, self.model, session)
+            obj = await self.service.get_or_create(data, self.model, session)
             return obj
         except IntegrityError:
             raise HTTPException(

@@ -1,7 +1,7 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Type
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +39,12 @@ class Repository(Generic[ModelType]):
         result = await session.execute(stmt)
         obj = result.scalar_one_or_none()
         return obj
+
+    async def get_by_obj(self, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
+        stmt = select(model).filter_by(**data)
+        result = await session.execute(stmt)
+        item = result.scalar_one_or_none()
+        return item
 
     async def get_all(self, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
         # Запрос с загрузкой связей и пагинацией

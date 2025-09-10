@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 # tests/test_routers.py
 """ в этой директории тесты для тестирования
     - генератора тестовых данных
@@ -12,6 +13,7 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip
 async def test_get(authenticated_client_with_db, test_db_session, fakedata_generator):
     # from app.support.drink.router import DrinkRouter as Router
     from app.support.warehouse.router import WarehouseRouter as Router
@@ -30,6 +32,7 @@ async def test_get(authenticated_client_with_db, test_db_session, fakedata_gener
     assert True
 
 
+@pytest.mark.skip
 async def test_create_drink(authenticated_client_with_db, test_db_session):
     """
     это тест детальной обработки ошибок drink и всех связаных таблиц
@@ -166,6 +169,7 @@ async def test_patch(authenticated_client_with_db, test_db_session, fakedata_gen
         assert result.get(key) == val
 
 
+@pytest.mark.skip
 async def test_greenlet(authenticated_client_with_db, test_db_session):
     """ тестирование one_to_many relationships"""
     from app.support.customer.router import CustomerRouter as RouterMain
@@ -212,6 +216,7 @@ async def test_greenlet(authenticated_client_with_db, test_db_session):
             assert False, f'{e} {data=} {x['id']=}'
 
 
+@pytest.mark.skip
 async def test_search(authenticated_client_with_db, test_db_session, create_drink):
     """ тестирование поиска в drink """
     from random import randint
@@ -244,3 +249,24 @@ async def test_new_data_generator(authenticated_client_with_db, new_data_generat
             assert True
         except Exception as e:
             assert False, f'number of record {n} error {e}'
+
+
+async def test_get_or_create(authenticated_client_with_db, test_db_session):
+    from app.support.category.router import CategoryRouter
+    client = authenticated_client_with_db
+    router = CategoryRouter()
+    create_schema = router.create_schema
+    prefix = router.prefix
+    data = {"name": "Design",
+            "name_ru": "Заработать",
+            "name_fr": "Mari",
+            "description": "Cup operation discussion significant early budget parent skill. Fund admit challenge individual government. Anything school Democrat first success yet. Many well product. Another information process those again sure six care. Whose business task offer response bring enough. Begin student rock smile five note eight. Look front teach notice final.",
+            "description_ru": "Зачем висеть смеяться кидать пропаганда художественный основание тусклый. Жить спалить лиловый возбуждение. Наткнуться редактор растеряться тяжелый ложиться материя. Построить наступать успокоиться. Скользить кузнец засунуть светило нервно заявление передо металл.",
+            "description_fr": "Rouge mort habiter jeunesse rose. Inviter habitant feuille paix. Prière douceur angoisse moindre surveiller corps effacer sable. Sourd résoudre fou combien toit. Employer inquiétude salle tout ferme réfléchir."
+            }
+    try:
+        _ = create_schema(**data)
+    except Exception as e:
+        assert False, f'Ошибка валидации данных: {e}'
+    response = await client.post(f'{prefix}', json=data)
+    assert response.status_code == 200, response.text

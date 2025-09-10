@@ -126,7 +126,7 @@ class TestDataGenerator:
                 'name': country_data['country']['en'],
                 'name_ru': country_data['country']['ru'],
                 'name_fr': country_data['country']['fr'],
-                'description_en': f"{country_data['country']['en']} is a country in Europe known for wine.",
+                'description': f"{country_data['country']['en']} is a country in Europe known for wine.",
                 'description_ru': f"{country_data['country']['ru']} — страна в Европе, известная своими винами.",
                 'description_fr': f"{country_data['country']['fr']} est un pays d'Europe réputé pour son vin.",
             },
@@ -134,7 +134,7 @@ class TestDataGenerator:
                 'name': region_data['name']['en'],
                 'name_ru': region_data['name']['ru'],
                 'name_fr': region_data['name']['fr'],
-                'description_en': f"{region_data['name']['en']} is a wine region in {country_data['country']['en']}.",
+                'description': f"{region_data['name']['en']} is a wine region in {country_data['country']['en']}.",
                 'description_ru': f"{region_data['name']['ru']} — винный регион в {country_data['country']['ru']}.",
                 'description_fr': f"{region_data['name']['fr']} est une région viticole en {country_data['country']['fr']}.",
             },
@@ -142,7 +142,7 @@ class TestDataGenerator:
                 'name': subregion_name['en'],
                 'name_ru': subregion_name['ru'],
                 'name_fr': subregion_name['fr'],
-                'description_en': f"{subregion_name['en']} is a subregion of {region_data['name']['en']}.",
+                'description': f"{subregion_name['en']} is a subregion of {region_data['name']['en']}.",
                 'description_ru': f"{subregion_name['ru']} — субрегион {region_data['name']['ru']}.",
                 'description_fr': f"{subregion_name['fr']} est un sous-région de {region_data['name']['fr']}.",
             }
@@ -180,7 +180,7 @@ class TestDataGenerator:
                         'name': self._generate_color('name'),
                         'name_ru': self._generate_color('name_ru'),
                         'name_fr': self._generate_color('name_fr'),
-                        'description_en': self._generate_string('description_en'),
+                        'description': self._generate_string('description'),
                         'description_ru': self._generate_string('description_ru'),
                         'description_fr': self._generate_string('description_fr'),
                     }
@@ -192,14 +192,14 @@ class TestDataGenerator:
                             'name': geo_data['region']['name'],
                             'name_ru': geo_data['region']['name_ru'],
                             'name_fr': geo_data['region']['name_fr'],
-                            'description_en': geo_data['region']['description_en'],
+                            'description': geo_data['region']['description'],
                             'description_ru': geo_data['region']['description_ru'],
                             'description_fr': geo_data['region']['description_fr'],
                         },
                         'name': geo_data['subregion']['name'],
                         'name_ru': geo_data['subregion']['name_ru'],
                         'name_fr': geo_data['subregion']['name_fr'],
-                        'description_en': geo_data['subregion']['description_en'],
+                        'description': geo_data['subregion']['description'],
                         'description_ru': geo_data['subregion']['description_ru'],
                         'description_fr': geo_data['subregion']['description_fr'],
                     }
@@ -210,7 +210,7 @@ class TestDataGenerator:
                         'name': name,
                         'name_ru': self._generate_string('name_ru'),
                         'name_fr': self._generate_string('name_fr'),
-                        'description_en': self._generate_string('description_en'),
+                        'description': self._generate_string('description'),
                         'description_ru': self._generate_string('description_ru'),
                         'description_fr': self._generate_string('description_fr'),
                     }
@@ -238,8 +238,8 @@ class TestDataGenerator:
         result = []
         for _ in range(count):
             item = self._generate_from_template(template)
-            # Убедимся, что description_en > 200 символов
-            for lang_key in ['description_en', 'description_ru', 'description_fr']:
+            # Убедимся, что description > 200 символов
+            for lang_key in ['description', 'description_ru', 'description_fr']:
                 if lang_key in item:
                     while len(item[lang_key]) < 200:
                         faker = self.fakers[lang_key.split('_')[1]]

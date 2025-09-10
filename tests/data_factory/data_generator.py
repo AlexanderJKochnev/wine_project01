@@ -184,7 +184,7 @@ def get_all_dict_paths(data: Any, parent_path: str = "") -> list[str]:
 
 
 single = get_relations(data[0])
-# print(json.dumps(single, indent=2, ensure_ascii=False))
+print(json.dumps(single, indent=2, ensure_ascii=False))
 result = get_all_dict_paths(single)
 print(json.dumps(result, indent=2, ensure_ascii=False))
 # country = get_nested(single, 'subregion_id.region.country')
