@@ -4,9 +4,12 @@ from typing import Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (CreateSchema, ReadSchema, ReadSchemaWithRealtionships,
-                                   UpdateSchema, FullSchema)
-from app.support.country.schemas import CountryRead
+from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, ReadSchemaWithRealtionships, UpdateSchema)
+from app.support.country.schemas import CountryCreateRelation, CountryRead
+
+
+class CustomCreateRelation:
+    country: Optional[CountryCreateRelation]
 
 
 class CustomReadSchema:
@@ -26,6 +29,10 @@ class RegionRead(ReadSchema, CustomReadSchema):
 
 
 class RegionCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class RegionCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

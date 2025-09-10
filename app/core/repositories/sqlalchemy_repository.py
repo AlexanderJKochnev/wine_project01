@@ -25,11 +25,6 @@ class Repository(Generic[ModelType]):
         return select(self.model)
 
     async def create(self, obj: ModelType, session: AsyncSession) -> ModelType:
-        """
-        create & return record """
-        # stmt = insert(self.model).values(**data).returning(self.model)
-        # result = await session.execute(stmt)
-        # obj = result.scalar_one()
         session.add(obj)
         await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
         await session.commit()

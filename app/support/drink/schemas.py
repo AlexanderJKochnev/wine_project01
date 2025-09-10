@@ -3,18 +3,33 @@
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict
 
-from app.core.schemas.base import (CreateSchema, DateSchema, PkSchema, ReadSchemaWithRealtionships,
-                                   UpdateSchema, ReadSchema, BaseModel)
-from app.support.category.schemas import CategoryRead
-from app.support.color.schemas import ColorRead
-from app.support.subregion.schemas import SubregionRead
-from app.support.sweetness.schemas import SweetnessRead
+from app.core.schemas.base import (BaseModel, CreateSchema, DateSchema, PkSchema, ReadSchema, UpdateSchema)
+from app.support.category.schemas import CategoryRead, CategoryCreateRelation
+from app.support.color.schemas import ColorRead, ColorCreateRelation
+from app.support.food.schemas import FoodRead, FoodCreateRelation
+# from app.support.item.schemas import ItemRead
+from app.support.subregion.schemas import SubregionRead, SubregionCreateRelation
+from app.support.sweetness.schemas import SweetnessRead, SweetnessCreateRelation
+from app.support.varietal.schemas import VarietalRead, VarietalCreateRelation
 
 
 # from app.support.country.schemas import CountryRead
 # from app.support.item.schemas import ItemRead
+
+class CustomCreateRelation:
+    category_id: Optional[CategoryCreateRelation] = None
+    color_id: Optional[ColorCreateRelation] = None
+    sweetness_id: Optional[SweetnessCreateRelation] = None
+    subregion_id: Optional[SubregionCreateRelation] = None
+    subtitle: Optional[str] = None
+    alcohol: Optional[Decimal] = None
+    sugar: Optional[Decimal] = None
+    aging: Optional[int] = None
+    sparkling: Optional[bool] = False
+    foods: List[FoodCreateRelation]
+    varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
 
 
 class CustomReadSchema:
@@ -27,8 +42,10 @@ class CustomReadSchema:
     sugar: Optional[Decimal] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
-    foods: List[str]
-    varietals: List[str]
+    foods: List[FoodRead]
+    varietals: List[VarietalRead]
+    # item is not fully implemented. circular import
+    # items: List[ItemRead]
 
 
 class CustomUpdSchema:
@@ -64,32 +81,11 @@ class DrinkRead(ReadSchema, CustomReadSchema):
     pass
 
 
-class DrinkRead1(ReadSchemaWithRealtionships):
-    model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True,
-                              extra='allow',
-                              populate_by_name=True,
-                              exclude_none=True)
-
-    # simple fields
-    subtitle: Optional[str] = None
-    alcohol: Optional[float] = None
-    sugar: Optional[float] = None
-    aging: Optional[int] = None
-    sparkling: Optional[bool] = False
-    country: Optional[str] = Field(..., json_schema_extra={'parent': 'subregion'},
-                                   description='это поле унаследовано от subregion.country'
-                                   )  # subregion.country.name
-    category: Optional[str] = None
-    # relationships field
-    color: Optional[str] = None
-    sweetness: Optional[str] = None
-    subregion: Optional[str] = None
-    foods: Optional[List[str]] = []
-    varietals: Optional[List[str]] = []
-
-
 class DrinkCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class DrinkCreateRelations(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

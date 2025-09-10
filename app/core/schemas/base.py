@@ -61,6 +61,10 @@ class UpdateSchema(LangSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
+class CreateSchemaRelation(LangSchema, UniqueSchema):
+    """ схема для создания записей с зависимаостями """
+    pass
+
 class ReadSchema(PkSchema, LangSchema, UniqueSchema):
     """
     остальные поля добавить через CustomReadSchema

@@ -231,3 +231,16 @@ async def test_search(authenticated_client_with_db, test_db_session, create_drin
     result = response.json().get('items')
     resp = [item for item in result if item.get('id') == id]
     assert resp, 'поиск выполнен неверно'
+
+
+async def test_new_data_generator(authenticated_client_with_db, new_data_generator):
+    from app.support.drink.router import DrinkRouter  # noqa: F401
+    client = authenticated_client_with_db
+    router = DrinkRouter()
+    schema = router.create_schema_relation
+    for n, val in enumerate(new_data_generator):
+        try:
+            _ = schema(**val)
+            assert True
+        except Exception as e:
+            assert False, f'number of record {n} error {e}'

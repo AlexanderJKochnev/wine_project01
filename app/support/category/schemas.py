@@ -1,7 +1,8 @@
 # app/support/category/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
+
+from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema
 
 
 class CustomReadSchema:
@@ -13,6 +14,10 @@ class CustomCreateSchema:
     pass
 
 
+class CustomCreateRelation:
+    pass
+
+
 class CustomUpdSchema:
     pass
 
@@ -20,6 +25,9 @@ class CustomUpdSchema:
 class CategoryRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
+
+class CategoryCreateRelation(CreateSchema, CustomCreateRelation):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 class CategoryCreate(CreateSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

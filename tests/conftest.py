@@ -15,6 +15,9 @@ from app.core.models.base_model import Base
 from app.main import app, get_db
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
+from tests.data_factory.fake_generator import TestDataGenerator
+from tests.data_factory.data_generator import remove_id, json_reader
+
 
 scope = 'session'
 scope2 = 'session'
@@ -28,6 +31,13 @@ def get_routers(method: str = 'GET') -> List[APIRoute]:
     return [a for a in app.routes
             if all((isinstance(a, APIRoute), a.path not in exc_route)) and all((hasattr(a, 'methods'),
                                                                                 method in a.methods))]
+
+
+@pytest.fixture(scope=scope)
+def new_data_generator():
+    generator = TestDataGenerator()
+    template = remove_id(json_reader())
+    return generator.generate(template, count=7)
 
 
 @pytest.fixture(scope=scope)

@@ -1,7 +1,11 @@
 # app/support/food/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema, CreateSchemaRelation
 from pydantic import ConfigDict
+
+
+class CustomCreateRelation:
+    pass
 
 
 class CustomReadSchema:
@@ -21,6 +25,10 @@ class FoodRead(ReadSchema, CustomReadSchema):
 
 
 class FoodCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class FoodCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

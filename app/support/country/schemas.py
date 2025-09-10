@@ -2,7 +2,11 @@
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema
+from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema, CreateSchemaRelation
+
+
+class CustomCreateRelation:
+    pass
 
 
 class CustomReadSchema:
@@ -22,6 +26,10 @@ class CountryRead(ReadSchema, CustomReadSchema):
 
 
 class CountryCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class CountryCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

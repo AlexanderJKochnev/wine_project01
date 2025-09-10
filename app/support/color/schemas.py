@@ -1,8 +1,9 @@
 # app/support/color/schemas.py
 
 
-from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
+
+from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema
 
 
 class CustomReadSchema:
@@ -10,6 +11,10 @@ class CustomReadSchema:
 
 
 class CustomCreateSchema:
+    pass
+
+
+class CustomCreateRelation:
     pass
 
 
@@ -22,6 +27,10 @@ class ColorRead(ReadSchema, CustomReadSchema):
 
 
 class ColorCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class ColorCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

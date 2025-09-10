@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
-from app.core.schemas.base import ReadSchema
+from app.core.schemas.base import ReadSchema, CreateSchemaRelation
 from app.core.config.project_config import get_paging
-from app.core.schemas.base import DeleteResponse, PaginatedResponse
+from app.core.schemas.base import DeleteResponse, PaginatedResponse, ListResponse
 from app.auth.dependencies import get_current_active_user
 from app.core.services.logger import logger
 from app.core.services.service import Service
@@ -37,7 +37,8 @@ class BaseRouter:
         read_schema: Type[ReadSchema],
         prefix: str,
         tags: List[str],
-        service: Service = Service
+        service: Service = Service,
+        create_schema_relation: Type[CreateSchemaRelation] = CreateSchemaRelation
         # session: AsyncSession = Depends(get_db)
     ):
         self.model = model
@@ -46,6 +47,7 @@ class BaseRouter:
         self.create_schema = create_schema
         self.patch_schema = patch_schema
         self.read_schema = read_schema
+        self.create_schema_relation = create_schema_relation
         self.prefix = prefix
         self.tags = tags
         self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
@@ -61,6 +63,7 @@ class BaseRouter:
     def setup_routes(self):
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
+        self.router.add_api_route("/relation", self.create_relation, methods=["POST"], response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
@@ -110,6 +113,25 @@ class BaseRouter:
     async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
             obj = await self.service.create(data, session)
+            return obj
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=f"{self.model.__name__} already exists"
+            )
+        except ValidationError as e:
+            raise HTTPException(
+                status_code=401, detail=f"Validation error: {str(e)}"
+                # status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {str(e)}"
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error creating {self.model.__name__}: {str(e)}"
+            )
+
+    async def create_relation(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
+        try:
+            obj = await self.service.create_relation(data, session)
             return obj
         except IntegrityError:
             raise HTTPException(

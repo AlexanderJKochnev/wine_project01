@@ -9,7 +9,7 @@ from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, DrinkRead,
-                                       DrinkUpdate, DrinkFoodLinkUpdate)
+                                       DrinkUpdate, DrinkFoodLinkUpdate, DrinkCreateRelations)
 from app.support.drink.service import DrinkService
 
 
@@ -21,12 +21,14 @@ class DrinkRouter(BaseRouter):
             create_schema=DrinkCreate,
             patch_schema=DrinkUpdate,
             read_schema=DrinkRead,
+            create_schema_relation=DrinkCreateRelations,
             prefix="/drinks",
             tags=["drinks"],
             service=DrinkService
         )
         self.create_response_schema = DrinkCreateResponseSchema
         self.setup_routes()
+        # self.create_schema_relation = DrinkCreateRelations
 
     def setup_routes(self):
         super().setup_routes()
@@ -47,6 +49,11 @@ class DrinkRouter(BaseRouter):
 
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
         result = await super().create(data, session)
+        return result
+
+    async def create_relation(self, data: DrinkCreateRelations, session: AsyncSession = Depends(get_db)) -> (
+            DrinkCreateResponseSchema):
+        result = await super().create_relation(data, session)
         return result
 
     async def patch(self, id: int, data: DrinkUpdate,

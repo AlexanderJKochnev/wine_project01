@@ -5,7 +5,8 @@ from typing import Any, List, Optional, TypeVar
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta
-
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from app.core.models.base_model import Base
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import DeleteResponse
@@ -24,6 +25,23 @@ class Service:
         data_dict = data.model_dump(exclude_unset=True)
         obj = self.model(**data_dict)
         return await self.repository.create(obj, session)
+
+    async def get_or_create(self, data: ModelType, session: Session):
+
+        stmt = select(self.model).filter_by(data)
+        result = await session.execute(stmt).scalar()
+        if result:
+            return result, False
+        else:
+            instance = model(**kwargs)
+            session.add(instance)
+            session.flush()  # чтобы получить ID
+            return instance, True
+
+    async def create_relation(self, data: ModelType, session: AsyncSession) -> ModelType:
+        """ create & return record with all relations"""
+        # shall be implemented for each model
+        return data
 
     async def get_by_id(self, id: int, session: AsyncSession) -> Optional[ModelType]:
         """

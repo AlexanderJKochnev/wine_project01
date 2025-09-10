@@ -4,6 +4,10 @@ from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSc
 from pydantic import ConfigDict
 
 
+class CustomCreateRelation:
+    pass
+
+
 class CustomReadSchema:
     pass
 
@@ -21,6 +25,10 @@ class VarietalRead(ReadSchema, CustomReadSchema):
 
 
 class VarietalCreate(CreateSchema, CustomCreateSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class VarietalCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

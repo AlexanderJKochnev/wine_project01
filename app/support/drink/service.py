@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.services.service import ModelType, Service
 from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import flatten_dict
+from app.support.drink.schemas import DrinkCreateRelations, DrinkCreateResponseSchema
 
 
 class DrinkService(Service):
@@ -21,4 +22,8 @@ class DrinkService(Service):
         print('-------------------')
         for key, val in flatresult.items():
             print(f'    {key}: {val}')
+        return result
+
+    async def create_relation(self, data: DrinkCreateRelations, session: AsyncSession) -> DrinkCreateResponseSchema:
+        result = super().create_relation(data, session)
         return result
