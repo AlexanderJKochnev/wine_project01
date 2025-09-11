@@ -35,7 +35,7 @@ class UniqueSchema(BaseModel):
 
 class DescriptionSchema(BaseModel):
     """ добавлять поля описаний на других языках """
-    description_en: Optional[str] = None
+    description: Optional[str] = None
     description_ru: Optional[str] = None
     description_fr: Optional[str] = None
 

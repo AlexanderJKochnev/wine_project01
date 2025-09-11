@@ -7,7 +7,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.subregion.model import Subregion
 from app.support.subregion.repository import SubregionRepository
-from app.support.subregion.schemas import SubregionCreate, SubregionRead, SubregionUpdate
+from app.support.subregion.schemas import SubregionCreate, SubregionRead, SubregionUpdate, SubregionCreateRelation
 
 
 class SubregionRouter(BaseRouter):

@@ -1,0 +1,129 @@
+{"drink":
+	{
+	"category_id": {
+	  "name": "string",
+	  "description_en": "string",
+	  "description_ru": "string",
+	  "description_fr": "string",
+	  "name_ru": "string",
+	  "name_fr": "string",
+	  "id": 0
+	},
+	"color_id": {
+	  "name": "string",
+	  "description_en": "string",
+	  "description_ru": "string",
+	  "description_fr": "string",
+	  "name_ru": "string",
+	  "name_fr": "string",
+	  "id": 0
+	},
+	"sweetness_id": {
+	  "name": "string",
+	  "description_en": "string",
+	  "description_ru": "string",
+	  "description_fr": "string",
+	  "name_ru": "string",
+	  "name_fr": "string",
+	  "id": 0
+	},
+	"subregion_id": {
+	  "region": {
+		"country": {
+		  "name": "string",
+		  "description_en": "string",
+		  "description_ru": "string",
+		  "description_fr": "string",
+		  "name_ru": "string",
+		  "name_fr": "string",
+		  "id": 0
+		},
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  },
+	  "name": "string",
+	  "description_en": "string",
+	  "description_ru": "string",
+	  "description_fr": "string",
+	  "name_ru": "string",
+	  "name_fr": "string",
+	  "id": 0
+	},
+	"subtitle": "string",
+	"alcohol": "decimal",
+	"sugar": "decimal",
+	"aging": "integer",
+	"sparkling": false,
+	"foods": [
+	  {
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  },
+	  {
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  },
+	  {
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  }
+	],
+	"varietals": [
+	  {
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  },
+	  {
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  },
+	  {
+		"name": "string",
+		"description_en": "string",
+		"description_ru": "string",
+		"description_fr": "string",
+		"name_ru": "string",
+		"name_fr": "string",
+		"id": 0
+	  }
+	],
+	"name": "string",
+	"description_en": "string",
+	"description_ru": "string",
+	"description_fr": "string",
+	"name_ru": "string",
+	"name_fr": "string",
+	"id": 0,
+	"additionalProp1": {}
+	}
+}

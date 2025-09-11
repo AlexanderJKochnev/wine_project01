@@ -476,7 +476,23 @@ def set_nested(d: dict, path: str, value: Any,
     current[final_key] = value
 
 
-def get_all_dict_paths(data: Any, parent_path: str = "") -> list[str]:
+def get_all_dict_paths(data: Any, parent_path: str = "") -> dict:
+    """ получает список сложных ключей словаря отсортированный по глубине вложенности по убыванию
+    {
+      "subregion_id.region.country": "country",
+      "subregion_id.region", "region"},
+      "foods[0]", "foods"},
+      "foods[1]", "foods"},
+      "foods[2]", "foods"},
+      "varietals[0]", "varietals"},
+      "varietals[1]", "varietals"},
+      "varietals[2]", "varietals"},
+      "category_id",  "category"},
+      "color_id", "color"},
+      "sweetness_id", "sweetness"},
+      "subregion_id","subregion"}
+    }
+    """
     paths: list[str] = []
 
     if isinstance(data, dict):
@@ -499,5 +515,6 @@ def get_all_dict_paths(data: Any, parent_path: str = "") -> list[str]:
                 sub_paths = get_all_dict_paths(item, list_path)
                 # Исключаем сам list_path из подпутей
                 paths.extend(p for p in sub_paths if p != list_path)
-
-    return sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
+    
+    result = sorted(paths, key = lambda p: p.count('.') + p.count('['), reverse = True)
+    return {x: x.split('.')[-1].replace('_id', '').split('[', 1)[0] for x in result}

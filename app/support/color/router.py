@@ -6,7 +6,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.color.model import Color
 from app.support.color.repository import ColorRepository
-from app.support.color.schemas import ColorRead, ColorCreate, ColorUpdate
+from app.support.color.schemas import ColorRead, ColorCreate, ColorUpdate ,ColorCreateRelation
 
 
 class ColorRouter(BaseRouter):

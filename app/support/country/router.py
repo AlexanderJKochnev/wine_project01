@@ -6,7 +6,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.country.model import Country
 from app.support.country.repository import CountryRepository
-from app.support.country.schemas import CountryRead, CountryCreate, CountryUpdate
+from app.support.country.schemas import CountryRead, CountryCreate, CountryUpdate, CountryCreateRelation
 
 
 class CountryRouter(BaseRouter):

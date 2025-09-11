@@ -133,17 +133,9 @@ class BaseRouter:
 
     async def create_relation(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
         try:
-            obj = await self.service.create_relation(data, self.model, session)
-            return obj
-        except IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=f"{self.model.__name__} already exists"
-            )
-        except ValidationError as e:
-            raise HTTPException(
-                status_code=401, detail=f"Validation error: {str(e)}"
-                # status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {str(e)}"
-            )
+            _ = self.model(**data)
+            # obj = await self.service.create_relation(data, self.model, session)
+            return None
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

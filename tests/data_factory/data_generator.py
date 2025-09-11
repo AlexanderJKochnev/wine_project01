@@ -180,15 +180,17 @@ def get_all_dict_paths(data: Any, parent_path: str = "") -> list[str]:
                 # Исключаем сам list_path из подпутей
                 paths.extend(p for p in sub_paths if p != list_path)
 
-    return sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
-
-
-single = get_relations(data[0])
-print(json.dumps(single, indent=2, ensure_ascii=False))
+    result =  sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
+    return {x: x.split('.')[-1].replace('_id','').split('[', 1)[0]  for x in result}
+    
+# single = get_relations(data[0])
+# print(json.dumps(single, indent=2, ensure_ascii=False))
+# result = get_all_dict_paths(single)
+# print(json.dumps(result, indent=2, ensure_ascii=False))
+print('==============================')
+single = data[0]
 result = get_all_dict_paths(single)
 print(json.dumps(result, indent=2, ensure_ascii=False))
-# country = get_nested(single, 'subregion_id.region.country')
-# print(json.dumps(country, indent=2, ensure_ascii=False))
-# set_nested(single,'subregion_id.region.country', 3 )
-# country = get_nested(single, 'subregion_id.region.country')
-# print(country)
+print('==============================')
+# result = [(x, x.split('.')[-1].replace('_id', '').split('[', 1)[0]) for x in result]
+print(json.dumps(single, indent=2, ensure_ascii=False))

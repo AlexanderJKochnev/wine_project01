@@ -149,7 +149,7 @@ class TestDataGenerator:
         }
 
     def _generate_list(self, template_list: List[Dict], depth: int = 0) -> List[Dict]:
-        count = random.randint(1, 3)
+        count = random.randint(1, 5)
         result = []
         for _ in range(count):
             item = self._generate_from_template(template_list[0], depth + 1)

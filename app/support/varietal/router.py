@@ -6,7 +6,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.varietal.model import Varietal
 from app.support.varietal.repository import VarietalRepository
-from app.support.varietal.schemas import VarietalRead, VarietalCreate, VarietalUpdate
+from app.support.varietal.schemas import VarietalRead, VarietalCreate, VarietalUpdate, VarietalCreateRelation
 
 
 class VarietalRouter(BaseRouter):

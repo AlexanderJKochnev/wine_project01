@@ -6,7 +6,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.food.model import Food
 from app.support.food.repository import FoodRepository
-from app.support.food.schemas import FoodRead, FoodCreate, FoodUpdate
+from app.support.food.schemas import FoodRead, FoodCreate, FoodUpdate, FoodCreateRelation
 
 
 class FoodRouter(BaseRouter):

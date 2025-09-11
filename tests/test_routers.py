@@ -9,6 +9,8 @@
 """
 
 import pytest
+from pydantic import TypeAdapter, ValidationError
+import json
 
 pytestmark = pytest.mark.asyncio
 
@@ -243,13 +245,16 @@ async def test_new_data_generator(authenticated_client_with_db, new_data_generat
     client = authenticated_client_with_db
     router = DrinkRouter()
     schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
     for n, val in enumerate(new_data_generator):
         try:
-            _ = schema(**val)
+            json_data = json.dumps(val)
+            adapter.validate_json(json_data)
             assert True
-        except Exception as e:
-            assert False, f'number of record {n} error {e}'
-
+        except ValidationError as e:
+            assert False, f"Errors: {e.errors()}"
+        
 
 async def test_get_or_create(authenticated_client_with_db, test_db_session):
     from app.support.category.router import CategoryRouter
@@ -270,3 +275,44 @@ async def test_get_or_create(authenticated_client_with_db, test_db_session):
         assert False, f'Ошибка валидации данных: {e}'
     response = await client.post(f'{prefix}', json=data)
     assert response.status_code == 200, response.text
+
+
+async def test_get_relation(authenticated_client_with_db, test_db_session):
+    from app.support.country.router import CountryRouter as Router
+    client = authenticated_client_with_db
+    router = Router()
+    create_schema = router.create_schema
+    create_schema_relation = router.create_schema_relation
+    adapter = TypeAdapter(create_schema_relation)
+    
+    prefix = router.prefix
+    data =  {
+    "region": {
+      "country": {
+        "name": "Italy",
+        "name_ru": "Италия",
+        "name_fr": "Italie",
+        "description": "Italy is a country in Europe known for wine.",
+        "description_ru": "Италия — страна в Европе, известная своими винами.",
+        "description_fr": "Italie est un pays d'Europe réputé pour son vin."
+      },
+      "name": "Tuscany",
+      "name_ru": "Тоскана",
+      "name_fr": "Toscane",
+      "description": "Tuscany is a wine region in Italy.",
+      "description_ru": "Тоскана — винный регион в Италия.",
+      "description_fr": "Toscane est une région viticole en Italie."
+    },
+    "name": "Montalcino",
+    "name_ru": "Монтальчино",
+    "name_fr": "Montalcino",
+    "description": "Montalcino is a subregion of Tuscany.",
+    "description_ru": "Монтальчино — субрегион Тоскана.",
+    "description_fr": "Montalcino est un sous-région de Toscane."
+  }
+    try:
+        json_data = json.dumps(data)
+        adapter.validate_json(json_data)
+        assert True
+    except ValidationError as e:
+        assert False, f"Errors: {e.errors()}"

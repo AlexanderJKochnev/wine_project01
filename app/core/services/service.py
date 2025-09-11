@@ -9,6 +9,7 @@ from sqlalchemy.orm import DeclarativeMeta, Session
 from app.core.models.base_model import Base
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import DeleteResponse
+from app.core.utils.common_utils import get_all_dict_paths, get_nested, set_nested
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -17,6 +18,15 @@ class Service:
     def __init__(self, repositiory: Repository, model: Base):
         self.repository = repositiory
         self.model = model
+
+    def get_models(self) -> List[ModelType]:
+        return (cls for cls in Base.registry._class_registry.values() if
+                isinstance(cls, type) and hasattr(cls, '__table__'))
+
+    def get_model_by_name(self, name: str) -> ModelType:
+        for mode in self.get_models():
+            if any((mode.__name__.lower() == name, mode.__table_name__.lower() == name)):
+                return mode
 
     async def create(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ create & return record """
@@ -55,8 +65,21 @@ class Service:
 
     async def create_relation(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ create & return record with all relations"""
-        # shall be implemented for each model
-        return data
+        try:
+            # вложенный словарь с данными в осноновй и связаных моделях
+            data = data
+            # получаем словарь: {путь к значениям: model}
+            main_dict = {key: self.get_model_by_name(val) for key, val in get_all_dict_paths(data).items()}
+            for key, val in main_dict.items():
+                raw_data = get_nested(data, key)
+                validiated_data = val(**raw_data)
+                obj = await self.get_or_create(validiated_data, val, session)
+                set_nested(data, key, obj['id'])
+            validiated_data = model(**data)
+            obj = await self.get_or_create(validiated_data, model, session)
+            return obj
+        except Exception as e:
+            print(f'ошибка {e}')
 
     async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """

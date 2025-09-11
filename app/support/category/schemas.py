@@ -15,6 +15,7 @@ class CustomCreateSchema:
 
 
 class CustomCreateRelation:
+    # сюда добавлять поля если появятся связи см Subregion для примера
     pass
 
 
