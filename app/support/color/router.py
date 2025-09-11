@@ -7,6 +7,7 @@ from app.core.routers.base import BaseRouter
 from app.support.color.model import Color
 from app.support.color.repository import ColorRepository
 from app.support.color.schemas import ColorRead, ColorCreate, ColorUpdate ,ColorCreateRelation
+from app.support.color.service import ColorService
 
 
 class ColorRouter(BaseRouter):
@@ -18,16 +19,22 @@ class ColorRouter(BaseRouter):
             patch_schema=ColorUpdate,
             read_schema=ColorRead,
             prefix="/colors",
-            tags=["colors"]
+            tags=["colors"],
+            create_schema_relation=ColorCreateRelation,
+            service=ColorService
         )
         self.setup_routes()
 
     async def create(self, data: ColorCreate, session: AsyncSession = Depends(get_db)) -> ColorRead:
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: ColorUpdate,
-                     session: AsyncSession = Depends(get_db)) -> ColorRead:
+    async def patch(self, id: int, data: ColorUpdate, session: AsyncSession = Depends(get_db)) -> ColorRead:
         return await super().patch(id, data, session)
+
+    async def create_relation(self, data: ColorCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> ColorRead:
+        result = await super().create_relation(data, session)
+        return result
 
 
 router = ColorRouter().router

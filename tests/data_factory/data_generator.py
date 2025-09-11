@@ -194,3 +194,7 @@ print(json.dumps(result, indent=2, ensure_ascii=False))
 print('==============================')
 # result = [(x, x.split('.')[-1].replace('_id', '').split('[', 1)[0]) for x in result]
 print(json.dumps(single, indent=2, ensure_ascii=False))
+print('===============================')
+from app.core.utils.common_utils import get_nested as gett
+nested = gett(single, 'subregion_id.region.country')
+print(json.dumps(nested, indent=2, ensure_ascii=False))

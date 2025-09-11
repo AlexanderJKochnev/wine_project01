@@ -8,6 +8,7 @@ from app.core.routers.base import BaseRouter
 from app.support.region.model import Region
 from app.support.region.repository import RegionRepository
 from app.support.region.schemas import RegionCreate, RegionRead, RegionUpdate, RegionCreateRelation
+from app.support.region.service import RegionService
 
 
 class RegionRouter(BaseRouter):
@@ -19,7 +20,9 @@ class RegionRouter(BaseRouter):
             patch_schema=RegionUpdate,
             read_schema=RegionRead,
             prefix="/regions",
-            tags=["regions"]
+            tags=["regions"],
+            service=RegionService,
+            create_schema_relation=RegionCreateRelation
         )
         self.create_response_schema = RegionRead
         self.setup_routes()
@@ -36,9 +39,13 @@ class RegionRouter(BaseRouter):
     async def create(self, data: RegionCreate, session: AsyncSession = Depends(get_db)) -> RegionRead:
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: RegionUpdate,
-                    session: AsyncSession = Depends(get_db)) -> RegionRead:
+    async def patch(self, id: int, data: RegionUpdate, session: AsyncSession = Depends(get_db)) -> RegionRead:
         return await super().patch(id, data, session)
+
+    async def create_relation(self, data: RegionCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> RegionRead:
+        result = await super().create_relation(data, session)
+        return result
 
 
 router = RegionRouter().router

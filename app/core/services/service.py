@@ -9,7 +9,7 @@ from sqlalchemy.orm import DeclarativeMeta, Session
 from app.core.models.base_model import Base
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import DeleteResponse
-from app.core.utils.common_utils import get_all_dict_paths, get_nested, set_nested
+from app.core.utils.common_utils import get_all_dict_paths, get_nested, set_nested, pop_nested
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
@@ -25,7 +25,7 @@ class Service:
 
     def get_model_by_name(self, name: str) -> ModelType:
         for mode in self.get_models():
-            if any((mode.__name__.lower() == name, mode.__table_name__.lower() == name)):
+            if any((mode.__name__.lower() == name, mode.__tablename__.lower() == name)):
                 return mode
 
     async def create(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
@@ -66,20 +66,21 @@ class Service:
     async def create_relation(self, data: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ create & return record with all relations"""
         try:
-            # вложенный словарь с данными в осноновй и связаных моделях
-            data = data
-            # получаем словарь: {путь к значениям: model}
+            # 0. вложенный словарь с данными в осноновной и связаных моделях
+            # 1. получаем словарь: {путь к значениям: model} для вложенны сущностей
             main_dict = {key: self.get_model_by_name(val) for key, val in get_all_dict_paths(data).items()}
-            for key, val in main_dict.items():
-                raw_data = get_nested(data, key)
-                validiated_data = val(**raw_data)
-                obj = await self.get_or_create(validiated_data, val, session)
-                set_nested(data, key, obj['id'])
-            validiated_data = model(**data)
-            obj = await self.get_or_create(validiated_data, model, session)
+            # 2. если пустой пропускаем следующее:
+            if main_dict:       # обрабатываем все что глубже, начиная снизу
+                for key, val in main_dict.items():
+                    subdata = pop_nested(data, key)
+                    # _ = val(**subdata)  # data validation
+                    obj = self.get_or_create(subdata, val, session)
+                    if obj.get('id'):
+                        set_nested(data, f'{key}_id', obj.get('id'))
+            obj = await self.create(data, model, session)
             return obj
         except Exception as e:
-            print(f'ошибка {e}')
+            return e
 
     async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """
@@ -124,4 +125,4 @@ class Service:
                                    model: ModelType,
                                    session: AsyncSession) -> List[Any]:
         skip = (page - 1) * page_size
-        return await self.repository.search_in_main_table(query, page, page_size, skip, session)
+        return await self.repository.search_in_main_table(query, page, page_size, skip, model, session)

@@ -14,7 +14,7 @@ ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
 
 class Repository(Generic[ModelType]):
-    model: ModelType
+    # model: ModelType
 
     def get_query(self, model: ModelType):
         """
@@ -49,7 +49,7 @@ class Repository(Generic[ModelType]):
     async def get_all(self, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
         # Запрос с загрузкой связей и пагинацией
         stmt = self.get_query(model).offset(skip).limit(limit)
-        total = await self.get_count(session)
+        total = await self.get_count(model, session)
         result = await session.execute(stmt)
         items = result.scalars().all()
         return items, total

@@ -7,6 +7,7 @@ from app.core.routers.base import BaseRouter
 from app.support.food.model import Food
 from app.support.food.repository import FoodRepository
 from app.support.food.schemas import FoodRead, FoodCreate, FoodUpdate, FoodCreateRelation
+from app.support.food.service import FoodService
 
 
 class FoodRouter(BaseRouter):
@@ -18,16 +19,22 @@ class FoodRouter(BaseRouter):
             patch_schema=FoodUpdate,
             read_schema=FoodRead,
             prefix="/foods",
-            tags=["foods"]
+            tags=["foods"],
+            service=FoodService,
+            create_schema_relation=FoodCreateRelation
         )
         self.setup_routes()
 
     async def create(self, data: FoodCreate, session: AsyncSession = Depends(get_db)) -> FoodRead:
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: FoodUpdate,
-                     session: AsyncSession = Depends(get_db)) -> FoodRead:
+    async def patch(self, id: int, data: FoodUpdate, session: AsyncSession = Depends(get_db)) -> FoodRead:
         return await super().patch(id, data, session)
+
+    async def create_relation(self, data: FoodCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> FoodRead:
+        result = await super().create_relation(data, session)
+        return result
 
 
 router = FoodRouter().router

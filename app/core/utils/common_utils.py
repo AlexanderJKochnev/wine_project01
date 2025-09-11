@@ -515,6 +515,20 @@ def get_all_dict_paths(data: Any, parent_path: str = "") -> dict:
                 sub_paths = get_all_dict_paths(item, list_path)
                 # Исключаем сам list_path из подпутей
                 paths.extend(p for p in sub_paths if p != list_path)
-    
-    result = sorted(paths, key = lambda p: p.count('.') + p.count('['), reverse = True)
+
+    result = sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
     return {x: x.split('.')[-1].replace('_id', '').split('[', 1)[0] for x in result}
+
+
+def pop_nested(d: dict, path: str, default=None):
+    keys = path.split('.')
+    current = d
+    for key in keys[:-1]:
+        if isinstance(current, dict) and key in current:
+            current = current[key]
+        else:
+            return default
+    final_key = keys[-1]
+    if isinstance(current, dict) and final_key in current:
+        return current.pop(final_key)
+    return default

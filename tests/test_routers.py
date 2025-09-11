@@ -278,41 +278,62 @@ async def test_get_or_create(authenticated_client_with_db, test_db_session):
 
 
 async def test_get_relation(authenticated_client_with_db, test_db_session):
-    from app.support.country.router import CountryRouter as Router
+    from app.support.subregion.router import SubregionRouter as Router
+    # from app.support.region.router import RegionRouter as Router
+    # from app.support.country.router import CountryRouter as Router
+    from app.core.utils.common_utils import get_all_dict_paths, get_nested, set_nested, pop_nested
     client = authenticated_client_with_db
+    
     router = Router()
     create_schema = router.create_schema
     create_schema_relation = router.create_schema_relation
     adapter = TypeAdapter(create_schema_relation)
-    
     prefix = router.prefix
-    data =  {
+    service = router.service
+    
+    data = {
     "region": {
       "country": {
-        "name": "Italy",
-        "name_ru": "Италия",
-        "name_fr": "Italie",
-        "description": "Italy is a country in Europe known for wine.",
-        "description_ru": "Италия — страна в Европе, известная своими винами.",
-        "description_fr": "Italie est un pays d'Europe réputé pour son vin."
+        "name": "Spain",
+        "name_ru": "Испания",
+        "name_fr": "Espagne",
+        "description": "Spain is a country in Europe known for wine.",
+        "description_ru": "Испания — страна в Европе, известная своими винами.",
+        "description_fr": "Espagne est un pays d'Europe réputé pour son vin."
       },
-      "name": "Tuscany",
-      "name_ru": "Тоскана",
-      "name_fr": "Toscane",
-      "description": "Tuscany is a wine region in Italy.",
-      "description_ru": "Тоскана — винный регион в Италия.",
-      "description_fr": "Toscane est une région viticole en Italie."
+      "name": "Rioja",
+      "name_ru": "Рибера-дель-Дуэро",
+      "name_fr": "Rioja",
+      "description": "Rioja is a wine region in Spain.",
+      "description_ru": "Рибера-дель-Дуэро — винный регион в Испания.",
+      "description_fr": "Rioja est une région viticole en Espagne."
     },
-    "name": "Montalcino",
-    "name_ru": "Монтальчино",
-    "name_fr": "Montalcino",
-    "description": "Montalcino is a subregion of Tuscany.",
-    "description_ru": "Монтальчино — субрегион Тоскана.",
-    "description_fr": "Montalcino est un sous-région de Toscane."
-  }
+    "name": "Alavesa",
+    "name_ru": "Алавеса",
+    "name_fr": "Alavesa",
+    "description": "Alavesa is a subregion of Rioja.",
+    "description_ru": "Алавеса — субрегион Рибера-дель-Дуэро.",
+    "description_fr": "Alavesa est un sous-région de Rioja."
+    }
+    # data = data.get('region')
+    # data = data.get('country')
     try:
         json_data = json.dumps(data)
         adapter.validate_json(json_data)
         assert True
     except ValidationError as e:
-        assert False, f"Errors: {e.errors()}"
+        assert False, f"Ошибка валидации входных данных. Errors: {e.errors()}"
+    main_dict = {key: service.get_model_by_name(val) for key, val in get_all_dict_paths(data).items()}
+    for key, val in main_dict.items():
+        subdata = pop_nested(data, key)
+        try:
+            _ = val(**subdata)
+        except Exception as e:
+            assert False, f'{e}, {key}, {json.dumps(subdata, indent=2, ensure_ascii=False)}'
+        set_nested(data, f'{key}_id', 1)
+    try:
+        _ = create_schema(**data)
+    except Exception as e:
+        assert False, f'валидация поcле обновления {e}'
+    response = await client.post(f'{prefix}/relation', json=data)
+    assert response.status_code == 200, response.text
