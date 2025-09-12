@@ -8,17 +8,18 @@ factory_config = {
 
 test_data = generate_test_data(User, 3, factory_config)
 """
+
 from pydantic import BaseModel
 from polyfactory.factories.pydantic_factory import ModelFactory
-from typing import Type, Any, List, Optional, Dict, TypeVar
+from typing import Type, Any, List, Optional, Dict
 from datetime import datetime, date, time
 from decimal import Decimal
 from uuid import UUID
 
-T = TypeVar("T", bound = BaseModel)
 
-
-def generate_test_data(model: Type[T], n: int) -> List[Dict[str, Any]]:
+def generate_test_data(
+        model: Type[BaseModel], n: int, factory_kwargs: Optional[Dict[str, Any]] = None
+        ) -> List[Dict[str, Any]]:
     """
     Генерирует n тестовых данных для указанной Pydantic-модели с использованием Polyfactory.
     Совместимо с Pydantic 2+.
@@ -26,43 +27,51 @@ def generate_test_data(model: Type[T], n: int) -> List[Dict[str, Any]]:
     Args:
         model: Pydantic-модель (возможно с вложенными моделями)
         n: количество генерируемых экземпляров
+        factory_kwargs: дополнительные аргументы для кастомизации фабрики
 
     Returns:
         Список словарей с тестовыми данными
     """
+    factory_kwargs = factory_kwargs or {}
     
-    # Создаем фабрику для модели
-    class DynamicFactory(ModelFactory):
-        __model__ = model
+    # Создаем динамическую фабрику для модели
+    factory_class = type(
+            f"{model.__name__}Factory", (ModelFactory,), {"__model__": model, **factory_kwargs}
+            )
     
     # Генерируем данные
-    return [DynamicFactory.build().model_dump() for _ in range(n)]
+    return [factory_class.build().model_dump() for _ in range(n)]
 
 
-def generate_test_data_batch(model: Type[T], n: int) -> List[Dict[str, Any]]:
+def generate_test_data_batch(
+        model: Type[BaseModel], n: int, factory_kwargs: Optional[Dict[str, Any]] = None
+        ) -> List[Dict[str, Any]]:
     """
-    Генерирует n тестовых данных используя batch-метод.
+    Генерирует n тестовых данных используя batch-метод для большей производительности.
 
     Args:
         model: Pydantic-модель
         n: количество генерируемых экземпляров
+        factory_kwargs: дополнительные аргументы для кастомизации фабрики
 
     Returns:
-        Список словарей с тестовых данных
+        Список словарей с тестовыми данными
     """
+    factory_kwargs = factory_kwargs or {}
     
-    # Создаем фабрику для модели
-    class DynamicFactory(ModelFactory):
-        __model__ = model
+    # Создаем динамическую фабрику для модели
+    factory_class = type(
+            f"{model.__name__}Factory", (ModelFactory,), {"__model__": model, **factory_kwargs}
+            )
     
-    # Создаем экземпляр фабрики и используем его build_batch метод
-    factory_instance = DynamicFactory()
-    instances = factory_instance.build_batch(size = n)
+    # Генерируем данные батчем
+    instances = factory_class.build_batch(n)
     return [instance.model_dump() for instance in instances]
 
 
+# Пример использования с кастомизацией полей
 def generate_custom_test_data(
-        model: Type[T], n: int, field_overrides: Optional[Dict[str, Any]] = None
+        model: Type[BaseModel], n: int, field_overrides: Optional[Dict[str, Any]] = None
         ) -> List[Dict[str, Any]]:
     """
     Генерирует тестовые данные с кастомными значениями для определенных полей.
@@ -73,7 +82,7 @@ def generate_custom_test_data(
         field_overrides: словарь с кастомными значениями или генераторами для полей
 
     Returns:
-        Список словарей с тестовых данных
+        Список словарей с тестовыми данными
     """
     field_overrides = field_overrides or {}
     
@@ -84,68 +93,14 @@ def generate_custom_test_data(
         # Динамически добавляем переопределения полей
         for field_name, value in field_overrides.items():
             if callable(value):
-                # Если значение - callable, создаем свойство
-                setattr(CustomFactory, field_name, classmethod(lambda cls, v=value: v()))
+                # Если значение - callable, используем его как метод
+                exec(f"@classmethod\ndef {field_name}(cls): return value()")
             else:
                 # Иначе используем фиксированное значение
-                setattr(CustomFactory, field_name, value)
+                exec(f"{field_name} = value")
     
     # Генерируем данные
     return [CustomFactory.build().model_dump() for _ in range(n)]
-
-
-def generate_realistic_test_data(
-        model: Type[T], n: int, field_mappings: Optional[Dict[str, Any]] = None
-        ) -> List[Dict[str, Any]]:
-    """
-    Генерирует более реалистичные тестовые данные с использованием Faker.
-
-    Args:
-        model: Pydantic-модель
-        n: количество генерируемых экземпляров
-        field_mappings: словарь с маппингом имен полей на функции Faker
-
-    Returns:
-        Список словарей с тестовых данных
-    """
-    try:
-        from faker import Faker
-        fake = Faker()
-        
-        # Маппинг полей на функции Faker по умолчанию
-        default_mappings = {'name': fake.name, 'email': fake.email, 'first_name': fake.first_name,
-                'last_name': fake.last_name, 'address': fake.address, 'city': fake.city, 'country': fake.country,
-                'zip_code': fake.zipcode, 'phone': fake.phone_number, 'title': fake.sentence, 'description': fake.text,
-                'created_at': fake.date_time_this_year, 'updated_at': fake.date_time_this_year, }
-        
-        # Объединяем с пользовательскими маппингами
-        field_mappings = {**default_mappings, **(field_mappings or {})}
-        
-        # Создаем фабрику с кастомными генераторами
-        class RealisticFactory(ModelFactory):
-            __model__ = model
-            
-            # Динамически добавляем кастомные генераторы
-            for field_name, generator in field_mappings.items():
-                if hasattr(model, 'model_fields') and field_name in model.model_fields:
-                    setattr(RealisticFactory, field_name, classmethod(lambda cls, g=generator: g()))
-        
-        # Генерируем данные
-        return [RealisticFactory.build().model_dump() for _ in range(n)]
-    
-    except ImportError:
-        print("Faker не установлен. Используется базовый генератор.")
-        return generate_test_data(model, n)
-
-
-# Альтернативная реализация с использованием create_factory
-def generate_test_data_alt(model: Type[T], n: int) -> List[Dict[str, Any]]:
-    """
-    Альтернативная реализация с использованием ModelFactory.create_factory.
-    """
-    factory = ModelFactory.create_factory(model)
-    instances = factory.build_batch(size = n)
-    return [instance.model_dump() for instance in instances]
 
 
 # Пример использования
@@ -188,14 +143,14 @@ if __name__ == "__main__":
     for i, data in enumerate(test_data_custom):
         print(f"{i + 1}: {data}")
     
-    # Генерируем с реалистичными данными
-    print("\nСгенерировано с реалистичными данными:")
-    test_data_realistic = generate_realistic_test_data(User, 2)
-    for i, data in enumerate(test_data_realistic):
-        print(f"{i + 1}: {data}")
+    # Генерируем с кастомными генераторами
+    print("\nСгенерировано с кастомными генераторами:")
+    from faker import Faker
     
-    # Альтернативная реализация
-    print("\nСгенерировано альтернативным методом:")
-    test_data_alt = generate_test_data_alt(User, 2)
-    for i, data in enumerate(test_data_alt):
+    fake = Faker()
+    
+    custom_generators = {"name": lambda: fake.name(), "email": lambda: fake.email(),
+            "created_at": lambda: fake.date_time_this_year()}
+    test_data_generators = generate_custom_test_data(User, 2, custom_generators)
+    for i, data in enumerate(test_data_generators):
         print(f"{i + 1}: {data}")
