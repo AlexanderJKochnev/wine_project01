@@ -10,6 +10,7 @@ from app.core.repositories.sqlalchemy_repository import Repository, ModelType
 class VarietalRepository(Repository):
     model = Varietal
 
-    def get_query(self, model: ModelType):
+    @classmethod
+    def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
         return select(self.model).options(selectinload(Varietal.drink_associations).joinedload(DrinkVarietal.drink))

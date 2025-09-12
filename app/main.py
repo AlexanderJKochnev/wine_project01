@@ -1,10 +1,14 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 # from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware
 # from app.admin import sqladm
+from fastapi.responses import JSONResponse
+# from sqlalchemy.exc import SQLAlchemyError
+
+from app.core.routers.base import SQLAlchemyError, NotFoundException, ValidationException, ConflictException
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.auth.routers import user_router, auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -34,6 +38,50 @@ app.add_middleware(
 )
 # app.add_middleware(AuthMiddleware)
 
+
+# Глобальный обработчик для кастомных исключений
+@app.exception_handler(NotFoundException)
+async def not_found_exception_handler(request: Request, exc: NotFoundException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(ValidationException)
+async def validation_exception_handler(request: Request, exc: ValidationException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(ConflictException)
+async def conflict_exception_handler(request: Request, exc: ConflictException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+# Обработчик для SQLAlchemy ошибок
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Database error occurred"},
+    )
+
+
+# Общий обработчик для всех исключений
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error"},
+    )
+
+
 """authentication_backend = authentication_backend
 admin = Admin(
     app=app,
@@ -54,6 +102,7 @@ admin.add_view(sqladm.ColorAdmin)
 admin.add_view(sqladm.SweetnessAdmin)
 admin.add_view(sqladm.SubregionAdmin)
 """
+
 
 @app.get("/")
 async def read_root():

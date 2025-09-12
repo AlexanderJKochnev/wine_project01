@@ -18,10 +18,14 @@ from tests.utility.find_models import discover_models, discover_schemas2
 from tests.data_factory.fake_generator import TestDataGenerator
 from tests.data_factory.data_generator import remove_id, json_reader
 
-
 scope = 'session'
 scope2 = 'session'
 example_count = 5      # количество тестовых записей - рекомедуется >20 для paging test
+
+
+def pytest_configure(config):
+    config.option.log_cli_level = "INFO"
+    config.option.log_cli_format = "%(levelname)s - %(message)s"
 
 
 def get_routers(method: str = 'GET') -> List[APIRoute]:

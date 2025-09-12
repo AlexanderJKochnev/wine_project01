@@ -10,6 +10,7 @@ from app.support.warehouse.model import Warehouse
 class WarehouseRepository(Repository):
     model = Warehouse
 
-    def get_query(self, model: ModelType):
+    @classmethod
+    def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
         return select(Warehouse).options(joinedload(Warehouse.customer))

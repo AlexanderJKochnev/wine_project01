@@ -275,7 +275,8 @@ async def test_get_or_create(authenticated_client_with_db, test_db_session):
         assert False, f'Ошибка валидации данных: {e}'
     response = await client.post(f'{prefix}', json=data)
     assert response.status_code == 200, response.text
-
+    response = await client.post(f'{prefix}', json=data)
+    assert response.status_code == 200, response.text
 
 async def test_get_relation(authenticated_client_with_db, test_db_session):
     from app.support.subregion.router import SubregionRouter as Router

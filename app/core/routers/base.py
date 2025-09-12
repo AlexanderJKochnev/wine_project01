@@ -1,25 +1,45 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar, Optional
+from typing import Type, Any, List, TypeVar, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError, NoResultFound
 
-from sqlalchemy.exc import IntegrityError
-from pydantic import ValidationError
+# from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import ReadSchema, CreateSchemaRelation
 from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
-from app.core.services.logger import logger
+# from app.core.services.logger import logger
 from app.core.services.service import Service
 
+import logging
 
 paging = get_paging
-TCreate = TypeVar("TCreate", bound=ReadSchema)
-TUpdate = TypeVar("TUpdate", bound=ReadSchema)
-TRead = TypeVar("TRead", bound=ReadSchema)
+TCreateSchema = TypeVar("TCreateSchema", bound=ReadSchema)
+TUpdateSchema = TypeVar("TUpdateSchema", bound=ReadSchema)
+TReadSchema = TypeVar("TReadSchema", bound=ReadSchema)
+
+logger = logging.getLogger(__name__)
+
+# Кастомные исключения
+
+
+class NotFoundException(HTTPException):
+    def __init__(self, detail: str = "Resource not found"):
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+
+
+class ValidationException(HTTPException):
+    def __init__(self, detail: str = "Validation error"):
+        super().__init__(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
+
+
+class ConflictException(HTTPException):
+    def __init__(self, detail: str = "Resource already exists"):
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
 class BaseRouter:
@@ -63,7 +83,11 @@ class BaseRouter:
     def setup_routes(self):
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
-        self.router.add_api_route("/relation", self.create_relation, methods=["POST"])
+        self.router.add_api_route("/hierarchy",
+                                  self.create_relation,
+                                  status_code=status.HTTP_201_CREATED,
+                                  methods=["POST"],
+                                  response_model=Dict)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
@@ -80,6 +104,122 @@ class BaseRouter:
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
+    async def create(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        try:
+            # obj = await self.service.create(data, self.model, session)
+            obj = await self.service.get_or_create(data, self.model, session)
+            await session.commit()
+            await session.refresh(obj)
+            return obj
+        except ValidationException as e:
+            await session.rollback()
+            logger.warning(f"Validation error in create_item: {e}")
+            raise
+
+        except ConflictException as e:
+            await session.rollback()
+            logger.warning(f"Conflict in create_item: {e}")
+            raise
+
+        except IntegrityError as e:
+            await session.rollback()
+            logger.error(f"Integrity error in create_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Data integrity error"
+            )
+
+        except SQLAlchemyError as e:
+            await session.rollback()
+            logger.error(f"Database error in create_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            )
+
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Unexpected error in create_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            )
+
+    async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)):
+        obj = await self.service.create_relation(data, self.model, session)
+
+        return obj
+
+    async def patch(self, id: int, data: TUpdateSchema,
+                    session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        try:
+            obj = await self.service.patch(id, data, self.model, session)
+
+            if not obj:
+                await session.rollback()
+                raise NotFoundException(detail=f"Item with id {id} not found")
+            await session.commit()
+            await session.refresh()
+            return obj
+        except ValidationException as e:
+            await session.rollback()
+            logger.warning(f"Validation error in update_item: {e}")
+            raise
+
+        except IntegrityError as e:
+            await session.rollback()
+            logger.error(f"Integrity error in update_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Data integrity error"
+            )
+
+        except SQLAlchemyError as e:
+            await session.rollback()
+            logger.error(f"Database error in update_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            )
+
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Unexpected error in update_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            )
+
+    async def delete(self, id: int,
+                     session: AsyncSession = Depends(get_db)) -> DeleteResponse:
+        try:
+            existing_item = await self.service.get_by_id(id, self.model, session)
+            if not existing_item:
+                raise NotFoundException(detail=f"Item with id {id} not found")
+            result = await self.service.delete(existing_item, self.model, session)
+            if not result:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete item"
+                )
+            resu = {'success': result, 'deleted_count': 1 if result else 0,
+                    'message': f'{self.model.__name__} with id {id} has been deleted'}
+            return DeleteResponse(**resu)
+        except NotFoundException:
+            raise
+
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in delete_item: {e}")
+
+            # Проверяем, является ли ошибка связанной с внешними ключами
+            if "foreign key constraint" in str(e).lower():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Cannot delete item due to existing references"
+                )
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            )
+
+        except Exception as e:
+            logger.error(f"Unexpected error in delete_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+            )
+
     async def get_one(self,
                       id: int,
                       session: AsyncSession = Depends(get_db)) -> Any:
@@ -89,13 +229,24 @@ class BaseRouter:
             - 404: Запись не найдена
             - 500: Внутренняя ошибка сервера
             """
-        obj = await self.service.get_by_id(id, self.model, session)
-        if obj is None:
+        try:
+            obj = await self.service.get_by_id(id, self.model, session)
+            if obj is None:
+                raise NotFoundException(detail=f"Item with id {id} not found")
+            return obj  # self.read_schema.model_validate(obj)
+        except NotFoundException:
+            raise
+
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in get_item: {e}")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{self.model.__name__} с ID {id} не найден"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+        except Exception as e:
+            logger.error(f"Unexpected error in get_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
             )
-        return obj  # self.read_schema.model_validate(obj)
 
     async def get(self, page: int = Query(1, ge=1),
                   page_size: int = Query(paging.get('def', 20),
@@ -106,48 +257,15 @@ class BaseRouter:
             response = await self.service.get_all(page, page_size, self.model, session)
             result = self.paginated_response(**response)
             return result
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in get_items: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
+
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error fetching data: {str(e)}"
-            )
-
-    async def create(self, data: TCreate, session: AsyncSession = Depends(get_db)) -> TRead:
-        try:
-            # obj = await self.service.create(data, self.model, session)
-            obj = await self.service.get_or_create(data, self.model, session)
-            return obj
-        except IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=f"{self.model.__name__} already exists"
-            )
-        except ValidationError as e:
-            raise HTTPException(
-                status_code=401, detail=f"Validation error: {str(e)}"
-                # status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Validation error: {str(e)}"
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error creating {self.model.__name__}: {str(e)}"
-            )
-
-    async def create_relation(self, data: TCreate, session: AsyncSession = Depends(get_db)):
-        obj = await self.service.create_relation(data, self.model, session)
-        return obj
-
-    async def patch(self, id: int, data: TUpdate,
-                    session: AsyncSession = Depends(get_db)) -> TRead:
-        try:
-            obj = await self.service.patch(id, data, self.model, session)
-            if not obj:
-                raise HTTPException(status_code=404, detail="Not found")
-            return obj
-        except Exception as e:
-            logger.warning(f"HTTP error PATCH: {e}")
-
-    async def delete(self, id: int,
-                     session: AsyncSession = Depends(get_db)) -> DeleteResponse:
-        return await self.service.delete(id, self.model, session)
+            logger.error(f"Unexpected error in get_items: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
 
     async def search(self, query: str = Query(...),
                      page: int = Query(1, ge=1),
@@ -156,9 +274,19 @@ class BaseRouter:
                                             le=paging.get('max', 1000)),
                      session: AsyncSession = Depends(get_db)) -> dict:
         """Поиск по всем текстовым полям основной таблицы"""
-        items = await self.service.search_in_main_table(query, page, page_size, self.model, session=session)
-        result = self.paginated_response(**items)
-        return result
+        try:
+            items = await self.service.search_in_main_table(query, page, page_size, self.model, session=session)
+            result = self.paginated_response(**items)
+            return result
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in get_items: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
+
+        except Exception as e:
+            logger.error(f"Unexpected error in get_items: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
 
     async def deep_search(self, query: Optional[str] = Query(None),
                           session: AsyncSession = Depends(get_db)) -> dict:

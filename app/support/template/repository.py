@@ -14,6 +14,7 @@ from sqlalchemy import select
 class TemplateRepository(Repository):
     model = Template
 
-    def get_query(self):
+    @classmethod
+    def get_query(cls):
         # Добавляем загрузку связи с relationships
         return select(Template).options(joinedload(Template.country))

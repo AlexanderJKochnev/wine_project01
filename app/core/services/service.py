@@ -17,7 +17,7 @@ ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 class Service:
     def __init__(self, repositiory: Repository, model: Base):
         self.repository = repositiory
-        self.model = model
+        # self.model = model
 
     def get_models(self) -> List[ModelType]:
         return (cls for cls in Base.registry._class_registry.values() if
@@ -33,17 +33,24 @@ class Service:
         # удаляет пустые поля
         data_dict = data.model_dump(exclude_unset=True)
         obj = model(**data_dict)
-        return await self.repository.create(obj, model, session)
+        result = await self.repository.create(obj, model, session)
+        # тут можно добавить преобразования результата потом commit в роутере
+        return result
 
     async def get_or_create(self, data: ModelType, model: ModelType, session: Session) -> ModelType:
         """ использовать вместо create """
+
         data_dict = data.model_dump(exclude_unset=True)
+
         result = await self.repository.get_by_obj(data_dict, model, session)
         if result:
             return result
         else:
             obj = model(**data_dict)
-            return await self.repository.create(obj, model, session)
+
+            result = await self.repository.create(obj, model, session)
+            # тут можно добавить преобразования результата потом commit в роутере
+            return result
 
     async def update_or_create(self,
                                lookup: Dict[str, Any],
@@ -106,16 +113,9 @@ class Service:
         obj = await self.repository.patch(id, data_dict, model, session)
         return obj
 
-    async def delete(self, id: Any, model: ModelType, session: AsyncSession) -> bool:
-        result = await self.repository.delete(id, model, session)
-        if not result:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"{model.__name__} with id {id} not found")
-
-        resu = {'success': result,
-                'deleted_count': 1 if result else 0,
-                'message': f'{model.__name__} with id {id} has been deleted'}
-        return DeleteResponse(**resu)
+    async def delete(self, obj: ModelType, model: ModelType, session: AsyncSession) -> bool:
+        result = await self.repository.delete(obj, session)
+        return result
 
 # -------------------
     async def search_in_main_table(self,

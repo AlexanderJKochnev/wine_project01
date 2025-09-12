@@ -11,7 +11,8 @@ from app.support.region.model import Region
 class DrinkRepository(Repository):
     model = Drink
 
-    def get_query(self, model: ModelType):
+    @classmethod
+    def get_query(csl, model: ModelType):
         # Добавляем загрузку связи с relationships
         return select(Drink).options(selectinload(Drink.subregion).
                                      selectinload(Subregion.region),

@@ -1,7 +1,7 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Type
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,64 +13,31 @@ from app.core.utils.common_utils import get_text_model_fields
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
 
-class Repository(Generic[ModelType]):
+class Repository:
     # model: ModelType
 
-    def get_query(self, model: ModelType):
-        """
-        Переопределяемый метод.
-        Возвращает select() с нужными selectinload.
-        По умолчанию — без связей.
-        """
-        return select(model)
-
-    async def create(self, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
+    @classmethod
+    async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         session.add(obj)
         await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
-        await session.commit()
-        await session.refresh(obj)
+        # commit делаем в сервисе - для групповых операций
         return obj
 
-    async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        """
-        get one record by id
-        """
-        stmt = self.get_query(model).where(model.id == id)
-        result = await session.execute(stmt)
-        obj = result.scalar_one_or_none()
-        return obj
-
-    async def get_by_obj(self, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
-        stmt = select(model).filter_by(**data)
-        result = await session.execute(stmt)
-        item = result.scalar_one_or_none()
-        return item
-
-    async def get_all(self, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
-        # Запрос с загрузкой связей и пагинацией
-        stmt = self.get_query(model).offset(skip).limit(limit)
-        total = await self.get_count(model, session)
-        result = await session.execute(stmt)
-        items = result.scalars().all()
-        return items, total
-
-    async def patch(self, id: Any, data: Dict[str, Any],
+    @classmethod
+    async def patch(cls, id: Any, data: Dict[str, Any],
                     model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        obj = await self.get_by_id(id, model, session)
+        obj = await cls.get_by_id(id, model, session)
         if not obj:
             return None
         for k, v in data.items():
             if hasattr(obj, k):
                 setattr(obj, k, v)
-        await session.commit()
-        await session.refresh(obj)
+        await session.flush()
         return obj
 
-    async def delete(self, id: Any, model: ModelType, session: AsyncSession) -> bool:
+    @classmethod
+    async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
         try:
-            obj = await self.get_by_id(id, model, session)
-            if not obj:
-                return False
             await session.delete(obj)
             await session.commit()
             return True
@@ -78,18 +45,56 @@ class Repository(Generic[ModelType]):
             logger.error(f'ошибка удаления записи: {e}')
             return False
 
-    async def get_by_field(self, field_name: str, field_value: Any, model: ModelType, session: AsyncSession):
+    @classmethod
+    def get_query(cls, model: ModelType):
+        """
+        Переопределяемый метод.
+        Возвращает select() с нужными selectinload.
+        По умолчанию — без связей.
+        """
+        return select(model)
+
+    @classmethod
+    async def get_by_id(cls, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        """
+        get one record by id
+        """
+        stmt = cls.get_query(model).where(model.id == id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
+        return obj
+
+    @classmethod
+    async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
+        stmt = select(model).filter_by(**data)
+        result = await session.execute(stmt)
+        item = result.scalar_one_or_none()
+        return item
+
+    @classmethod
+    async def get_all(cls, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
+        # Запрос с загрузкой связей и пагинацией
+        stmt = cls.get_query(model).offset(skip).limit(limit)
+        total = await cls.get_count(model, session)
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+        return items, total
+
+    @classmethod
+    async def get_by_field(cls, field_name: str, field_value: Any, model: ModelType, session: AsyncSession):
         stmt = select(model).where(getattr(model, field_name) == field_value)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_count(self, model: ModelType, session: AsyncSession) -> int:
+    @classmethod
+    async def get_count(cls, model: ModelType, session: AsyncSession) -> int:
         count_stmt = select(func.count()).select_from(model)
         count_result = await session.execute(count_stmt)
         total = count_result.scalar()
         return total
 
-    async def search_in_main_table(self,
+    @classmethod
+    async def search_in_main_table(cls,
                                    search_query: str,
                                    page: int,
                                    page_size: int,
@@ -100,7 +105,7 @@ class Repository(Generic[ModelType]):
         items = []
         total = 0
         try:
-            query = self.get_query(model)     # все записи
+            query = cls.get_query(model)     # все записи
             text_fields = get_text_model_fields(model)
             conditions = []
             for field in text_fields:
@@ -128,8 +133,9 @@ class Repository(Generic[ModelType]):
 
 
 """
+    @classmethod
     async def search_with_relations(
-            self, search_query: Optional[str], main_text_fields: Optional[List[str]] = None,
+            cls, search_query: Optional[str], main_text_fields: Optional[List[str]] = None,
             relation_fields: Optional[Dict[str, List[str]]] = None, page: int = 1, page_size: int = 20
             ) -> Tuple[List[Item], int]:
         # Поиск по текстовым полям основной таблицы и связанных таблиц с пагинацией
@@ -178,10 +184,10 @@ class Repository(Generic[ModelType]):
         offset = (page - 1) * page_size
         stmt = stmt.offset(offset).limit(page_size)
 
-        result = await self.session.execute(stmt)
+        result = await cls.session.execute(stmt)
         items = result.scalars().all()
 
-        count_result = await self.session.execute(count_stmt)
+        count_result = await cls.session.execute(count_stmt)
         total_count = count_result.scalar()
 
         return items, total_count
