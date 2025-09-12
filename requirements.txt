@@ -19,3 +19,4 @@ sqlalchemy-utils
 # for testing purpose only
 Faker
 itsdangerous>=2.1.0
+pydantic_factories
