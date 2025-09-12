@@ -152,13 +152,16 @@ class BaseRouter:
     async def patch(self, id: int, data: TUpdateSchema,
                     session: AsyncSession = Depends(get_db)) -> TReadSchema:
         try:
-            obj = await self.service.patch(id, data, self.model, session)
+            existing_item = await self.service.get_by_id(id, self.model, session)
+            if not existing_item:
+                raise NotFoundException(detail=f"Item with id {id} not found")
+            obj = await self.service.patch(existing_item, data, session)
 
             if not obj:
                 await session.rollback()
                 raise NotFoundException(detail=f"Item with id {id} not found")
             await session.commit()
-            await session.refresh()
+            await session.refresh(obj)
             return obj
         except ValidationException as e:
             await session.rollback()

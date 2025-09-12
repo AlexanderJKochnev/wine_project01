@@ -24,11 +24,9 @@ class Repository:
         return obj
 
     @classmethod
-    async def patch(cls, id: Any, data: Dict[str, Any],
-                    model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        obj = await cls.get_by_id(id, model, session)
-        if not obj:
-            return None
+    async def patch(cls, obj: ModelType, data: Dict[str, Any],
+                    session: AsyncSession) -> Optional[ModelType]:
+        # obj = await cls.get_by_id(id, model, session)
         for k, v in data.items():
             if hasattr(obj, k):
                 setattr(obj, k, v)

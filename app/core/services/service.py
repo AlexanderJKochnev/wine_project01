@@ -106,9 +106,9 @@ class Service:
                   "has_prev": page > 1}
         return result
 
-    async def patch(self, id: Any, data: ModelType, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+    async def patch(self, obj: ModelType, data: ModelType, session: AsyncSession) -> Optional[ModelType]:
         data_dict = data.model_dump(exclude_unset=True)
-        obj = await self.repository.patch(id, data_dict, model, session)
+        obj = await self.repository.patch(obj, data_dict, session)
         return obj
 
     async def delete(self, obj: ModelType, model: ModelType, session: AsyncSession) -> bool:
