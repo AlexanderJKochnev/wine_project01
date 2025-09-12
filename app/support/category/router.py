@@ -31,7 +31,7 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
     async def patch(self, id: int, data: CategoryUpdate, session: AsyncSession = Depends(get_db)) -> CategoryRead:
         return await super().patch(id, data, session)
 
-    async def create_relation(self, data: CategoryCreateRelation,
+    async def create_relation(self, data: CategoryCreate,
                               session: AsyncSession = Depends(get_db)) -> CategoryRead:
         result = await super().create_relation(data, session)
         return result

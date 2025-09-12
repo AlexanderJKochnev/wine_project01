@@ -30,6 +30,7 @@ class CategoryRead(ReadSchema, CustomReadSchema):
 class CategoryCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
+
 class CategoryCreate(CreateSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 

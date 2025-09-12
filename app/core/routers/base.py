@@ -89,7 +89,7 @@ class BaseRouter:
                                   self.create_relation,
                                   status_code=status.HTTP_201_CREATED,
                                   methods=["POST"],
-                                  response_model=Dict)
+                                  response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
@@ -144,10 +144,43 @@ class BaseRouter:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
             )
 
-    async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)):
-        obj = await self.service.create_relation(data, self.model, session)
+    async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        try:
+            # obj = await self.service.create(data, self.model, session)
+            obj = await self.service.get_or_create(data, self.model, session)
+            await session.commit()
+            await session.refresh(obj)
+            return obj
+        except ValidationException as e:
+            await session.rollback()
+            logger.warning(f"Validation error in create_item: {e}")
+            raise
 
-        return obj
+        except ConflictException as e:
+            await session.rollback()
+            logger.warning(f"Conflict in create_item: {e}")
+            raise
+
+        except IntegrityError as e:
+            await session.rollback()
+            logger.error(f"Integrity error in create_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Data integrity error"
+            )
+
+        except SQLAlchemyError as e:
+            await session.rollback()
+            logger.error(f"Database error in create_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error {e}"
+            )
+
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Unexpected error in create_item: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error {e}"
+            )
 
     async def patch(self, id: int, data: TUpdateSchema,
                     session: AsyncSession = Depends(get_db)) -> TReadSchema:
