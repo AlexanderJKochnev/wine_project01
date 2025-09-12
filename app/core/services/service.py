@@ -7,11 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta, Session
 
 from app.core.models.base_model import Base
-from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.repositories.sqlalchemy_repository import Repository, ModelType
 from app.core.schemas.base import DeleteResponse
 from app.core.utils.common_utils import get_all_dict_paths, get_nested, set_nested, pop_nested
-
-ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 
 
 class Service:

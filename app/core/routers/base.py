@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, NoResultFound
-
+from sqlalchemy.orm import DeclarativeMeta, Session
 # from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import ReadSchema, CreateSchemaRelation
@@ -13,7 +13,8 @@ from app.core.config.project_config import get_paging
 from app.core.schemas.base import DeleteResponse, PaginatedResponse
 from app.auth.dependencies import get_current_active_user
 # from app.core.services.logger import logger
-from app.core.services.service import Service
+from app.core.services.service import Service, ModelType
+
 
 import logging
 
@@ -21,6 +22,7 @@ paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=ReadSchema)
 TUpdateSchema = TypeVar("TUpdateSchema", bound=ReadSchema)
 TReadSchema = TypeVar("TReadSchema", bound=ReadSchema)
+
 
 logger = logging.getLogger(__name__)
 
