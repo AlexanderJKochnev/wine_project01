@@ -91,8 +91,11 @@ class Service:
         """
         get one record by id
         """
-        obj = await self.repository.get_by_id(id, model, session)
-        return obj
+        try:
+            return await self.repository.get_by_id(id, model, session)
+        except Exception as e:
+            # logger.error(f"Error in get_by_id: {e}")
+            raise
 
     async def get_all(self, page: int, page_size: int, model: ModelType, session: AsyncSession, ) -> List[dict]:
         # Запрос с загрузкой связей и пагинацией

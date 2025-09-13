@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.repositories.sqlalchemy_repository import Repository, ModelType
-from app.support.drink.model import Drink, DrinkFood
+from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.subregion.model import Subregion
 from app.support.region.model import Region
 
@@ -24,4 +24,6 @@ class DrinkRepository(Repository):
                                      selectinload(Drink.color),
                                      selectinload(Drink.sweetness),
                                      selectinload(Drink.foods),
-                                     selectinload(Drink.food_associations).joinedload(DrinkFood.food))
+                                     selectinload(Drink.food_associations).joinedload(DrinkFood.food),
+                                     selectinload(Drink.varietals),
+                                     selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal))

@@ -279,7 +279,8 @@ class BaseRouter:
                 raise NotFoundException(detail=f"Item with id {id} not found")
             return obj  # self.read_schema.model_validate(obj)
         except NotFoundException:
-            raise
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"record with id {id} not found")
 
         except SQLAlchemyError as e:
             logger.error(f"Database error in get_item: {e}")

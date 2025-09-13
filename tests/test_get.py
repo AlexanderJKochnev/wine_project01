@@ -63,7 +63,9 @@ async def test_fault_get_one(authenticated_client_with_db, test_db_session,
         id = 1000
         response = await client.get(f'{prefix}/{id}')
         assert response.status_code == 404
-
+        error_data = response.json()
+        assert "detail" in error_data
+        assert "not found" in error_data["detail"].lower()
 
 async def test_get_one_exact(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list,

@@ -57,10 +57,13 @@ class Repository:
         """
         get one record by id
         """
-        stmt = cls.get_query(model).where(model.id == id)
-        result = await session.execute(stmt)
-        obj = result.scalar_one_or_none()
-        return obj
+        try:
+            stmt = cls.get_query(model).where(model.id == id)
+            result = await session.execute(stmt)
+            obj = result.scalar_one_or_none()
+            return obj
+        except Exception:
+            return None
 
     @classmethod
     async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
