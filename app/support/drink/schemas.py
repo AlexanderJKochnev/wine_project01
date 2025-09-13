@@ -1,11 +1,12 @@
 # app/support/drink/schemas.py
 
-from decimal import Decimal
+# from decimal import Decimal
 from typing import List, Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (BaseModel, CreateSchema, DateSchema, PkSchema, ReadSchema, UpdateSchema)
+from app.core.schemas.base import (BaseModel, DateSchema, ReadNoNameSchema, CreateNoNameSchema,
+                                   UpdateNoNameSchema, PkSchema)
 from app.support.category.schemas import CategoryRead, CategoryCreateRelation
 from app.support.color.schemas import ColorRead, ColorCreateRelation
 from app.support.food.schemas import FoodRead, FoodCreateRelation
@@ -19,13 +20,16 @@ from app.support.varietal.schemas import VarietalRead, VarietalCreateRelation
 # from app.support.item.schemas import ItemRead
 
 class CustomCreateRelation:
-    category_id: Optional[CategoryCreateRelation] = None
+    category_id: CategoryCreateRelation
     color_id: Optional[ColorCreateRelation] = None
     sweetness_id: Optional[SweetnessCreateRelation] = None
     subregion_id: Optional[SubregionCreateRelation] = None
+    title: str
+    title_native: Optional[str] = None
+    subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
-    alcohol: Optional[Decimal] = None
-    sugar: Optional[Decimal] = None
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     foods: List[FoodCreateRelation]
@@ -37,9 +41,12 @@ class CustomReadSchema:
     color_id: Optional[ColorRead] = None
     sweetness_id: Optional[SweetnessRead] = None
     subregion_id: Optional[SubregionRead] = None
+    title: str
+    title_native: Optional[str] = None
+    subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
-    alcohol: Optional[Decimal] = None
-    sugar: Optional[Decimal] = None
+    alc: Optional[str] = None
+    sugar: Optional[str] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     foods: List[FoodRead]
@@ -53,8 +60,11 @@ class CustomUpdSchema:
     color: Optional[int] = None
     sweetness: Optional[str] = None
     subregion: Optional[str] = None
+    title: Optional[str] = None
+    title_native: Optional[str] = None
+    subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
-    alcohol: Optional[float] = None
+    alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
@@ -65,14 +75,17 @@ class CustomCreateSchema:
     color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
     subregion_id: int
+    title: str
+    title_native: Optional[str] = None
+    subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
-    alcohol: Optional[Decimal] = None
-    sugar: Optional[Decimal] = None
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
 
 
-class DrinkRead(ReadSchema, CustomReadSchema):
+class DrinkRead(ReadNoNameSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',
@@ -81,15 +94,15 @@ class DrinkRead(ReadSchema, CustomReadSchema):
     pass
 
 
-class DrinkCreate(CreateSchema, CustomCreateSchema):
+class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class DrinkCreateRelations(CreateSchema, CustomCreateRelation):
+class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class DrinkUpdate(UpdateSchema, CustomUpdSchema):
+class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

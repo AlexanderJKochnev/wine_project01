@@ -53,6 +53,10 @@ class CreateSchema(LangSchema, UniqueSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
+class CreateNoNameSchema(DescriptionSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
 class UpdateSchema(LangSchema):
     """
     остальные поля добавить через CustomUpdateSchema
@@ -61,14 +65,20 @@ class UpdateSchema(LangSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
+class UpdateNoNameSchema(DescriptionSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
 class CreateSchemaRelation(LangSchema, UniqueSchema):
     """ схема для создания записей с зависимаостями """
     pass
 
+
 class ReadSchema(PkSchema, LangSchema, UniqueSchema):
-    """
-    остальные поля добавить через CustomReadSchema
-    """
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class ReadNoNameSchema(PkSchema, DescriptionSchema, UniqueSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 

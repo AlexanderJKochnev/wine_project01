@@ -34,7 +34,7 @@ async def test_get(authenticated_client_with_db, test_db_session, fakedata_gener
     assert True
 
 
-@pytest.mark.skip
+
 async def test_create_drink(authenticated_client_with_db, test_db_session):
     """
     это тест детальной обработки ошибок drink и всех связаных таблиц
@@ -240,9 +240,36 @@ async def test_search(authenticated_client_with_db, test_db_session, create_drin
     assert resp, 'поиск выполнен неверно'
 
 
-async def test_new_data_generator(authenticated_client_with_db, new_data_generator):
-    from app.support.drink.router import DrinkRouter  # noqa: F401
+async def test_new_data_generator1(authenticated_client_with_db, test_db_session):
+    """ тестируем генератор тестовых данных """
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.drink.router import router
     client = authenticated_client_with_db
+    rout = router()
+    assert True
+    #csource = simple_router_list + complex_router_list
+    test_number = 5     # количество записей
+    for n, item in enumerate(source):
+        try:
+            router = item()
+        except Exception as e:
+            assert False, f'error {e}, {n}'
+            
+        schema = router.create_schema
+        adapter = TypeAdapter(schema)
+        prefix = router.prefix
+        test_data = generate_test_data(schema, test_number, {
+            'int_range': (1, 5),
+            'decimal_range': (0.5, 1),
+            'float_range': {'price': (50.0, 200.0)},
+            # 'field_overrides': {'name': 'Special Product'},
+            'faker_seed': 42})
+    assert False
+    
+
+
+
+    
     router = DrinkRouter()
     schema = router.create_schema_relation
     adapter = TypeAdapter(schema)
@@ -338,3 +365,103 @@ async def test_get_relation(authenticated_client_with_db, test_db_session):
         assert False, f'валидация поcле обновления {e}'
     response = await client.post(f'{prefix}/relation', json=data)
     assert response.status_code == 200, response.text
+
+
+async def test_new_data_generator(authenticated_client_with_db, test_db_session,
+                                  simple_router_list, complex_router_list):
+    from tests.data_factory.fake_generator import generate_test_data
+    source = simple_router_list + complex_router_list
+    test_number = 10
+    client = authenticated_client_with_db
+    for n, item in enumerate(source):
+        router = item()
+        schema = router.create_schema
+        adapter = TypeAdapter(schema)
+        prefix = router.prefix
+        test_data = generate_test_data(
+            schema, test_number,
+            {'int_range': (1, test_number),
+             'decimal_range': (0.5, 1),
+             'float_range': (0.1, 1.0),
+             # 'field_overrides': {'name': 'Special Product'},
+             'faker_seed': 42}
+            )
+        for m, data in enumerate(test_data):
+            try:
+                # _ = schema(**data)      # валидация данных
+                json_data = json.dumps(data)
+                adapter.validate_json(json_data)
+                assert True
+            except Exception as e:
+                assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+            try:
+                response = await client.post(f'{prefix}', json = data)
+                assert response.status_code == 200, f'||{prefix}, {response.text}'
+            except Exception as e:
+                assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
+    test_data = None
+    from app.support.drink.router import DrinkRouter
+    router1 = DrinkRouter()
+    schema = router1.create_schema
+    adapter = TypeAdapter(schema)
+    prefix = router1.prefix
+    test_data = [
+            {"category_id": 7, "color_id": 8, "sweetness_id": 6, "subregion_id": 1, "title": "lAtsniQNBfjMJObaZvPf",
+                    "title_native": None, "subtitle_native": "CBIWveRegjXaqVXLXCNi", "subtitle": None,
+                    "alc": 0.36752304919533296, "sugar": 0.5806690384391704, "aging": 5, "sparkling": None,
+                    "description": "MUkURnQBSKoIUZFjdyOe", "description_ru": "GvWQuoGqhsIZVdZfuBIU",
+                    "description_fr": None},
+            {"category_id": 2, "color_id": 3, "sweetness_id": 5, "subregion_id": 6, "title": "gfrGFTpYBwqmjvXPcFHK",
+                    "title_native": "ihiYUdmfAeIVhawvVMpa", "subtitle_native": None, "subtitle": None,
+                    "alc": 0.7992019667771836, "sugar": 0.8901261684051047, "aging": 9, "sparkling": None,
+                    "description": "kVkrUidYLVokOpkJBjTW", "description_ru": None,
+                    "description_fr": "zqMoxvsscHbEKjtXoDHN"},
+            {"category_id": 6, "color_id": 9, "sweetness_id": 10, "subregion_id": 8, "title": "tKHkxjAlCKstBSgTOZOG",
+                    "title_native": None, "subtitle_native": "gOJZvzmQYTucMwfCOCrk", "subtitle": "ylCotlwGzHzpCHkJydqr",
+                    "alc": 0.1150442009137261, "sugar": 0.3552974891120789, "aging": 9, "sparkling": False,
+                    "description": "HsOqrrbDJUicnvJVOLdB", "description_ru": None, "description_fr": None},
+            {"category_id": 5, "color_id": 2, "sweetness_id": 9, "subregion_id": 7, "title": "fZabagpyCbCEMCpoeNNZ",
+                    "title_native": None, "subtitle_native": None, "subtitle": "JmRJXCgxgBYbpTXEciRF",
+                    "alc": 0.9914355116276414, "sugar": 0.48197031130075996, "aging": 3, "sparkling": None,
+                    "description": None, "description_ru": "owRVskmBKhitkJPUuAOi", "description_fr": None},
+            {"category_id": 4, "color_id": 5, "sweetness_id": 3, "subregion_id": 2, "title": "aESxrXCGsJYpADdODwxw",
+                    "title_native": "ltcgYXUjYROQlYONQgON", "subtitle_native": None, "subtitle": "XccaguABxSgDezXGnUtK",
+                    "alc": 0.7224170050273336, "sugar": 0.5670533699446634, "aging": 2, "sparkling": True,
+                    "description": "VoHWNFeLicgyWyWsCGfg", "description_ru": "CgcqjgHHsmAIQkhJTxly",
+                    "description_fr": None},
+            {"category_id": 9, "color_id": 9, "sweetness_id": 4, "subregion_id": 10, "title": "eIpLVccndpTizJQqxUxm",
+                    "title_native": "COlBWMqxAuqHLBinXIps", "subtitle_native": None, "subtitle": "IomEEUKQBoaPCWZOEOrf",
+                    "alc": 0.5476083412256929, "sugar": 0.9768010914489466, "aging": 9, "sparkling": None,
+                    "description": None, "description_ru": "JFscOVCreLoxvOsBbWzc",
+                    "description_fr": "SGECwJVmbHvWBbNYBTja"},
+            {"category_id": 6, "color_id": 4, "sweetness_id": 1, "subregion_id": 8, "title": "KCDJpwLrNCKQAdNmUyuK",
+                    "title_native": "dxwhUsnpLKkypDxyNcMW", "subtitle_native": None, "subtitle": "oXUxKUCCXzxdPUzWJsmp",
+                    "alc": 0.5130736136070028, "sugar": 0.21538321879282046, "aging": 3, "sparkling": True,
+                    "description": "DRPJkASsJyWQCppDOSdz", "description_ru": None, "description_fr": None},
+            {"category_id": 1, "color_id": 5, "sweetness_id": 7, "subregion_id": 7, "title": "LDaFKhttpEOPGjnUJMoo",
+                    "title_native": None, "subtitle_native": None, "subtitle": "mivbqKKdapYwJMAFlHwm",
+                    "alc": 0.12103160652804867, "sugar": 0.5638407683961387, "aging": 3, "sparkling": False,
+                    "description": None, "description_ru": None, "description_fr": None},
+            {"category_id": 10, "color_id": 8, "sweetness_id": 6, "subregion_id": 3, "title": "gVmbNOThRUKdgHjTSGfv",
+                    "title_native": None, "subtitle_native": None, "subtitle": None, "alc": 0.1322944331451323,
+                    "sugar": 0.20382409973454954, "aging": 4, "sparkling": None, "description": "sROGtQCmWfINmpRmJxrB",
+                    "description_ru": None, "description_fr": None},
+            {"category_id": 5, "color_id": 3, "sweetness_id": 8, "subregion_id": 3, "title": "SgNwZuqBliFkEpfwMsfX",
+                    "title_native": None, "subtitle_native": "OxUydQyYwWrxcouHUkMp", "subtitle": "OOGAcVyuQjRqryPPmYEk",
+                    "alc": 0.6202312364007778, "sugar": 0.8523281980791738, "aging": 3, "sparkling": True,
+                    "description": None, "description_ru": "pBJCYUfodMHHdjcxthaH",
+                    "description_fr": "lfjdfusQvcSBiuAqFAIY"}
+            ]
+    for n, data1 in enumerate(test_data):
+        try:
+            # _ = schema(**data)      # валидация данных
+            json_data = json.dumps(data1)
+            adapter.validate_json(json_data)
+            assert True
+        except Exception as e:
+            assert False, f'input validation error {e}, router {prefix}, example {n}'
+        try:
+            response = await client.post(f'{prefix}', json = data1)
+            assert response.status_code == 200, f'{response.text}'
+        except Exception as e:
+            assert False, f'example {n}, prefix {prefix}, {response.status_code=}, {response.text}'

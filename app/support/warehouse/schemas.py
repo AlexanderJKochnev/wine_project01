@@ -4,10 +4,11 @@ from typing import Optional
 from pydantic import ConfigDict
 
 from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, ReadSchemaWithRealtionships, UpdateSchema)
+from app.support.customer.schemas import CustomerCreate
 
 
 class CustomCreateRelation:
-    pass
+    cutomer: CustomerCreate
 
 
 class CustomReadSchema:

@@ -5,18 +5,17 @@ from typing import Any, Dict, List
 import pytest
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
 
 from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.main import app, get_db
+from tests.data_factory.fake_generator import generate_test_data
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
-from tests.data_factory.fake_generator import TestDataGenerator
-from tests.data_factory.data_generator import remove_id, json_reader
 
 scope = 'session'
 scope2 = 'session'
@@ -38,10 +37,44 @@ def get_routers(method: str = 'GET') -> List[APIRoute]:
 
 
 @pytest.fixture(scope=scope)
-def new_data_generator():
-    generator = TestDataGenerator()
-    template = remove_id(json_reader())
-    return generator.generate(template, count=7)
+def simple_router_list():
+    """список роутеров простых моделей
+    """
+
+    from app.support.category.router import CategoryRouter
+    from app.support.color.router import ColorRouter
+    from app.support.country.router import CountryRouter
+    from app.support.customer.router import CustomerRouter
+    from app.support.food.router import FoodRouter
+    from app.support.sweetness.router import SweetnessRouter
+    from app.support.varietal.router import VarietalRouter
+
+    # generator = TestDataGenerator()
+    # template = remove_id(json_reader())
+    # return generator.generate(template, count=7)
+    source = (CategoryRouter,
+              ColorRouter,
+              CountryRouter,
+              CustomerRouter,
+              FoodRouter,
+              SweetnessRouter,
+              VarietalRouter)
+    return source
+
+
+@pytest.fixture(scope=scope)
+def complex_router_list():
+    from app.support.region.router import RegionRouter
+    from app.support.subregion.router import SubregionRouter
+    from app.support.warehouse.router import WarehouseRouter
+    from app.support.drink.router import DrinkRouter
+    from app.support.item.router import ItemRouter
+    return (RegionRouter,
+            SubregionRouter,
+            WarehouseRouter,
+            # DrinkRouter,
+            # ItemRouter
+    )
 
 
 @pytest.fixture(scope=scope)

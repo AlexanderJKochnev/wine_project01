@@ -9,11 +9,11 @@ from app.support.country.schemas import CountryCreateRelation, CountryRead
 
 
 class CustomCreateRelation:
-    country: Optional[CountryCreateRelation]
+    country: CountryCreateRelation
 
 
 class CustomReadSchema:
-    country: Optional[CountryRead] = None
+    country: CountryRead
 
 
 class CustomCreateSchema:

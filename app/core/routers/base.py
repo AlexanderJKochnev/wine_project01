@@ -116,12 +116,18 @@ class BaseRouter:
         except ValidationException as e:
             await session.rollback()
             logger.warning(f"Validation error in create_item: {e}")
-            raise
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"ValidationException. Validation error in create_item: {e}"
+            )
 
         except ConflictException as e:
             await session.rollback()
             logger.warning(f"Conflict in create_item: {e}")
-            raise
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"ConflictException. Conflict in create_item: {e}"
+            )
 
         except IntegrityError as e:
             await session.rollback()
@@ -134,7 +140,8 @@ class BaseRouter:
             await session.rollback()
             logger.error(f"Database error in create_item: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"SQLAlchemyError. Database error in create_item: {e}"
             )
 
         except Exception as e:

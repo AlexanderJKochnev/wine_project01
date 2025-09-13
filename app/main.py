@@ -23,6 +23,7 @@ from app.support.region.router import router as region_router
 from app.support.color.router import router as color_router
 from app.support.sweetness.router import router as sweetness_router
 from app.support.subregion.router import router as subregion_router
+from app.support.varietal.router import router as varietal_router
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
@@ -127,4 +128,5 @@ app.include_router(region_router)
 app.include_router(color_router)
 app.include_router(sweetness_router)
 app.include_router(subregion_router)
+app.include_router(varietal_router)
 # app.include_router(image_router)

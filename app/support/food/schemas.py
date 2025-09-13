@@ -1,6 +1,6 @@
 # app/support/food/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema, CreateSchemaRelation
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, FullSchema
 from pydantic import ConfigDict
 
 

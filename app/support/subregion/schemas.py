@@ -9,7 +9,7 @@ from app.support.region.schemas import RegionCreateRelation, RegionRead
 
 
 class CustomCreateRelation:
-    region: Optional[RegionCreateRelation]
+    region: RegionCreateRelation
 
 
 class CustomReadSchema:
