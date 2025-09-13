@@ -13,5 +13,5 @@ class SubregionRepository(Repository):
     @classmethod
     def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
-        return select(Subregion).options(selectinload(Subregion.region),
+        return select(Subregion).options(selectinload(Subregion.region).
                                          selectinload(Region.country))

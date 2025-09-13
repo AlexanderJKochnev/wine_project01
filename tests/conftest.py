@@ -1,10 +1,12 @@
 # tests/conftest.py
 import asyncio
+import json
 from typing import Any, Dict, List
-
+import logging
 import pytest
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
+from pydantic import TypeAdapter
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,6 +29,14 @@ def pytest_configure(config):
     config.option.log_cli_format = "%(levelname)s - %(message)s"
 
 
+@pytest.fixture(autouse=True)
+def disable_httpx_logging():
+    """Подавляет INFO-логи от httpx и httpcore"""
+    loggers_to_silence = ["httpx", "httpx._client", "httpcore"]
+    for name in loggers_to_silence:
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+
 def get_routers(method: str = 'GET') -> List[APIRoute]:
     """  список роутеров, содержащих указанный метод """
     # prefix содердится в a.path
@@ -38,7 +48,7 @@ def get_routers(method: str = 'GET') -> List[APIRoute]:
 
 @pytest.fixture(scope=scope)
 def simple_router_list():
-    """список роутеров простых моделей
+    """генератор тестовых данных 1
     """
 
     from app.support.category.router import CategoryRouter
@@ -58,13 +68,13 @@ def simple_router_list():
               CustomerRouter,
               FoodRouter,
               SweetnessRouter,
-              VarietalRouter
-    )
+              VarietalRouter)
     return source
 
 
 @pytest.fixture(scope=scope)
 def complex_router_list():
+    """ генератор тестовых данных 2"""
     from app.support.region.router import RegionRouter
     from app.support.subregion.router import SubregionRouter
     from app.support.warehouse.router import WarehouseRouter
@@ -74,8 +84,7 @@ def complex_router_list():
             SubregionRouter,
             WarehouseRouter,
             DrinkRouter,
-            # ItemRouter
-    )
+            ItemRouter)
 
 
 @pytest.fixture(scope=scope)
@@ -191,7 +200,41 @@ def get_fields_type() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope=scope)
-async def fakedata_generator(authenticated_client_with_db, test_db_session, get_fields_type):
+async def fakedata_generator(authenticated_client_with_db, test_db_session,
+                             simple_router_list, complex_router_list):
+    # from tests.data_factory.fake_generator import generate_test_data
+    source = simple_router_list + complex_router_list
+    test_number = 10
+    client = authenticated_client_with_db
+    for n, item in enumerate(source):
+        router = item()
+        schema = router.create_schema
+        adapter = TypeAdapter(schema)
+        prefix = router.prefix
+        test_data = generate_test_data(
+            schema, test_number,
+            {'int_range': (1, test_number),
+             'decimal_range': (0.5, 1),
+             'float_range': (0.1, 1.0),
+             # 'field_overrides': {'name': 'Special Product'},
+             'faker_seed': 42})
+        for m, data in enumerate(test_data):
+            try:
+                # _ = schema(**data)      # валидация данных
+                json_data = json.dumps(data)
+                adapter.validate_json(json_data)
+                assert True
+            except Exception as e:
+                assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+            try:
+                response = await client.post(f'{prefix}', json=data)
+                assert response.status_code == 200, f'||{prefix}, {response.text}'
+            except Exception as e:
+                assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
+
+
+@pytest.fixture(scope=scope)
+async def fakedata_generator1(authenticated_client_with_db, test_db_session, get_fields_type):
     """
     проходит по списку роутеров и заполняет таблицы данными
     :return:

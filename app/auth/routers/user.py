@@ -15,7 +15,7 @@ user_repo = UserRepository()
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate, session: AsyncSession = Depends(get_db)):
     # Проверяем, существует ли пользователь с таким именем
-    existing_user = await user_repo.get_by_field("username", user.username, session)
+    existing_user = await user_repo.get_by_field("username", user.username, User, session)
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Username already registered")

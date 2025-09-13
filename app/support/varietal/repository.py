@@ -13,4 +13,4 @@ class VarietalRepository(Repository):
     @classmethod
     def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
-        return select(self.model).options(selectinload(Varietal.drink_associations).joinedload(DrinkVarietal.drink))
+        return select(cls.model).options(selectinload(Varietal.drink_associations).joinedload(DrinkVarietal.drink))

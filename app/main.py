@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # from app.admin import sqladm
 from fastapi.responses import JSONResponse
 # from sqlalchemy.exc import SQLAlchemyError
-
+import logging
 from app.core.routers.base import SQLAlchemyError, NotFoundException, ValidationException, ConflictException
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.auth.routers import user_router, auth_router
@@ -27,7 +27,10 @@ from app.support.varietal.router import VarietalRouter
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
-from app.admin.auth import authentication_backend
+# from app.admin.auth import authentication_backend
+
+
+logging.basicConfig(level=logging.WARNING)  # в начале main.py или conftest.py
 
 app = FastAPI()
 app.add_middleware(

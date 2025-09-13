@@ -1,44 +1,44 @@
 # tests/test_create.py
 """
-    валидация генерируемых тестовых данных
-    проверка метода POST
-    новые методы добавляются автоматически
+проверка методов post c валидацией входящих и исходящих данных
 """
 
 import pytest
-from app.core.schemas.base import ListResponse  # noqa: F401
+from pydantic import TypeAdapter
+import json
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_input_validation(authenticated_client_with_db,
-                                test_db_session,
-                                routers_get_all,
-                                # fakedata_generator,
-                                routers_post):
-    # client = authenticated_client_with_db
-    # from app.support.drink.router import DrinkRouter as Router
-    from app.support.customer.router import CustomerRouter as Router
-    data = {'category_id': 1,
-            'color_id': 1,
-            'sweetness_id': 1,
-            'region_id': 1,
-            'subtitle': 'East Mallorystad',
-            'alcohol': 2.97, 'sugar': 1.3, 'aging': 3, 'sparkling': False,
-            'food': ['Ellenfurt',],
-            'description': 'Cause hotel right nice movement her. '
-                           'Themselves perform anything could. '
-                           'Red already vote us effort.\nMemory environment follow type machine. '
-                           'Bed you maybe group.',
-            'description_ru': 'Where language book. Scene person short realize rise star argue you.'
-                              '\nYou me short design act beat bank. Onto year by.\nTen plan let store. '
-                              'Computer grow cell newspaper charge.',
-            'name_ru': 'Daniel Jensen', 'name': 'Charles Mills'}
-    data = {'login': 'Lake Cathyfurt', 'id': 1}
-    router = Router()
-    # prefix = router.prefix
-    create_schema = router.create_schema
-    try:
-        _ = create_schema(**data)
-    except Exception as e:
-        assert False, f'Ошибка валидации {e}, {data}'
+async def test_new_data_generator(authenticated_client_with_db, test_db_session,
+                                  simple_router_list, complex_router_list):
+    from tests.data_factory.fake_generator import generate_test_data
+    source = simple_router_list + complex_router_list
+    test_number = 10
+    client = authenticated_client_with_db
+    for n, item in enumerate(source):
+        router = item()
+        schema = router.create_schema
+        adapter = TypeAdapter(schema)
+        prefix = router.prefix
+        test_data = generate_test_data(
+            schema, test_number,
+            {'int_range': (1, test_number),
+             'decimal_range': (0.5, 1),
+             'float_range': (0.1, 1.0),
+             # 'field_overrides': {'name': 'Special Product'},
+             'faker_seed': 42}
+            )
+        for m, data in enumerate(test_data):
+            try:
+                # _ = schema(**data)      # валидация данных
+                json_data = json.dumps(data)
+                adapter.validate_json(json_data)
+                assert True
+            except Exception as e:
+                assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+            try:
+                response = await client.post(f'{prefix}', json = data)
+                assert response.status_code == 200, f'||{prefix}, {response.text}'
+            except Exception as e:
+                assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'

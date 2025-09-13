@@ -13,9 +13,12 @@ class DrinkRepository(Repository):
 
     @classmethod
     def get_query(csl, model: ModelType):
-        # Добавляем загрузку связи с relationships
+        """ Добавляем загрузку связи с relationships
+            Обратить внимание! для последовательной загрузки использовать точку.
+            параллельно запятая
+        """
         return select(Drink).options(selectinload(Drink.subregion).
-                                     selectinload(Subregion.region),
+                                     selectinload(Subregion.region).
                                      selectinload(Region.country),
                                      selectinload(Drink.category),
                                      selectinload(Drink.color),

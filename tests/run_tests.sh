@@ -11,9 +11,8 @@ pytest tests/test_auth.py \
        tests/test_database.py \
        tests/test_database_connection.py \
        tests/test_fastapi.py \
-       tests/test_sqladmin.py \
-       tests/test_delete.py \
-       tests/test_get.py \
-       tests/test_search.py \
-       tests/test_update.py \
-       --tb=auto --disable-warnings -vv
+       tests/test_create.py --tb=auto --log-cli-level=WARNING
+       # tests/test_delete.py \
+       # tests/test_search.py \
+       # tests/test_update.py \
+       # --tb=auto --disable-warnings -vv

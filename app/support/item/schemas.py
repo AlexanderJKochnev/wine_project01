@@ -14,32 +14,32 @@ class CustomReadSchema:
     id: int
     drink: DrinkRead
     warehoise: WarehouseRead
-    volume: Optional[Decimal] = None
-    price: Optional[Decimal] = None
+    volume: Optional[float] = None
+    price: Optional[float] = None
     count: Optional[int] = 0
 
 
 class CustomCreateSchema:
     drink_id: int
     warehouse_id: int
-    volume: Optional[Decimal] = None
-    price: Optional[Decimal] = None
+    volume: Optional[float] = None
+    price: Optional[float] = None
     count: Optional[int] = 0
 
 
 class CustomCreateRelation:
     drink_id: DrinkCreateRelations
     warehouse_id: WarehouseCreateRelation
-    volume: Optional[Decimal] = None
-    price: Optional[Decimal] = None
+    volume: Optional[float] = None
+    price: Optional[float] = None
     count: Optional[int] = 0
 
 
 class CustomUpdSchema:
     drink_id: Optional[int] = None
     warehouse_id: Optional[int] = None
-    volume: Optional[Decimal] = None
-    price: Optional[Decimal] = None
+    volume: Optional[float] = None
+    price: Optional[float] = None
     count: Optional[int] = 0
 
 

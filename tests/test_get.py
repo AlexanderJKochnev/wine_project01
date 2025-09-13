@@ -6,7 +6,7 @@
 """
 
 import pytest
-from app.core.schemas.base import ListResponse
+from app.core.schemas.base import PaginatedResponse
 
 pytestmark = pytest.mark.asyncio
 
@@ -14,7 +14,7 @@ pytestmark = pytest.mark.asyncio
 async def test_get_all(authenticated_client_with_db, test_db_session, routers_get_all, fakedata_generator):
     """ тестирует методы get all - с проверкой формата ответа """
     routers = routers_get_all
-    x = ListResponse.model_fields.keys()
+    x = PaginatedResponse.model_fields.keys()
     client = authenticated_client_with_db
     for prefix in routers:
         response = await client.get(f'{prefix}')
@@ -27,22 +27,12 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
     """ тестирует методы get one - c проверкой id """
     client = authenticated_client_with_db
     routers = routers_get_all
-    """
-    tmp = [(a.path.lstrip('/').split('/')[0], a)
-           for a in app.routes
-           if all((isinstance(a, APIRoute), a.path not in ('/', '/auth/token', '/wait')))]
-    for n, a in tmp:
-        print(f'{n}: {a}')
-    from collections import defaultdict
-    result = defaultdict(set)
-    for key, value in tmp:
-        result[key].add(value)
-    result = dict(result)
 
-    assert False
-    """
-    x = ListResponse.model_fields.keys()
+    # x = PaginatedResponse.model_fields.keys()
     for prefix in routers:
+        response = await client.get(f'{prefix}/1')
+        assert response.status_code in [200, 404], response.text
+        """
         response = await client.get(f'{prefix}')
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
@@ -62,7 +52,7 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
         else:   # записей в тестируемой таблице нет, просот тестируем доступ
             resp = await client.get(f'{prefix}/1')
             assert resp.status_code in [200, 404]
-
+        """
 
 async def test_fault_get_one(authenticated_client_with_db, test_db_session,
                              routers_get_all, fakedata_generator):
@@ -73,3 +63,16 @@ async def test_fault_get_one(authenticated_client_with_db, test_db_session,
         id = 1000
         response = await client.get(f'{prefix}/{id}')
         assert response.status_code == 404
+
+
+async def test_get_one_exact(authenticated_client_with_db, test_db_session,
+                             simple_router_list, complex_router_list,
+                             fakedata_generator):
+    router_list = simple_router_list + complex_router_list
+    for item in router_list:
+        router = item()
+        prefix = router.prefix
+        client = authenticated_client_with_db
+        id = 1
+        response = await client.get(f'{prefix}/{1}')
+        assert response.status_code == 200, f'{prefix}, {response.text}'

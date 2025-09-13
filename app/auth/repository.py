@@ -37,7 +37,7 @@ class UserRepository(Repository):
     async def create(cls, data: dict, session):
         data["hashed_password"] = cls.get_password_hash(data.pop("password"))
         verified_data = cls.model(**data)
-        return await super().create(verified_data, session)
+        return await super().create(verified_data, cls.model, session)
 
     @classmethod
     async def get_superuser_by_username(cls, username: str, session: AsyncSession):

@@ -74,7 +74,6 @@ class BaseRouter:
         self.prefix = prefix
         self.tags = tags
         self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
-        # self.session = session  # будет установлен через зависимости
         self.paginated_response = create_model(f"Paginated{read_schema.__name__}",
                                                __base__=PaginatedResponse[read_schema])
         self.delete_response = DeleteResponse
@@ -267,7 +266,7 @@ class BaseRouter:
 
     async def get_one(self,
                       id: int,
-                      session: AsyncSession = Depends(get_db)) -> Any:
+                      session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """
             Получение одной записи по ID с четким разделением ошибок:
             - 400: Неверный формат ID или параметры
@@ -297,18 +296,19 @@ class BaseRouter:
                   page_size: int = Query(paging.get('def', 20),
                                          ge=paging.get('min', 1),
                                          le=paging.get('max', 1000)),
-                  session: AsyncSession = Depends(get_db)) -> dict:
+                  session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
         try:
             response = await self.service.get_all(page, page_size, self.model, session)
+            return response
             result = self.paginated_response(**response)
             return result
         except SQLAlchemyError as e:
-            logger.error(f"Database error in get_items: {e}")
+            logger.error(f"Database error in get: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail="Internal server error")
 
         except Exception as e:
-            logger.error(f"Unexpected error in get_items: {e}")
+            logger.error(f"Unexpected error in get: {e} {self.model.__name__}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail="Internal server error")
 
