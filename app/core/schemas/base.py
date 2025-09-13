@@ -69,11 +69,6 @@ class UpdateNoNameSchema(DescriptionSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-class CreateSchemaRelation(LangSchema, UniqueSchema):
-    """ схема для создания записей с зависимаостями """
-    pass
-
-
 class ReadSchema(PkSchema, LangSchema, UniqueSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
@@ -142,6 +137,10 @@ class ListResponse(BaseModel, Generic[T]):
     """
     items: List[T]
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class CreateResponse(PkSchema, DateSchema):
+    pass
 
 
 class PaginatedResponse(BaseModel, Generic[T]):

@@ -5,15 +5,14 @@ from typing import List, Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (BaseModel, DateSchema, ReadNoNameSchema, CreateNoNameSchema,
-                                   UpdateNoNameSchema, PkSchema)
-from app.support.category.schemas import CategoryRead, CategoryCreateRelation
-from app.support.color.schemas import ColorRead, ColorCreateRelation
-from app.support.food.schemas import FoodRead, FoodCreateRelation
+from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, ReadNoNameSchema, UpdateNoNameSchema)
+from app.support.category.schemas import CategoryCreateRelation, CategoryRead
+from app.support.color.schemas import ColorCreateRelation, ColorRead
+from app.support.food.schemas import FoodCreateRelation, FoodRead
 # from app.support.item.schemas import ItemRead
-from app.support.subregion.schemas import SubregionRead, SubregionCreateRelation
-from app.support.sweetness.schemas import SweetnessRead, SweetnessCreateRelation
-from app.support.varietal.schemas import VarietalRead, VarietalCreateRelation
+from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
+from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
+from app.support.varietal.schemas import VarietalCreateRelation, VarietalRead
 
 
 # from app.support.country.schemas import CountryRead
@@ -106,7 +105,7 @@ class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class DrinkCreateResponseSchema(DrinkCreate, PkSchema, DateSchema):
+class DrinkCreateResponseSchema(DrinkCreate, CreateResponse):
     pass
 
 

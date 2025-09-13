@@ -19,14 +19,14 @@ class DrinkRouter(BaseRouter):
             model=Drink,
             repo=DrinkRepository,
             create_schema=DrinkCreate,
-            patch_schema=DrinkUpdate,
             read_schema=DrinkRead,
             create_schema_relation=DrinkCreateRelations,
+            create_response_schema=DrinkCreateResponseSchema,
             prefix="/drinks",
             tags=["drinks"],
             service=DrinkService
         )
-        self.create_response_schema = DrinkCreateResponseSchema
+        # self.create_response_schema = DrinkCreateResponseSchema
 
     def setup_routes(self):
         super().setup_routes()

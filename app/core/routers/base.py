@@ -12,14 +12,16 @@ from app.auth.dependencies import get_current_active_user
 # from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging
-from app.core.schemas.base import CreateSchemaRelation, DeleteResponse, PaginatedResponse, ReadSchema
+from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
+                                   CreateResponse, UpdateSchema, CreateSchema)
 # from app.core.services.logger import logger
 from app.core.services.service import Service
 
 paging = get_paging
-TCreateSchema = TypeVar("TCreateSchema", bound=ReadSchema)
-TUpdateSchema = TypeVar("TUpdateSchema", bound=ReadSchema)
+TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
+TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 TReadSchema = TypeVar("TReadSchema", bound=ReadSchema)
+TCreateResponse = TypeVar("TCreateResponse", bound=CreateResponse)
 
 
 logger = logging.getLogger(__name__)
@@ -52,22 +54,23 @@ class BaseRouter:
         self,
         model: Type[Any],
         repo: Type[Any],
-        create_schema: Type[ReadSchema],
-        patch_schema: Type[ReadSchema],
-        read_schema: Type[ReadSchema],
         prefix: str,
         tags: List[str],
-        service: Service = Service,
-        create_schema_relation: Type[CreateSchemaRelation] = CreateSchemaRelation
+        create_schema: Type[ReadSchema],
+        # patch_schema: Type[ReadSchema],
+        read_schema: Type[ReadSchema],
+        create_response_schema: Type[CreateResponse],
+        create_schema_relation: Type[CreateResponse],
+        service: Service,
         # session: AsyncSession = Depends(get_db)
     ):
         self.model = model
         self.repo = repo()
         self.service = service(self.repo, self.model)
         self.create_schema = create_schema
-        self.patch_schema = patch_schema
         self.read_schema = read_schema
         self.create_schema_relation = create_schema_relation
+        self.create_response_schema = create_response_schema
         self.prefix = prefix
         self.tags = tags
         self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
@@ -81,7 +84,7 @@ class BaseRouter:
 
     def setup_routes(self):
         """Настраивает маршруты"""
-        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.read_schema)
+        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
         self.router.add_api_route("/hierarchy",
                                   self.create_relation,
                                   status_code=status.HTTP_201_CREATED,
@@ -100,7 +103,7 @@ class BaseRouter:
                                   response_model=self.read_schema,
                                   # responses=self.responses
                                   )
-        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
+        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.create_response_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def create(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:

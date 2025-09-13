@@ -7,7 +7,8 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.region.model import Region
 from app.support.region.repository import RegionRepository
-from app.support.region.schemas import RegionCreate, RegionRead, RegionUpdate, RegionCreateRelation
+from app.support.region.schemas import (RegionCreate, RegionRead, RegionUpdate, RegionCreateRelation,
+                                        RegionCreateResponseSchema)
 from app.support.region.service import RegionService
 
 
@@ -17,12 +18,12 @@ class RegionRouter(BaseRouter):
             model=Region,
             repo=RegionRepository,
             create_schema=RegionCreate,
-            patch_schema=RegionUpdate,
             read_schema=RegionRead,
             prefix="/regions",
             tags=["regions"],
             service=RegionService,
-            create_schema_relation=RegionCreateRelation
+            create_schema_relation=RegionCreateRelation,
+            create_response_schema=RegionCreateResponseSchema
         )
         self.create_response_schema = RegionRead
 
@@ -35,10 +36,12 @@ class RegionRouter(BaseRouter):
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
     """
-    async def create(self, data: RegionCreate, session: AsyncSession = Depends(get_db)) -> RegionRead:
+    async def create(self, data: RegionCreate,
+                     session: AsyncSession = Depends(get_db)) -> RegionCreateResponseSchema:
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: RegionUpdate, session: AsyncSession = Depends(get_db)) -> RegionRead:
+    async def patch(self, id: int, data: RegionUpdate,
+                    session: AsyncSession = Depends(get_db)) -> RegionCreateResponseSchema:
         return await super().patch(id, data, session)
 
     async def create_relation(self, data: RegionCreateRelation,

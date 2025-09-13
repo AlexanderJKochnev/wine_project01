@@ -6,7 +6,9 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.customer.model import Customer
 from app.support.customer.repository import CustomerRepository
-from app.support.customer.schemas import CustomerRead, CustomerCreate, CustomerUpdate
+from app.support.customer.service import CutomerService
+from app.support.customer.schemas import (CustomerRead, CustomerCreate, CustomerUpdate,
+                                          CustomerCreateRelation, CustomerCreateResponse)
 
 
 class CustomerRouter(BaseRouter):
@@ -15,13 +17,15 @@ class CustomerRouter(BaseRouter):
             model=Customer,
             repo=CustomerRepository,
             create_schema=CustomerCreate,
-            patch_schema=CustomerUpdate,
+            create_response_schema=CustomerCreateResponse,
+            create_schema_relation=CustomerCreateRelation,
             read_schema=CustomerRead,
             prefix="/customers",
-            tags=["customers"]
+            tags=["customers"],
+            service=CutomerService
         )
 
-    async def create(self, data: CustomerCreate, session: AsyncSession = Depends(get_db)) -> CustomerRead:
+    async def create(self, data: CustomerCreate, session: AsyncSession = Depends(get_db)) -> CustomerCreateResponse:
         return await super().create(data, session)
 
     async def patch(self, id: int, data: CustomerUpdate,

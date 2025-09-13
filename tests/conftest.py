@@ -58,7 +58,8 @@ def simple_router_list():
               CustomerRouter,
               FoodRouter,
               SweetnessRouter,
-              VarietalRouter)
+              VarietalRouter
+    )
     return source
 
 

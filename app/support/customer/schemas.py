@@ -44,3 +44,11 @@ class CustomerUpdate(BaseModel, CustomUpdSchema):
 
 class CustomerFull(CustomerRead, DateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+
+
+class CustomerCreateResponse(CustomerFull):
+    pass
+
+
+class CustomerCreateRelation(CustomerCreate):
+    pass

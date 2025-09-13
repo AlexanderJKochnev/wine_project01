@@ -5,9 +5,9 @@ from typing import Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import BaseModel, DateSchema, FullSchema
-from app.support.drink.schemas import DrinkRead
-from app.support.warehouse.schemas import WarehouseRead
+from app.core.schemas.base import BaseModel, CreateResponse, CreateNoNameSchema
+from app.support.drink.schemas import DrinkRead, DrinkCreateRelations
+from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
 
 
 class CustomReadSchema:
@@ -27,6 +27,14 @@ class CustomCreateSchema:
     count: Optional[int] = 0
 
 
+class CustomCreateRelation:
+    drink_id: DrinkCreateRelations
+    warehouse_id: WarehouseCreateRelation
+    volume: Optional[Decimal] = None
+    price: Optional[Decimal] = None
+    count: Optional[int] = 0
+
+
 class CustomUpdSchema:
     drink_id: Optional[int] = None
     warehouse_id: Optional[int] = None
@@ -34,9 +42,6 @@ class CustomUpdSchema:
     price: Optional[Decimal] = None
     count: Optional[int] = 0
 
-
-class CustomFullSchema(CustomReadSchema, DateSchema):
-    pass
 
 
 class ItemRead(BaseModel, CustomReadSchema):
@@ -51,5 +56,9 @@ class ItemUpdate(BaseModel, CustomUpdSchema):
     pass
 
 
-class ItemFull(FullSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+class ItemCreateResponseSchema(ItemCreate, CreateResponse):
+    pass
+
+
+class ItemCreateRelationSchema(BaseModel, CustomCreateRelation):
+    model_config = ConfigDict(from_attributes = True, arbitrary_types_allowed = True)  # , exclude_none=True)

@@ -6,7 +6,8 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.country.model import Country
 from app.support.country.repository import CountryRepository
-from app.support.country.schemas import CountryRead, CountryCreate, CountryUpdate, CountryCreateRelation
+from app.support.country.schemas import (CountryRead, CountryCreate, CountryUpdate,
+                                         CountryCreateRelation, CountryCreateResponseSchema)
 from app.support.country.service import CountryService
 
 
@@ -16,7 +17,7 @@ class CountryRouter(BaseRouter):
             model=Country,
             repo=CountryRepository,
             create_schema=CountryCreate,
-            patch_schema=CountryUpdate,
+            create_response_schema=CountryCreateResponseSchema,
             read_schema=CountryRead,
             create_schema_relation=CountryCreateRelation,
             prefix="/countries",
@@ -24,10 +25,11 @@ class CountryRouter(BaseRouter):
             service=CountryService
         )
 
-    async def create(self, data: CountryCreate, session: AsyncSession = Depends(get_db)) -> CountryRead:
+    async def create(self, data: CountryCreate, session: AsyncSession = Depends(get_db)) -> CountryCreateResponseSchema:
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: CountryUpdate, session: AsyncSession = Depends(get_db)) -> CountryRead:
+    async def patch(self, id: int, data: CountryUpdate,
+                    session: AsyncSession = Depends(get_db)) -> CountryCreateResponseSchema:
         return await super().patch(id, data, session)
 
     async def create_relation(self, data: CountryCreateRelation,

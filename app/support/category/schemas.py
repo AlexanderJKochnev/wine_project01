@@ -2,11 +2,10 @@
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import CreateSchema, FullSchema, ReadSchema, UpdateSchema
+from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
 
 
 class CustomReadSchema:
-    """ кастомные поля """
     pass
 
 
@@ -15,7 +14,6 @@ class CustomCreateSchema:
 
 
 class CustomCreateRelation:
-    # сюда добавлять поля если появятся связи см Subregion для примера
     pass
 
 
@@ -39,5 +37,5 @@ class CategoryUpdate(UpdateSchema, CustomUpdSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class CategoryFull(FullSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+class CategoryCreateResponseSchema(CategoryCreate, CreateResponse):
+    pass

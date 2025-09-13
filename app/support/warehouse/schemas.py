@@ -3,7 +3,8 @@ from typing import Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, ReadSchemaWithRealtionships, UpdateSchema)
+from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema,
+                                   UpdateSchema, CreateResponse)
 from app.support.customer.schemas import CustomerCreate
 
 
@@ -47,13 +48,5 @@ class WarehouseFull(FullSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class WarehouseRead1(ReadSchemaWithRealtionships):
-    # model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-    model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True,
-                              # protected_namespaces=('_',),
-                              extr='allow',
-                              populate_by_name=True,
-                              exclude_none=True)
-
-    customer: Optional[str] = None
+class WarehouseCreateResponseSchema(WarehouseCreate, CreateResponse):
+    pass
