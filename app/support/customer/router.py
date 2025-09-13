@@ -20,14 +20,10 @@ class CustomerRouter(BaseRouter):
             prefix="/customers",
             tags=["customers"]
         )
-        self.setup_routes()
 
     async def create(self, data: CustomerCreate, session: AsyncSession = Depends(get_db)) -> CustomerRead:
         return await super().create(data, session)
 
     async def patch(self, id: int, data: CustomerUpdate,
-                     session: AsyncSession = Depends(get_db)) -> CustomerRead:
+                    session: AsyncSession = Depends(get_db)) -> CustomerRead:
         return await super().patch(id, data, session)
-
-
-router = CustomerRouter().router

@@ -399,12 +399,17 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                 assert response.status_code == 200, f'||{prefix}, {response.text}'
             except Exception as e:
                 assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
+"""
     test_data = None
     from app.support.drink.router import DrinkRouter
-    router1 = DrinkRouter()
-    schema = router1.create_schema
+    router = DrinkRouter()
+    schema = router.create_schema
     adapter = TypeAdapter(schema)
-    prefix = router1.prefix
+    prefix = router.prefix
+    router = DrinkRouter()
+    print("Router prefix:", router.prefix)
+    print("Read schema:", router.read_schema)
+    print("Fields:", list(router.read_schema.model_fields.keys()))
     test_data = [
             {"category_id": 7, "color_id": 8, "sweetness_id": 6, "subregion_id": 1, "title": "lAtsniQNBfjMJObaZvPf",
                     "title_native": None, "subtitle_native": "CBIWveRegjXaqVXLXCNi", "subtitle": None,
@@ -452,16 +457,17 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                     "description": None, "description_ru": "pBJCYUfodMHHdjcxthaH",
                     "description_fr": "lfjdfusQvcSBiuAqFAIY"}
             ]
-    for n, data1 in enumerate(test_data):
+    for n, data in enumerate(test_data):
         try:
             # _ = schema(**data)      # валидация данных
-            json_data = json.dumps(data1)
+            json_data = json.dumps(data)
             adapter.validate_json(json_data)
             assert True
         except Exception as e:
             assert False, f'input validation error {e}, router {prefix}, example {n}'
         try:
-            response = await client.post(f'{prefix}', json = data1)
+            response = await client.post(f'{prefix}', json = data)
             assert response.status_code == 200, f'{response.text}'
         except Exception as e:
             assert False, f'example {n}, prefix {prefix}, {response.status_code=}, {response.text}'
+"""

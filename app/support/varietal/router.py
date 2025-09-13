@@ -23,7 +23,6 @@ class VarietalRouter(BaseRouter):
             service=VarietalService,
             create_schema_relation=VarietalCreateRelation
         )
-        self.setup_routes()
 
     async def create(self, data: VarietalCreate, session: AsyncSession = Depends(get_db)) -> VarietalRead:
         return await super().create(data, session)
@@ -35,6 +34,3 @@ class VarietalRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> VarietalRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = VarietalRouter().router

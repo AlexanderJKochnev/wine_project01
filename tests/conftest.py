@@ -72,7 +72,7 @@ def complex_router_list():
     return (RegionRouter,
             SubregionRouter,
             WarehouseRouter,
-            # DrinkRouter,
+            DrinkRouter,
             # ItemRouter
     )
 

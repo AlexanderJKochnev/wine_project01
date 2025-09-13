@@ -29,7 +29,6 @@ class TemplateRouter(BaseRouter):
             tags=["regions"]
         )
         self.create_response_schema = TemplateCreateResponseSchema
-        self.setup_routes()
 
     def setup_routes(self):
         """Настраивает маршруты"""
@@ -45,6 +44,3 @@ class TemplateRouter(BaseRouter):
     async def patch(self, id: int, data: TemplateUpdate,
                     session: AsyncSession = Depends(get_db)) -> TemplateRead:
         return await super().patch(id, data, session)
-
-
-router = TemplateRouter().router

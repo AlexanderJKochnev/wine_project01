@@ -25,7 +25,6 @@ class RegionRouter(BaseRouter):
             create_schema_relation=RegionCreateRelation
         )
         self.create_response_schema = RegionRead
-        self.setup_routes()
 
     """
     def setup_routes(self):
@@ -46,6 +45,3 @@ class RegionRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> RegionRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = RegionRouter().router

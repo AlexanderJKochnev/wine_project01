@@ -27,8 +27,6 @@ class DrinkRouter(BaseRouter):
             service=DrinkService
         )
         self.create_response_schema = DrinkCreateResponseSchema
-        self.setup_routes()
-        # self.create_schema_relation = DrinkCreateRelations
 
     def setup_routes(self):
         super().setup_routes()
@@ -59,6 +57,3 @@ class DrinkRouter(BaseRouter):
     async def patch(self, id: int, data: DrinkUpdate,
                     session: AsyncSession = Depends(get_db)) -> DrinkRead:
         return await super().patch(id, data, session)
-
-
-router = DrinkRouter().router

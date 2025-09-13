@@ -23,7 +23,6 @@ class FoodRouter(BaseRouter):
             service=FoodService,
             create_schema_relation=FoodCreateRelation
         )
-        self.setup_routes()
 
     async def create(self, data: FoodCreate, session: AsyncSession = Depends(get_db)) -> FoodRead:
         return await super().create(data, session)
@@ -35,6 +34,3 @@ class FoodRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> FoodRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = FoodRouter().router

@@ -23,7 +23,6 @@ class CountryRouter(BaseRouter):
             tags=["countries"],
             service=CountryService
         )
-        self.setup_routes()
 
     async def create(self, data: CountryCreate, session: AsyncSession = Depends(get_db)) -> CountryRead:
         return await super().create(data, session)
@@ -35,6 +34,3 @@ class CountryRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> CountryRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = CountryRouter().router

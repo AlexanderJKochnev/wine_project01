@@ -23,7 +23,6 @@ class SweetnessRouter(BaseRouter):
             service=SweetnessService,
             create_schema_relation=SweetnessCreateRelation
         )
-        self.setup_routes()
 
     async def create(self, data: SweetnessCreate, session: AsyncSession = Depends(get_db)) -> SweetnessRead:
         return await super().create(data, session)
@@ -35,6 +34,3 @@ class SweetnessRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> SweetnessRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = SweetnessRouter().router

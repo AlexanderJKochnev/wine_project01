@@ -22,7 +22,6 @@ class WarehouseRouter(BaseRouter):
             service=WarehouseService,
             create_schema_relation=WarehouseCreateRelation
         )
-        self.setup_routes()
 
     async def create(self, data: WarehouseCreate, session: AsyncSession = Depends(get_db)) -> WarehouseRead:
         return await super().create(data, session)
@@ -34,6 +33,3 @@ class WarehouseRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> WarehouseRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = WarehouseRouter().router

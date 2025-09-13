@@ -20,14 +20,10 @@ class ItemRouter(BaseRouter):
             prefix="/items",
             tags=["items"]
         )
-        self.setup_routes()
 
     async def create(self, data: ItemCreate, session: AsyncSession = Depends(get_db)) -> ItemRead:
         return await super().create(data, session)
 
     async def patch(self, id: int, data: ItemUpdate,
-                     session: AsyncSession = Depends(get_db)) -> ItemRead:
+                    session: AsyncSession = Depends(get_db)) -> ItemRead:
         return await super().patch(id, data, session)
-
-
-router = ItemRouter().router

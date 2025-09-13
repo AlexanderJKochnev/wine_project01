@@ -1,22 +1,20 @@
 # app/core/routers/base.py
 
-from typing import Type, Any, List, TypeVar, Optional, Dict
+import logging
+from typing import Any, List, Optional, Type, TypeVar
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError, NoResultFound
-from sqlalchemy.orm import DeclarativeMeta, Session
+
+from app.auth.dependencies import get_current_active_user
 # from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
-from app.core.schemas.base import ReadSchema, CreateSchemaRelation
 from app.core.config.project_config import get_paging
-from app.core.schemas.base import DeleteResponse, PaginatedResponse
-from app.auth.dependencies import get_current_active_user
+from app.core.schemas.base import CreateSchemaRelation, DeleteResponse, PaginatedResponse, ReadSchema
 # from app.core.services.logger import logger
-from app.core.services.service import Service, ModelType
-
-
-import logging
+from app.core.services.service import Service
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=ReadSchema)
@@ -79,8 +77,7 @@ class BaseRouter:
         self.delete_response = DeleteResponse
         self.responses = {404: {"description": "Record not found",
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
-
-        # self.setup_routes()
+        self.setup_routes()
 
     def setup_routes(self):
         """Настраивает маршруты"""

@@ -23,7 +23,6 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
             tags=["categories"],
             service=CategoryService
         )
-        self.setup_routes()
 
     async def create(self, data: CategoryCreate, session: AsyncSession = Depends(get_db)) -> CategoryRead:
         return await super().create(data, session)
@@ -35,6 +34,3 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
                               session: AsyncSession = Depends(get_db)) -> CategoryRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = CategoryRouter().router

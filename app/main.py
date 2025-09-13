@@ -12,18 +12,18 @@ from app.core.routers.base import SQLAlchemyError, NotFoundException, Validation
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.auth.routers import user_router, auth_router
 # -------ИМПОРТ РОУТЕРОВ----------
-from app.support.category.router import router as category_router
-from app.support.drink.router import router as drink_router
-from app.support.country.router import router as country_router
-from app.support.customer.router import router as customer_router
-from app.support.warehouse.router import router as warehouse_router
-from app.support.food.router import router as food_router
-from app.support.item.router import router as item_router
-from app.support.region.router import router as region_router
-from app.support.color.router import router as color_router
-from app.support.sweetness.router import router as sweetness_router
-from app.support.subregion.router import router as subregion_router
-from app.support.varietal.router import router as varietal_router
+from app.support.category.router import CategoryRouter
+from app.support.drink.router import DrinkRouter
+from app.support.country.router import CountryRouter
+from app.support.customer.router import CustomerRouter
+from app.support.warehouse.router import WarehouseRouter
+from app.support.food.router import FoodRouter
+from app.support.item.router import ItemRouter
+from app.support.region.router import RegionRouter
+from app.support.color.router import ColorRouter
+from app.support.sweetness.router import SweetnessRouter
+from app.support.subregion.router import SubregionRouter
+from app.support.varietal.router import VarietalRouter
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
@@ -115,18 +115,18 @@ async def wait_some_time(seconds: float):
     await asyncio.sleep(seconds)  # Не блокирует поток
     return {"waited": seconds}
 
+# app.include_router(image_router)
 app.include_router(auth_router)
 app.include_router(user_router)
-app.include_router(drink_router)
-app.include_router(category_router)
-app.include_router(country_router)
-app.include_router(customer_router)
-app.include_router(warehouse_router)
-app.include_router(food_router)
-app.include_router(item_router)
-app.include_router(region_router)
-app.include_router(color_router)
-app.include_router(sweetness_router)
-app.include_router(subregion_router)
-app.include_router(varietal_router)
-# app.include_router(image_router)
+app.include_router(CategoryRouter().router)
+app.include_router(ColorRouter().router)
+app.include_router(CountryRouter().router)
+app.include_router(CustomerRouter().router)
+app.include_router(FoodRouter().router)
+app.include_router(SweetnessRouter().router)
+app.include_router(VarietalRouter().router)
+app.include_router(RegionRouter().router)
+app.include_router(SubregionRouter().router)
+app.include_router(WarehouseRouter().router)
+app.include_router(DrinkRouter().router)  # ← очень важно
+app.include_router(ItemRouter().router)

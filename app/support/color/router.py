@@ -6,7 +6,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.color.model import Color
 from app.support.color.repository import ColorRepository
-from app.support.color.schemas import ColorRead, ColorCreate, ColorUpdate ,ColorCreateRelation
+from app.support.color.schemas import ColorRead, ColorCreate, ColorUpdate, ColorCreateRelation
 from app.support.color.service import ColorService
 
 
@@ -23,7 +23,6 @@ class ColorRouter(BaseRouter):
             create_schema_relation=ColorCreateRelation,
             service=ColorService
         )
-        self.setup_routes()
 
     async def create(self, data: ColorCreate, session: AsyncSession = Depends(get_db)) -> ColorRead:
         return await super().create(data, session)
@@ -35,6 +34,3 @@ class ColorRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)) -> ColorRead:
         result = await super().create_relation(data, session)
         return result
-
-
-router = ColorRouter().router

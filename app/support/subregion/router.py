@@ -24,7 +24,6 @@ class SubregionRouter(BaseRouter):
             service=SubregionService,
             create_schema_relation=SubregionCreateRelation
         )
-        self.setup_routes()
         """self.create_response_schema = SubregionRead
         try:
             self.setup_routes()
@@ -42,6 +41,3 @@ class SubregionRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)
         return result
-
-
-router = SubregionRouter().router
