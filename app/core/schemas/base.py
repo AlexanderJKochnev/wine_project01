@@ -73,7 +73,7 @@ class ReadSchema(PkSchema, LangSchema, UniqueSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-class ReadNoNameSchema(PkSchema, DescriptionSchema, UniqueSchema):
+class ReadNoNameSchema(PkSchema, DescriptionSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 

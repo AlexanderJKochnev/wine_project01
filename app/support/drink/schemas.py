@@ -36,16 +36,16 @@ class CustomCreateRelation:
 
 
 class CustomReadSchema:
-    category_id: Optional[CategoryRead] = None
-    color_id: Optional[ColorRead] = None
-    sweetness_id: Optional[SweetnessRead] = None
-    subregion_id: Optional[SubregionRead] = None
+    category: Optional[CategoryRead] = None
+    color: Optional[ColorRead] = None
+    sweetness: Optional[SweetnessRead] = None
+    subregion: Optional[SubregionRead] = None
     title: str
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
-    alc: Optional[str] = None
-    sugar: Optional[str] = None
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     foods: List[FoodRead]

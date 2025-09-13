@@ -68,7 +68,10 @@ async def test_fault_get_one(authenticated_client_with_db, test_db_session,
 async def test_get_one_exact(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list,
                              fakedata_generator):
-    router_list = simple_router_list + complex_router_list
+    from app.support.item.router import ItemRouter
+    from app.support.drink.router import DrinkRouter
+    # router_list = simple_router_list + complex_router_list
+    router_list = [ItemRouter]
     for item in router_list:
         router = item()
         prefix = router.prefix

@@ -13,7 +13,7 @@ from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
 class CustomReadSchema:
     id: int
     drink: DrinkRead
-    warehoise: WarehouseRead
+    warehouse: Optional[WarehouseRead] = None
     volume: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
@@ -43,7 +43,6 @@ class CustomUpdSchema:
     count: Optional[int] = 0
 
 
-
 class ItemRead(BaseModel, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
@@ -61,4 +60,4 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
 
 
 class ItemCreateRelationSchema(BaseModel, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes = True, arbitrary_types_allowed = True)  # , exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
