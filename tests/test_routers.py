@@ -240,49 +240,6 @@ async def test_search(authenticated_client_with_db, test_db_session, create_drin
     assert resp, 'поиск выполнен неверно'
 
 
-async def test_new_data_generator1(authenticated_client_with_db, test_db_session):
-    """ тестируем генератор тестовых данных """
-    from tests.data_factory.fake_generator import generate_test_data
-    from app.support.drink.router import router
-    client = authenticated_client_with_db
-    rout = router()
-    assert True
-    #csource = simple_router_list + complex_router_list
-    test_number = 5     # количество записей
-    for n, item in enumerate(source):
-        try:
-            router = item()
-        except Exception as e:
-            assert False, f'error {e}, {n}'
-            
-        schema = router.create_schema
-        adapter = TypeAdapter(schema)
-        prefix = router.prefix
-        test_data = generate_test_data(schema, test_number, {
-            'int_range': (1, 5),
-            'decimal_range': (0.5, 1),
-            'float_range': {'price': (50.0, 200.0)},
-            # 'field_overrides': {'name': 'Special Product'},
-            'faker_seed': 42})
-    assert False
-    
-
-
-
-    
-    router = DrinkRouter()
-    schema = router.create_schema_relation
-    adapter = TypeAdapter(schema)
-    prefix = router.prefix
-    for n, val in enumerate(new_data_generator):
-        try:
-            json_data = json.dumps(val)
-            adapter.validate_json(json_data)
-            assert True
-        except ValidationError as e:
-            assert False, f"Errors: {e.errors()}"
-        
-
 async def test_get_or_create(authenticated_client_with_db, test_db_session):
     from app.support.category.router import CategoryRouter
     client = authenticated_client_with_db
@@ -304,6 +261,7 @@ async def test_get_or_create(authenticated_client_with_db, test_db_session):
     assert response.status_code == 200, response.text
     response = await client.post(f'{prefix}', json=data)
     assert response.status_code == 200, response.text
+
 
 async def test_get_relation(authenticated_client_with_db, test_db_session):
     from app.support.subregion.router import SubregionRouter as Router
@@ -375,7 +333,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
-        schema = router.create_schema
+        schema = router.create_schema_relation
         adapter = TypeAdapter(schema)
         prefix = router.prefix
         test_data = generate_test_data(
@@ -394,8 +352,50 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                 assert True
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+            return
             try:
                 response = await client.post(f'{prefix}', json = data)
                 assert response.status_code == 200, f'||{prefix}, {response.text}'
             except Exception as e:
                 assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
+
+
+async def test_create_relations(authenticated_client_with_db, test_db_session,
+                                simple_router_list, complex_router_list):
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.subregion.router import SubregionRouter
+    from app.support.region.router import RegionRouter
+    from app.support.country.router import CountryRouter
+    from app.support.country.service import CountryService
+    from app.support.country.model import Country
+    from app.core.utils.common_utils import get_nested, set_nested
+    # source = simple_router_list + complex_router_list
+    source = [SubregionRouter]
+    test_number = 1
+    client = authenticated_client_with_db
+    for n, item in enumerate(source):
+        router = item()
+        schema = router.create_schema_relation
+        adapter = TypeAdapter(schema)
+        prefix = router.prefix
+        test_data = generate_test_data(
+            schema, test_number,
+            {'int_range': (1, test_number),
+             'decimal_range': (0.5, 1),
+             'float_range': (0.1, 1.0),
+             # 'field_overrides': {'name': 'Special Product'},
+             'faker_seed': 42}
+            )
+        for m, data in enumerate(test_data):
+            try:
+                # _ = schema(**data)      # валидация данных
+                json_data = json.dumps(data)
+                adapter.validate_json(json_data)
+                assert True
+            except Exception as e:
+                assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+        country_data = get_nested(data, 'region.country')
+        # response = await client.post(f'{prefix}', json = data)
+        CountryService.create()
+        
+        assert False, get_nested(data, 'region.country')
