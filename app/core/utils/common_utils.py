@@ -517,6 +517,7 @@ def get_all_dict_paths(data: Any, parent_path: str = "") -> dict:
                 paths.extend(p for p in sub_paths if p != list_path)
 
     result = sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
+    return result
     return {x: x.split('.')[-1].replace('_id', '').split('[', 1)[0] for x in result}
 
 

@@ -363,19 +363,31 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
 async def test_create_relations(authenticated_client_with_db, test_db_session,
                                 simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
-    from app.support.subregion.router import SubregionRouter
-    from app.support.region.router import RegionRouter
-    from app.support.country.router import CountryRouter
-    from app.support.country.service import CountryService
-    from app.support.country.model import Country
+    from app.support.subregion.router import (SubregionRouter, Subregion, SubregionRepository,
+                                              SubregionCreate, SubregionService)
+    from app.support.region.router import RegionRouter, Region, RegionRepository, RegionService, RegionCreate
+    from app.support.country.router import CountryRouter, Country, CountryRepository, CountryService, CountryCreate
     from app.core.utils.common_utils import get_nested, set_nested
+    from app.core.utils.common_utils import get_all_dict_paths
     # source = simple_router_list + complex_router_list
-    source = [SubregionRouter]
+    stock = {'country': {'schema': CountryCreate,
+                         'model': Country,
+                         'repo': CountryRepository,
+                         'service': CountryService},
+             'region': {'schema': RegionCreate,
+                        'model': Region,
+                        'repo': RegionRepository,
+                        'service': RegionService}
+    }
+    
+    
+    source = [SubregionRouter, ]
     test_number = 1
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
         schema = router.create_schema_relation
+        create_schema = router.create_schema
         adapter = TypeAdapter(schema)
         prefix = router.prefix
         test_data = generate_test_data(
@@ -394,8 +406,40 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
                 assert True
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
-        country_data = get_nested(data, 'region.country')
-        # response = await client.post(f'{prefix}', json = data)
-        CountryService.create()
+        vv = get_all_dict_paths(data)
         
-        assert False, get_nested(data, 'region.country')
+        for key in get_all_dict_paths(data):
+            idx = key.split('.')[-1]
+            val: dict = stock[idx]
+            ndata = get_nested(data, key)
+            model_data = val['schema'](**ndata)
+            result = await val['service'].create(model_data, val['repo'], val['model'], test_db_session)
+            id = result.to_dict()['id']
+            assert id, result
+            if not idx.endswith('_id'):
+                idx = f'{idx}_id'
+            if '.' in key:  # уровень вложенности больше 1
+                path = '.'.join((key.rsplit('.', 1)[0], idx))
+                set_nested(data, path, id)
+            else:
+                data[idx] = id
+                # assert False, f'{idx=}'
+        model_data = create_schema(**data)
+        result = await SubregionService.create(model_data, SubregionRepository, Subregion, test_db_session)
+        return
+        """country_data = get_nested(data, 'region.country')
+        # response = await client.post(f'{prefix}', json = data)
+        model_data = CountryCreate(**country_data)
+        result = await CountryService.create(model_data, CountryRepository, Country, test_db_session)
+        # test_db_session.commit()
+        assert result.to_dict().get('id'), result
+        region_data = get_nested(data, 'region')
+        region_data['country_id'] = result.to_dict().get('id')
+        model_data = RegionCreate(**region_data)
+        result = await RegionService.create(model_data, RegionRepository, Region, test_db_session)
+        assert result.to_dict().get('id'), result
+        data['region_id'] = result.to_dict().get('id')
+        model_data = SubregionCreate(**data)
+        result = await SubregionService.create(model_data, SubregionRepository, Subregion, test_db_session)
+        assert result.to_dict().get('id'), result
+        test_db_session.commit()"""
