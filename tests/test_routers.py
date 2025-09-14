@@ -413,7 +413,7 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
             val: dict = stock[idx]
             ndata = get_nested(data, key)
             model_data = val['schema'](**ndata)
-            result = await val['service'].create(model_data, val['repo'], val['model'], test_db_session)
+            result = await val['service'].get_or_create(model_data, val['repo'], val['model'], test_db_session)
             id = result.to_dict()['id']
             assert id, result
             if not idx.endswith('_id'):
@@ -425,7 +425,7 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
                 data[idx] = id
                 # assert False, f'{idx=}'
         model_data = create_schema(**data)
-        result = await SubregionService.create(model_data, SubregionRepository, Subregion, test_db_session)
+        result = await SubregionService.get_or_create(model_data, SubregionRepository, Subregion, test_db_session)
         return
         """country_data = get_nested(data, 'region.country')
         # response = await client.post(f'{prefix}', json = data)
@@ -443,3 +443,9 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
         result = await SubregionService.create(model_data, SubregionRepository, Subregion, test_db_session)
         assert result.to_dict().get('id'), result
         test_db_session.commit()"""
+
+
+async def test_create_relations_api(authenticated_client_with_db, test_db_session):
+    from app.support.subregion.router import (SubregionRouter, Subregion, SubregionRepository, SubregionCreate,
+                                              SubregionService)
+    

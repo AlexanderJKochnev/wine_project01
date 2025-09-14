@@ -197,11 +197,11 @@ def generate_custom_test_data(
 if __name__ == "__main__":
 
 
-    from app.support.drink.schemas import DrinkCreate as schema
+    from app.support.region.schemas import RegionCreateRelation as schema
     import json
     # Генерируем 3 тестовых набора данных с помощью polyfactory
     print("Сгенерировано с помощью polyfactory:")
-    test_number = 10
+    test_number = 1
     test_data = generate_test_data(schema,
                                    test_number,
                                    {'int_range': (1, test_number),
