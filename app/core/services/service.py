@@ -81,29 +81,31 @@ class Service:
                 idx = key.split('.')[-1]
                 val: dict = kwargs[idx]
                 ndata = get_nested(data_dict, key)
-                model_data = val['schema'](**ndata)
-                object = await val['service'].get_or_create(model_data, val['repo'], val['model'], session)
-                session.flush()
-                id = object.to_dict()['id']
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f'Relationship data for {key} has not been saved'
-                )
-                # подставляем полученный id в data_dict
-                # в результате data with relations превращается в обычный data для create
-                if not idx.endswith('_id'):
-                    idx = f'{idx}_id'
-                if '.' in key:  # уровень вложенности больше 1
-                    path = '.'.join((key.rsplit('.', 1)[0], idx))
-                    set_nested(data_dict, path, id)
-                else:
-                    data_dict[idx] = id  # assert False, f'{idx=}'
-            data = create_schema(**data_dict)
-            # переделать на update_or_create
-            object = cls.get_or_create(data, repository, model, session)
+                if ndata is not None:
+                    model_data = val['schema'](**ndata)
+                    related_object = await val['service'].get_or_create(model_data,
+                                                                        val['repo'],
+                                                                        val['model'], session)
+                    session.flush()
+                    related_id = related_object.id
+                    # Устанавливаем ID связи в data_dict
+                    if '.' in key:
+                        # Для вложенных путей
+                        path_parts = key.split('.')
+                        parent_path = '.'.join(path_parts[:-1])
+                        parent_dict = get_nested(data_dict, parent_path)
+                        if parent_dict is not None:
+                            parent_dict[f"{idx}_id"] = related_id
+                    else:
+                        # Для простых путей
+                        data_dict[f"{idx}_id"] = related_id
+            data_with_relations = create_schema(**data_dict)
+            object = await cls.get_or_create(data_with_relations, repository, model, session)
             return object
-        except Exception:
-            return None
+        except Exception as e:
+            raise HTTPException(
+                    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Error creating relation: {str(e)}"
+                    )
 
     async def get_by_id(cls, id: int, repository: Type[Repository], model: ModelType,
                         session: AsyncSession) -> Optional[ModelType]:
