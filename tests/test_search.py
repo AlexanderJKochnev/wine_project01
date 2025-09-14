@@ -65,4 +65,4 @@ async def test_search(authenticated_client_with_db, test_db_session,
         assert response.status_code == 200
         result = response.json()
         nmbr = result.get('total')
-        assert nmbr >= expected_nmbr
+        assert nmbr >= expected_nmbr, f'{nmbr=} {expected_nmbr=}'

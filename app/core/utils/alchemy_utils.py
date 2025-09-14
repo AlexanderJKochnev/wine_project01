@@ -1,5 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Query
+from typing import List
+from app.core.models.base_model import Base
+from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 
 
 async def mass_delete(query: Query, batch: int, session: AsyncSession):
@@ -46,3 +49,8 @@ def model_to_dict(obj, seen=None):
         else:
             result[key] = value
     return result
+
+
+def get_models() -> List[ModelType]:
+    return (cls for cls in Base.registry._class_registry.values() if
+            isinstance(cls, type) and hasattr(cls, '__table__'))

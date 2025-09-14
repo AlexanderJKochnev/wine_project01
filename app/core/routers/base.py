@@ -66,7 +66,7 @@ class BaseRouter:
     ):
         self.model = model
         self.repo = repo()
-        self.service = service(self.repo, self.model)
+        self.service = service()
         self.create_schema = create_schema
         self.read_schema = read_schema
         self.create_schema_relation = create_schema_relation
@@ -108,7 +108,7 @@ class BaseRouter:
     async def create(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         try:
             # obj = await self.service.create(data, self.model, session)
-            obj = await self.service.get_or_create(data, self.model, session)
+            obj = await self.service.get_or_create(data, self.repo, self.model, session)
             await session.commit()
             await session.refresh(obj)
             return obj
@@ -153,7 +153,7 @@ class BaseRouter:
     async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         try:
             # obj = await self.service.create(data, self.model, session)
-            obj = await self.service.get_or_create(data, self.model, session)
+            obj = await self.service.get_or_create(data, self.repo, self.model, session)
             await session.commit()
             await session.refresh(obj)
             return obj
@@ -191,10 +191,10 @@ class BaseRouter:
     async def patch(self, id: int, data: TUpdateSchema,
                     session: AsyncSession = Depends(get_db)) -> TReadSchema:
         try:
-            existing_item = await self.service.get_by_id(id, self.model, session)
+            existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
             if not existing_item:
                 raise NotFoundException(detail=f"Item with id {id} not found")
-            obj = await self.service.patch(existing_item, data, session)
+            obj = await self.service.patch(existing_item, data, self.repo, session)
 
             if not obj:
                 await session.rollback()
@@ -231,10 +231,10 @@ class BaseRouter:
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
         try:
-            existing_item = await self.service.get_by_id(id, self.model, session)
+            existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
             if not existing_item:
                 raise NotFoundException(detail=f"Item with id {id} not found")
-            result = await self.service.delete(existing_item, self.model, session)
+            result = await self.service.delete(existing_item, self.repo, self.model, session)
             if not result:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete item"
@@ -274,7 +274,7 @@ class BaseRouter:
             - 500: Внутренняя ошибка сервера
             """
         try:
-            obj = await self.service.get_by_id(id, self.model, session)
+            obj = await self.service.get_by_id(id, self.repo, self.model, session)
             if obj is None:
                 raise NotFoundException(detail=f"Item with id {id} not found")
             return obj  # self.read_schema.model_validate(obj)
@@ -299,7 +299,7 @@ class BaseRouter:
                                          le=paging.get('max', 1000)),
                   session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
         try:
-            response = await self.service.get_all(page, page_size, self.model, session)
+            response = await self.service.get_all(page, page_size, self.repo, self.model, session)
             return response
             result = self.paginated_response(**response)
             return result
@@ -321,7 +321,8 @@ class BaseRouter:
                      session: AsyncSession = Depends(get_db)) -> dict:
         """Поиск по всем текстовым полям основной таблицы"""
         try:
-            items = await self.service.search_in_main_table(query, page, page_size, self.model, session=session)
+            items = await self.service.search_in_main_table(query, page, page_size, self.repo,
+                                                            self.model, session=session)
             result = self.paginated_response(**items)
             return result
         except SQLAlchemyError as e:

@@ -1,8 +1,8 @@
 # app.support.drink.service.py
-from typing import Optional
+from typing import Optional, Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import ModelType, Service
 from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import flatten_dict
@@ -12,8 +12,9 @@ from app.support.drink.schemas import DrinkCreateRelations, DrinkCreateResponseS
 class DrinkService(Service):
     """ переписываем методы для обрабоки manytomany relationships """
 
-    async def get_by_id(self, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        result = await super().get_by_id(id, model, session)
+    async def get_by_id(self, id: int, repository: Type[Repository],
+                        model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        result = await super().get_by_id(id, repository, model, session)
         subresult = model_to_dict(result)
         flatresult = flatten_dict(subresult, ['name', 'name_ru'])
         print(f'{subresult}')
