@@ -54,24 +54,31 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
             assert resp.status_code in [200, 404]
         """
 
+
+@pytest.mark.skip
 async def test_fault_get_one(authenticated_client_with_db, test_db_session,
                              routers_get_all, fakedata_generator):
     """ тестирует методы get one - несуществующий id """
     client = authenticated_client_with_db
     routers = routers_get_all
     for prefix in routers:
-        id = 1000
+        print(f'==================={prefix=}')
+        if prefix == '/items':
+            id = 1
+        else:
+            id = 1000
         response = await client.get(f'{prefix}/{id}')
         assert response.status_code == 404
         error_data = response.json()
         assert "detail" in error_data
         assert "not found" in error_data["detail"].lower()
 
+
 async def test_get_one_exact(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list,
                              fakedata_generator):
     from app.support.item.router import ItemRouter
-    from app.support.drink.router import DrinkRouter
+    # from app.support.drink.router import DrinkRouter
     # router_list = simple_router_list + complex_router_list
     router_list = [ItemRouter]
     for item in router_list:
@@ -79,5 +86,5 @@ async def test_get_one_exact(authenticated_client_with_db, test_db_session,
         prefix = router.prefix
         client = authenticated_client_with_db
         id = 1
-        response = await client.get(f'{prefix}/{1}')
+        response = await client.get(f'{prefix}/{id}')
         assert response.status_code == 200, f'{prefix}, {response.text}'

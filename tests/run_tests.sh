@@ -11,8 +11,9 @@ pytest tests/test_auth.py \
        tests/test_database.py \
        tests/test_database_connection.py \
        tests/test_fastapi.py \
-       tests/test_create.py --tb=auto --log-cli-level=WARNING
-       # tests/test_delete.py \
-       # tests/test_search.py \
-       # tests/test_update.py \
+       tests/test_create.py \
+       tests/test_get.py \
+       tests/test_search.py \
+       tests/test_update.py --tb=auto --log-cli-level=WARNING
+       # tests/test_delete.py \   разобраться - ошибка при получении несущестуующей записи, ошибка при удалении relatuionship
        # --tb=auto --disable-warnings -vv

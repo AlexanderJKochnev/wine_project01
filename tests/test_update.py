@@ -6,7 +6,7 @@
 """
 
 import pytest
-from app.core.schemas.base import ListResponse
+from app.core.schemas.base import PaginatedResponse
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,7 +16,7 @@ async def test_patch(authenticated_client_with_db, test_db_session,
     """ тестирует методы PATCH (patch) - c проверкой id """
     client = authenticated_client_with_db
     routers = routers_get_all
-    response_keys = ListResponse.model_fields.keys()
+    response_keys = PaginatedResponse.model_fields.keys()
     # all foireign field name add to remove list
     remove_list: tuple = ('id', 'created_at', 'updated_at', 'country', 'customer')
     for prefix in routers:

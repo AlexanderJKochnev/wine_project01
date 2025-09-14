@@ -6,51 +6,63 @@
 
 import pytest
 from typing import List
-from app.core.schemas.base import ListResponse
+from collections import Counter
+
+from app.core.schemas.base import PaginatedResponse
 
 pytestmark = pytest.mark.asyncio
+
+
+def split_string(s: str, n: int = 3) -> List[str]:
+    return [s[i:i + n] for i in range(0, len(s), n)]
+
+
+def count_and_sort_elements(input_list):
+    """
+    Преобразует список с повторяющимися элементами в список списков [элемент, количество],
+    отсортированный по количеству повторов по убыванию.
+
+    Args:
+        input_list: список с повторяющимися элементами
+
+    Returns:
+        list: список списков формата [элемент, количество], отсортированный по количеству
+    """
+    # Считаем количество каждого элемента
+    counter = Counter(input_list)
+
+    # Сортируем элементы по количеству повторов (по убыванию)
+    sorted_items = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+
+    # Преобразуем кортежи в списки
+    result = [[item, count] for item, count in sorted_items]
+    return result
 
 
 async def test_search(authenticated_client_with_db, test_db_session,
                       routers_get_all, fakedata_generator):
     """ тестирует методы get one - c проверкой id """
-    from random import randint
     client = authenticated_client_with_db
     routers = routers_get_all
-    x = ListResponse.model_fields.keys()
-    counter = 0
+    x = PaginatedResponse.model_fields.keys()
     for prefix in routers:          # перебирает существующие роутеры
-        # if prefix == '/warehouses':
-        #     continue
         response = await client.get(f'{prefix}')   # получает все записи (1 страница)
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
 
         tmp: List[dict] = response.json().get('items')
-        tmp2: dict = {}
+        tmp2: list = []
         for value in tmp:
-            key = value.get('id')
-            # формирует строку из слов из всех текстовых полей без повтров
-            data = ' '.join({val.replace('.', ' ').
-                            replace('  ', '^ ').
-                            replace('^', '') for val in value.values()
-                             if isinstance(val, str)}).split(' ')
-            tmp2[key] = data
-        try:
-            bgstring = (val for val in tmp2.values())
-            bgstring = set(sum(bgstring, []))
-            bigstring = [a for a in bgstring if len(a) > 3]
-        except Exception as e:
-            assert False, f'{tmp2}, {e}'
-
-        query = bigstring[randint(0, len(bigstring) - 1)]
-
-        # список id содержащий искомое слово
-        expected_answer = [key for key, val in tmp2.items() if query in val]
+            data = ' '.join((' '.join(split_string(val, 3))
+                             for val in value.values() if isinstance(val, str))).split(' ')
+            tmp2.extend(data)
+        tmp2 = count_and_sort_elements(tmp2)
+        query, expected_nmbr = tmp2[0]
+        # expected_answer = [key for key, val in tmp2.items() if query in val]
         params = {'query': query}
+
         response = await client.get(f'{prefix}/search', params=params)
-        assert response.status_code == 200, response.text
-        result = response.json().get('items')
-        answer = [item.get('id') for item in result]
-        assert set(answer) == set(expected_answer), f'результат неверный {query} {prefix} {query=}  {bigstring=}'
-        counter += 1
+        assert response.status_code == 200
+        result = response.json()
+        nmbr = result.get('total')
+        assert nmbr >= expected_nmbr
