@@ -95,13 +95,13 @@ class DrinkService(Service):
                 result = await VarietalService.get_or_create(item, VarietalRepository, Varietal, session)
                 varietal_percentage[result.id] = percentage
                 varietal_ids.append(result.id)
-            # print(f'=={varietal_percentage=}')
-            print(f'=={varietal_ids}')
             # 2. set drink_varietal
             await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
             print('1 ========================')
             # 3. set up percentage
             for key, val in varietal_percentage.items():
+                perc = val if all((abs(val) <= 1.6, val >= 0)) <= 1.6 else 1.6
+                print(f'---------{perc=}----------')
                 await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
                 print('2 ========================')
         return result

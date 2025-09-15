@@ -108,9 +108,9 @@ class DrinkVarietal(Base):
     drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
     varietal_id = Column(Integer, ForeignKey("varietals.id"), primary_key=True)
 
-    percentage = Column(DECIMAL(3, 2), default=1, nullable=True)
-    __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 1',
-                                      name='check_percentage_range'),)
+    percentage = Column(DECIMAL(10, 2), default=1, nullable=True)
+    # __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 1',
+    #                                   name='check_percentage_range'),)
 
     # Relationships
     drink = relationship("Drink", back_populates="varietal_associations", overlaps='varietalss')
