@@ -9,7 +9,7 @@ from app.support.customer.schemas import CustomerCreate
 
 
 class CustomCreateRelation:
-    cutomer: CustomerCreate
+    customer: CustomerCreate
 
 
 class CustomReadSchema:

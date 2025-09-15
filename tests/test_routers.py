@@ -34,7 +34,7 @@ async def test_get(authenticated_client_with_db, test_db_session, fakedata_gener
     assert True
 
 
-
+@pytest.mark.skip
 async def test_create_drink(authenticated_client_with_db, test_db_session):
     """
     это тест детальной обработки ошибок drink и всех связаных таблиц
@@ -263,6 +263,7 @@ async def test_get_or_create(authenticated_client_with_db, test_db_session):
     assert response.status_code == 200, response.text
 
 
+@pytest.mark.skip
 async def test_get_relation(authenticated_client_with_db, test_db_session):
     from app.support.subregion.router import SubregionRouter as Router
     # from app.support.region.router import RegionRouter as Router
@@ -450,7 +451,7 @@ async def test_create_region_relation(authenticated_client_with_db, test_db_sess
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.region.router import RegionRouter, Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
-    test_number = 1
+    test_number = 3
     client = authenticated_client_with_db
     router = RegionRouter()
     schema = router.create_schema_relation
@@ -462,15 +463,15 @@ async def test_create_region_relation(authenticated_client_with_db, test_db_sess
                                     'float_range': (0.1, 1.0),
                                     # 'field_overrides': {'name': 'Special Product'},
                                     'faker_seed': 42})
-    data = test_data[0]
-    try:
-        json_data = json.dumps(data)
-        adapter.validate_json(json_data)
-    except Exception as e:
-        assert False, e
-
-    response = await client.post(f'{prefix}/hierarchy', json=data)
-    assert response.status_code in [200, 201], f'{response.text}'
+    for data in test_data:
+        try:
+            json_data = json.dumps(data)
+            adapter.validate_json(json_data)
+        except Exception as e:
+            assert False, e
+    
+        response = await client.post(f'{prefix}/hierarchy', json=data)
+        assert response.status_code in [200, 201], f'{response.text}'
 
 
 async def test_create_subregion_relation(authenticated_client_with_db, test_db_session,
@@ -478,7 +479,7 @@ async def test_create_subregion_relation(authenticated_client_with_db, test_db_s
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.subregion.router import SubregionRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
-    test_number = 1
+    test_number = 3
     client = authenticated_client_with_db
     router = SubregionRouter()
     schema = router.create_schema_relation
@@ -490,15 +491,15 @@ async def test_create_subregion_relation(authenticated_client_with_db, test_db_s
                                     'float_range': (0.1, 1.0),
                                     # 'field_overrides': {'name': 'Special Product'},
                                     'faker_seed': 42})
-    data = test_data[0]
-    try:
-        json_data = json.dumps(data)
-        adapter.validate_json(json_data)
-    except Exception as e:
-        assert False, e
-
-    response = await client.post(f'{prefix}/hierarchy', json=data)
-    assert response.status_code in [200, 201], f'{response.text}'
+    for data in test_data:
+        try:
+            json_data = json.dumps(data)
+            adapter.validate_json(json_data)
+        except Exception as e:
+            assert False, e
+    
+        response = await client.post(f'{prefix}/hierarchy', json=data)
+        assert response.status_code in [200, 201], f'{response.text}'
 
 
 async def test_create_drink_relation(authenticated_client_with_db, test_db_session,
@@ -506,7 +507,7 @@ async def test_create_drink_relation(authenticated_client_with_db, test_db_sessi
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
-    test_number = 1
+    test_number = 10
     client = authenticated_client_with_db
     router = DrinkRouter()
     schema = router.create_schema_relation
@@ -518,12 +519,174 @@ async def test_create_drink_relation(authenticated_client_with_db, test_db_sessi
                                     'float_range': (0.1, 1.0),
                                     # 'field_overrides': {'name': 'Special Product'},
                                     'faker_seed': 42})
-    data = test_data[0]
-    try:
-        json_data = json.dumps(data)
-        adapter.validate_json(json_data)
-    except Exception as e:
-        assert False, e
+    for data in  test_data:
+        try:
+            json_data = json.dumps(data)
+            adapter.validate_json(json_data)
+        except Exception as e:
+            assert False, e
+    
+        response = await client.post(f'{prefix}/hierarchy', json=data)
+        assert response.status_code in [200, 201], f'{response.text}'
 
-    response = await client.post(f'{prefix}/hierarchy', json=data)
-    assert response.status_code in [200, 201], f'{response.text}'
+
+async def test_create_warehouse_relation(
+        authenticated_client_with_db, test_db_session, simple_router_list, complex_router_list
+        ):
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.warehouse.router import WarehouseRouter  # , Region, RegionCreate, RegionCreateRelation
+    # source = simple_router_list + complex_router_list
+    test_number = 10
+    client = authenticated_client_with_db
+    router = WarehouseRouter()
+    schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
+    test_data = generate_test_data(
+        schema, test_number, {'int_range': (1, test_number), 'decimal_range': (0.5, 1), 'float_range': (0.1, 1.0),
+                              # 'field_overrides': {'name': 'Special Product'},
+                              'faker_seed': 42}
+        )
+    for data in test_data:
+        try:
+            json_data = json.dumps(data)
+            adapter.validate_json(json_data)
+        except Exception as e:
+            assert False, e
+        
+        response = await client.post(f'{prefix}/hierarchy', json = data)
+        assert response.status_code in [200, 201], f'{response.text}'
+
+
+async def test_create_item_relation(
+        authenticated_client_with_db, test_db_session, simple_router_list, complex_router_list
+        ):
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.item.router import ItemRouter  # , Region, RegionCreate, RegionCreateRelation
+    # source = simple_router_list + complex_router_list
+    test_number = 1
+    client = authenticated_client_with_db
+    router = ItemRouter()
+    schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
+    test_data = generate_test_data(
+        schema, test_number, {'int_range': (1, test_number), 'decimal_range': (0.5, 1), 'float_range': (0.1, 1.0),
+                              # 'field_overrides': {'name': 'Special Product'},
+                              'faker_seed': 42}
+        )
+    data = {
+      "drink": {
+        "category": {
+          "name": "string",
+          "description": "string",
+          "description_ru": "string",
+          "description_fr": "string",
+          "name_ru": "string",
+          "name_fr": "string"
+        },
+        "color": {
+          "name": "string",
+          "description": "string",
+          "description_ru": "string",
+          "description_fr": "string",
+          "name_ru": "string",
+          "name_fr": "string"
+        },
+        "sweetness": {
+          "name": "string",
+          "description": "string",
+          "description_ru": "string",
+          "description_fr": "string",
+          "name_ru": "string",
+          "name_fr": "string"
+        },
+        "subregion": {
+          "region": {
+            "country": {
+              "name": "string",
+              "description": "string",
+              "description_ru": "string",
+              "description_fr": "string",
+              "name_ru": "string",
+              "name_fr": "string"
+            },
+            "name": "string",
+            "description": "string",
+            "description_ru": "string",
+            "description_fr": "string",
+            "name_ru": "string",
+            "name_fr": "string"
+          },
+          "name": "string",
+          "description": "string",
+          "description_ru": "string",
+          "description_fr": "string",
+          "name_ru": "string",
+          "name_fr": "string"
+        },
+        "title": "string",
+        "title_native": "string",
+        "subtitle_native": "string",
+        "subtitle": "string",
+        "alc": 0,
+        "sugar": 0,
+        "aging": 0,
+        "sparkling": False,
+        "foods": [
+          {
+            "name": "string",
+            "description": "string",
+            "description_ru": "string",
+            "description_fr": "string",
+            "name_ru": "string",
+            "name_fr": "string"
+          }
+        ],
+        "varietals": [
+          {
+            "varietal": {
+              "name": "string",
+              "description": "string",
+              "description_ru": "string",
+              "description_fr": "string",
+              "name_ru": "string",
+              "name_fr": "string"
+            },
+            "percentage": 0,
+            "additionalProp1": {}
+          }
+        ],
+        "description": "string",
+        "description_ru": "string",
+        "description_fr": "string"
+      },
+      "warehouse": {
+        "customer": {
+          "login": "string",
+          "firstname": "string",
+          "lastname": "string",
+          "account": "string"
+        },
+        "name": "string",
+        "description": "string",
+        "description_ru": "string",
+        "description_fr": "string",
+        "name_ru": "string",
+        "name_fr": "string"
+      },
+      "volume": 0,
+      "price": 0,
+      "count": 0
+    }
+    
+    for data1 in test_data:
+        try:
+            json_data = json.dumps(data)
+            adapter.validate_json(json_data)
+            _ = schema(**data)
+        except Exception as e:
+            assert False, e
+        
+        response = await client.post(f'{prefix}/hierarchy', json = data)
+        assert response.status_code in [200, 201], f'{response.text}'

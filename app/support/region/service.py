@@ -8,6 +8,7 @@ from app.support.region.router import (Region, RegionCreate, RegionCreateRelatio
 
 class RegionService(Service):
 
+    @classmethod
     async def create_relation(cls, data: RegionCreateRelation, repository: RegionRepository,
                               model: Region, session: AsyncSession) -> RegionRead:
         # pydantic model -> dict

@@ -10,6 +10,7 @@ from app.support.subregion.router import (Subregion, SubregionCreate, SubregionR
 
 class SubregionService(Service):
 
+    @classmethod
     async def create_relation(cls, data: RegionCreateRelation, repository: RegionRepository,
                               model: Region, session: AsyncSession) -> RegionRead:
         # pydantic model -> dict

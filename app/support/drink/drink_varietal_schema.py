@@ -12,7 +12,7 @@ class DrinkVarietalRelation(BaseModel):
                               populate_by_name=True,
                               exclude_none=True)
     varietal: VarietalCreateRelation
-    percentage: int
+    percentage: Optional[float] = None
     # varietals: List[Tuple[VarietalCreateRelation, float]]
 
 

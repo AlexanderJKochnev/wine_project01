@@ -31,12 +31,14 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
         )
         for m, data in enumerate(test_data):
             try:
+                print(json.dumps(data, indent = 2, ensure_ascii = False))
                 # _ = schema(**data)      # валидация данных
                 json_data = json.dumps(data)
                 adapter.validate_json(json_data)
                 assert True
             except Exception as e:
-                assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+                # assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+                assert False, data
             try:
                 response = await client.post(f'{prefix}', json=data)
                 assert response.status_code in [200, 201], f'{prefix}, {response.text}'
@@ -45,7 +47,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
 
 
 async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session,
-                                  simple_router_list, complex_router_list):
+                                           simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
     test_number = 10

@@ -8,6 +8,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from typing import Type, Any, List, Optional, Dict, Tuple, Union, get_origin, get_args
 from decimal import Decimal
 import random
+from random import randint
 
 class TestDataGenerator:
     def __init__(self):
@@ -373,4 +374,39 @@ def generate_test_data(
             )
     
     # Генерируем данные
-    return [factory_class.build().model_dump() for _ in range(n)]
+    return (factory_class.build().model_dump() for _ in range(n))
+    # return (dict_validator(val) for val in result)
+
+
+def dict_validator(source: dict, n: int=3) -> dict:
+    if isinstance(source, dict):
+        for key, val in source.items():
+            # if key in ('sugar', 'alcc', 'aging', 'price', 'volume')
+            #    print(f'========{key}: {val}== {type(val)}')
+            if isinstance(val, Union[dict, list]):
+                source[key] = dict_validator(val, n)
+            elif isinstance(val, int):
+                if key.endswith('_id'):
+                    source[key] = 1  # randint(1, n)
+                else:
+                    source[key] = randint(1, 100)
+            elif isinstance(val, float):
+                source[key] = random.uniform(0.1, 25.0)
+            elif isinstance(val, bool):
+                source[key] = True
+        return source
+    elif isinstance(source, list):
+        tmp: list = []
+        for val in source:
+            if isinstance(val, Union[dict, list]):
+                tmp.append(dict_validator(val, n))
+            elif isinstance(val, int):
+                tmp.append = randint(1, 100)
+            elif isinstance(val, float):
+                tmp.append(random.uniform(0.1, 25.0))
+            elif isinstance(val, bool):
+                tmp.append(True)
+            else:
+                tmp.append(val)
+        return tmp
+        

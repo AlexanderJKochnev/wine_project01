@@ -16,7 +16,7 @@ from decimal import Decimal
 import random
 
 
-def generate_test_data(
+def generate_test_data1(
         model: Type[BaseModel], n: int, factory_kwargs: Optional[Dict[str, Any]] = None
         ) -> List[Dict[str, Any]]:
     """
@@ -195,13 +195,12 @@ def generate_custom_test_data(
 
 # Пример использования
 if __name__ == "__main__":
-
-
-    from app.support.region.schemas import RegionCreateRelation as schema
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.item.schemas import ItemCreateRelations as schema
     import json
     # Генерируем 3 тестовых набора данных с помощью polyfactory
     print("Сгенерировано с помощью polyfactory:")
-    test_number = 1
+    test_number = 3
     test_data = generate_test_data(schema,
                                    test_number,
                                    {'int_range': (1, test_number),

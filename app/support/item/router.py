@@ -6,7 +6,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate, ItemCreateRelationSchema,
+from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate, ItemCreateRelations,
                                       ItemCreateResponseSchema)
 from app.support.item.service import ItemService
 
@@ -21,7 +21,7 @@ class ItemRouter(BaseRouter):
             prefix="/items",
             tags=["items"],
             create_response_schema=ItemCreateResponseSchema,
-            create_schema_relation=ItemCreateRelationSchema,
+            create_schema_relation=ItemCreateRelations,
             service=ItemService
         )
 
@@ -32,3 +32,8 @@ class ItemRouter(BaseRouter):
     async def patch(self, id: int, data: ItemUpdate,
                     session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         return await super().patch(id, data, session)
+
+    async def create_relation(self, data: ItemCreateRelations,
+                              session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
+        result = await super().create_relation(data, session)
+        return result

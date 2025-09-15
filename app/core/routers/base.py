@@ -80,6 +80,7 @@ class BaseRouter:
         self.responses = {404: {"description": "Record not found",
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
         self.setup_routes()
+        self.service = service
 
     def setup_routes(self):
         """Настраивает маршруты"""
@@ -235,7 +236,7 @@ class BaseRouter:
             existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
             if not existing_item:
                 raise NotFoundException(detail=f"Item with id {id} not found")
-            result = await self.service.delete(existing_item, self.repo, self.model, session)
+            result = await self.service.delete(existing_item, self.repo, session)
             if not result:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete item"

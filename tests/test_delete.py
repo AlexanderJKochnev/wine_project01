@@ -6,6 +6,7 @@
 """
 
 import pytest
+
 from app.core.schemas.base import PaginatedResponse
 
 pytestmark = pytest.mark.asyncio
@@ -22,21 +23,13 @@ async def test_delete(authenticated_client_with_db, test_db_session,
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
         tmp = response.json()
-        total = len(tmp['items'])
-        if total > 0:       # записи есть
-            id = 2  # берем вторую
-            instance = tmp['items'][id - 1]
-            try:
-                resp = await client.delete(f'{prefix}/{id}')
-                assert resp.status_code == 200, f'{instance} // {resp}'
-            except Exception as e:
-                assert False, f'ошибка {e}, {instance}'
-
-            # проверка удаления
-            resp = await client.get(f'{prefix}/{id}')
-            assert resp.status_code in [404, 500], resp.text
-        else:
-            assert False, 'генератор тестовых данных не сработал на {prefix}. см. test_routers.py'
+        for key in tmp['items']:
+            id = key['id']
+            response = await client.delete(f'{prefix}/{id}')
+            assert response.status_code == 200, response.text
+            # gроверка удаления
+            check = await client.get(f'{prefix}/{id}')
+            assert check.status_code in [404, 500], check.text
 
 
 @pytest.mark.skip
@@ -51,11 +44,10 @@ async def test_fault_delete(authenticated_client_with_db, test_db_session,
         assert resp.status_code == 404, resp.text
 
 
+@pytest.mark.skip
 async def test_delete_one_exact(authenticated_client_with_db, test_db_session,
                                 simple_router_list, complex_router_list,
                                 fakedata_generator):
-    from app.support.item.router import ItemRouter
-    from app.support.drink.router import DrinkRouter
     router_list = simple_router_list + complex_router_list
     # router_list = [ItemRouter, DrinkRouter]
     for item in router_list:

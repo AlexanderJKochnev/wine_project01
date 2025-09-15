@@ -28,8 +28,8 @@ class CustomCreateSchema:
 
 
 class CustomCreateRelation:
-    drink_id: DrinkCreateRelations
-    warehouse_id: WarehouseCreateRelation
+    drink: DrinkCreateRelations
+    warehouse: WarehouseCreateRelation
     volume: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
@@ -59,5 +59,5 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
     pass
 
 
-class ItemCreateRelationSchema(BaseModel, CustomCreateRelation):
+class ItemCreateRelations(BaseModel, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)

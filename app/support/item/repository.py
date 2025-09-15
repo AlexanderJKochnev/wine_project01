@@ -32,3 +32,4 @@ class ItemRepository(Repository):
             selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)),
             selectinload(Item.warehouse)
         )
+
