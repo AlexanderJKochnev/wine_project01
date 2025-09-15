@@ -153,10 +153,11 @@ class BaseRouter:
     async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         try:
             # obj = await self.service.create(data, self.model, session)
-            obj = await self.service.get_or_create(data, self.repo, self.model, session)
+            obj = await self.service.create_relation(data, self.repo, self.model, session)
             await session.commit()
-            await session.refresh(obj)
-            return obj
+            result = await self.service.get_by_id(obj.id, self.repo, self.model, session)
+            # await session.refresh(obj)
+            return result
         except ValidationException as e:
             await session.rollback()
             logger.warning(f"Validation error in create_item: {e}")

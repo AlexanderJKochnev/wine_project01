@@ -1,20 +1,20 @@
 # app.support.region.service.py
-from typing import Type
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.services.service import Service, ModelType, Repository
-from app.support.country.router import CountryCreate, Country, CountryRepository, CountryService
-from app.support.region.schemas import CreateSchema
+
+from app.core.services.service import Service
+from app.support.country.router import Country, CountryRepository, CountryService
+from app.support.region.router import (Region, RegionCreate, RegionCreateRelation, RegionRead, RegionRepository)
 
 
 class RegionService(Service):
-    pass
 
-    async def create_relation(cls, data: ModelType, repository: Type[Repository],
-                              model: ModelType, session: AsyncSession) -> ModelType:
-        country = {'schema': CountryCreate,
-                   'model': Country,
-                   'repo': CountryRepository,
-                   'service': CountryService}
-        create_schema = CreateSchema
-        return super().create_relation(data, repository , model, session,
-                                       country=country, create_schema=create_schema)
+    async def create_relation(cls, data: RegionCreateRelation, repository: RegionRepository,
+                              model: Region, session: AsyncSession) -> RegionRead:
+        # pydantic model -> dict
+        region_data: dict = data.model_dump(exclude={'country'}, exclude_unset=True)
+        if data.country:
+            result = await CountryService.get_or_create(data.country, CountryRepository, Country, session)
+            region_data['country_id'] = result.id
+        region = RegionCreate(**region_data)
+        result = await RegionService.get_or_create(region, RegionRepository, Region, session)
+        return result

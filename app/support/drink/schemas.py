@@ -19,10 +19,10 @@ from app.support.varietal.schemas import VarietalCreateRelation, VarietalRead
 # from app.support.item.schemas import ItemRead
 
 class CustomCreateRelation:
-    category_id: CategoryCreateRelation
-    color_id: Optional[ColorCreateRelation] = None
-    sweetness_id: Optional[SweetnessCreateRelation] = None
-    subregion_id: Optional[SubregionCreateRelation] = None
+    category: CategoryCreateRelation
+    color: Optional[ColorCreateRelation] = None
+    sweetness: Optional[SweetnessCreateRelation] = None
+    subregion: SubregionCreateRelation
     title: str
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
@@ -32,7 +32,7 @@ class CustomCreateRelation:
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     foods: List[FoodCreateRelation]
-    varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
+    # varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
 
 
 class CustomReadSchema:
@@ -82,6 +82,9 @@ class CustomCreateSchema:
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
+    # description: Optional[str] = None
+    # description_fr: Optional[str] = None
+    # description_ru: Optional[str] = None
 
 
 class DrinkRead(ReadNoNameSchema, CustomReadSchema):

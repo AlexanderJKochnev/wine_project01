@@ -445,7 +445,85 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
         test_db_session.commit()"""
 
 
-async def test_create_relations_api(authenticated_client_with_db, test_db_session):
-    from app.support.subregion.router import (SubregionRouter, Subregion, SubregionRepository, SubregionCreate,
-                                              SubregionService)
-    
+async def test_create_region_relation(authenticated_client_with_db, test_db_session,
+                                  simple_router_list, complex_router_list):
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.region.router import RegionRouter, Region, RegionCreate, RegionCreateRelation
+    # source = simple_router_list + complex_router_list
+    test_number = 1
+    client = authenticated_client_with_db
+    router = RegionRouter()
+    schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
+    test_data = generate_test_data(schema, test_number,
+                                   {'int_range': (1, test_number),
+                                    'decimal_range': (0.5, 1),
+                                    'float_range': (0.1, 1.0),
+                                    # 'field_overrides': {'name': 'Special Product'},
+                                    'faker_seed': 42})
+    data = test_data[0]
+    try:
+        json_data = json.dumps(data)
+        adapter.validate_json(json_data)
+    except Exception as e:
+        assert False, e
+
+    response = await client.post(f'{prefix}/hierarchy', json=data)
+    assert response.status_code in [200, 201], f'{response.text}'
+
+
+async def test_create_subregion_relation(authenticated_client_with_db, test_db_session,
+                                  simple_router_list, complex_router_list):
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.subregion.router import SubregionRouter  # , Region, RegionCreate, RegionCreateRelation
+    # source = simple_router_list + complex_router_list
+    test_number = 1
+    client = authenticated_client_with_db
+    router = SubregionRouter()
+    schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
+    test_data = generate_test_data(schema, test_number,
+                                   {'int_range': (1, test_number),
+                                    'decimal_range': (0.5, 1),
+                                    'float_range': (0.1, 1.0),
+                                    # 'field_overrides': {'name': 'Special Product'},
+                                    'faker_seed': 42})
+    data = test_data[0]
+    try:
+        json_data = json.dumps(data)
+        adapter.validate_json(json_data)
+    except Exception as e:
+        assert False, e
+
+    response = await client.post(f'{prefix}/hierarchy', json=data)
+    assert response.status_code in [200, 201], f'{response.text}'
+
+
+async def test_create_drink_relation(authenticated_client_with_db, test_db_session,
+                                  simple_router_list, complex_router_list):
+    from tests.data_factory.fake_generator import generate_test_data
+    from app.support.drink.router import DrinkRouter  # , Region, RegionCreate, RegionCreateRelation
+    # source = simple_router_list + complex_router_list
+    test_number = 1
+    client = authenticated_client_with_db
+    router = DrinkRouter()
+    schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
+    test_data = generate_test_data(schema, test_number,
+                                   {'int_range': (1, test_number),
+                                    'decimal_range': (0.5, 1),
+                                    'float_range': (0.1, 1.0),
+                                    # 'field_overrides': {'name': 'Special Product'},
+                                    'faker_seed': 42})
+    data = test_data[0]
+    try:
+        json_data = json.dumps(data)
+        adapter.validate_json(json_data)
+    except Exception as e:
+        assert False, e
+
+    response = await client.post(f'{prefix}/hierarchy', json=data)
+    assert response.status_code in [200, 201], f'{response.text}'

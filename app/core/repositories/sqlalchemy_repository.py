@@ -67,7 +67,12 @@ class Repository:
 
     @classmethod
     async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
-        stmt = select(model).filter_by(**data)
+        valid_fields = {key: value for key, value in data.items()
+                        if hasattr(model, key) and not key.endswith('_id')}
+        if not valid_fields:
+            return None
+
+        stmt = select(model).filter_by(**valid_fields)
         result = await session.execute(stmt)
         item = result.scalar_one_or_none()
         return item

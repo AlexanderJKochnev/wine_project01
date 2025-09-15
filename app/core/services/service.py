@@ -47,6 +47,7 @@ class Service:
             # тут можно добавить преобразования результата потом commit в роутере
             return result
 
+    @classmethod
     async def update_or_create(cls,
                                lookup: Dict[str, Any],
                                defaults: Dict[str, Any],
@@ -65,48 +66,24 @@ class Service:
             obj = model(**data)
             return await cls.repository.create(obj, model, session)
 
-    async def create_relation(cls, data: ModelType, repository: Type[Repository],
-                              model: ModelType, session: AsyncSession, **kwargs) -> ModelType:
-        """ create & return record with all relations
-            kwargs (см. app.support.region.service для примера
-        """
-        try:
-            if not kwargs:      # если kwargs отсутстствует - просто get_or_create
-                return cls.get_or_create(data, repository, model, session)
-            """ relation section is exists """
-            create_schema = kwargs.pop('create_schema')
-            data_dict = data.model_dump(exclude_unset=True)
-            # получаем список ключей с точесной аннотацией region.country и проходим по ней из глубины наверх
-            for key in get_all_dict_paths(data_dict):
-                idx = key.split('.')[-1]
-                val: dict = kwargs[idx]
-                ndata = get_nested(data_dict, key)
-                if ndata is not None:
-                    model_data = val['schema'](**ndata)
-                    related_object = await val['service'].get_or_create(model_data,
-                                                                        val['repo'],
-                                                                        val['model'], session)
-                    session.flush()
-                    related_id = related_object.id
-                    # Устанавливаем ID связи в data_dict
-                    if '.' in key:
-                        # Для вложенных путей
-                        path_parts = key.split('.')
-                        parent_path = '.'.join(path_parts[:-1])
-                        parent_dict = get_nested(data_dict, parent_path)
-                        if parent_dict is not None:
-                            parent_dict[f"{idx}_id"] = related_id
-                    else:
-                        # Для простых путей
-                        data_dict[f"{idx}_id"] = related_id
-            data_with_relations = create_schema(**data_dict)
-            object = await cls.get_or_create(data_with_relations, repository, model, session)
-            return object
-        except Exception as e:
-            raise HTTPException(
-                    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = f"Error creating relation: {str(e)}"
-                    )
+    @classmethod
+    async def create_relation(
+            cls, data: ModelType, repository: Type[Repository], model: ModelType, session: Session
+            ) -> ModelType:
+        """ использовать вместо create """
 
+        data_dict = data.model_dump(exclude_unset = True)
+        result = await repository.get_by_obj(data_dict, model, session)
+        if result:
+            return result
+        else:
+            obj = model(**data_dict)
+
+            result = await repository.create(obj, model, session)
+            # тут можно добавить преобразования результата потом commit в роутере
+            return result
+
+    @classmethod
     async def get_by_id(cls, id: int, repository: Type[Repository], model: ModelType,
                         session: AsyncSession) -> Optional[ModelType]:
         """
@@ -118,6 +95,7 @@ class Service:
             # logger.error(f"Error in get_by_id: {e}")
             raise
 
+    @classmethod
     async def get_all(cls, page: int, page_size: int, repository: Type[Repository], model: ModelType,
                       session: AsyncSession, ) -> List[dict]:
         # Запрос с загрузкой связей и пагинацией
@@ -131,18 +109,21 @@ class Service:
                   "has_prev": page > 1}
         return result
 
+    @classmethod
     async def patch(cls, obj: ModelType, data: ModelType, repository: Type[Repository], session: AsyncSession) -> (
             Optional)[ModelType]:
         data_dict = data.model_dump(exclude_unset=True)
         obj = await repository.patch(obj, data_dict, session)
         return obj
 
+    @classmethod
     async def delete(cls, obj: ModelType, repository: Type[Repository],
                      session: AsyncSession) -> bool:
         result = await repository.delete(obj, session)
         return result
 
 # -------------------
+    @classmethod
     async def search_in_main_table(cls,
                                    query: str,
                                    page: int,

@@ -8,18 +8,17 @@ from app.support.food.model import Food
 
 
 class DrinkFoodRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
 
-    async def get_drink_with_foods(self, drink_id: int):
-        result = await self.session.execute(
+    @classmethod
+    async def get_drink_with_foods(cls, drink_id: int, session: AsyncSession):
+        result = await session.execute(
             select(Drink)
             .where(Drink.id == drink_id)
             .options(selectinload(Drink.food_associations).joinedload(DrinkFood.food))
         )
         return result.scalar_one_or_none()
 
-    async def get_food_with_drinks(self, food_id: int):
+    async def get_food_with_drinks(cls, food_id: int, ):
         result = await self.session.execute(
             select(Food)
             .where(Food.id == food_id)

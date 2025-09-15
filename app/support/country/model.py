@@ -7,4 +7,4 @@ from app.core.models.base_model import BaseFull
 
 
 class Country(BaseFull):
-    regions = relationship("Region", back_populates="country", lazy="selectin")
+    regions = relationship("Region", back_populates="country", lazy="selectin", cascade="all, delete-orphan")
