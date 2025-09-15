@@ -1,9 +1,19 @@
 # app/support/drink/drink_varietal_schema.py
-#
-from typing import List
 
-from pydantic import BaseModel
+from typing import List, Optional, Tuple
+from pydantic import BaseModel, ConfigDict
+from app.support.varietal.router import VarietalCreateRelation
 
+
+class DrinkVarietalRelation(BaseModel):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extra='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
+    varietal: VarietalCreateRelation
+    percentage: float
+    # varietals: List[Tuple[VarietalCreateRelation, float]]
 
 class DrinkVarietalLinkCreate(BaseModel):
     drink_id: int

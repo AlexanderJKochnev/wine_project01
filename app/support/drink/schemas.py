@@ -13,6 +13,7 @@ from app.support.food.schemas import FoodCreateRelation, FoodRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalCreateRelation, VarietalRead
+from app.support.drink.drink_varietal_schema import DrinkVarietalRelation
 
 
 # from app.support.country.schemas import CountryRead
@@ -32,6 +33,7 @@ class CustomCreateRelation:
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
     foods: List[FoodCreateRelation]
+    varietals: List[DrinkVarietalRelation]
     # varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
 
 

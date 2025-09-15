@@ -18,6 +18,7 @@ from app.support.food.router import (Food, FoodCreate, FoodCreateRelation, FoodR
 from app.support.varietal.router import (Varietal, VarietalCreate, VarietalCreateRelation, VarietalRepository,
                                          VarietalRead, VarietalService)
 from app.support.drink.drink_food_repo import DrinkFoodRepository
+from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 
 
 class DrinkService(Service):
@@ -42,6 +43,10 @@ class DrinkService(Service):
         drink_data: dict = data.model_dump(exclude={'subregion', 'category', 'color',
                                                     'sweetness', 'varietals', 'foods'},
                                            exclude_unset=True)
+        print('====================================================================')
+        import json
+        print(json.dumps(data.model_dump(), indent=2, ensure_ascii=False))
+        print('====================================================================')
         if data.subregion:
             subregion_data: dict = data.subregion.model_dump(exclude={'region'}, exclude_unset=True)
             if data.subregion.region:
@@ -65,8 +70,7 @@ class DrinkService(Service):
         if data.sweetness:
             result = await SweetnessService.get_or_create(data.sweetness, SweetnessRepository, Sweetness, session)
             drink_data['sweetness_id'] = result.id
-        # import json
-        # print(json.dumps(drink_data, indent = 2, ensure_ascii = False))
+
         drink = DrinkCreate(**drink_data)
         drink_instance = await DrinkService.get_or_create(drink, DrinkRepository, Drink, session)
         drink_id = drink_instance.id
@@ -79,4 +83,25 @@ class DrinkService(Service):
                 food_ids.append(result.id)
             # 2. set drink_food
             await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
+        if data.varietals:
+            varietal_ids = []
+            varietal_percentage = {}
+            # 1. get_or_create varietals in Varietal
+            # data.varietals is List[{varietal: VarietalCreateRelation
+            #                         percentage: float}]
+            for dvschema in data.varietals:
+                item = dvschema.varietal
+                percentage = dvschema.percentage
+                result = await VarietalService.get_or_create(item, VarietalRepository, Varietal, session)
+                varietal_percentage[result.id] = percentage
+                varietal_ids.append(result.id)
+            # print(f'=={varietal_percentage=}')
+            print(f'=={varietal_ids}')
+            # 2. set drink_varietal
+            await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
+            print('1 ========================')
+            # 3. set up percentage
+            for key, val in varietal_percentage.items():
+                await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
+                print('2 ========================')
         return result
