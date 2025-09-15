@@ -94,9 +94,6 @@ class DrinkFood(Base):
     drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
     food_id = Column(Integer, ForeignKey("foods.id"), primary_key=True)
 
-    # Пример дополнительного поля (можно расширять)
-    priority = Column(Integer, default=0)
-
     # Relationships
     drink = relationship("Drink", back_populates="food_associations", overlaps='foods')
     food = relationship("Food", back_populates="drink_associations", overlaps='drinks,foods')

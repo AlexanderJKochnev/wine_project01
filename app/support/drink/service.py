@@ -17,6 +17,7 @@ from app.support.sweetness.router import (Sweetness, SweetnessRepository, Sweetn
 from app.support.food.router import (Food, FoodCreate, FoodCreateRelation, FoodRepository, FoodRead, FoodService)
 from app.support.varietal.router import (Varietal, VarietalCreate, VarietalCreateRelation, VarietalRepository,
                                          VarietalRead, VarietalService)
+from app.support.drink.drink_food_repo import DrinkFoodRepository
 
 
 class DrinkService(Service):
@@ -68,11 +69,14 @@ class DrinkService(Service):
         # print(json.dumps(drink_data, indent = 2, ensure_ascii = False))
         drink = DrinkCreate(**drink_data)
         drink_instance = await DrinkService.get_or_create(drink, DrinkRepository, Drink, session)
+        drink_id = drink_instance.id
         # =============manytomany case==============
         if data.foods:
-            foods_ids = []
+            food_ids = []
+            # 1. get_or_create foods in Food
             for item in data.foods:
                 result = await FoodService.get_or_create(item, FoodRepository, Food, session)
-                foods_ids.append(result.id)
-        
+                food_ids.append(result.id)
+            # 2. set drink_food
+            await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
         return result
