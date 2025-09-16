@@ -55,8 +55,6 @@ class CustomReadSchema:
     sparkling: Optional[bool] = False
     foods: List[FoodRead]
     varietals: List[VarietalRead]
-    # item is not fully implemented. circular import
-    # items: List[ItemRead]
 
 
 class CustomUpdSchema:

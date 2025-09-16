@@ -62,6 +62,7 @@ services:
   
   django:
     # build: ./django_admin
+    restart: unless-stopped
     build:
       context: .
       dockerfile: django_admin/Dockerfile
@@ -75,12 +76,6 @@ services:
       # ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     depends_on:
       - wine_host
-#     networks:
-#       - pgnetwork
-
-# networks:
-#   pgnetwork:
-#     driver: bridge
 
 volumes:
   migration_volume: # alembic migrations
