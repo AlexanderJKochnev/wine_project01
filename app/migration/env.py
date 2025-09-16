@@ -27,6 +27,7 @@ from app.auth.models import User  # noqa: F401, E402
 from app.core.config.database.db_config import settings_db  # noqa:  F401, E402
 from app.support.drink.model import DrinkFood  # noqa:  F401, E402
 from app.support.subregion.model import Subregion  # noqa:  F401, E402
+from app.support.type.model import Type  # noqa:  F401, E402
 
 # F401, E402
 

@@ -24,6 +24,7 @@ from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.subregion.router import SubregionRouter
 from app.support.varietal.router import VarietalRouter
+from app.support.type.router import TypeRouter
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
@@ -133,3 +134,4 @@ app.include_router(SubregionRouter().router)
 app.include_router(WarehouseRouter().router)
 app.include_router(DrinkRouter().router)  # ← очень важно
 app.include_router(ItemRouter().router)
+app.include_router(TypeRouter().router)

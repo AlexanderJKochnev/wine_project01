@@ -10,6 +10,7 @@ from app.support.category.schemas import CategoryCreateRelation, CategoryRead
 from app.support.color.schemas import ColorCreateRelation, ColorRead
 from app.support.drink.drink_varietal_schema import DrinkVarietalRelation
 from app.support.food.schemas import FoodCreateRelation, FoodRead
+from app.support.type.schemas import TypeCreate, TypeCreateRelation
 # from app.support.item.schemas import ItemRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
@@ -37,6 +38,7 @@ class CustomCreateRelation:
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
     image_path: Optional[str]
+    type: Optional[TypeCreateRelation]
     # varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
 
 

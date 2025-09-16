@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.support.color.model import Color
     from app.support.category.model import Category
     from app.support.subregion.model import Subregion
+    from app.support.type.model import Type
 
 
 class Drink(Base, BaseDescription, BaseAt, ImageMixin):
@@ -42,12 +43,14 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     subregion_id: Mapped[int] = mapped_column(ForeignKey("subregions.id"), nullable=False)
     color_id: Mapped[int] = mapped_column(ForeignKey("colors.id"), nullable=True)
     sweetness_id: Mapped[int] = mapped_column(ForeignKey("sweetness.id"), nullable=True)
+    type_id: Mapped[int] = mapped_column(ForeignKey("types.id"), nullable=True)
 
     # Relationships fields (
     category: Mapped["Category"] = relationship(back_populates="drinks")
     subregion: Mapped["Subregion"] = relationship(back_populates="drinks")
     color: Mapped["Color"] = relationship(back_populates="drinks")
     sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
+    type: Mapped["Type"] = relationship(back_populates="drinks")
 
     # обратная связь
     items = relationship("Item", back_populates=single_name,

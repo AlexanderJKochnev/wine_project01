@@ -10,7 +10,7 @@ from django.utils.html import format_html
 from PIL import Image
 
 from .models import (Category, Color, Country, Drink, DrinkFood, DrinkVarietal, Food, Region, Subregion, Sweetness,
-                     Varietal)
+                     Varietal, Type)
 
 
 class SortedModelAdmin(admin.ModelAdmin):
@@ -190,6 +190,10 @@ class SubregionAdmin(SortedModelAdmin):
 
 @admin.register(Sweetness)
 class SweetnessAdmin(SortedModelAdmin):
+    pass
+
+@admin.register(Type)
+class TypeAdmin(SortedModelAdmin):
     pass
 
 # Регистрация остальных моделей

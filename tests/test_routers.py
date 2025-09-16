@@ -418,7 +418,7 @@ async def test_create_drink_relation(authenticated_client_with_db, test_db_sessi
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
-    test_number = 2  # большое кол-во тестов может привести к ошибке - генератор float увеличивает
+    test_number = 20  # большое кол-во тестов может привести к ошибке - генератор float увеличивает
     # значения за пределы допустимого
     client = authenticated_client_with_db
     router = DrinkRouter()
@@ -436,8 +436,13 @@ async def test_create_drink_relation(authenticated_client_with_db, test_db_sessi
             json_data = json.dumps(data)
             adapter.validate_json(json_data)
         except Exception as e:
+            print('================================')
+            print(json.dumps(data, indent = 2, ensure_ascii = False))
+            print('============================================')
             assert False, e
-    
+        # print('================================')
+        # print(json.dumps(data, indent = 2, ensure_ascii = False))
+        # print('============================================')
         response = await client.post(f'{prefix}/hierarchy', json=data)
         assert response.status_code in [200, 201], f'{response.text}'
 

@@ -1,14 +1,15 @@
 # tests/data_factory/fake_generator.py
 # flake8: noqa: E501
 import random
-from typing import Any, Dict, List, Union
-from faker import Faker
-from pydantic import BaseModel
-from polyfactory.factories.pydantic_factory import ModelFactory
-from typing import Type, Any, List, Optional, Dict, Tuple, Union, get_origin, get_args
 from decimal import Decimal
-import random
 from random import randint
+from typing import Any, Dict, get_args, get_origin, List, Optional, Type, Union
+
+from faker import Faker
+from polyfactory.factories.pydantic_factory import ModelFactory
+from pydantic import BaseModel
+from tests.data_factory.postprocessiong import validate_and_fix_numeric_ranges
+
 
 class TestDataGenerator:
     def __init__(self):
@@ -374,8 +375,8 @@ def generate_test_data(
             )
     
     # Генерируем данные
-    return (factory_class.build().model_dump() for _ in range(n))
-    # return (dict_validator(val) for val in result)
+    result = (factory_class.build().model_dump() for _ in range(n))
+    return (validate_and_fix_numeric_ranges(val, int_range=(1,10), float_range=(0.1, 1.0) ) for val in result)
 
 
 def dict_validator(source: dict, n: int=3) -> dict:

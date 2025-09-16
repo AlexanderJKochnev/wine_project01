@@ -10,6 +10,14 @@ from django.utils.translation import gettext_lazy as _
 # import os
 
 
+class Type(BaseFull):
+    class Meta:
+        db_table = 'types'
+        verbose_name = _("Type")
+        verbose_name_plural = _("Types")
+        managed = False
+
+
 class Category(BaseFull):
     class Meta:
         db_table = 'categories'
