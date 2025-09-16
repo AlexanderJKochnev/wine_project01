@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     DJANGO_PORT: int = 8093
     ADMIN_EMAIL: str
     ADMIN_PASSWORD: str
+    IMAGE_BASE_URL: str
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

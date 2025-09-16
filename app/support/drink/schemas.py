@@ -14,12 +14,14 @@ from app.support.food.schemas import FoodCreateRelation, FoodRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
+from app.core.schemas.image_mixin import ImageUrlMixin
 
 
 # from app.support.country.schemas import CountryRead
 # from app.support.item.schemas import ItemRead
 
 class CustomCreateRelation:
+    image_path: Optional[str] = None
     category: CategoryCreateRelation
     color: Optional[ColorCreateRelation] = None
     sweetness: Optional[SweetnessCreateRelation] = None
@@ -34,6 +36,7 @@ class CustomCreateRelation:
     sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
+    image_path: Optional[str]
     # varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
 
 
@@ -69,6 +72,7 @@ class CustomUpdSchema:
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
+    image_path: Optional[str]
 
 
 class CustomCreateSchema:
@@ -84,12 +88,13 @@ class CustomCreateSchema:
     sugar: Optional[float] = None
     aging: Optional[int] = None
     sparkling: Optional[bool] = False
+    image_path: Optional[str]
     # description: Optional[str] = None
     # description_fr: Optional[str] = None
     # description_ru: Optional[str] = None
 
 
-class DrinkRead(ReadNoNameSchema, CustomReadSchema):
+class DrinkRead(ReadNoNameSchema, CustomReadSchema, ImageUrlMixin):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',

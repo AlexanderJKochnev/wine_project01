@@ -1,14 +1,16 @@
 # app/support/drink/model.py
 from __future__ import annotations
-from sqlalchemy.types import DECIMAL
+
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import DECIMAL
 
 from app.core.config.project_config import settings
 from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone, descr, ion, str_null_true, str_uniq,
                                         volume)
+from app.core.models.image_mixin import ImageMixin
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     from app.support.subregion.model import Subregion
 
 
-class Drink(Base, BaseDescription, BaseAt):
+class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'drink'
