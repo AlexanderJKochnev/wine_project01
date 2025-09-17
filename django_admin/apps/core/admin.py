@@ -9,7 +9,8 @@ from django.db import models
 from django.utils.html import format_html
 from PIL import Image
 
-from .models import (Category, Color, Country, Drink, DrinkFood, DrinkVarietal, Food, Region, Subregion, Sweetness,
+from .models import (Category, Subcategory, Country, Drink, DrinkFood, DrinkVarietal,
+                     Food, Region, Subregion, Sweetness,
                      Varietal, Type)
 
 
@@ -168,8 +169,8 @@ class CategoryAdmin(SortedModelAdmin):
     pass
 
 
-@admin.register(Color)
-class ColorAdmin(SortedModelAdmin):
+@admin.register(Subcategory)
+class SubcategoryAdmin(SortedModelAdmin):
     pass
 
 
@@ -191,6 +192,7 @@ class SubregionAdmin(SortedModelAdmin):
 @admin.register(Sweetness)
 class SweetnessAdmin(SortedModelAdmin):
     pass
+
 
 @admin.register(Type)
 class TypeAdmin(SortedModelAdmin):

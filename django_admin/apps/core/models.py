@@ -26,11 +26,14 @@ class Category(BaseFull):
         managed = False
 
 
-class Color(BaseFull):
+class Subcategory(BaseFull):
+    country = models.ForeignKey(Category, on_delete=models.DO_NOTHING, db_column='category_id',
+                                related_name='subcategories')
+
     class Meta:
-        db_table = 'colors'
-        verbose_name = _("Color")
-        verbose_name_plural = _("Colors")
+        db_table = 'subcategoriess'
+        verbose_name = _("Subcategory")
+        verbose_name_plural = _("Subcategories")
         managed = False
 
 
@@ -95,12 +98,10 @@ class Drink(models.Model):
     sugar = models.DecimalField(max_digits=5, decimal_places=2, null=True, verbose_name=_("Sugar %"))
     aging = models.IntegerField(null=True, verbose_name=_("Aging"))
     sparkling = models.BooleanField(null=True, verbose_name=_("Sparkling"))
-    category = models.ForeignKey(Category, on_delete=models.DO_NOTHING,
-                                 db_column='category_id', related_name='drinks')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.DO_NOTHING,
+                                    db_column='subcategory_id', related_name='drinks')
     subregion = models.ForeignKey(Subregion, on_delete=models.DO_NOTHING,
                                   db_column='subregion_id', related_name='drinks')
-    color = models.ForeignKey(Color, on_delete=models.DO_NOTHING,
-                              db_column='color_id', null=True, related_name='drinks')
     sweetness = models.ForeignKey(Sweetness, on_delete=models.DO_NOTHING,
                                   db_column='sweetness_id', null=True, related_name='drinks')
     description = models.TextField(null=True, blank=True, verbose_name=_("Description"))

@@ -18,3 +18,5 @@
       4. service.py !!!
    9. tests/conftest.py (import ...)
    10. django_admin
+       1. django_admin/apps/core/models.py
+       2. django_admin/apps/core/admin.py
