@@ -8,7 +8,7 @@ from typing import Any, Dict, get_args, get_origin, List, Optional, Type, Union
 from faker import Faker
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel
-from tests.data_factory.postprocessiong import validate_and_fix_numeric_ranges
+from tests.data_factory.postprocessing import validate_and_fix_numeric_ranges
 
 
 class TestDataGenerator:

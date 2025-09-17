@@ -32,6 +32,8 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     subtitle: Mapped[str_null_true]
     # описание на международном (англ) языке (остальные через BaseDescription)
     description: Mapped[descr]
+    madeof: Mapped[descr]
+    madeof_ru: Mapped[descr]
     alc: Mapped[volume]
     sugar: Mapped[volume]
     aging: Mapped[ion]

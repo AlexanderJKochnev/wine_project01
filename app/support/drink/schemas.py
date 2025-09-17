@@ -29,6 +29,8 @@ class CustomCreateRelation:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
@@ -49,6 +51,8 @@ class CustomReadSchema:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
@@ -66,6 +70,8 @@ class CustomUpdSchema:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
@@ -82,6 +88,8 @@ class CustomCreateSchema:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None

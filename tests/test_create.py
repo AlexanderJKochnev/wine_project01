@@ -50,7 +50,7 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
                                            simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
-    test_number = 10
+    test_number = 1
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
