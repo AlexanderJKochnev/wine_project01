@@ -13,7 +13,6 @@ from app.support.warehouse.model import Warehouse
 from app.support.food.model import Food
 from app.support.item.model import Item
 from app.support.region.model import Region
-from app.support.color.model import Color
 from app.support.sweetness.model import Sweetness
 from app.auth.models import User
 """

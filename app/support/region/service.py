@@ -17,5 +17,5 @@ class RegionService(Service):
             result = await CountryService.get_or_create(data.country, CountryRepository, Country, session)
             region_data['country_id'] = result.id
         region = RegionCreate(**region_data)
-        result = await RegionService.get_or_create(region, RegionRepository, Region, session)
+        result = await cls.get_or_create(region, RegionRepository, Region, session)
         return result

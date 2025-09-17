@@ -1,14 +1,12 @@
-# app.core.service/service_layer.py
+# app.core.service/service.py
 
 from typing import Any, Dict, List, Optional, Type
-from fastapi import HTTPException, status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from app.core.models.base_model import Base
-from app.core.utils.alchemy_utils import get_models
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.core.utils.common_utils import get_all_dict_paths, pop_nested, set_nested, get_nested
+from app.core.utils.alchemy_utils import get_models
 
 
 class Service:
@@ -67,12 +65,11 @@ class Service:
             return await cls.repository.create(obj, model, session)
 
     @classmethod
-    async def create_relation(
-            cls, data: ModelType, repository: Type[Repository], model: ModelType, session: Session
-            ) -> ModelType:
+    async def create_relation(cls, data: ModelType,
+                              repository: Type[Repository], model: ModelType, session: Session) -> ModelType:
         """ использовать вместо create """
 
-        data_dict = data.model_dump(exclude_unset = True)
+        data_dict = data.model_dump(exclude_unset=True)
         result = await repository.get_by_obj(data_dict, model, session)
         if result:
             return result
@@ -90,7 +87,8 @@ class Service:
         get one record by id
         """
         try:
-            return await repository.get_by_id(id, model, session)
+            result = await repository.get_by_id(id, model, session)
+            return result
         except Exception:
             # logger.error(f"Error in get_by_id: {e}")
             raise

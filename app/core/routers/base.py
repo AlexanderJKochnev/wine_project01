@@ -87,7 +87,7 @@ class BaseRouter:
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
         self.router.add_api_route("/hierarchy",
                                   self.create_relation,
-                                  status_code=status.HTTP_201_CREATED,
+                                  status_code=status.HTTP_200_OK,
                                   methods=["POST"],
                                   response_model=self.read_schema)
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
@@ -156,9 +156,7 @@ class BaseRouter:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.create_relation(data, self.repo, self.model, session)
             await session.commit()
-            result = await self.service.get_by_id(obj.id, self.repo, self.model, session)
-            # await session.refresh(obj)
-            return result
+            return await self.service.get_by_id(obj.id, self.repo, self.model, session)
         except ValidationException as e:
             await session.rollback()
             logger.warning(f"Validation error in create_item: {e}")

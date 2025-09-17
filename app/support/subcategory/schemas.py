@@ -1,41 +1,42 @@
-# app/support/type/schemas.py
+# app/support/subcategory/schemas.py
 
 from pydantic import ConfigDict
-
+from typing import Optional
 from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
+from app.support.category.schemas import CategoryCreateRelation, CategoryRead
 
 
 class CustomReadSchema:
-    pass
+    category: CategoryRead
 
 
 class CustomCreateSchema:
-    pass
+    category_id: int
 
 
 class CustomCreateRelation:
-    pass
+    category: CategoryCreateRelation
 
 
 class CustomUpdSchema:
-    pass
+    category: Optional[CategoryCreateRelation]
 
 
-class TypeRead(ReadSchema, CustomReadSchema):
+class SubcategoryRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class TypeCreateRelation(CreateSchema, CustomCreateRelation):
+class SubcategoryCreateRelation(CreateSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class TypeCreate(CreateSchema, CustomCreateSchema):
+class SubcategoryCreate(CreateSchema, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class TypeUpdate(UpdateSchema, CustomUpdSchema):
+class SubcategoryUpdate(UpdateSchema, CustomUpdSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class TypeCreateResponseSchema(TypeCreate, CreateResponse):
+class SubcategoryCreateResponseSchema(SubcategoryCreate, CreateResponse):
     pass

@@ -6,12 +6,10 @@ from typing import List, Optional
 from pydantic import ConfigDict
 
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, ReadNoNameSchema, UpdateNoNameSchema)
-from app.support.category.schemas import CategoryCreateRelation, CategoryRead
-from app.support.color.schemas import ColorCreateRelation, ColorRead
+from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
+# from app.support.color.schemas import ColorCreateRelation, ColorRead
 from app.support.drink.drink_varietal_schema import DrinkVarietalRelation
 from app.support.food.schemas import FoodCreateRelation, FoodRead
-from app.support.type.schemas import TypeCreate, TypeCreateRelation
-# from app.support.item.schemas import ItemRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
@@ -23,8 +21,8 @@ from app.core.schemas.image_mixin import ImageUrlMixin
 
 class CustomCreateRelation:
     image_path: Optional[str] = None
-    category: CategoryCreateRelation
-    color: Optional[ColorCreateRelation] = None
+    subcategory: SubcategoryCreateRelation
+    # color: Optional[ColorCreateRelation] = None
     sweetness: Optional[SweetnessCreateRelation] = None
     subregion: SubregionCreateRelation
     title: str
@@ -34,17 +32,17 @@ class CustomCreateRelation:
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
-    sparkling: Optional[bool] = False
-    foods: Optional[List[FoodCreateRelation]] = None
-    varietals: Optional[List[DrinkVarietalRelation]] = None
+    sparkling: bool  # Optional[bool] = False
+    # foods: Optional[List[FoodCreateRelation]] = None
+    # varietals: Optional[List[DrinkVarietalRelation]] = None
+    foods: List[FoodCreateRelation]
+    varietals: List[DrinkVarietalRelation]
     image_path: Optional[str]
-    type: Optional[TypeCreateRelation]
-    # varietals: List[VarietalCreateRelation]  # item is not fully implemented. circular import  # items: List[ItemRead]
 
 
 class CustomReadSchema:
-    category: Optional[CategoryRead] = None
-    color: Optional[ColorRead] = None
+    subcategory: SubcategoryRead
+    # color: Optional[ColorRead] = None
     sweetness: Optional[SweetnessRead] = None
     subregion: Optional[SubregionRead] = None
     title: str
@@ -60,8 +58,8 @@ class CustomReadSchema:
 
 
 class CustomUpdSchema:
-    category: Optional[int] = None
-    color: Optional[int] = None
+    subcategory: Optional[int] = None
+    # color: Optional[int] = None
     sweetness: Optional[str] = None
     subregion: Optional[str] = None
     title: Optional[str] = None
@@ -76,8 +74,8 @@ class CustomUpdSchema:
 
 
 class CustomCreateSchema:
-    category_id: int
-    color_id: Optional[int] = None
+    subcategory_id: int
+    # color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
     subregion_id: int
     title: str
@@ -108,7 +106,7 @@ class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
 
 
 class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 
 class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):

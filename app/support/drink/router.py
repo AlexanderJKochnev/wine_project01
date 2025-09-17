@@ -50,7 +50,7 @@ class DrinkRouter(BaseRouter):
         return result
 
     async def create_relation(self, data: DrinkCreateRelations, session: AsyncSession = Depends(get_db)) -> (
-            DrinkCreateResponseSchema):
+            DrinkRead):
         result = await super().create_relation(data, session)
         return result
 

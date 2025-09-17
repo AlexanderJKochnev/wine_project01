@@ -1,0 +1,27 @@
+# app/support/subcategory/model.py
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.config.project_config import settings
+from app.core.models.base_model import BaseFull
+from app.core.utils.common_utils import plural
+
+if TYPE_CHECKING:
+    from app.support.category.model import Category
+
+
+class Subcategory(BaseFull):
+
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'subcategory'
+    plural_name = plural(single_name)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
+    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
+    drinks = relationship("Drink", back_populates=single_name,
+                          cascade=cascade,
+                          lazy=lazy)

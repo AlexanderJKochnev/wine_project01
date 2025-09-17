@@ -20,11 +20,11 @@ from app.support.warehouse.router import WarehouseRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
 from app.support.region.router import RegionRouter
-from app.support.color.router import ColorRouter
+# from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.subregion.router import SubregionRouter
 from app.support.varietal.router import VarietalRouter
-from app.support.type.router import TypeRouter
+from app.support.subcategory.router import SubcategoryRouter
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
@@ -123,7 +123,7 @@ async def wait_some_time(seconds: float):
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(CategoryRouter().router)
-app.include_router(ColorRouter().router)
+# app.include_router(ColorRouter().router)
 app.include_router(CountryRouter().router)
 app.include_router(CustomerRouter().router)
 app.include_router(FoodRouter().router)
@@ -134,4 +134,4 @@ app.include_router(SubregionRouter().router)
 app.include_router(WarehouseRouter().router)
 app.include_router(DrinkRouter().router)  # ← очень важно
 app.include_router(ItemRouter().router)
-app.include_router(TypeRouter().router)
+app.include_router(SubcategoryRouter().router)

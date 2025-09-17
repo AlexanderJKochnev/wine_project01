@@ -6,6 +6,7 @@ from app.core.repositories.sqlalchemy_repository import Repository, ModelType
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.subregion.model import Subregion
 from app.support.region.model import Region
+from app.support.subcategory.model import Subcategory
 
 
 class DrinkRepository(Repository):
@@ -20,8 +21,8 @@ class DrinkRepository(Repository):
         return select(Drink).options(selectinload(Drink.subregion).
                                      selectinload(Subregion.region).
                                      selectinload(Region.country),
-                                     selectinload(Drink.category),
-                                     selectinload(Drink.color),
+                                     selectinload(Drink.subcategory).
+                                     selectinload(Subcategory.category),
                                      selectinload(Drink.sweetness),
                                      selectinload(Drink.foods),
                                      selectinload(Drink.food_associations).joinedload(DrinkFood.food),

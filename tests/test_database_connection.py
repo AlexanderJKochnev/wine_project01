@@ -32,7 +32,7 @@ async def test_fastapi_database_dependency_works(authenticated_client_with_db):
     """Тест проверяет, что FastAPI dependency для базы данных работает"""
     # Создаем тестовый маршрут, который использует базу данных
     # Для этого делаем простой запрос, который задействует репозиторий
-    response = await authenticated_client_with_db.get("/colors")
+    response = await authenticated_client_with_db.get("/drinks")
     # Даже если таблица пустая, запрос должен пройти успешно
     assert response.status_code == 200
 

@@ -15,10 +15,8 @@ from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
     from app.support.sweetness.model import Sweetness
-    from app.support.color.model import Color
-    from app.support.category.model import Category
+    from app.support.subcategory.model import Subcategory
     from app.support.subregion.model import Subregion
-    from app.support.type.model import Type
 
 
 class Drink(Base, BaseDescription, BaseAt, ImageMixin):
@@ -39,18 +37,17 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     aging: Mapped[ion]
     sparkling: Mapped[boolnone]
     # Foreign Keys on-to-many
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
+    subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False)
     subregion_id: Mapped[int] = mapped_column(ForeignKey("subregions.id"), nullable=False)
-    color_id: Mapped[int] = mapped_column(ForeignKey("colors.id"), nullable=True)
+    # color_id: Mapped[int] = mapped_column(ForeignKey("colors.id"), nullable=True)
     sweetness_id: Mapped[int] = mapped_column(ForeignKey("sweetness.id"), nullable=True)
-    type_id: Mapped[int] = mapped_column(ForeignKey("types.id"), nullable=True)
 
     # Relationships fields (
-    category: Mapped["Category"] = relationship(back_populates="drinks")
+    subcategory: Mapped["Subcategory"] = relationship(back_populates="drinks")
     subregion: Mapped["Subregion"] = relationship(back_populates="drinks")
-    color: Mapped["Color"] = relationship(back_populates="drinks")
+    # color: Mapped["Color"] = relationship(back_populates="drinks")
     sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
-    type: Mapped["Type"] = relationship(back_populates="drinks")
+    # type: Mapped["Type"] = relationship(back_populates="drinks")
 
     # обратная связь
     items = relationship("Item", back_populates=single_name,
@@ -90,7 +87,7 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     """
 
     def __str__(self):
-        return f"{self.title} - {self.title_native})"
+        return f"{self.title}"
 
 
 class DrinkFood(Base):

@@ -3,7 +3,7 @@
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar
-
+import json
 # from sqlalchemy.sql.sqltypes import String, Text, Boolean
 from sqlalchemy import Boolean, inspect, String, Text, Unicode, UnicodeText
 from sqlalchemy.dialects.postgresql import CITEXT  # если используешь PostgreSQL
@@ -533,3 +533,7 @@ def pop_nested(d: dict, path: str, default=None):
     if isinstance(current, dict) and final_key in current:
         return current.pop(final_key)
     return default
+
+
+def jprint(data: dict):
+    print(json.dumps(data, indent=2, ensure_ascii=False))

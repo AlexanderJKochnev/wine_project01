@@ -28,6 +28,10 @@ class CustomerRouter(BaseRouter):
     async def create(self, data: CustomerCreate, session: AsyncSession = Depends(get_db)) -> CustomerCreateResponse:
         return await super().create(data, session)
 
+    async def create_relation(self, data: CustomerCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> CustomerCreateResponse:
+        return await super().create(data, session)
+
     async def patch(self, id: int, data: CustomerUpdate,
                     session: AsyncSession = Depends(get_db)) -> CustomerRead:
         return await super().patch(id, data, session)

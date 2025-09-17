@@ -14,6 +14,6 @@ class Category(BaseFull):
     plural_name = plural(single_name)
     cascade = settings.CASCADE
     # Обратная связь: один ко многим
-    drinks = relationship(
-        "Drink", back_populates=single_name, cascade=cascade, lazy=lazy
+    subcategories = relationship(
+        "Subcategory", back_populates=single_name, cascade=cascade, lazy=lazy
     )

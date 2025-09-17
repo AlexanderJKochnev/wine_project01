@@ -8,6 +8,7 @@ from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.item.model import Item
 from app.support.region.model import Region
 from app.support.subregion.model import Subregion
+from app.support.subcategory.model import Subcategory
 
 
 # from app.core.config.database.db_noclass import get_db
@@ -23,8 +24,8 @@ class ItemRepository(Repository):
             selectinload(Drink.subregion).options(
                 selectinload(Subregion.region).options(
                     selectinload(Region.country))),
-            selectinload(Drink.category),
-            selectinload(Drink.color),
+            selectinload(Drink.subcategory).
+            selectinload(Subcategory.category),
             selectinload(Drink.sweetness),
             selectinload(Drink.foods),
             selectinload(Drink.food_associations).joinedload(DrinkFood.food),

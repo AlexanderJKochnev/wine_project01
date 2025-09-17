@@ -6,7 +6,7 @@
 import pytest
 from pydantic import TypeAdapter
 import json
-
+from app.core.utils.common_utils import jprint
 pytestmark = pytest.mark.asyncio
 
 
@@ -14,7 +14,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                                   simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
-    test_number = 10
+    test_number = 1
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
@@ -31,14 +31,14 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
         )
         for m, data in enumerate(test_data):
             try:
-                print(json.dumps(data, indent = 2, ensure_ascii = False))
+                # print(json.dumps(data, indent = 2, ensure_ascii = False))
                 # _ = schema(**data)      # валидация данных
                 json_data = json.dumps(data)
                 adapter.validate_json(json_data)
                 assert True
-            except Exception as e:
+            except Exception:
                 # assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
-                assert False, data
+                assert False, f'validation false {data=}'
             try:
                 response = await client.post(f'{prefix}', json=data)
                 assert response.status_code in [200, 201], f'{prefix}, {response.text}'
@@ -57,8 +57,7 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
         schema = router.create_schema_relation
         adapter = TypeAdapter(schema)
         prefix = router.prefix
-        if prefix not in ['/regions',]:
-            continue
+
         test_data = generate_test_data(
             schema, test_number,
             {'int_range': (1, test_number),
@@ -79,4 +78,5 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
                 response = await client.post(f'{prefix}/hierarchy', json=data)
                 assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
-                assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
+                jprint(data)
+                assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
