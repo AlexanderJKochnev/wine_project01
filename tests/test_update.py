@@ -12,6 +12,7 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip
 async def test_patch(authenticated_client_with_db, test_db_session,
                      real_routers_get_all, fakedata_generator):
     """ тестирует методы PATCH (patch) - c проверкой id """

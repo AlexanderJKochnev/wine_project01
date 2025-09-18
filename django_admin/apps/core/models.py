@@ -97,6 +97,7 @@ class Drink(models.Model):
     alc = models.DecimalField(max_digits=5, decimal_places=2, null=True, verbose_name=_("Alcohol %"))
     sugar = models.DecimalField(max_digits=5, decimal_places=2, null=True, verbose_name=_("Sugar %"))
     aging = models.IntegerField(null=True, verbose_name=_("Aging"))
+    age = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Age"))
     sparkling = models.BooleanField(null=True, verbose_name=_("Sparkling"))
     subcategory = models.ForeignKey(Subcategory, on_delete=models.DO_NOTHING,
                                     db_column='subcategory_id', related_name='drinks')
@@ -107,10 +108,14 @@ class Drink(models.Model):
     description = models.TextField(null=True, blank=True, verbose_name=_("Description"))
     description_ru = models.TextField(null=True, blank=True, verbose_name=_("Description (RU)"))
     description_fr = models.TextField(null=True, blank=True, verbose_name=_("Description (FR)"))
+    recommendation = models.TextField(null=True, blank=True, verbose_name=_("Recommendation"))
+    recommendation_ru = models.TextField(null=True, blank=True, verbose_name=_("Recommendation (RU)"))
+    recommendation_fr = models.TextField(null=True, blank=True, verbose_name=_("Recommendation (FR)"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
     foods = models.ManyToManyField('Food', related_name='drinks', blank=True)
     varietals = models.ManyToManyField(Varietal, through='DrinkVarietal', related_name='drinks')
+    image_path = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Image_path"))
     # OneToOne с файлом в MongoDB (ссылка в Postgres)
     # image = MongoFileField(upload_to='drink_images/', null=True, blank=True, verbose_name=_("Image"))
 

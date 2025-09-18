@@ -29,11 +29,15 @@ class CustomCreateRelation:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
     madeof: Optional[str] = None
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
+    age: Optional[str] = None
     sparkling: bool  # Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
@@ -51,11 +55,15 @@ class CustomReadSchema:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
     madeof: Optional[str] = None
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
+    age: Optional[str] = None
     sparkling: Optional[bool] = False
     foods: List[FoodRead]
     varietals: List[VarietalRead]
@@ -70,11 +78,15 @@ class CustomUpdSchema:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
     madeof: Optional[str] = None
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
+    age: Optional[str] = None
     sparkling: Optional[bool] = False
     image_path: Optional[str]
 
@@ -88,11 +100,15 @@ class CustomCreateSchema:
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
     subtitle: Optional[str] = None
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
     madeof: Optional[str] = None
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     aging: Optional[int] = None
+    age: Optional[str] = None
     sparkling: Optional[bool] = False
     image_path: Optional[str]
     # description: Optional[str] = None
