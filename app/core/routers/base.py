@@ -76,6 +76,8 @@ class BaseRouter:
         self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
         self.paginated_response = create_model(f"Paginated{read_schema.__name__}",
                                                __base__=PaginatedResponse[read_schema])
+        self.read_response = create_model(f'{read_schema.__name__}Response',
+                                          __base__=read_schema)
         self.delete_response = DeleteResponse
         self.responses = {404: {"description": "Record not found",
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
@@ -98,6 +100,7 @@ class BaseRouter:
         self.router.add_api_route(
             "/advsearch", self.advanced_search, methods=["GET"], response_model=self.paginated_response
         )
+        self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
                                   response_model=self.read_schema,
@@ -303,6 +306,19 @@ class BaseRouter:
             return response
             result = self.paginated_response(**response)
             return result
+        except SQLAlchemyError as e:
+            logger.error(f"Database error in get: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
+
+        except Exception as e:
+            logger.error(f"Unexpected error in get: {e} {self.model.__name__}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
+
+    async def get_all(self, session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
+        try:
+            return await self.service.get(self.repo, self.model, session)
         except SQLAlchemyError as e:
             logger.error(f"Database error in get: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

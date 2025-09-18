@@ -361,6 +361,18 @@ def flatten_dict(
     return result
 
 
+def json_flattern(self, data: dict, parent: str = '') -> dict:
+    """ превращает словарь в плоский """
+    result: dict = {}
+    for key, val in data.items():
+        if isinstance(val, dict):
+            parent = f'{parent}.{key}'
+            result.update(self.json_flattern(val, parent))
+        else:
+            result[f'{parent}.{key}'] = ', '.join(val) if isinstance(val, str) else val
+    return result
+
+
 def plural(single: str) -> str:
     """
     :param single:  single name

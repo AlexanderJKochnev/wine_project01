@@ -87,6 +87,14 @@ class Repository:
         return items, total
 
     @classmethod
+    async def get(cls, model: ModelType, session: AsyncSession, ) -> list:
+        # Запрос с загрузкой связей NO PAGINATION
+        stmt = cls.get_query(model)
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+        return items
+
+    @classmethod
     async def get_by_field(cls, field_name: str, field_value: Any, model: ModelType, session: AsyncSession):
         stmt = select(model).where(getattr(model, field_name) == field_value)
         result = await session.execute(stmt)

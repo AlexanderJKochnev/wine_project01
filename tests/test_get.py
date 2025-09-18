@@ -6,7 +6,7 @@
 """
 
 import pytest
-from app.core.schemas.base import PaginatedResponse
+from app.core.schemas.base import PaginatedResponse, ListResponse
 
 pytestmark = pytest.mark.asyncio
 
@@ -14,12 +14,26 @@ pytestmark = pytest.mark.asyncio
 async def test_get_all(authenticated_client_with_db, test_db_session, routers_get_all, fakedata_generator):
     """ тестирует методы get all - с проверкой формата ответа """
     routers = routers_get_all
-    x = PaginatedResponse.model_fields.keys()
+    expected_response = PaginatedResponse.model_fields.keys()
     client = authenticated_client_with_db
     for prefix in routers:
         response = await client.get(f'{prefix}')
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
+        assert response.json().keys() == expected_response, \
+            f'метод GET для пути "{prefix}" возвращает некорректные данные'
+
+
+async def test_get_nopage(authenticated_client_with_db, test_db_session, routers_get_all, fakedata_generator):
+    """ тестирует методы get all - с проверкой формата ответа """
+    routers = routers_get_all
+    # expected_response = ListResponse.model_fields.keys()
+    client = authenticated_client_with_db
+    for prefix in routers:
+        response = await client.get(f'{prefix}/all')
+        assert response.status_code == 200, response.text
+        # f'метод GET не работает для пути "{prefix}"'
+        # assert response.json().keys() == expected_response, \
+        #    f'метод GET для пути "{prefix}" возвращает некорректные данные'
 
 
 async def test_get_one(authenticated_client_with_db, test_db_session,

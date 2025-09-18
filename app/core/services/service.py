@@ -106,6 +106,12 @@ class Service:
                   "has_next": skip + len(items) < total,
                   "has_prev": page > 1}
         return result
+    
+    @classmethod
+    async def get(cls, repository: Type[Repository], model: ModelType, session: AsyncSession, ) -> List:
+        # Запрос с загрузкой связей
+        result = await repository.get(model, session)
+        return result
 
     @classmethod
     async def patch(cls, obj: ModelType, data: ModelType, repository: Type[Repository], session: AsyncSession) -> (
