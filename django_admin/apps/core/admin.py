@@ -88,9 +88,8 @@ class DrinkAdminForm(forms.ModelForm):
             'image': ImageUploadWidget,
             'foods': forms.CheckboxSelectMultiple,  # many-to-many → чекбоксы
             'varietals': forms.CheckboxSelectMultiple,
-            'category': forms.Select,               # many-to-one → выпадающий список
+            'subcategory': forms.Select,               # many-to-one → выпадающий список
             'subregion': forms.Select,
-            'color': forms.Select,
             'sweetness': forms.Select,
         }
 
@@ -128,8 +127,8 @@ class DrinkVarietalInline(admin.TabularInline):
 @admin.register(Drink)
 class DrinkAdmin(SortedModelAdmin):
     form = DrinkAdminForm
-    list_display = ('title', 'alc', 'category', 'image_tag', 'get_foods')
-    list_filter = ('category', 'color', 'sweetness')
+    list_display = ('title', 'alc', 'subcategory', 'image_tag', 'get_foods')
+    list_filter = ('subcategory', 'sweetness')
     search_fields = ('title', 'title_native', 'subtitle')
     filter_horizontal = ()  # Отключаем, так как используем CheckboxSelectMultiple в форме
     readonly_fields = ('image_tag',)

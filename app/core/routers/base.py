@@ -22,7 +22,7 @@ TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
 TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 TReadSchema = TypeVar("TReadSchema", bound=ReadSchema)
 TCreateResponse = TypeVar("TCreateResponse", bound=CreateResponse)
-
+TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class BaseRouter:
         prefix: str,
         tags: List[str],
         create_schema: Type[ReadSchema],
-        # patch_schema: Type[ReadSchema],
+        path_schema: Type[UpdateSchema],
         read_schema: Type[ReadSchema],
         create_response_schema: Type[CreateResponse],
         create_schema_relation: Type[CreateResponse],
@@ -83,6 +83,7 @@ class BaseRouter:
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
         self.setup_routes()
         self.service = service
+        self.path_schema = path_schema
 
     def setup_routes(self):
         """Настраивает маршруты"""

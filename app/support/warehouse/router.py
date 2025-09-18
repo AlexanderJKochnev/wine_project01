@@ -17,6 +17,7 @@ class WarehouseRouter(BaseRouter):
             repo=WarehouseRepository,
             create_schema=WarehouseCreate,
             read_schema=WarehouseRead,
+            path_schema=WarehouseUpdate,
             prefix="/warehouses",
             tags=["warehouses"],
             service=WarehouseService,

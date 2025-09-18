@@ -22,6 +22,7 @@ class DrinkRouter(BaseRouter):
             read_schema=DrinkRead,
             create_schema_relation=DrinkCreateRelations,
             create_response_schema=DrinkCreateResponseSchema,
+            path_schema=DrinkUpdate,
             prefix="/drinks",
             tags=["drinks"],
             service=DrinkService

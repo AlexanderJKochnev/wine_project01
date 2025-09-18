@@ -4,32 +4,34 @@
     новые методы добавляются автоматически
     pytest tests/test_patch.py --tb=auto --disable-warnings -vv --capture=no
 """
+import random
 
 import pytest
-from app.core.schemas.base import PaginatedResponse
+
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_patch(authenticated_client_with_db, test_db_session,
-                     routers_get_all, fakedata_generator):
+                     real_routers_get_all, fakedata_generator):
     """ тестирует методы PATCH (patch) - c проверкой id """
+    """ тест не работает в реале работает - разобраться """
     client = authenticated_client_with_db
-    routers = routers_get_all
-    response_keys = PaginatedResponse.model_fields.keys()
+    routers = real_routers_get_all
     # all foireign field name add to remove list
     remove_list: tuple = ('id', 'created_at', 'updated_at', 'country', 'customer')
-    for prefix in routers:
-        if prefix == '/drinks':
+    for router in routers:
+        prefix = router.path
+        if prefix in ['/drinks']:
             continue
-        response = await client.get(f'{prefix}')
+        response = await client.get(f'{prefix}/all')
         assert response.status_code == 200, 'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == response_keys, 'метод GET для пути "{prefix}" возвращает некорректные данные'
+        # assert response.json().keys() == response_keys, 'метод GET для пути "{prefix}" возвращает некорректные данные'
         tmp = response.json()
-        total = len(tmp['items'])
+        total = len(tmp)
         if total > 0:       # записи есть
-            instance = tmp['items'][-1]
-            id = instance['id']
+            instance = tmp[random.randint(0, total - 1)]
+            id = instance.pop('id')
             for key, val in instance.items():  # изменяем
                 if isinstance(val, str):
                     instance[key] = f'changed_{val}'
@@ -37,11 +39,11 @@ async def test_patch(authenticated_client_with_db, test_db_session,
                     instance[key] = None
             for x in remove_list:  # удаляем pk и
                 instance.pop(x, None)
-            instance_patchd = {key: val for key, val in instance.items() if val}
-            resp = await client.patch(f'{prefix}/{id}', json=instance_patchd)
-            assert resp.status_code == 200, f'{instance_patchd=}, {prefix}'
+            instance_patched = {key: val for key, val in instance.items() if val}
+            resp = await client.patch(f'{prefix}/{id}', json=instance_patched)
+            assert resp.status_code == 200, f'{prefix} {instance_patched=}'
             result = resp.json()
-            for key, val in instance_patchd.items():
-                assert result.get(key) == val, f'{prefix=}, {result=} {instance_patchd=}'
+            for key, val in instance_patched.items():
+                assert result.get(key) == val, f'{prefix=}, {result=} {instance_patched=}'
         else:
             assert False, 'генератор тестовых данных не сработал на {prefix}. см. test_routers.py'

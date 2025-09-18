@@ -18,6 +18,7 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
             repo=CategoryRepository,
             create_schema=CategoryCreate,
             read_schema=CategoryRead,
+            path_schema=CategoryUpdate,
             create_schema_relation=CategoryCreateRelation,
             create_response_schema=CategoryCreateResponseSchema,
             prefix="/categories",

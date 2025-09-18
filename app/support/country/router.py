@@ -20,6 +20,7 @@ class CountryRouter(BaseRouter):
             create_response_schema=CountryCreateResponseSchema,
             read_schema=CountryRead,
             create_schema_relation=CountryCreateRelation,
+            path_schema=CountryUpdate,
             prefix="/countries",
             tags=["countries"],
             service=CountryService

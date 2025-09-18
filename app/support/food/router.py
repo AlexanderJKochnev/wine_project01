@@ -19,6 +19,7 @@ class FoodRouter(BaseRouter):
             repo=FoodRepository,
             create_schema=FoodCreate,
             read_schema=FoodRead,
+            path_schema=FoodUpdate,
             prefix="/foods",
             tags=["foods"],
             service=FoodService,

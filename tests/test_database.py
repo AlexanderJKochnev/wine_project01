@@ -35,7 +35,7 @@ async def test_all_tables_created(mock_engine):
         # Проверяем наличие всех ожидаемых таблиц
         expected_tables = {'categories', 'drinks', 'countries', 'customers',
                            'warehouses', 'foods', 'items', 'regions',
-                           'colors', 'sweetness', 'users'}
+                           'sweetness', 'users'}
 
         # Для SQLite таблицы могут иметь немного другие имена
         found_tables = set(tables)

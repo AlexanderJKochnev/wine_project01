@@ -19,6 +19,7 @@ class RegionRouter(BaseRouter):
             repo=RegionRepository,
             create_schema=RegionCreate,
             read_schema=RegionRead,
+            path_schema=RegionUpdate,
             prefix="/regions",
             tags=["regions"],
             service=RegionService,

@@ -18,6 +18,7 @@ class ItemRouter(BaseRouter):
             repo=ItemRepository,
             create_schema=ItemCreate,
             read_schema=ItemRead,
+            path_schema=ItemUpdate,
             prefix="/items",
             tags=["items"],
             create_response_schema=ItemCreateResponseSchema,

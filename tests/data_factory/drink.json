@@ -9,15 +9,6 @@
 	  "name_fr": "string",
 	  "id": 0
 	},
-	"color_id": {
-	  "name": "string",
-	  "description_en": "string",
-	  "description_ru": "string",
-	  "description_fr": "string",
-	  "name_ru": "string",
-	  "name_fr": "string",
-	  "id": 0
-	},
 	"sweetness_id": {
 	  "name": "string",
 	  "description_en": "string",

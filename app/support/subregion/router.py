@@ -19,6 +19,7 @@ class SubregionRouter(BaseRouter):
             repo=SubregionRepository,
             create_schema=SubregionCreate,
             read_schema=SubregionRead,
+            path_schema=SubregionUpdate,
             prefix="/subregions",
             tags=["subregions"],
             service=SubregionService,

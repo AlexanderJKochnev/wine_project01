@@ -18,6 +18,7 @@ class SubcategoryRouter(BaseRouter):
             repo=SubcategoryRepository,
             create_schema=SubcategoryCreate,
             read_schema=SubcategoryRead,
+            path_schema=SubcategoryUpdate,
             create_schema_relation=SubcategoryCreateRelation,
             create_response_schema=SubcategoryCreateResponseSchema,
             prefix="/subcategories",

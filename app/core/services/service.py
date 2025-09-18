@@ -1,7 +1,7 @@
 # app.core.service/service.py
 
 from typing import Any, Dict, List, Optional, Type
-
+import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -106,7 +106,7 @@ class Service:
                   "has_next": skip + len(items) < total,
                   "has_prev": page > 1}
         return result
-    
+
     @classmethod
     async def get(cls, repository: Type[Repository], model: ModelType, session: AsyncSession, ) -> List:
         # Запрос с загрузкой связей

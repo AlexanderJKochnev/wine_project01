@@ -18,6 +18,7 @@ class VarietalRouter(BaseRouter):
             repo=VarietalRepository,
             create_schema=VarietalCreate,
             read_schema=VarietalRead,
+            path_schema=VarietalUpdate,
             prefix="/varietals",
             tags=["varietals"],
             service=VarietalService,

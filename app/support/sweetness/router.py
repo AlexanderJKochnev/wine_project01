@@ -18,6 +18,7 @@ class SweetnessRouter(BaseRouter):
             repo=SweetnessRepository,
             create_schema=SweetnessCreate,
             read_schema=SweetnessRead,
+            path_schema=SweetnessUpdate,
             prefix="/sweetnesses",
             tags=["sweetnesses"],
             service=SweetnessService,

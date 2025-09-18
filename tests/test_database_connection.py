@@ -20,7 +20,7 @@ async def test_database_connection_established(test_db_session):
 async def test_database_tables_accessible(authenticated_client_with_db, test_db_session):
     """Тест проверяет, что таблицы созданы и доступны в тестовой базе данных"""
     # Проверяем доступ к основным таблицам
-    expected_tables = ['users', 'categories', 'drinks', 'colors', 'regions', 'countries']
+    expected_tables = ['users', 'categories', 'drinks', 'regions', 'countries']
 
     for table_name in expected_tables:
         result = await test_db_session.execute(text(f"SELECT COUNT(*) FROM {table_name}"))

@@ -19,6 +19,7 @@ class CustomerRouter(BaseRouter):
             create_schema=CustomerCreate,
             create_response_schema=CustomerCreateResponse,
             create_schema_relation=CustomerCreateRelation,
+            path_schema=CustomerUpdate,
             read_schema=CustomerRead,
             prefix="/customers",
             tags=["customers"],

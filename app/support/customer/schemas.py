@@ -23,7 +23,7 @@ class CustomCreateSchema(BaseModel):
 
 
 class CustomUpdSchema(BaseModel):
-    id: Optional[str]
+    # id: Optional[str]
     login: Optional[str] = None
     firstname: Optional[str] = None
     lastname: Optional[str] = None
