@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import (Mapped, mapped_column, relationship)
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import BaseFull
+from app.core.models.base_model import BaseFull, str_null_false
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
@@ -25,3 +25,5 @@ class Subregion(BaseFull):
     drinks = relationship("Drink", back_populates=single_name,
                           cascade=cascade,
                           lazy=lazy)
+    name: Mapped[str_null_false]
+    __table_args__ = (UniqueConstraint('name', 'region_id', name='uq_subregion_name_region'),)
