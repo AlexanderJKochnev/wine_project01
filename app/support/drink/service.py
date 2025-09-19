@@ -50,23 +50,23 @@ class DrinkService(Service):
             result = await SubregionService.create_relation(data.subregion, SubregionRepository,
                                                             Subregion, session)
             drink_data['subregion_id'] = result.id
-            print(f'============subregion {result.id}')
+
         if data.subcategory:
             result = await SubcategoryService.create_relation(data.subcategory, SubcategoryRepository,
                                                               Subcategory, session)
             drink_data['subcategory_id'] = result.id
-            print(f'============subcategory {result.id}')
+
         # if data.color:
         #     result = await ColorService.get_or_create(data.color, ColorRepository, Color, session)
         #     drink_data['color_id'] = result.id
         if data.sweetness:
             result = await SweetnessService.get_or_create(data.sweetness, SweetnessRepository, Sweetness, session)
             drink_data['sweetness_id'] = result.id
-            print(f'============sweetness {result.id}')
+
         drink = DrinkCreate(**drink_data)
         drink_instance = await DrinkService.get_or_create(drink, DrinkRepository, Drink, session)
         drink_id = drink_instance.id
-        # =============manytomany case==============
+
         if isinstance(data.foods, list):
             food_ids = []
             # 1. get_or_create foods in Food
@@ -90,7 +90,6 @@ class DrinkService(Service):
             # 2. set drink_varietal
             await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
             # 3. set up percentage
-            print(f'======================={type(varietal_percentage)=}')
             for key, val in varietal_percentage.items():
                 await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
         return drink_instance

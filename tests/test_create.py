@@ -80,3 +80,27 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
             except Exception as e:
                 jprint(data)
                 assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
+
+
+async def test_real_data_relation(authenticated_client_with_db, test_db_session, import_data):
+    from app.support.drink.router import DrinkRouter as Router
+    client = authenticated_client_with_db
+    dataset = import_data
+    router = Router()
+    schema = router.create_schema_relation
+    adapter = TypeAdapter(schema)
+    prefix = router.prefix
+    for n, data in enumerate(dataset):
+        try:
+            json_data = json.dumps(data)
+            adapter.validate_json(json_data)
+            assert True
+        except Exception as e:
+            jprint(data)
+            assert False, e
+        try:
+            response = await client.post(f'{prefix}/hierarchy', json = data)
+            assert response.status_code in [200, 201], f'{prefix}, {response.text}'
+        except Exception as e:
+            jprint(data)
+            assert False, f'{e} {response.status_code} {prefix=}, {response.text}'

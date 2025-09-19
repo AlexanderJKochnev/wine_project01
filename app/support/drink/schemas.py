@@ -38,7 +38,7 @@ class CustomCreateRelation:
     sugar: Optional[float] = None
     aging: Optional[int] = None
     age: Optional[str] = None
-    sparkling: bool  # Optional[bool] = False
+    sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
     # foods: List[FoodCreateRelation]

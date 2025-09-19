@@ -18,6 +18,7 @@ from app.main import app, get_db
 from tests.data_factory.fake_generator import generate_test_data
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
+from tests.data_factory.reader_json import JsonConverter
 
 scope = 'session'
 scope2 = 'session'
@@ -35,6 +36,12 @@ def disable_httpx_logging():
     loggers_to_silence = ["httpx", "httpx._client", "httpcore"]
     for name in loggers_to_silence:
         logging.getLogger(name).setLevel(logging.WARNING)
+
+
+@pytest.fixture(scope=scope)
+def import_data() -> List[Dict]:
+    data = JsonConverter()()
+    return list(data.values())
 
 
 def get_routers(method: str = 'GET') -> List[APIRoute]:

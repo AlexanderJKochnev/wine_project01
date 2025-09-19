@@ -2,7 +2,7 @@
 #
 from typing import List
 
-from pydantic import BaseModel
+from app.core.schemas.base import BaseModel
 
 
 class DrinkFoodLinkCreate(BaseModel):

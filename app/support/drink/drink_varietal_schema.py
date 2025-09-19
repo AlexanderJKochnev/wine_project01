@@ -1,7 +1,7 @@
 # app/support/drink/drink_varietal_schema.py
 
-from typing import List, Optional, Tuple
-from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
+from app.core.schemas.base import BaseModel, ConfigDict
 from app.support.varietal.router import VarietalCreateRelation
 
 
