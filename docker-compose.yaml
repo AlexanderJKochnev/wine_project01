@@ -13,10 +13,7 @@ services:
     volumes:
       - ./pg_data:/var/lib/postgresql/data
       - ./pg_dump:/tmp
-  #   networks:
-  #     - pgnetwork
-      #   aliases:
-      #     - ${POSTGRES_HOST}
+
     healthcheck:
       test: |
         sh -c 'pg_isready -h localhost -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}'
@@ -38,9 +35,15 @@ services:
       - wine_host
     ports:
       - "${ADMINER_PORTS}"
-#     networks:
-#       - pgnetwork
-
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.12'
+          memory: 256M
+  
   app:
     container_name: app
     build: .
@@ -76,8 +79,62 @@ services:
       # ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     depends_on:
       - wine_host
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.12'
+          memory: 256M
+  
+  mongo:
+    image: mongo:4.4.20
+    container_name: mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: admin
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb_data:/data/db
+      - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+  
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.12'
+          memory: 256M
 
 volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
+  mongodb_data:

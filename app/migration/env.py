@@ -1,4 +1,4 @@
-import asyncio
+# import asyncio
 from logging.config import fileConfig
 
 # from sqlalchemy import pool
@@ -21,7 +21,6 @@ from app.support.warehouse.model import Warehouse   # noqa: F401, E402
 from app.support.food.model import Food   # noqa: F401, E402
 from app.support.item.model import Item   # noqa: F401, E402
 from app.support.region.model import Region   # noqa: F401, E402
-from app.support.color.model import Color   # noqa: F401, E402
 from app.support.sweetness.model import Sweetness   # noqa: F401, E402
 from app.auth.models import User  # noqa: F401, E402
 from app.core.config.database.db_config import settings_db  # noqa:  F401, E402
