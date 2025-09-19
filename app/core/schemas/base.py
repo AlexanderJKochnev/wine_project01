@@ -10,8 +10,31 @@ PaginatedResponse - см ниже на базе ReadSchema
 ListResponse - тоже что и Pagianted только без Pagianted
 """
 from typing import NewType, Generic, TypeVar, List, Optional, Any
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel as BaseOrigin, ConfigDict, model_validator
 from datetime import datetime
+from abc import ABC
+
+
+class BaseModel(BaseOrigin, ABC):
+    def get_required_structure(self, deep: bool = False) -> dict:
+        """ Рекурсивно получает структуру только с обязательными полями
+            deep = true - поиск во вложенных моделях
+        """
+        result = {}
+        EXCLUDE_LIST = ['id', 'pk', 'uuid', 'uid']  # исключает счетчики
+        for field_name, field_info in self.model_fields.items():
+            if field_name in EXCLUDE_LIST:
+                continue
+            if field_info.is_required():
+                value = getattr(self, field_name)
+                if deep:
+                    # Рекурсивная обработка вложенных моделей
+                    if isinstance(value, BaseModel):
+                        result[field_name] = self.get_required_structure(value)
+                    else:
+                        result[field_name] = value
+        return result
+
 
 PyModel = NewType("PyModel", BaseModel)
 T = TypeVar("T")

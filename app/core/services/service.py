@@ -1,7 +1,7 @@
 # app.core.service/service.py
 
 from typing import Any, Dict, List, Optional, Type
-import json
+# import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -34,6 +34,7 @@ class Service:
         """ использовать вместо create """
 
         data_dict = data.model_dump(exclude_unset=True)
+        # data_dict = data.get_required_structure()   # поиск только по обязательным полям
 
         result = await repository.get_by_obj(data_dict, model, session)
         if result:
