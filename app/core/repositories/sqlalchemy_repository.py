@@ -19,8 +19,8 @@ class Repository:
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         session.add(obj)
-        await session.flush()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
-        # commit делаем в сервисе - для групповых операций
+        await session.commit()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
+        await session.refresh(obj)
         return obj
 
     @classmethod
@@ -30,7 +30,8 @@ class Repository:
         for k, v in data.items():
             if hasattr(obj, k):
                 setattr(obj, k, v)
-        await session.flush()
+        await session.commit()
+        await session.refresh()
         return obj
 
     @classmethod

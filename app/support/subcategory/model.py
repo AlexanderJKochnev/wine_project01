@@ -7,14 +7,15 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import BaseFull, str_null_false
+from app.core.models.base_model import (BaseFullFree, str_null_false,
+                                        str_null_true)
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
     from app.support.category.model import Category
 
 
-class Subcategory(BaseFull):
+class Subcategory(BaseFullFree):
 
     lazy = settings.LAZY
     cascade = settings.CASCADE
@@ -25,5 +26,5 @@ class Subcategory(BaseFull):
     drinks = relationship("Drink", back_populates=single_name,
                           cascade=cascade,
                           lazy=lazy)
-    name: Mapped[str_null_false]
-    __table_args__ = (UniqueConstraint('name', 'category_id', name = 'uq_subcategory_name_category'),)
+    # name: Mapped[str_null_true]
+    __table_args__ = (UniqueConstraint('name', 'category_id', name='uq_subcategory_name_category'),)

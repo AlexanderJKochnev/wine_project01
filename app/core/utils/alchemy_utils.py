@@ -1,8 +1,11 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+import re
+from typing import List, Optional, Tuple
+
 from fastapi import Query
-from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.models.base_model import Base
-from app.core.repositories.sqlalchemy_repository import ModelType, Repository
+from app.core.repositories.sqlalchemy_repository import ModelType
 
 
 async def mass_delete(query: Query, batch: int, session: AsyncSession):
@@ -54,3 +57,33 @@ def model_to_dict(obj, seen=None):
 def get_models() -> List[ModelType]:
     return (cls for cls in Base.registry._class_registry.values() if
             isinstance(cls, type) and hasattr(cls, '__table__'))
+
+
+def parse_unique_violation(error_msg: str) -> Optional[Tuple[str, str]]:
+    """
+    Парсит сообщение об ошибке уникальности и извлекает:
+    - название поля (constraint)
+    - значение, которое вызвало конфликт
+
+    Пример:
+    Input: 'duplicate key value violates unique constraint "ix_foods_name"
+            DETAIL: Key (name)=(Game (venison)) already exists.'
+    Output: ('name', 'Game (venison)')
+    """
+    # Паттерны для извлечения информации
+    patterns = [
+        # Для PostgreSQL
+        r'Key \((.+?)\)=\((.+?)\) already exists',
+        r'duplicate key value violates unique constraint ".+?"\s+DETAIL:\s+Key \((.+?)\)=\((.+?)\)',
+        # Для других СУБД
+        r'UNIQUE constraint failed: (.+?)\.(.+?)',
+        r'Duplicate entry \'(.+?)\' for key \'(.+?)\''
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, error_msg, re.IGNORECASE)
+        if match:
+            if len(match.groups()) == 2:
+                return match.group(1), match.group(2)
+
+    return None

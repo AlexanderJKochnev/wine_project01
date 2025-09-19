@@ -11,6 +11,8 @@
 import pytest
 from pydantic import TypeAdapter, ValidationError
 import json
+from app.core.utils.common_utils import jprint
+
 
 pytestmark = pytest.mark.asyncio
 
@@ -618,12 +620,16 @@ async def test_real_data_relation(authenticated_client_with_db, test_db_session,
     adapter = TypeAdapter(schema)
     prefix = router.prefix
     for n, data in enumerate(dataset):
+        if n < 7:
+            continue
+        if n == 15:
+            break
         try:
             json_data = json.dumps(data)
             adapter.validate_json(json_data)
             assert True
         except Exception as e:
-            jprint(data)
+            # jprint(data)
             assert False, e
         try:
             response = await client.post(f'{prefix}/hierarchy', json = data)

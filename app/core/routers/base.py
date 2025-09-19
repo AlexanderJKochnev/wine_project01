@@ -114,8 +114,8 @@ class BaseRouter:
         try:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.get_or_create(data, self.repo, self.model, session)
-            await session.commit()
-            await session.refresh(obj)
+            # await session.commit()
+            # await session.refresh(obj)
             return obj
         except ValidationException as e:
             await session.rollback()
@@ -159,7 +159,7 @@ class BaseRouter:
         try:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.create_relation(data, self.repo, self.model, session)
-            await session.commit()
+            # await session.commit()
             return await self.service.get_by_id(obj.id, self.repo, self.model, session)
         except ValidationException as e:
             await session.rollback()
@@ -203,8 +203,8 @@ class BaseRouter:
             if not obj:
                 await session.rollback()
                 raise NotFoundException(detail=f"Item with id {id} not found")
-            await session.commit()
-            await session.refresh(obj)
+            # await session.commit()
+            # await session.refresh(obj)
             return obj
         except ValidationException as e:
             await session.rollback()

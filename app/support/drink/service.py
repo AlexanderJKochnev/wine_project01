@@ -23,9 +23,10 @@ class DrinkService(Service):
 
     @classmethod
     async def __get_by_id(cls, id: int, repository: Type[Repository],
-                        model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+                          model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         result = await super().get_by_id(id, repository, model, session)
         return result
+        """
         try:
             subresult = model_to_dict(result)
             flatresult = flatten_dict(subresult, ['name', 'name_ru'])
@@ -37,6 +38,7 @@ class DrinkService(Service):
             print(f'drink.service..get_by_id error {e}')
         finally:
             return result
+        """
 
     @classmethod
     async def create_relation(cls, data: DrinkCreateRelations,
@@ -56,17 +58,15 @@ class DrinkService(Service):
                                                               Subcategory, session)
             drink_data['subcategory_id'] = result.id
 
-        # if data.color:
-        #     result = await ColorService.get_or_create(data.color, ColorRepository, Color, session)
-        #     drink_data['color_id'] = result.id
         if data.sweetness:
             result = await SweetnessService.get_or_create(data.sweetness, SweetnessRepository, Sweetness, session)
             drink_data['sweetness_id'] = result.id
-
-        drink = DrinkCreate(**drink_data)
-        drink_instance = await DrinkService.get_or_create(drink, DrinkRepository, Drink, session)
-        drink_id = drink_instance.id
-
+        try:
+            drink = DrinkCreate(**drink_data)
+            drink_instance = await DrinkService.get_or_create(drink, DrinkRepository, Drink, session)
+            drink_id = drink_instance.id
+        except Exception as e:
+            print(f'drink/service/create_relation:70 {e}==========================')
         if isinstance(data.foods, list):
             food_ids = []
             # 1. get_or_create foods in Food
@@ -91,5 +91,6 @@ class DrinkService(Service):
             await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
             # 3. set up percentage
             for key, val in varietal_percentage.items():
+                pass
                 await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
         return drink_instance

@@ -110,6 +110,13 @@ class BaseInt:
     description: Mapped[descr]
 
 
+class BaseIntFree:
+    """ общие поля для всех таблиц на англ. языке """
+    __abstract__ = True
+    name: Mapped[str_null_false]
+    description: Mapped[descr]
+
+
 class BaseDescription:
     """ общие поля для всех таблиц на разных языках
         добавлять по мере необходимости
@@ -131,5 +138,11 @@ class BaseLang(BaseDescription):
 
 
 class BaseFull(Base, BaseInt, BaseAt, BaseLang):
+    __abstract__ = True
+    pass
+
+
+class BaseFullFree(Base, BaseIntFree, BaseAt, BaseLang):
+    """ модель без обязательных полей под составной индекс"""
     __abstract__ = True
     pass

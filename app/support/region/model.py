@@ -7,14 +7,14 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import (Mapped, mapped_column, relationship)
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import BaseFull, str_null_false
+from app.core.models.base_model import BaseFullFree, str_null_false
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
     from app.support.country.model import Country
 
 
-class Region(BaseFull):
+class Region(BaseFullFree):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single = 'region'

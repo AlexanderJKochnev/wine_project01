@@ -1,12 +1,15 @@
 # app.core.service/service.py
 
 from typing import Any, Dict, List, Optional, Type
+
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 # import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.core.utils.alchemy_utils import get_models
+from app.core.utils.alchemy_utils import get_models, parse_unique_violation
 
 
 class Service:
@@ -25,7 +28,6 @@ class Service:
         data_dict = data.model_dump(exclude_unset=True)
         obj = model(**data_dict)
         result = await repository.create(obj, model, session)
-        # тут можно добавить преобразования результата потом commit в роутере
         return result
 
     @classmethod
@@ -41,10 +43,26 @@ class Service:
             return result
         else:
             obj = model(**data_dict)
+            try:
+                result = await repository.create(obj, model, session)
+                # тут можно добавить преобразования результата потом commit в роутере
+                return result
+            except IntegrityError as e:
+                error_msg = str(e)
+                await session.rollback()
+                parsed_info = parse_unique_violation(error_msg)
 
-            result = await repository.create(obj, model, session)
-            # тут можно добавить преобразования результата потом commit в роутере
-            return result
+                if parsed_info:
+                    field_name, conflict_value = parsed_info
+                    existing_instance = await repository.get_by_field(field_name, conflict_value, model, session)
+
+                    if existing_instance:
+                        return existing_instance
+                    else:
+                        raise HTTPException(status_code=409,
+                                            detail=f"Unique constraint violation for "
+                                                   f"{field_name}='{conflict_value}' "
+                                                   f"but existing record not found")
 
     @classmethod
     async def update_or_create(cls,
