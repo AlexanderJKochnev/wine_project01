@@ -1,8 +1,9 @@
 # tests/conftest.py
 import asyncio
 import json
-from typing import Any, Dict, List
 import logging
+from typing import Any, Dict, List
+
 import pytest
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
@@ -15,11 +16,12 @@ from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.main import app, get_db
+from app.mongodb.config import AsyncIOMotorClient, close_mongo_connection, connect_to_mongo, mongodb
 from tests.data_factory.fake_generator import generate_test_data
+from tests.data_factory.reader_json import JsonConverter
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
-from tests.data_factory.reader_json import JsonConverter
-from app.mongodb.config import mongodb, connect_to_mongo, close_mongo_connection, AsyncIOMotorClient
+from tests.config import settings_db
 
 
 scope = 'session'
@@ -35,6 +37,7 @@ class MockMongoDB:
 
 
 mock_mongodb = MockMongoDB()
+
 
 @pytest.fixture(scope="function")
 async def test_mongo_connection():
@@ -64,6 +67,8 @@ async def mongo_health_check():
         print(f"MongoDB health check failed: {e}")
         return False
 # ---------------mongo db end ----------
+
+
 def pytest_configure(config):
     config.option.log_cli_level = "INFO"
     config.option.log_cli_format = "%(levelname)s - %(message)s"
@@ -365,7 +370,10 @@ def mock_db_url():
     """URL для тестовой базы данных SQLite"""
     # return "sqlite+aiosqlite:///:memory:"
     # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
-    return "postgresql+psycopg_async://test_user:test@localhost:2345/test_db"
+    st = settings_db
+    return (f"postgresql+psycopg_async://{st.POSTGRES_USER}:"
+            f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
+    # return "postgresql+psycopg_async://test_user:test@localhost:2345/test_db"
     # return "sqlite+aiosqlite:///:memory:?cache=shared"
 
 
