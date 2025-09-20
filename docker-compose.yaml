@@ -113,8 +113,10 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
       MONGO_INITDB_DATABASE: admin
-    ports:
-      - "${MONGO_OUT_PORT}:${MONGO_INN_PORT}"
+    expose:
+      - "${MONGO_INN_PORT}"
+    # ports:
+    #   - "${MONGO_OUT_PORT}:${MONGO_INN_PORT}"
     volumes:
       - ./mongodb_data:/data/db
       - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
