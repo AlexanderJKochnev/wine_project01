@@ -19,12 +19,51 @@ from tests.data_factory.fake_generator import generate_test_data
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
 from tests.data_factory.reader_json import JsonConverter
+from app.mongodb.config import mongodb, connect_to_mongo, close_mongo_connection, AsyncIOMotorClient
+
 
 scope = 'session'
 scope2 = 'session'
 example_count = 5      # количество тестовых записей - рекомедуется >20 для paging test
 
 
+class MockMongoDB:
+    def __init__(self):
+        self.client = None
+        self.database = None
+        self.connected = False
+
+
+mock_mongodb = MockMongoDB()
+
+@pytest.fixture(scope="function")
+async def test_mongo_connection():
+    """Тестовая фикстура для проверки подключения к MongoDB"""
+    try:
+        # Пытаемся подключиться к тестовой MongoDB
+        test_client = AsyncIOMotorClient("mongodb://admin:admin@localhost:27017", serverSelectionTimeoutMS=5000)
+        await test_client.admin.command('ping')
+        connected = True
+        test_client.close()
+    except Exception as e:
+        print(f"MongoDB connection failed: {e}")
+        connected = False
+    return connected
+
+
+@pytest.fixture(scope="function")
+async def mongo_health_check():
+    """Проверка здоровья MongoDB подключения из приложения"""
+    try:
+        # Имитируем подключение как в приложении
+        await connect_to_mongo()
+        healthy = mongodb.client is not None
+        await close_mongo_connection()
+        return healthy
+    except Exception as e:
+        print(f"MongoDB health check failed: {e}")
+        return False
+# ---------------mongo db end ----------
 def pytest_configure(config):
     config.option.log_cli_level = "INFO"
     config.option.log_cli_format = "%(levelname)s - %(message)s"

@@ -1,10 +1,46 @@
 # app/mongodb/config.py
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi import Depends  # NOQA: F401
+from app.core.utils.common_utils import get_path_to_root
 # import os
 
-MONGO_URL = "mongodb://admin:admin@mongodb:27017"
-DATABASE_NAME = "files_db"
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=get_path_to_root(), env_file_encoding='utf-8', extra='ignore'
+    )
+    MONGODB_CONTAINER_NAME: str
+    MONGO_INITDB_ROOT_USERNAME: str
+    MONGO_INITDB_ROOT_PASSWORD: str
+    MONGO_INITDB_DATABASE: str
+    MONGO_OUT_PORT: int = 27017
+    MONGO_INN_PORT: int = 27017
+
+    MONGO_EXPRESS_CONTAINER_NAME: str
+    ME_CONFIG_MONGODB_ADMINUSERNAME: str
+    ME_CONFIG_MONGODB_ADMINPASSWORD: str
+    ME_CONFIG_MONGODB_SERVER: str
+    ME_CONFIG_BASICAUTH_USERNAME: str
+    ME_CONFIG_BASICAUTH_PASSWORD: str
+    ME_OUT_PORT: int
+    ME_INN_PORT: int
+
+    @property
+    def mongo_url(self) -> str:
+        """
+        выводит строку подключения
+        :return:
+        :rtype:
+        """
+        return (f"mongodb://{self.MONGO_INITDB_ROOT_USERNAME}:"
+                f"{self.MONGO_INITDB_ROOT_PASSWORD}@{self.MONGODB_CONTAINER_NAME}:"
+                f"{self.MONGO_INN_PORT}/")  # {self.MONGO_INITDB_DATABASE}")
+
+
+settings = Settings()
+# MONGO_URL = "mongodb://admin:admin@mongodb:27017"
+# DATABASE_NAME = "files_db"
 
 
 class MongoDB:
@@ -17,8 +53,8 @@ mongodb = MongoDB()
 
 async def connect_to_mongo():
     if mongodb.client is None:
-        mongodb.client = AsyncIOMotorClient(MONGO_URL)
-        mongodb.database = mongodb.client[DATABASE_NAME]
+        mongodb.client = AsyncIOMotorClient(settings.mongo_url)
+        mongodb.database = mongodb.client['files_db']
         print("Connected to MongoDB")
 
 

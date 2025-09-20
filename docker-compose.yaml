@@ -23,6 +23,14 @@ services:
       retries: 5
       start_period: 40s
       start_interval: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.125'
+          memory: 256M
   
   adminer:
     container_name: pg_admin
@@ -62,6 +70,15 @@ services:
       - ./migration_volume:/app/app/migration/versions
   #   networks:
   #     - pgnetwork
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.125'
+          memory: 256M
+    
   
   django:
     # build: ./django_admin
@@ -85,19 +102,19 @@ services:
           cpus: '1'
           memory: 512M
         reservations:
-          cpus: '0.12'
+          cpus: '0.125'
           memory: 256M
   
   mongo:
     image: mongo:4.4.20
-    container_name: mongo
+    container_name: ${MONGODB_CONTAINER_NAME}
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
       MONGO_INITDB_DATABASE: admin
     ports:
-      - "27017:27017"
+      - "${MONGO_OUT_PORT}:${MONGO_INN_PORT}"
     volumes:
       - ./mongodb_data:/data/db
       - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -105,32 +122,32 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 512G
+          memory: 512M
         reservations:
-          cpus: '0.5'
+          cpus: '0.125'
           memory: 256M
   
   mongo-express:
     image: mongo-express
-    container_name: mongo-express
+    container_name: ${MONGO_EXPRESS_CONTAINER_NAME}
     restart: unless-stopped
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${ME_CONFIG_MONGODB_SERVER}
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
     ports:
-      - "8081:8081"
+      - "${ME_OUT_PORT}:${ME_INN_PORT}"
     depends_on:
       - mongo
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '2'
           memory: 512M
         reservations:
-          cpus: '0.12'
+          cpus: '0.125'
           memory: 256M
 
 volumes:
