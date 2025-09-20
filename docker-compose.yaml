@@ -108,6 +108,7 @@ services:
   mongo:
     image: mongo:4.4.20
     container_name: ${MONGODB_CONTAINER_NAME}
+    hostname: ${MONGO_HOSTNAME}
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin

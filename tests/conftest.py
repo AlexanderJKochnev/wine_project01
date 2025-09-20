@@ -44,7 +44,8 @@ async def test_mongo_connection():
     """Тестовая фикстура для проверки подключения к MongoDB"""
     try:
         # Пытаемся подключиться к тестовой MongoDB
-        test_client = AsyncIOMotorClient("mongodb://admin:admin@localhost:27017", serverSelectionTimeoutMS=5000)
+        # test_client = AsyncIOMotorClient("mongodb://admin:admin@localhost:27017", serverSelectionTimeoutMS=5000)
+        test_client = AsyncIOMotorClient(settings_db.mongo_url, serverSelectionTimeoutMS = 5000)
         await test_client.admin.command('ping')
         connected = True
         test_client.close()
@@ -373,8 +374,6 @@ def mock_db_url():
     st = settings_db
     return (f"postgresql+psycopg_async://{st.POSTGRES_USER}:"
             f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
-    # return "postgresql+psycopg_async://test_user:test@localhost:2345/test_db"
-    # return "sqlite+aiosqlite:///:memory:?cache=shared"
 
 
 @pytest.fixture(scope=scope)

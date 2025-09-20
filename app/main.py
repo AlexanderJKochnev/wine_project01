@@ -1,7 +1,7 @@
 # app/main.py
 # from sqlalchemy.exc import SQLAlchemyError
 import logging
-
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 # from sqladmin import Admin
@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
+from app.mongodb.config import get_mongo_db, close_mongo_connection
 from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
 from app.mongodb.router import router as MongoRouter
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -33,10 +34,21 @@ from app.support.warehouse.router import WarehouseRouter
 
 # from app.admin.auth import authentication_backend
 
-
 logging.basicConfig(level=logging.WARNING)  # в начале main.py или conftest.py
 
-app = FastAPI()
+"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup - подключение к MongoDB
+    # Note: Motor клиент создается при первом обращении, здесь просто инициализируем
+    await get_mongo_db()  # Инициализируем подключение
+    yield
+    # Shutdown - закрываем подключение
+    await close_mongo_connection()
+
+"""
+app = FastAPI(title="Hybrid PostgreSQL-MongoDB API")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -98,9 +110,19 @@ async def read_root():
 @app.get("/health")
 async def health_check():
     from app.mongodb.config import mongodb
+
+    status_info = {"status": "healthy",
+                   "mongo_connected": mongodb.client is not None,
+                   "mongo_operational": False, }
+
     if mongodb.client:
-        return {"status": "healthy", "mongo_connected": True}
-    return {"status": "unhealthy", "mongo_connected": False}
+        try:
+            await mongodb.client.admin.command('ping')
+            status_info["mongo_operational"] = True
+        except Exception:
+            status_info["status"] = "degraded"
+
+    return status_info
 
 # app.include_router(image_router)
 app.include_router(auth_router)
