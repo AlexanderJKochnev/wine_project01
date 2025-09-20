@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
-from app.mongodb.config import get_mongo_db, close_mongo_connection
+from app.mongodb.config import get_mongo_db, close_mongo_connection, connect_to_mongo
 from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
 from app.mongodb.router import router as MongoRouter
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -60,6 +60,14 @@ app.add_middleware(
 
 
 # Глобальный обработчик для кастомных исключений
+@app.on_event("startup")
+async def startup_event():
+    await connect_to_mongo()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await close_mongo_connection()
+
 @app.exception_handler(NotFoundException)
 async def not_found_exception_handler(request: Request, exc: NotFoundException):
     return JSONResponse(

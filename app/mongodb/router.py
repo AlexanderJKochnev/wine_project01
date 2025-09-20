@@ -14,7 +14,7 @@ from app.mongodb.service import MongoDBService
 router = APIRouter(prefix="/mongodb", tags=["mongodb"])
 
 
-async def get_mongo_service(db: AsyncIOMotorDatabase):
+def get_mongo_service(db: AsyncIOMotorDatabase):
     """Dependency для инъекции MongoDBService"""
     return MongoDBService(db)
 
@@ -25,12 +25,17 @@ async def upload_image(file: UploadFile = File(...),
                        current_user: dict = Depends(get_current_user),
                        db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
     service = get_mongo_service(db)
+    print(f'{current_user=}')
+    print(f'{service}=')
     content = await file.read()
     if len(content) > 8 * 1024 * 1024:  # 8MB limit
         raise HTTPException(status_code=400, detail="File too large")
 
-    image_data = ImageCreate(filename=file.filename, description=description, content=content)
-
+    image_data = ImageCreate(filename=file.filename,
+                             description=description,
+                             content=content,
+                             owner_id=current_user)
+    print('image_data_validation is OK')
     file_id = await service.create_image(image_data, current_user["id"], db)
     return {"id": file_id, "message": "Image uploaded successfully"}
 

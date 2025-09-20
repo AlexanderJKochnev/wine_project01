@@ -40,6 +40,15 @@ settings = Settings()
 # DATABASE_NAME = "files_db"
 
 
+async def mongo_client():
+    """ Cинхронное соединение с базой данных """
+    # uri = 'mongodb://root:example@localhost'
+    client = AsyncIOMotorClient(settings.mongo_url)
+    yield client
+    client.close()
+
+# ------------------
+
 class MongoDB:
     client: AsyncIOMotorClient = None
     database = None
