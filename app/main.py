@@ -1,30 +1,33 @@
 # app/main.py
+# from sqlalchemy.exc import SQLAlchemyError
+import logging
+
 from fastapi import FastAPI, Request, status
-import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 # from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware
 # from app.admin import sqladm
 from fastapi.responses import JSONResponse
-# from sqlalchemy.exc import SQLAlchemyError
-import logging
-from app.core.routers.base import SQLAlchemyError, NotFoundException, ValidationException, ConflictException
+
+from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
-from app.auth.routers import user_router, auth_router
+from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
+from app.mongodb.router import router as MongoRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
-from app.support.drink.router import DrinkRouter
 from app.support.country.router import CountryRouter
 from app.support.customer.router import CustomerRouter
-from app.support.warehouse.router import WarehouseRouter
+from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
 from app.support.region.router import RegionRouter
+from app.support.subcategory.router import SubcategoryRouter
+from app.support.subregion.router import SubregionRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
-from app.support.subregion.router import SubregionRouter
 from app.support.varietal.router import VarietalRouter
-from app.support.subcategory.router import SubcategoryRouter
+from app.support.warehouse.router import WarehouseRouter
+
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
 
@@ -87,37 +90,17 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 
-"""authentication_backend = authentication_backend
-admin = Admin(
-    app=app,
-    engine=engine,
-    authentication_backend=authentication_backend,
-    templates_dir="/app/templates"
-)
-# --------------подключение админ панели------------------
-admin.add_view(sqladm.CategoryAdmin)
-admin.add_view(sqladm.DrinkAdmin)
-admin.add_view(sqladm.CountryAdmin)
-admin.add_view(sqladm.CustomerAdmin)
-admin.add_view(sqladm.WarehouseAdmin)
-admin.add_view(sqladm.FoodAdmin)
-admin.add_view(sqladm.ItemAdmin)
-admin.add_view(sqladm.RegionAdmin)
-admin.add_view(sqladm.ColorAdmin)
-admin.add_view(sqladm.SweetnessAdmin)
-admin.add_view(sqladm.SubregionAdmin)
-"""
-
-
 @app.get("/")
 async def read_root():
-    return {"Hello": "World"}
+    return {"message": "Hybrid PostgreSQL (auth) + MongoDB (files) API"}
 
 
-@app.get("/wait")
-async def wait_some_time(seconds: float):
-    await asyncio.sleep(seconds)  # Не блокирует поток
-    return {"waited": seconds}
+@app.get("/health")
+async def health_check():
+    from app.mongodb.config import mongodb
+    if mongodb.client:
+        return {"status": "healthy", "mongo_connected": True}
+    return {"status": "unhealthy", "mongo_connected": False}
 
 # app.include_router(image_router)
 app.include_router(auth_router)
@@ -135,3 +118,4 @@ app.include_router(WarehouseRouter().router)
 app.include_router(DrinkRouter().router)  # ← очень важно
 app.include_router(ItemRouter().router)
 app.include_router(SubcategoryRouter().router)
+app.include_router(MongoRouter)
