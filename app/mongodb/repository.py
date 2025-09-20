@@ -1,101 +1,60 @@
 # app/mongodb/repository.py
-from datetime import datetime
-
 from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-
-from app.mongodb.config import get_mongo_db  # NOQA: F401
-from app.mongodb.models import DocumentResponse, ImageResponse
-
+from datetime import datetime
+from app.mongodb.config import get_mongo_db
+from app.mongodb.models import FileResponse
 
 class MongoDBRepository:
     def __init__(self, db):
         self.db = db
-        self.fs_images = AsyncIOMotorGridFSBucket(self.db, bucket_name="images")
-        self.fs_docs = AsyncIOMotorGridFSBucket(self.db, bucket_name="documents")
+        self.images_collection = self.db["images"]
+        self.documents_collection = self.db["documents"]
 
+    async def save_file(self, collection, file_data: dict) -> str:
+        file_data["created_at"] = datetime.utcnow()
+        file_data["size"] = len(file_data["content"])
+        result = await collection.insert_one(file_data)
+        return str(result.inserted_id)
+
+    async def get_file(self, collection, file_id: str) -> dict:
+        file = await collection.find_one({"_id": ObjectId(file_id)})
+        if file:
+            file["_id"] = str(file["_id"])
+        return file
+
+    async def delete_file(self, collection, file_id: str) -> bool:
+        result = await collection.delete_one({"_id": ObjectId(file_id)})
+        return result.deleted_count > 0
+
+    async def get_user_files(self, collection, owner_id: int):
+        files = []
+        async for file in collection.find({"owner_id": owner_id}):
+            file["_id"] = str(file["_id"])
+            files.append(FileResponse(**file))
+        return files
+
+    # Методы для изображений
     async def save_image(self, image_data: dict) -> str:
-        image_data["upload_date"] = datetime.utcnow()
-        file_id = await self.fs_images.upload_from_stream(
-            image_data["filename"],
-            image_data["content"],
-            metadata={
-                "description": image_data.get("description"),
-                "owner_id": image_data["owner_id"],
-                "size": len(image_data["content"])
-            }
-        )
-        return str(file_id)
+        return await self.save_file(self.images_collection, image_data)
 
     async def get_image(self, file_id: str) -> dict:
-        file = await self.fs_images.open_download_stream(ObjectId(file_id))
-        content = await file.read()
-        return {
-            "filename": file.filename,
-            "content": content,
-            "metadata": file.metadata
-        }
+        return await self.get_file(self.images_collection, file_id)
 
     async def delete_image(self, file_id: str) -> bool:
-        try:
-            await self.fs_images.delete(ObjectId(file_id))
-            return True
-        except Exception:
-            return False
-
-    async def save_document(self, doc_data: dict) -> str:
-        doc_data["upload_date"] = datetime.utcnow()
-        file_id = await self.fs_docs.upload_from_stream(
-            doc_data["filename"],
-            doc_data["content"],
-            metadata={
-                "description": doc_data.get("description"),
-                "owner_id": doc_data["owner_id"],
-                "size": len(doc_data["content"])
-            }
-        )
-        return str(file_id)
-
-    async def get_document(self, file_id: str) -> dict:
-        file = await self.fs_docs.open_download_stream(ObjectId(file_id))
-        content = await file.read()
-        return {
-            "filename": file.filename,
-            "content": content,
-            "metadata": file.metadata
-        }
-
-    async def delete_document(self, file_id: str) -> bool:
-        try:
-            await self.fs_docs.delete(ObjectId(file_id))
-            return True
-        except Exception:
-            return False
+        return await self.delete_file(self.images_collection, file_id)
 
     async def get_user_images(self, owner_id: int):
-        cursor = self.fs_images.find({"metadata.owner_id": owner_id})
-        images = []
-        async for file in cursor:
-            images.append(ImageResponse(
-                _id=file._id,
-                filename=file.filename,
-                description=file.metadata.get("description"),
-                owner_id=file.metadata["owner_id"],
-                created_at=file.upload_date,
-                size=file.metadata["size"]
-            ))
-        return images
+        return await self.get_user_files(self.images_collection, owner_id)
+
+    # Методы для документов
+    async def save_document(self, doc_data: dict) -> str:
+        return await self.save_file(self.documents_collection, doc_data)
+
+    async def get_document(self, file_id: str) -> dict:
+        return await self.get_file(self.documents_collection, file_id)
+
+    async def delete_document(self, file_id: str) -> bool:
+        return await self.delete_file(self.documents_collection, file_id)
 
     async def get_user_documents(self, owner_id: int):
-        cursor = self.fs_docs.find({"metadata.owner_id": owner_id})
-        docs = []
-        async for file in cursor:
-            docs.append(DocumentResponse(
-                _id=file._id,
-                filename=file.filename,
-                description=file.metadata.get("description"),
-                owner_id=file.metadata["owner_id"],
-                created_at=file.upload_date,
-                size=file.metadata["size"]
-            ))
-        return docs
+        return await self.get_user_files(self.documents_collection, owner_id)
