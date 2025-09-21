@@ -1,11 +1,12 @@
 # app/mongodb/service.py
 from fastapi import HTTPException
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.mongodb.models import DocumentCreate, ImageCreate
 from app.mongodb.repository import MongoDBRepository
 
 
 class MongoDBService:
-    def __init__(self, db):
+    def __init__(self, db: AsyncIOMotorDatabase):
         self.repository = MongoDBRepository(db)
 
     async def create_image(self, image: ImageCreate, owner_id: int) -> str:

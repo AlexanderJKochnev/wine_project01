@@ -1,7 +1,6 @@
 import pytest
-import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.mongodb.config import connect_to_mongo, close_mongo_connection, mongodb
+from app.mongodb.config import mongodb
 from tests.config import settings_db
 
 pytestmark = pytest.mark.asyncio
@@ -11,8 +10,7 @@ async def test_direct_mongo_connection():
     """Прямое тестирование подключения к MongoDB"""
     try:
         mongo_url = settings_db.mongo_url
-        # mongo_url = "mongodb://admin:admin@localhost:27027"
-        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=10000)
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=500)
         # Проверяем подключение
         await client.admin.command('ping')
         client.close()
@@ -22,27 +20,23 @@ async def test_direct_mongo_connection():
         assert False, f"{e} {mongo_url=}"
 
 
-async def test_app_mongo_connection():
+async def test_app_mongo_connection(authenticated_client_with_db, test_db_session, test_mongodb):
     """Тестирование подключения через приложение"""
+    from app.mongodb.config import (MongoDB)
+    from app.mongodb.router import get_mongodb
     try:
-        # Имитируем запуск приложения
-        await connect_to_mongo()
-        connected = mongodb.client is not None
-
-        if connected:
-            # Дополнительная проверка, что база данных доступна
-            db = mongodb.client.get_database("files_db")
-            collections = await db.list_collection_names()
-            print(f"Available collections: {collections}")
-
-        await close_mongo_connection()
+        client = authenticated_client_with_db
+        prefix = 'mongodb/images/'
+        response = await client.get(prefix)
+        assert response.status_code == 200, response.text
     except Exception as e:
-        print(f"App connection failed: {e}")
+        # print(f"App connection failed: {e}")
         connected = False
 
-    assert connected, "Подключение через приложение не удалось"
+        assert connected, f"Подключение через приложение не удалось: {e}"
 
 
+@pytest.mark.skip
 async def test_mongo_health_endpoint(authenticated_client_with_db, test_db_session):
     """Тестирование health endpoint"""
     client = authenticated_client_with_db

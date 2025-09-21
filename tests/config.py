@@ -1,12 +1,11 @@
 # tests/config.py
-# app/core/config/database/db_config.py
 
 from typing import Optional
 from pydantic import PostgresDsn
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.utils.common_utils import get_path_to_root
-from app.mongodb.config import Settings
+# from app.mongodb.config import Settings
 # load_dotenv() - не использовать - путает
 
 env_file = Path(__file__).resolve().parent.joinpath('.env.tests')
@@ -33,10 +32,10 @@ class ConfigDataBase(BaseSettings):
     MONGO_INITDB_ROOT_USERNAME: str
     MONGO_INITDB_ROOT_PASSWORD: str
     MONGO_INITDB_DATABASE: str
-    MONGO_DATABASE: int
+    MONGO_DATABASE: str
     MONGO_OUT_PORT: int
     MONGO_INN_PORT: int
-    MONGODB_HOSTNAME: str
+    MONGO_HOSTNAME: str
     MONGO_EXPRESS_CONTAINER_NAME: str
     ME_CONFIG_MONGODB_ADMINUSERNAME: str
     ME_CONFIG_MONGODB_ADMINPASSWORD: str
@@ -80,7 +79,7 @@ class ConfigDataBase(BaseSettings):
         :rtype:
         """
         return (f"mongodb://{self.MONGO_INITDB_ROOT_USERNAME}:"
-                f"{self.MONGO_INITDB_ROOT_PASSWORD}@{self.MONGO_DATABASE}:"
+                f"{self.MONGO_INITDB_ROOT_PASSWORD}@{self.MONGO_HOSTNAME}:"
                 f"{self.MONGO_OUT_PORT}")  # {self.MONGO_INITDB_DATABASE}")
 
 

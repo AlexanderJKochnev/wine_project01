@@ -1,8 +1,8 @@
 # app/main.py
 # from sqlalchemy.exc import SQLAlchemyError
 import logging
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, status
+
+from fastapi import FastAPI, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 # from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware
@@ -11,8 +11,8 @@ from fastapi.responses import JSONResponse
 
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
-from app.mongodb.config import get_mongo_db, close_mongo_connection, connect_to_mongo
 from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
+from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
 from app.mongodb.router import router as MongoRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
@@ -62,11 +62,17 @@ app.add_middleware(
 # Глобальный обработчик для кастомных исключений
 @app.on_event("startup")
 async def startup_event():
-    await connect_to_mongo()
+    # await connect_to_mongo()
+    # mongodb_instance = await get_mongodb()
+    await get_mongodb()
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await close_mongo_connection()
+    # await close_mongo_connection()
+    mongodb_instance = await get_mongodb()
+    await mongodb_instance.disconnect()
+
 
 @app.exception_handler(NotFoundException)
 async def not_found_exception_handler(request: Request, exc: NotFoundException):
@@ -116,16 +122,16 @@ async def read_root():
 
 
 @app.get("/health")
-async def health_check():
-    from app.mongodb.config import mongodb
+async def health_check(mongodb_instance: MongoDB = Depends(get_mongodb)):
+    # from app.mongodb.config import mongodb
 
     status_info = {"status": "healthy",
-                   "mongo_connected": mongodb.client is not None,
+                   "mongo_connected": mongodb_instance.client is not None,
                    "mongo_operational": False, }
 
-    if mongodb.client:
+    if mongodb_instance.client:
         try:
-            await mongodb.client.admin.command('ping')
+            await mongodb_instance.client.admin.command('ping')
             status_info["mongo_operational"] = True
         except Exception:
             status_info["status"] = "degraded"

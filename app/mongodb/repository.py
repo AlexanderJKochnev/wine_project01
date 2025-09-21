@@ -1,13 +1,14 @@
 # app/mongodb/repository.py
 from bson import ObjectId
 from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorDatabase
 # from app.mongodb.config import get_mongo_db
 from app.mongodb.models import FileResponse
 
 
 class MongoDBRepository:
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, database: AsyncIOMotorDatabase):
+        self.db = database
         self.images_collection = self.db["images"]
         self.documents_collection = self.db["documents"]
 

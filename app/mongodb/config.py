@@ -2,7 +2,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi import Depends  # NOQA: F401
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 from app.core.utils.common_utils import get_path_to_root
 # import os
 
@@ -49,15 +49,50 @@ async def mongo_client():
 
 # ------------------
 
+
 class MongoDB:
-    client: AsyncIOMotorClient = None
-    database = None
+    def __init__(self):
+        self.client: Optional[AsyncIOMotorClient] = None
+        self.database = None
+
+    async def connect(self, connection_string: str, database_name: str):
+        """Подключается к MongoDB"""
+        if self.client is None:
+            self.client = AsyncIOMotorClient(connection_string)
+            self.database = self.client[database_name]
+            print(f"✅ Connected to MongoDB: {database_name}")
+
+    async def disconnect(self):
+        """Закрывает подключение"""
+        if self.client:
+            self.client.close()
+            self.client = None
+            self.database = None
+            print("🔌 Disconnected from MongoDB")
 
 
 mongodb = MongoDB()
 
 
-async def connect_to_mongo():
+async def get_mongodb():
+    """Возвращает глобальный экземпляр MongoDB"""
+    return mongodb
+
+
+# Dependency для получения базы данных
+async def get_database(mongodb_instance: MongoDB = Depends(get_mongodb)):
+    """Возвращает базу данных из MongoDB экземпляра"""
+    if mongodb_instance.database is None:
+        # Автоподключение если не подключены
+        default_url = settings.mongo_url
+        default_db = settings.MONGO_DATABASE
+        # default_url = os.getenv("MONGO_URL", "mongodb://admin:admin@localhost:27027")
+        # default_db = os.getenv("MONGO_DB", "files_db")
+        await mongodb_instance.connect(default_url, default_db)
+    return mongodb_instance.database
+
+
+async def connect_to_mongo1():
     if mongodb.client is None:
         mongodb.client = AsyncIOMotorClient(settings.mongo_url,
                                             maxPoolSize=10,
@@ -66,7 +101,7 @@ async def connect_to_mongo():
         print("Connected to MongoDB")
 
 
-async def close_mongo_connection():
+async def close_mongo_connection1():
     """Закрывает MongoDB соединение"""
     if mongodb.client:
         mongodb.client.close()
@@ -75,13 +110,13 @@ async def close_mongo_connection():
 
 
 # Dependency для использования в роутерах
-async def get_mongo_db() -> AsyncGenerator:
+async def get_mongo_db1() -> AsyncGenerator:
     """
     Dependency для получения MongoDB database.
     Используется в роутерах через Depends.
     """
     if mongodb.client is None:
-        await connect_to_mongo()
+        await connect_to_mongo1()
 
     try:
         yield mongodb.database

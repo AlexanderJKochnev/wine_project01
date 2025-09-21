@@ -102,12 +102,12 @@ def generate_simple_phrase(language='ru', target_length=100):
 
 
 ru_phrase = generate_simple_phrase('ru', 50)
-print(f"Русская фраза ({len(ru_phrase)} символов): {ru_phrase}")
+#  print(f"Русская фраза ({len(ru_phrase)} символов): {ru_phrase}")
 
 # Английский язык
 en_phrase = generate_simple_phrase('en', 80)
-print(f"Английская фраза ({len(en_phrase)} символов): {en_phrase}")
+# print(f"Английская фраза ({len(en_phrase)} символов): {en_phrase}")
 
 # Французский язык
 fr_phrase = generate_simple_phrase('fr', 120)
-print(f"Французская фраза ({len(fr_phrase)} символов): {fr_phrase}")
+# print(f"Французская фраза ({len(fr_phrase)} символов): {fr_phrase}")

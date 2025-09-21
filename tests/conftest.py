@@ -16,36 +16,47 @@ from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.main import app, get_db
-from app.mongodb.config import AsyncIOMotorClient, close_mongo_connection, connect_to_mongo, mongodb
+from app.mongodb.config import MongoDB
+from app.mongodb.router import get_mongodb
+from tests.config import settings_db
 from tests.data_factory.fake_generator import generate_test_data
 from tests.data_factory.reader_json import JsonConverter
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
-from tests.config import settings_db
-
 
 scope = 'session'
 scope2 = 'session'
 example_count = 5      # количество тестовых записей - рекомедуется >20 для paging test
 
 
-class MockMongoDB:
-    def __init__(self):
-        self.client = None
-        self.database = None
-        self.connected = False
+@pytest.fixture(scope="session")
+async def test_mongodb():
+    """Создает тестовый экземпляр MongoDB"""
+    test_mongo = MongoDB()
+    test_url = f'{settings_db.mongo_url}/test_db'
+    await test_mongo.connect(test_url, "test_db")
+    yield test_mongo
+    await test_mongo.disconnect()
 
 
-mock_mongodb = MockMongoDB()
+@pytest.fixture(scope="function")  # , autouse=True)
+async def clean_database(test_mongodb):
+    """Очищает базу данных перед каждым тестом"""
+    if test_mongodb.database:
+        collections = await test_mongodb.database.list_collection_names()
+        for collection_name in collections:
+            if not collection_name.startswith('system.'):
+                await test_mongodb.database[collection_name].delete_many({})
+    yield
 
-
+"""
 @pytest.fixture(scope="function")
 async def test_mongo_connection():
-    """Тестовая фикстура для проверки подключения к MongoDB"""
+    # Тестовая фикстура для проверки подключения к MongoDB
     try:
         # Пытаемся подключиться к тестовой MongoDB
         # test_client = AsyncIOMotorClient("mongodb://admin:admin@localhost:27017", serverSelectionTimeoutMS=5000)
-        test_client = AsyncIOMotorClient(settings_db.mongo_url, serverSelectionTimeoutMS = 5000)
+        test_client = AsyncIOMotorClient(settings_db.mongo_url, serverSelectionTimeoutMS=500)
         await test_client.admin.command('ping')
         connected = True
         test_client.close()
@@ -57,7 +68,7 @@ async def test_mongo_connection():
 
 @pytest.fixture(scope="function")
 async def mongo_health_check():
-    """Проверка здоровья MongoDB подключения из приложения"""
+    # Проверка здоровья MongoDB подключения из приложения
     try:
         # Имитируем подключение как в приложении
         await connect_to_mongo()
@@ -67,6 +78,7 @@ async def mongo_health_check():
     except Exception as e:
         print(f"MongoDB health check failed: {e}")
         return False
+"""
 # ---------------mongo db end ----------
 
 
@@ -477,8 +489,17 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
     async def get_test_db():
         yield test_db_session
 
+    async def override_get_mongodb():
+        return test_mongodb
+
+    async def override_get_database():
+        return test_mongodb.database
+
     # override_app_dependencies[app.dependency_overrides] = get_test_db
     app.dependency_overrides[get_db] = get_test_db
+    app.dependency_overrides[get_mongodb] = override_get_mongodb
+    # app.dependency_overrides[get_database] = override_get_database
+
     # Создаем JWT токен для тестового пользователя
     token_data = {"sub": super_user_data["username"]}
     access_token = create_access_token(data=token_data)

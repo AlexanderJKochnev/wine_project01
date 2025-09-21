@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.auth.dependencies import get_current_user
-from app.mongodb.config import get_mongo_db
+from app.mongodb.config import get_mongodb
 from app.mongodb.models import DocumentCreate, FileResponse, ImageCreate
 from app.mongodb.service import MongoDBService
 
@@ -23,7 +23,7 @@ def get_mongo_service(db: AsyncIOMotorDatabase):
 async def upload_image(file: UploadFile = File(...),
                        description: Optional[str] = Form(None),
                        current_user: dict = Depends(get_current_user),
-                       db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                       db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     print(f'{current_user=}')
     print(f'{service}=')
@@ -42,7 +42,7 @@ async def upload_image(file: UploadFile = File(...),
 
 @router.get("/images/", response_model=List[FileResponse])
 async def get_user_images(current_user: dict = Depends(get_current_user),
-                          db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                          db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     return await service.get_user_images_list(current_user["id"])
 
@@ -50,7 +50,7 @@ async def get_user_images(current_user: dict = Depends(get_current_user),
 @router.get("/images/{file_id}")
 async def download_image(file_id: str,
                          current_user: dict = Depends(get_current_user),
-                         db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                         db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     image_data = await service.get_image(file_id, current_user["id"])
 
@@ -62,7 +62,7 @@ async def download_image(file_id: str,
 @router.delete("/images/{file_id}", response_model=dict)
 async def delete_image(file_id: str,
                        current_user: dict = Depends(get_current_user),
-                       db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                       db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     success = await service.delete_image(file_id, current_user["id"])
     if success:
@@ -75,7 +75,7 @@ async def delete_image(file_id: str,
 async def upload_document(file: UploadFile = File(...),
                           description: Optional[str] = Form(None),
                           current_user: dict = Depends(get_current_user),
-                          db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                          db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     content = await file.read()
     if len(content) > 8 * 1024 * 1024:  # 8MB limit
@@ -91,7 +91,7 @@ async def upload_document(file: UploadFile = File(...),
 
 @router.get("/documents/", response_model=List[FileResponse])
 async def get_user_documents(current_user: dict = Depends(get_current_user),
-                             db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                             db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     return await service.get_user_documents_list(current_user["id"])
 
@@ -99,7 +99,7 @@ async def get_user_documents(current_user: dict = Depends(get_current_user),
 @router.get("/documents/{file_id}")
 async def download_document(file_id: str,
                             current_user: dict = Depends(get_current_user),
-                            db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                            db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     doc_data = await service.get_document(file_id, current_user["id"])
 
@@ -111,7 +111,7 @@ async def download_document(file_id: str,
 @router.delete("/documents/{file_id}", response_model=dict)
 async def delete_document(file_id: str,
                           current_user: dict = Depends(get_current_user),
-                          db: AsyncIOMotorDatabase = Depends(get_mongo_db)):
+                          db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     service = get_mongo_service(db)
     success = await service.delete_document(file_id, current_user["id"])
     if success:
