@@ -20,6 +20,28 @@ async def test_direct_mongo_connection():
         assert False, f"{e} {mongo_url=}"
 
 
+async def test_mongodb_connection():
+    """Прямое тестирование подключения к MongoDB"""
+    from app.mongodb.config import MongoDB, get_mongodb, get_database
+    try:
+        mongo_url = settings_db.mongo_url
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=500)
+        # Проверяем подключение
+        await client.admin.command('ping')
+        client.close()
+    except Exception as e:
+        print(f"Direct connection failed: {e}")
+        assert False, f"{e} {mongo_url=}"
+    try:
+        test_mongo = MongoDB()
+        test_url = settings_db.mongo_url
+        # test_url = f'{settings_db.mongo_url}/test_db'
+        await test_mongo.connect(test_url, "test_db")
+        yield test_mongo
+        await test_mongo.disconnect()
+    except Exception as e:
+        assert False, e
+
 async def test_app_mongo_connection(authenticated_client_with_db, test_db_session, test_mongodb):
     """Тестирование подключения через приложение"""
     from app.mongodb.config import (MongoDB)

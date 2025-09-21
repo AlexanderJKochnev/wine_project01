@@ -16,8 +16,8 @@ from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.main import app, get_db
-from app.mongodb.config import MongoDB
-from app.mongodb.router import get_mongodb
+from app.mongodb.config import MongoDB, get_mongodb, get_database
+# from app.mongodb.router import get_mongodb
 from tests.config import settings_db
 from tests.data_factory.fake_generator import generate_test_data
 from tests.data_factory.reader_json import JsonConverter
@@ -49,36 +49,29 @@ async def clean_database(test_mongodb):
                 await test_mongodb.database[collection_name].delete_many({})
     yield
 
-"""
+
 @pytest.fixture(scope="function")
 async def test_mongo_connection():
-    # Тестовая фикстура для проверки подключения к MongoDB
+    """Фикстура для проверки прямого подключения к MongoDB"""
     try:
-        # Пытаемся подключиться к тестовой MongoDB
-        # test_client = AsyncIOMotorClient("mongodb://admin:admin@localhost:27017", serverSelectionTimeoutMS=5000)
-        test_client = AsyncIOMotorClient(settings_db.mongo_url, serverSelectionTimeoutMS=500)
-        await test_client.admin.command('ping')
-        connected = True
-        test_client.close()
+        client = AsyncIOMotorClient(settings_db.mongo_url, serverSelectionTimeoutMS=5000)
+        await client.admin.command('ping')
+        client.close()
+        return True
     except Exception as e:
-        print(f"MongoDB connection failed: {e}")
-        connected = False
-    return connected
+        pytest.fail(f"MongoDB connection failed: {e}")
 
 
 @pytest.fixture(scope="function")
-async def mongo_health_check():
-    # Проверка здоровья MongoDB подключения из приложения
+async def mongo_health_check(test_mongodb):
+    """Проверка здоровья MongoDB подключения из приложения"""
     try:
-        # Имитируем подключение как в приложении
-        await connect_to_mongo()
-        healthy = mongodb.client is not None
-        await close_mongo_connection()
-        return healthy
+        # Проверяем что можем выполнять команды
+        await test_mongodb.client.admin.command('ping')
+        return True
     except Exception as e:
-        print(f"MongoDB health check failed: {e}")
-        return False
-"""
+        pytest.fail(f"MongoDB health check failed: {e}")
+
 # ---------------mongo db end ----------
 
 
@@ -498,7 +491,7 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
     # override_app_dependencies[app.dependency_overrides] = get_test_db
     app.dependency_overrides[get_db] = get_test_db
     app.dependency_overrides[get_mongodb] = override_get_mongodb
-    # app.dependency_overrides[get_database] = override_get_database
+    app.dependency_overrides[get_database] = override_get_database
 
     # Создаем JWT токен для тестового пользователя
     token_data = {"sub": super_user_data["username"]}

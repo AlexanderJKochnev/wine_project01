@@ -40,50 +40,31 @@ settings = Settings()
 # DATABASE_NAME = "files_db"
 
 
-async def mongo_client():
-    """ Cинхронное соединение с базой данных """
-    # uri = 'mongodb://root:example@localhost'
-    client = AsyncIOMotorClient(settings.mongo_url)
-    yield client
-    client.close()
-
-# ------------------
-
-
 class MongoDB:
     def __init__(self):
         self.client: Optional[AsyncIOMotorClient] = None
         self.database = None
 
     async def connect(self, connection_string: str, database_name: str):
-        """Подключается к MongoDB"""
         if self.client is None:
             self.client = AsyncIOMotorClient(connection_string)
             self.database = self.client[database_name]
-            print(f"✅ Connected to MongoDB: {database_name}")
 
     async def disconnect(self):
-        """Закрывает подключение"""
         if self.client:
             self.client.close()
             self.client = None
             self.database = None
-            print("🔌 Disconnected from MongoDB")
-
 
 mongodb = MongoDB()
 
 
 async def get_mongodb():
-    """Возвращает глобальный экземпляр MongoDB"""
     return mongodb
 
 
-# Dependency для получения базы данных
 async def get_database(mongodb_instance: MongoDB = Depends(get_mongodb)):
-    """Возвращает базу данных из MongoDB экземпляра"""
     if mongodb_instance.database is None:
-        # Автоподключение если не подключены
         default_url = settings.mongo_url
         default_db = settings.MONGO_DATABASE
         # default_url = os.getenv("MONGO_URL", "mongodb://admin:admin@localhost:27027")

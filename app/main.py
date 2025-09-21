@@ -36,17 +36,6 @@ from app.support.warehouse.router import WarehouseRouter
 
 logging.basicConfig(level=logging.WARNING)  # в начале main.py или conftest.py
 
-"""
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup - подключение к MongoDB
-    # Note: Motor клиент создается при первом обращении, здесь просто инициализируем
-    await get_mongo_db()  # Инициализируем подключение
-    yield
-    # Shutdown - закрываем подключение
-    await close_mongo_connection()
-
-"""
 app = FastAPI(title="Hybrid PostgreSQL-MongoDB API")
 
 app.add_middleware(
@@ -56,22 +45,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.add_middleware(AuthMiddleware)
 
-
-# Глобальный обработчик для кастомных исключений
-@app.on_event("startup")
-async def startup_event():
-    # await connect_to_mongo()
-    # mongodb_instance = await get_mongodb()
-    await get_mongodb()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    # await close_mongo_connection()
-    mongodb_instance = await get_mongodb()
-    await mongodb_instance.disconnect()
+# app.include_router(image_router)
+app.include_router(auth_router)
+app.include_router(user_router)
+app.include_router(CategoryRouter().router)
+# app.include_router(ColorRouter().router)
+app.include_router(CountryRouter().router)
+app.include_router(CustomerRouter().router)
+app.include_router(FoodRouter().router)
+app.include_router(SweetnessRouter().router)
+app.include_router(VarietalRouter().router)
+app.include_router(RegionRouter().router)
+app.include_router(SubregionRouter().router)
+app.include_router(WarehouseRouter().router)
+app.include_router(DrinkRouter().router)  # ← очень важно
+app.include_router(ItemRouter().router)
+app.include_router(SubcategoryRouter().router)
+app.include_router(MongoRouter)
 
 
 @app.exception_handler(NotFoundException)
@@ -123,11 +114,9 @@ async def read_root():
 
 @app.get("/health")
 async def health_check(mongodb_instance: MongoDB = Depends(get_mongodb)):
-    # from app.mongodb.config import mongodb
-
     status_info = {"status": "healthy",
                    "mongo_connected": mongodb_instance.client is not None,
-                   "mongo_operational": False, }
+                   "mongo_operational": False}
 
     if mongodb_instance.client:
         try:
@@ -138,20 +127,28 @@ async def health_check(mongodb_instance: MongoDB = Depends(get_mongodb)):
 
     return status_info
 
-# app.include_router(image_router)
-app.include_router(auth_router)
-app.include_router(user_router)
-app.include_router(CategoryRouter().router)
-# app.include_router(ColorRouter().router)
-app.include_router(CountryRouter().router)
-app.include_router(CustomerRouter().router)
-app.include_router(FoodRouter().router)
-app.include_router(SweetnessRouter().router)
-app.include_router(VarietalRouter().router)
-app.include_router(RegionRouter().router)
-app.include_router(SubregionRouter().router)
-app.include_router(WarehouseRouter().router)
-app.include_router(DrinkRouter().router)  # ← очень важно
-app.include_router(ItemRouter().router)
-app.include_router(SubcategoryRouter().router)
-app.include_router(MongoRouter)
+
+@app.on_event("startup")
+async def startup_event():
+    pass
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    mongodb_instance = await get_mongodb()
+    await mongodb_instance.disconnect()
+
+"""
+@app.on_event("startup")
+async def startup_event():
+    # await connect_to_mongo()
+    # mongodb_instance = await get_mongodb()
+    await get_mongodb()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # await close_mongo_connection()
+    mongodb_instance = await get_mongodb()
+    await mongodb_instance.disconnect()
+"""
