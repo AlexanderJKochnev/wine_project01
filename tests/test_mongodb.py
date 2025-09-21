@@ -1,6 +1,10 @@
+# tests/test_mongodb.py
+# тесты запускать по одному иначе падают - особенность mongodb
+
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.mongodb.config import mongodb
+# from app.mongodb.config import mongodb
+from fastapi import status
 from tests.config import settings_db
 
 pytestmark = pytest.mark.asyncio
@@ -14,133 +18,94 @@ async def test_direct_mongo_connection():
         # Проверяем подключение
         await client.admin.command('ping')
         client.close()
-        return True
+        assert True, "MongoDB connection unsuccessful"
     except Exception as e:
         print(f"Direct connection failed: {e}")
         assert False, f"{e} {mongo_url=}"
 
 
-async def test_mongodb_connection():
-    """Прямое тестирование подключения к MongoDB"""
-    from app.mongodb.config import MongoDB, get_mongodb, get_database
+async def test_mongo_health_check(test_mongodb):
+    """Тестирует health check MongoDB подключения - ДОЛЖЕН ПАДАТЬ при проблемах"""
+    # Проверяем что можем выполнять команды
     try:
-        mongo_url = settings_db.mongo_url
-        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=500)
-        # Проверяем подключение
-        await client.admin.command('ping')
-        client.close()
+        result = await test_mongodb.client.admin.command('ping')
+        assert result["ok"] == 1.0, "MongoDB ping command failed"
     except Exception as e:
-        print(f"Direct connection failed: {e}")
-        assert False, f"{e} {mongo_url=}"
-    try:
-        test_mongo = MongoDB()
-        test_url = settings_db.mongo_url
-        # test_url = f'{settings_db.mongo_url}/test_db'
-        await test_mongo.connect(test_url, "test_db")
-        yield test_mongo
-        await test_mongo.disconnect()
-    except Exception as e:
-        assert False, e
-
-async def test_app_mongo_connection(authenticated_client_with_db, test_db_session, test_mongodb):
-    """Тестирование подключения через приложение"""
-    from app.mongodb.config import (MongoDB)
-    from app.mongodb.router import get_mongodb
-    try:
-        client = authenticated_client_with_db
-        prefix = 'mongodb/images/'
-        response = await client.get(prefix)
-        assert response.status_code == 200, response.text
-    except Exception as e:
-        # print(f"App connection failed: {e}")
-        connected = False
-
-        assert connected, f"Подключение через приложение не удалось: {e}"
+        pytest.fail(f"MongoDB health check failed: {e}")
 
 
-@pytest.mark.skip
-async def test_mongo_health_endpoint(authenticated_client_with_db, test_db_session):
-    """Тестирование health endpoint"""
-    client = authenticated_client_with_db
+async def test_api_health_endpoint(test_client_with_mongo):
+    """Тестирует health endpoint через API - ДОЛЖЕН ПАДАТЬ при отсутствии MongoDB"""
+    client = test_client_with_mongo
+
     response = await client.get("/health")
 
-    assert response.status_code == 200
+    # Проверяем статус код
+    assert response.status_code == status.HTTP_200_OK, f"Health endpoint returned {response.status_code}"
+
     data = response.json()
-    print(f"Health response: {data}")
 
     # Проверяем структуру ответа
+    assert "status" in data, "Missing 'status' in health response"
+    assert "mongo_connected" in data, "Missing 'mongo_connected' in health response"
+    assert "mongo_operational" in data, "Missing 'mongo_operational' in health response"
 
-    assert "mongo_connected" in data
-    assert data["mongo_connected"], data
-    assert "status" in data
-    assert data['status'] == 'healthy', "соединение с MongoDb установлено, но не работает должным образом"
-
-
-@pytest.mark.skip
-async def test_mongo_connection_flow():
-    """Полный тест потока подключения"""
-    # Проверяем, что изначально клиент None
-    assert mongodb.client is None
-
-    # Подключаемся
-    await connect_to_mongo()
-
-    # Проверяем, что клиент создан
-    assert mongodb.client is not None
-    assert mongodb.database is not None
-
-    # Проверяем, что можем выполнять операции
-    try:
-        collections = await mongodb.database.list_collection_names()
-        print(f"Collections: {collections}")
-        can_operate = True
-    except Exception as e:
-        print(f"Operation failed: {e}")
-        can_operate = False
-
-    # Отключаемся
-    await close_mongo_connection()
-
-    # Проверяем, что отключились
-    assert mongodb.client is None
-
-    assert can_operate, "Не удалось выполнить операции с MongoDB"
+    # Проверяем значения - ДОЛЖНЫ БЫТЬ True
+    assert data["mongo_connected"] is True, "MongoDB should be connected"
+    assert data["mongo_operational"] is True, "MongoDB should be operational"
+    assert data["status"] == "healthy", f"Status should be 'healthy', got '{data['status']}'"
 
 
-async def test_mongo_authentication():
-    """Тестирование аутентификации с разными credentials"""
-    test_cases = [{"url": settings_db.mongo_url, "should_work": True},
-                  {"url": f"mongodb://wrong:wrong@mongodb:{settings_db.MONGO_OUT_PORT}", "should_work": False},
-                  {"url": "mongodb://mongodb:27017", "should_work": False},  # без аутентификации
-                  ]
+async def test_api_mongo_crud_operations(authenticated_client_with_db, test_db_session):
+    """Тестирует CRUD операции через API - ДОЛЖЕН ПАДАТЬ при проблемах с MongoDB"""
+    client = authenticated_client_with_db
+    # 1. Тестируем загрузку изображения
+    tier = 10
+    for i in range(tier):
+        test_image_data = b"fake_image_data_123"
+        files = {"file": (f"test{i}.jpg", test_image_data, "image/jpeg")}
+        data = {"description": "Test image for integration test"}
+        response = await client.post("/mongodb/images/", files=files, data=data)
+        # Проверяем успешность запроса
+        assert response.status_code == status.HTTP_200_OK, f"Upload failed: {response.text}"
+        assert "id" in response.json(), "Response should contain 'id'"
+        assert response.json()["message"] == "Image uploaded successfully", "Wrong success message"
 
-    for case in test_cases:
-        try:
-            client = AsyncIOMotorClient(case["url"], serverSelectionTimeoutMS=3000)
-            await client.admin.command('ping')
-            client.close()
-            if not case["should_work"]:
-                assert False
-            else:
-                assert True
-        except Exception:
-            if case["should_work"]:
-                assert False
+    file_id = response.json()["id"]
 
-    assert True
+    # 2. Тестируем получение списка изображений
+    response = await client.get("/mongodb/images/")
+    assert response.status_code == status.HTTP_200_OK, "Get images list failed"
+    assert isinstance(response.json(), list), "Response should be a list"
+    assert len(response.json()) == tier, f"Should have exactly {tier} images"
+    assert response.json()[0]["filename"] == "test0.jpg", "Wrong filename"
+
+    # 3. Тестируем скачивание изображения
+    response = await client.get(f"/mongodb/images/{file_id}")
+    assert response.status_code == status.HTTP_200_OK, "Download failed"
+    assert response.content == test_image_data, "Downloaded content doesn't match original"
+
+    # 4. Тестируем удаление изображения
+    response = await client.delete(f"/mongodb/images/{file_id}")
+    assert response.status_code == status.HTTP_200_OK, "Delete failed"
+    assert response.json()["message"] == "Image deleted successfully", "Wrong delete message"
+
+    # 5. Проверяем что изображение действительно удалено
+    response = await client.get(f"/mongodb/images/{file_id}")
+    assert response.status_code == status.HTTP_404_NOT_FOUND, "Image should be deleted"
 
 
-async def test_connection_timeout():
-    """Тестирование таймаутов подключения"""
-    try:
-        # Очень короткий таймаут для теста
-        client = AsyncIOMotorClient(
-            settings_db.mongo_url, serverSelectionTimeoutMS=100  # 100ms - очень коротко
-        )
-        await client.admin.command('ping')
-        client.close()
-        print("Connection with short timeout - SUCCESS")
-        assert True
-    except Exception as e:
-        result = f"Connection with short timeout - FAILED (expected): {e}"
-        assert False, result
+async def test_api_authentication_required(test_client_with_mongo):
+    """Тестирует что аутентификация обязательна для MongoDB endpoints"""
+    client = test_client_with_mongo
+
+    # Убираем аутентификацию
+    if "Authorization" in client.headers:
+        del client.headers["Authorization"]
+
+    # Пытаемся получить доступ без аутентификации
+    response = await client.get("/mongodb/images/")
+
+    # Должен вернуть 401
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED, "Should require authentication"
+# --------------------------------------

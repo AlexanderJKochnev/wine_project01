@@ -276,7 +276,7 @@ class BaseRouter:
             - 400: Неверный формат ID или параметры
             - 404: Запись не найдена
             - 500: Внутренняя ошибка сервера
-            """
+        """
         try:
             obj = await self.service.get_by_id(id, self.repo, self.model, session)
             if obj is None:

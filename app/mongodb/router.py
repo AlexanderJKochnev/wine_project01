@@ -17,6 +17,9 @@ async def upload_image(
     current_user: User = Depends(get_current_user),
     image_service: ImageService = Depends()
 ):
+    """
+    загрузка изображения в базу данных
+    """
     content = await file.read()
     file_id = await image_service.upload_image(file.filename, content, description, current_user.id)
     return {"id": file_id, "message": "Image uploaded successfully"}
@@ -27,6 +30,7 @@ async def get_user_images(
     current_user: User = Depends(get_current_user),
     image_service: ImageService = Depends()
 ):
+    """ получает изображения текущего пользователя """
     return await image_service.get_user_images(current_user.id)
 
 

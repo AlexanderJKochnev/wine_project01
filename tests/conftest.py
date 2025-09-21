@@ -11,6 +11,7 @@ from pydantic import TypeAdapter
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
@@ -30,24 +31,25 @@ example_count = 5      # количество тестовых записей - 
 
 
 @pytest.fixture(scope="session")
-async def test_mongodb():
+async def test_mongodb(clean_database):
     """Создает тестовый экземпляр MongoDB"""
     test_mongo = MongoDB()
-    test_url = f'{settings_db.mongo_url}/test_db'
-    await test_mongo.connect(test_url, "test_db")
+    test_url = f'{settings_db.mongo_url}'
+    await test_mongo.connect(test_url, settings_db.MONGO_DATABASE)
     yield test_mongo
     await test_mongo.disconnect()
 
 
-@pytest.fixture(scope="function")  # , autouse=True)
-async def clean_database(test_mongodb):
-    """Очищает базу данных перед каждым тестом"""
-    if test_mongodb.database:
-        collections = await test_mongodb.database.list_collection_names()
-        for collection_name in collections:
-            if not collection_name.startswith('system.'):
-                await test_mongodb.database[collection_name].delete_many({})
-    yield
+@pytest.fixture(scope="session")  # , autouse=True)
+async def clean_database():
+    """Очищает базу данных перед каждым тестами"""
+    test_mongo = MongoDB()
+    test_url = f'{settings_db.mongo_url}'
+    await test_mongo.connect(test_url, settings_db.MONGO_DATABASE)
+    if hasattr(test_mongo, 'database'):
+        await test_mongo.client.drop_database(settings_db.MONGO_DATABASE)
+        test_mongo.database = test_mongo.client[settings_db.MONGO_DATABASE]
+    await test_mongo.disconnect()
 
 
 @pytest.fixture(scope="function")
@@ -71,6 +73,26 @@ async def mongo_health_check(test_mongodb):
         return True
     except Exception as e:
         pytest.fail(f"MongoDB health check failed: {e}")
+
+
+@pytest.fixture
+async def test_client_with_mongo(test_mongodb):
+    """Создает тестового клиента с переопределенными MongoDB зависимостями"""
+    from app.main import app
+    from app.mongodb.config import get_mongodb, get_database
+
+    # Переопределяем зависимости для тестов
+    async def override_get_mongodb():
+        return test_mongodb
+
+    async def override_get_database():
+        return test_mongodb.database
+
+    app.dependency_overrides[get_mongodb] = override_get_mongodb
+    app.dependency_overrides[get_database] = override_get_database
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        yield client
 
 # ---------------mongo db end ----------
 
@@ -476,9 +498,10 @@ async def client(test_db_session, override_app_dependencies, get_test_db, base_u
 
 @pytest.fixture(scope=scope2)
 async def authenticated_client_with_db(test_db_session, super_user_data,
-                                       override_app_dependencies, base_url, get_test_db):
+                                       override_app_dependencies, base_url, get_test_db, test_mongodb):
     """ Аутентифицированный клиент с тестовой базой данных """
-    """ переобъявление get_test_db в теле - заставляет работать чудо какое-то"""
+    # from app.main import app
+    # from app.mongodb.config import get_mongodb, get_database
     async def get_test_db():
         yield test_db_session
 
