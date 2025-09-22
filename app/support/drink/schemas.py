@@ -1,6 +1,4 @@
 # app/support/drink/schemas.py
-
-# from decimal import Decimal
 from typing import List, Optional
 
 from pydantic import ConfigDict
@@ -14,10 +12,8 @@ from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
 from app.core.schemas.image_mixin import ImageUrlMixin
+from app.mongodb.models import ImageCreate, FileResponse
 
-
-# from app.support.country.schemas import CountryRead
-# from app.support.item.schemas import ItemRead
 
 class CustomCreateRelation:
     image_path: Optional[str] = None
@@ -41,8 +37,6 @@ class CustomCreateRelation:
     sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
-    # foods: List[FoodCreateRelation]
-    # varietals: List[DrinkVarietalRelation]
     image_path: Optional[str]
 
 
@@ -126,12 +120,21 @@ class DrinkRead(ReadNoNameSchema, CustomReadSchema, ImageUrlMixin):
 
 
 class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 
 class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
+
+class DrinkCreateRelationsWithImage(DrinkCreateRelations):
+    model_config = ConfigDict(from_attributes = True, arbitrary_types_allowed =True, exclude_none = True)
+    
+    @property
+    def image(self) -> Optional[ImageCreate]:
+        return Optional[ImageCreate]
+    
+    
 
 class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
@@ -151,9 +154,4 @@ class DrinkFoodLinkUpdate(BaseModel):
 
 
 class DrinkVarietalLinkCreate(BaseModel):
-    drink_id: int
-    varietal_ids: List[int]  # полный список ID для связи
-
-
-class DrinkVarietalLinkUpdate(BaseModel):
-    varietal_ids: List[int]
+    drink: DrinkRead

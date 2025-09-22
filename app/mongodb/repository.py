@@ -13,12 +13,12 @@ class ImageRepository:
         self.db = database
         self.collection = self.db["images"]
 
-    async def create_image(self, filename: str, content: bytes, description: str, owner_id: int):
+    async def create_image(self, filename: str, content: bytes, description: str, drink_id: int) -> str:
         document = {
             "filename": filename,
             "content": content,
             "description": description,
-            "owner_id": owner_id,
+            "drink_id": drink_id,
             "created_at": datetime.utcnow(),
             "size": len(content)
         }
@@ -28,8 +28,8 @@ class ImageRepository:
     async def get_image(self, image_id: str):
         return await self.collection.find_one({"_id": ObjectId(image_id)})
 
-    async def get_user_images(self, owner_id: int) -> List[dict]:
-        cursor = self.collection.find({"owner_id": owner_id})
+    async def get_user_images(self, drink_id: int) -> List[dict]:
+        cursor = self.collection.find({"drink_id": drink_id})
         images = []
         async for image in cursor:
             image["_id"] = str(image["_id"])
@@ -46,12 +46,12 @@ class DocumentRepository:
         self.db = database
         self.collection = self.db["documents"]
 
-    async def create_document(self, filename: str, content: bytes, description: str, owner_id: int):
+    async def create_document(self, filename: str, content: bytes, description: str, drink_id: int):
         document = {
             "filename": filename,
             "content": content,
             "description": description,
-            "owner_id": owner_id,
+            "drink_id": drink_id,
             "created_at": datetime.utcnow(),
             "size": len(content)
         }
@@ -61,8 +61,8 @@ class DocumentRepository:
     async def get_document(self, document_id: str):
         return await self.collection.find_one({"_id": ObjectId(document_id)})
 
-    async def get_user_documents(self, owner_id: int) -> List[dict]:
-        cursor = self.collection.find({"owner_id": owner_id})
+    async def get_user_documents(self, drink_id: int) -> List[dict]:
+        cursor = self.collection.find({"drink_id": drink_id})
         documents = []
         async for doc in cursor:
             doc["_id"] = str(doc["_id"])

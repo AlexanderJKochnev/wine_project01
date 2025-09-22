@@ -1,5 +1,5 @@
 # app/support/drink/router.py
-from fastapi import Depends
+from fastapi import Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
@@ -9,8 +9,10 @@ from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, DrinkRead,
+                                       DrinkCreateRelationsWithImage,
                                        DrinkUpdate, DrinkFoodLinkUpdate, DrinkCreateRelations)
 from app.support.drink.service import DrinkService
+from app.mongodb.models import ImageCreate
 
 
 class DrinkRouter(BaseRouter):
@@ -27,10 +29,17 @@ class DrinkRouter(BaseRouter):
             tags=["drinks"],
             service=DrinkService
         )
+        self.create_relation_image = DrinkCreateRelationsWithImage
         # self.create_response_schema = DrinkCreateResponseSchema
 
     def setup_routes(self):
         super().setup_routes()
+        """self.router.add_api_route("/full",
+                                  self.create_relation_image,
+                                  status_code=status.HTTP_200_OK,
+                                  methods=["POST"],
+                                  response_model=self.read_schema)"""
+        # пока не понятно зачем то что ниже забыл
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
 
@@ -50,11 +59,23 @@ class DrinkRouter(BaseRouter):
         result = await super().create(data, session)
         return result
 
-    async def create_relation(self, data: DrinkCreateRelations, session: AsyncSession = Depends(get_db)) -> (
-            DrinkRead):
+    async def create_relation(self, data: DrinkCreateRelations,
+                              session: AsyncSession = Depends(get_db)) -> DrinkRead:
         result = await super().create_relation(data, session)
         return result
 
     async def patch(self, id: int, data: DrinkUpdate,
                     session: AsyncSession = Depends(get_db)) -> DrinkRead:
         return await super().patch(id, data, session)
+
+    async def create_relation_image(self, data: DrinkCreateRelationsWithImage,
+                                    session: AsyncSession = Depends(get_db)) -> DrinkRead:
+        # validation postgresql -> validation postgresql
+        # validation mongodb -> validation mongodb
+        # add mongodb -> get mongodb_filename
+        # get mongo_db_id -> add postgresql, get id
+        # add postgresql -> add mongodb
+        mongo_data = data.image
+        pass
+    
+    

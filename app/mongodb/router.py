@@ -1,9 +1,13 @@
 # app/mongodb/router.py
+""" этот роутер только для целеей тестирования в dev отключить, заходить через
+    postgres related routers
+    вместо get_current_user - drink_id
+"""
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+from PIL import Image
 from typing import List, Optional
 import io
-
 from app.mongodb.service import ImageService, DocumentService
 from app.auth.dependencies import get_current_user, User
 

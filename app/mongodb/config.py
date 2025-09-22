@@ -27,7 +27,11 @@ class Settings(BaseSettings):
     ME_CONFIG_BASICAUTH_PASSWORD: str
     ME_OUT_PORT: int
     ME_INN_PORT: int
-
+    # IMAGE SIZING в пикселях
+    IMAGE_WIDTH: int
+    IMAGE_HEIGH: int
+    IMAGE_QUALITY: int
+    
     @property
     def mongo_url(self) -> str:
         return (f"mongodb://{self.MONGO_INITDB_ROOT_USERNAME}:"

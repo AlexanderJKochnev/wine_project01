@@ -7,7 +7,7 @@ from typing import Optional
 class FileBase(BaseModel):
     filename: str
     description: Optional[str] = None
-    owner_id: int
+    drink_id: int
 
 
 class ImageCreate(FileBase):
