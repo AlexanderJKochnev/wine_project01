@@ -1,7 +1,8 @@
 # app/support/drink/router.py
-from fastapi import Depends, status
+from fastapi import Depends, status, UploadFile, File, HTTPException, Form
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-
+import json
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.drink.drink_food_repo import DrinkFoodRepository
@@ -13,6 +14,7 @@ from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, D
                                        DrinkUpdate, DrinkFoodLinkUpdate, DrinkCreateRelations)
 from app.support.drink.service import DrinkService
 from app.mongodb.models import ImageCreate
+from app.mongodb.service import ImageService
 
 
 class DrinkRouter(BaseRouter):
@@ -30,16 +32,17 @@ class DrinkRouter(BaseRouter):
             service=DrinkService
         )
         self.create_relation_image = DrinkCreateRelationsWithImage
+        # self.image_service=ImageService
         # self.create_response_schema = DrinkCreateResponseSchema
 
     def setup_routes(self):
         super().setup_routes()
-        """self.router.add_api_route("/full",
+        self.router.add_api_route("/full",
                                   self.create_relation_image,
                                   status_code=status.HTTP_200_OK,
                                   methods=["POST"],
-                                  response_model=self.read_schema)"""
-        # пока не понятно зачем то что ниже забыл
+                                  response_model=dict)
+        # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
 
@@ -68,14 +71,23 @@ class DrinkRouter(BaseRouter):
                     session: AsyncSession = Depends(get_db)) -> DrinkRead:
         return await super().patch(id, data, session)
 
-    async def create_relation_image(self, data: DrinkCreateRelationsWithImage,
-                                    session: AsyncSession = Depends(get_db)) -> DrinkRead:
-        # validation postgresql -> validation postgresql
-        # validation mongodb -> validation mongodb
-        # add mongodb -> get mongodb_filename
-        # get mongo_db_id -> add postgresql, get id
-        # add postgresql -> add mongodb
-        mongo_data = data.image
-        pass
-    
-    
+    async def create_relation_image(self,
+                                    data: str = Form(..., description="JSON string of DrinkCreateRelations"),
+                                    file: UploadFile = File(...),
+                                    session: AsyncSession = Depends(get_db),
+                                    image_service: ImageService = Depends()
+                                    ) -> DrinkRead:
+        try:
+            data_dict = json.loads(data)
+            drink_data = DrinkCreateRelations(**data_dict)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
+        # title = data.title
+        # content = await file.read()
+        # file_id = await image_service.upload_image(file.filename, content, title, 1)
+        # data.image_path = file_id
+        # return {"id": file_id, "message": "Image uploaded successfully"}
+        result = await super().create_relation(drink_data, session)
+        return result

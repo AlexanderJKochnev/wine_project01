@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     IMAGE_WIDTH: int
     IMAGE_HEIGH: int
     IMAGE_QUALITY: int
+    LENGTH_RANDOM_NAME: int
     
     @property
     def mongo_url(self) -> str:

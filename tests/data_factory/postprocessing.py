@@ -43,7 +43,7 @@ def validate_and_fix_numeric_ranges(data, int_range=None, float_range=None):
             language = tmp[-1]
             language = language if language in common_locales else 'en'
             leng = 300 if name.startswith('description') else 25
-            # return generate_simple_phrase(language, leng)
+            return generate_simple_phrase(language, leng)
         return value
 
     def traverse(obj):

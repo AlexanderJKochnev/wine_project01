@@ -1,0 +1,136 @@
+# app/mongodb/utils.py
+from PIL import Image
+import io
+import string
+import random
+from app.mongodb.config import settings
+
+
+def make_transparent_white_bg(content: bytes) -> bytes:
+    """ удаление белого (почти белого) фона"""
+    # Открываем изображение
+    img = Image.open(io.BytesIO(content))
+    
+    # Конвертируем в RGBA (добавляем альфа-канал для прозрачности)
+    img = img.convert("RGBA")
+    
+    # Получаем данные пикселей
+    datas = img.getdata()
+    
+    # Создаем новый список пикселей
+    new_data = []
+    
+    # Заменяем белый цвет (или близкий к белому) на прозрачный
+    for item in datas:
+        # Если пиксель белый (или близок к белому), делаем прозрачным
+        if item[0] > 240 and item[1] > 240 and item[2] > 240:
+            new_data.append((255, 255, 255, 0))  # прозрачный
+        else:
+            new_data.append(item)
+    
+    # Обновляем данные изображения
+    img.putdata(new_data)
+    
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format = "PNG")
+    img_bytes.seek(0)
+    
+    return img_bytes.getvalue()
+
+
+
+def remove_background(content: bytes, bg_color=(255, 255, 255), tolerance=20) -> bytes:
+    """
+    Удаляет фон указанного цвета с заданной допуском
+    """
+    img = Image.open(io.BytesIO(content))
+    img = img.convert("RGBA")
+    
+    datas = img.getdata()
+    new_data = []
+    
+    for item in datas:
+        # Проверяем, насколько цвет близок к фону
+        if (abs(item[0] - bg_color[0]) <= tolerance and abs(item[1] - bg_color[1]) <= tolerance and abs(
+                item[2] - bg_color[2]
+                ) <= tolerance):
+            # Делаем прозрачным
+            new_data.append((255, 255, 255, 0))
+        else:
+            new_data.append(item)
+    
+    img.putdata(new_data)
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format = "PNG")
+    img_bytes.seek(0)
+    
+    return img_bytes.getvalue()
+
+def remove_background_with_mask(content: bytes) -> bytes:
+    """
+    удаление фона по маске
+    """
+    img = Image.open(io.BytesIO(content))
+    
+    # Создаем маску на основе альфа-канала или яркости
+    if img.mode == 'RGBA':
+        # Если уже есть альфа-канал, используем его как маску
+        alpha = img.split()[-1]
+    else:
+        # Иначе создаем маску на основе яркости
+        img_gray = img.convert('L')
+        alpha = img_gray.point(lambda x: 0 if x > 240 else 255)
+    
+    # Создаем изображение с прозрачностью
+    img_rgba = img.convert('RGBA')
+    img_rgba.putalpha(alpha)
+    
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format = "PNG")
+    img_bytes.seek(0)
+    
+    return img_bytes.getvalue()
+
+
+def file_name(origin: str, length: int = 10, ext: str = None) -> str:
+    """
+    меняет имя файла на произвольное
+    :param origin: исходное имя
+    :param length: заданная длина
+    :return: имя файла с расширением
+    """
+    if not ext:
+        ext = f'.{origin.rsplit('.', 1)}' if '.' in origin else ''
+    name = ''.join(random.choice(string.ascii_letters) for _ in range(length))
+    return f'{name}{ext}'
+
+
+def image_aligning(content):
+    """ подгон изображения под требуемый разимер"""
+    width = settings.IMAGE_WIDTH
+    height = settings.IMAGE_HEIGH
+    quality = settings.IMAGE_QUALITY
+    try:
+        # Открываем изображение
+        image = Image.open(io.BytesIO(content))
+        original_width, original_height = image.size
+        original_ratio = original_width / original_height
+        ratio = width / height
+        if original_ratio > ratio:
+            # height priority
+            new_height = height
+            new_width = int(original_width * (height / original_height))
+        else:
+            # width_priority
+            new_width = width
+            new_height = int(original_height * (width / original_width))
+        resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        img_byte_arr = io.BytesIO()
+        format = image.format if image.format else 'JPEG'
+        resized_image.save(img_byte_arr, format = format, optimize = True)
+        # Получаем обработанное содержимое
+        new_content = img_byte_arr.getvalue()
+        return new_content
+    except Exception as e:
+        return content
+        raise HTTPException(status_code = 400, detail = f"Ошибка обработки изображения: {str(e)}")

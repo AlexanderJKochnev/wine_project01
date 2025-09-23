@@ -12,6 +12,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                                   simple_router_list, complex_router_list):
+    """ валидация генерируемых данных и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
     test_number = 1
@@ -48,6 +49,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
 
 async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session,
                                            simple_router_list, complex_router_list):
+    """ валидация генерируемых данных со связанными полями и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
     test_number = 1

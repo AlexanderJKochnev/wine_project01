@@ -5,52 +5,25 @@ from fastapi import Depends, HTTPException, status
 from PIL import Image
 from app.mongodb.repository import DocumentRepository, ImageRepository
 from app.mongodb.config import settings
+from app.mongodb.utils import (make_transparent_white_bg, file_name, image_aligning,
+                               remove_background, remove_background_with_mask)
 
 
 class ImageService:
     def __init__(self, image_repository: ImageRepository = Depends()):
         self.image_repository = image_repository
 
-    def image_aligning(self, content):
-        """ подгон изображения под требуемый разимер"""
-        width = settings.IMAGE_WIDTH
-        height = settings.IMAGE_HEIGH
-        quality = settings.IMAGE_QUALITY
-        try:
-            # Открываем изображение
-            image = Image.open(io.BytesIO(content))
-            original_width, original_height = image.size
-            original_ratio = original_width / original_height
-            ratio = width / height
-            if original_ratio > ratio:
-                # height priority
-                new_height = height
-                new_width = int(original_width * (height / original_height))
-            else:
-                # width_priority
-                new_width = width
-                new_height = int(original_height * (width / original_width))
-            resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            img_byte_arr = io.BytesIO()
-            format = image.format if image.format else 'JPEG'
-            resized_image.save(img_byte_arr, format = format, optimize = True)
-
-            # Получаем обработанное содержимое
-            new_content = img_byte_arr.getvalue()
-            return new_content
-        except Exception as e:
-            return content
-            raise HTTPException(status_code = 400, detail = f"Ошибка обработки изображения: {str(e)}")
-            
 
     async def upload_image(self, filename: str, content: bytes, description: str, drink_id: int):
-        content = self.image_aligning(content)
+        content = image_aligning(content)
+        content = remove_background_with_mask(content)
         if len(content) > 8 * 1024 * 1024:
             # сюда вставить обработку изображения
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="File too large"
             )
+        filename=file_name(filename, settings.LENGTH_RANDOM_NAME, '.png')
         return await self.image_repository.create_image(filename, content, description, drink_id)
 
     async def get_image(self, image_id: str, drink_id: int):
