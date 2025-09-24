@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     IMAGE_HEIGH: int
     IMAGE_QUALITY: int
     LENGTH_RANDOM_NAME: int
+    PAGE_DEFAULT: int
+    PAGE_MIN: int
+    PAGE_MAX: int
+    
     
     @property
     def mongo_url(self) -> str:
