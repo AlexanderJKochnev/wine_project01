@@ -121,9 +121,22 @@ class DrinkVarietal(Base):
     #                                   name='check_percentage_range'),)
 
     # Relationships
-    drink = relationship("Drink", back_populates="varietal_associations", overlaps='varietalss')
+    drink = relationship("Drink", back_populates="varietal_associations", overlaps='varietals')
     varietal = relationship("Varietal", back_populates="drink_associations", overlaps='drinks,varietals')
 
     def __str__(self):
         # return f"Drink {self.drink_id} - Varietal {self.food_id} (Percentage: {self.percentage})"
         return f"Varietal {self.varietal_id} (Percentage: {self.percentage})"
+
+
+class DrinkImage(Base):
+    __tablename__ = "drink_image"
+    lazy = settings.LAZY
+    image_id = Mapped[str_uniq]
+    drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), nullable = False)
+    drink: Mapped["Drink"] = relationship(back_populates = "drink_images", lazy = lazy)
+    
+    
+    def __str__(self):
+        # return f"Drink {self.drink_id} - Varietal {self.food_id} (Percentage: {self.percentage})"
+        return f"Image {self.image_id}"

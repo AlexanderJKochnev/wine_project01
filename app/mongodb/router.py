@@ -26,6 +26,7 @@ async def upload_image(
     """
     content = await file.read()
     file_id = await image_service.upload_image(file.filename, content, description, current_user.id)
+    print(f'{file_id=}=======================================')
     return {"id": file_id, "message": "Image uploaded successfully"}
 
 

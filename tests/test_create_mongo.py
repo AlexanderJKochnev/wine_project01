@@ -9,10 +9,12 @@ import json
 from app.core.utils.common_utils import jprint
 pytestmark = pytest.mark.asyncio
 
+
 async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session):
     """ валидация генерируемых данных со связанными полями и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter as Router
+    from app.support.drink.schemas import DrinkCreateRelations
     source = [Router]  # simple_router_list + complex_router_list
     test_number = 1
     client = authenticated_client_with_db
@@ -40,15 +42,21 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
             # генератор тествых данных для mongodb
-            test_image_data = b"fake_image_data"
+            test_image_data = b"fake_image_876876876876_data"
             files = {"file": (f"test_{m}.jpg", test_image_data, "image/jpeg")}
             
             try:
                 # Отправляем данные в поле "data" как JSON строку
                 form_data = {"data": json.dumps(data)}
-                response = await client.post(f'{prefix}/full', data=form_data, files=files)
-                assert False, response.text  # response["message"] == "Image uploaded successfully", response
-                # assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
-                jprint(data)
-                assert False, f'{e}'
+                assert False, e
+            try:
+                response = await client.post(f'{prefix}/full', data=form_data, files=files)
+                assert response.status_code in [200, 201], response.text  # response["message"] == "Image uploaded successfully", response
+            except Exception as e:
+                # jprint(data)
+                if 'response' in locals():
+                    print(f"Response status: {response.status_code=}")
+                    print(f"Response text: {response.text=}")
+                assert False, e
+

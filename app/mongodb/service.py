@@ -15,8 +15,21 @@ class ImageService:
 
 
     async def upload_image(self, filename: str, content: bytes, description: str, drink_id: int):
-        content = image_aligning(content)
-        content = remove_background_with_mask(content)
+        try:
+            pass
+            # content = image_aligning(content)
+        except Exception:
+            raise HTTPException(
+                    status_code = status.HTTP_400_BAD_REQUEST, detail = "image aligning fault"
+                    )
+        try:
+            pass
+            # content = remove_background_with_mask(content)
+        except Exception:
+            raise HTTPException(
+                    status_code = status.HTTP_400_BAD_REQUEST, detail = "remove background fault"
+                    )
+        print(f'{content=}============================')
         if len(content) > 8 * 1024 * 1024:
             # сюда вставить обработку изображения
             raise HTTPException(

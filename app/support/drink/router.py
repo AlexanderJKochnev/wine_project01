@@ -15,6 +15,7 @@ from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, D
 from app.support.drink.service import DrinkService
 from app.mongodb.models import ImageCreate
 from app.mongodb.service import ImageService
+from app.mongodb.router import upload_image
 
 
 class DrinkRouter(BaseRouter):
@@ -32,6 +33,7 @@ class DrinkRouter(BaseRouter):
             service=DrinkService
         )
         self.create_relation_image = DrinkCreateRelationsWithImage
+        self.image_service: ImageService = Depends()
         # self.image_service=ImageService
         # self.create_response_schema = DrinkCreateResponseSchema
 
@@ -40,8 +42,7 @@ class DrinkRouter(BaseRouter):
         self.router.add_api_route("/full",
                                   self.create_relation_image,
                                   status_code=status.HTTP_200_OK,
-                                  methods=["POST"],
-                                  response_model=dict)
+                                  methods=["POST"], response_model=self.read_schema)
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
@@ -76,7 +77,7 @@ class DrinkRouter(BaseRouter):
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
                                     image_service: ImageService = Depends()
-                                    ) -> DrinkRead:
+                                    ) -> DrinkCreateResponseSchema:
         try:
             data_dict = json.loads(data)
             drink_data = DrinkCreateRelations(**data_dict)
@@ -90,4 +91,14 @@ class DrinkRouter(BaseRouter):
         # data.image_path = file_id
         # return {"id": file_id, "message": "Image uploaded successfully"}
         result = await super().create_relation(drink_data, session)
+        try:
+            content = await file.read()
+            # file_id = await image_service.upload_image(file.filename, content, result.title, result.id)
+            response = await image_service.upload_image(filename=file.filename,
+                                                        content=content,
+                                                        description=result.title,
+                                                        drink_id=result.id)
+            print(f'========{response=}')
+        except Exception as e:
+            raise HTTPException(status_code = 500, detail = e)
         return result
