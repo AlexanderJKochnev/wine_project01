@@ -46,6 +46,8 @@ class DrinkRouter(BaseRouter):
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
+        self.router.add_api_route("/{id}/flat", self.get_one_flat,
+                                   methods=['GET'], response_model=dict)
 
     def get_drink_food_service(session: AsyncSession) -> DrinkFoodService:
         repo = DrinkFoodRepository(session)
@@ -91,3 +93,11 @@ class DrinkRouter(BaseRouter):
         drink_data.image_path = response
         result = await super().create_relation(drink_data, session)
         return result
+
+
+    async def get_one_flat(self, id: int, session: AsyncSession = Depends(get_db)) -> dict:
+        """
+            Получение одной записи по ID
+        """
+        obj = await self.service.get_dict_by_id(id, self.repo, self.model, session)
+        return obj  # self.read_schema.model_validate(obj)

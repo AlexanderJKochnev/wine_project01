@@ -22,11 +22,11 @@ class DrinkService(Service):
     """ переписываем методы для обрабоки manytomany relationships """
 
     @classmethod
-    async def __get_by_id(cls, id: int, repository: Type[Repository],
+    async def get_dict_by_id(cls, id: int, repository: Type[Repository],
                           model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         result = await super().get_by_id(id, repository, model, session)
-        return result
-        """
+        # return result
+        
         try:
             subresult = model_to_dict(result)
             flatresult = flatten_dict(subresult, ['name', 'name_ru'])
@@ -34,11 +34,12 @@ class DrinkService(Service):
                 print(f'    {key}: {val}')
             for key, val in flatresult.items():
                 print(f'    {key}: {val}')
+            return flatresult
         except Exception as e:
             print(f'drink.service..get_by_id error {e}')
-        finally:
-            return result
-        """
+        # finally:
+        #     return result
+        
 
     @classmethod
     async def create_relation(cls, data: DrinkCreateRelations,

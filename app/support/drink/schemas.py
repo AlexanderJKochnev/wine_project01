@@ -1,18 +1,19 @@
 # app/support/drink/schemas.py
+from datetime import datetime
 from typing import List, Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_serializer
 
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, ReadNoNameSchema, UpdateNoNameSchema)
-from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
+from app.core.schemas.image_mixin import ImageUrlMixin
+from app.mongodb.models import ImageCreate
 # from app.support.color.schemas import ColorCreateRelation, ColorRead
 from app.support.drink.drink_varietal_schema import DrinkVarietalRelation
 from app.support.food.schemas import FoodCreateRelation, FoodRead
+from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
-from app.core.schemas.image_mixin import ImageUrlMixin
-from app.mongodb.models import ImageCreate, FileResponse
 
 
 class CustomCreateRelation:
@@ -61,7 +62,19 @@ class CustomReadSchema:
     sparkling: Optional[bool] = False
     foods: List[FoodRead]
     varietals: List[VarietalRead]
-
+    updated_at: Optional[datetime] = None
+    
+    @field_serializer('alc', when_used = 'unless-none')
+    def serialize_alc(self, value: Optional[float]) -> Optional[str]:
+        if value is None:
+            return None
+        return f"{int(round(value * 100))}%"
+    
+    @field_serializer('sugar', when_used = 'unless-none')
+    def serialize_sugar(self, value: Optional[float]) -> Optional[str]:
+        if value is None:
+            return None
+        return f"{int(round(value * 100))}%"
 
 class CustomUpdSchema:
     subcategory: Optional[int] = None

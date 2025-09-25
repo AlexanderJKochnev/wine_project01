@@ -119,7 +119,7 @@ class ReadSchemaWithRealtionships(ReadSchema):
     @classmethod
     def flatten_relationships(cls, data: Any):
         """
-            Принимает ORM-объект, возвращает словарь с плоскими значениями (deep levle 2)
+            Принимает ORM-объект, возвращает словарь с плоскими значениями (deep level 2)
             Никакой модификации исходного объекта!
         """
         if hasattr(data, '__dict__') or hasattr(data, '__class__'):

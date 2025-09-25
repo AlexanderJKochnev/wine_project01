@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Annotated
 
 # from sqlalchemy.dialects.postgresql import MONEY
-from sqlalchemy import DECIMAL, func, Integer, text, Text
+from sqlalchemy import DECIMAL, func, Integer, text, Text, CheckConstraint
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import class_mapper, DeclarativeBase, declared_attr, Mapped, mapped_column
 
@@ -40,8 +40,12 @@ descr = Annotated[str, mapped_column(Text, nullable=True)]
 # money
 money = Annotated[Decimal, mapped_column(DECIMAL(10, 2), nullable=True)]
 
-# volume, alcohol sugar percentage
+# volume,
 volume = Annotated[Decimal, mapped_column(DECIMAL(5, 2), nullable=True)]
+
+# alc sugar percentage
+percent = Annotated[Decimal, mapped_column(DECIMAL(3, 2), nullable=True),
+CheckConstraint('volume >= 0 AND volume <= 1.00')]  # , name='volume_range_check')]
 
 # int or none
 ion = Annotated[int, mapped_column(nullable=True)]

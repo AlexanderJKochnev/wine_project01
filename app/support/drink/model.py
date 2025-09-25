@@ -8,8 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DECIMAL
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone, descr, ion, str_null_true, str_uniq,
-                                        volume)
+from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone,
+                                        descr, ion, str_null_true, str_uniq,
+                                        volume, percent)
 from app.core.models.image_mixin import ImageMixin
 from app.core.utils.common_utils import plural
 
@@ -37,8 +38,8 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     recommendation_fr: Mapped[descr]
     madeof: Mapped[descr]
     madeof_ru: Mapped[descr]
-    alc: Mapped[volume]
-    sugar: Mapped[volume]
+    alc: Mapped[percent]
+    sugar: Mapped[percent]
     aging: Mapped[ion]
     age: Mapped[str_null_true]
     sparkling: Mapped[boolnone]

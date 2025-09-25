@@ -1,0 +1,117 @@
+{
+  "image_path": "string",
+  "subcategory": {
+    "category": {
+      "name": "Wine",
+      "description": "Some wine",
+      "description_ru": "КАКОЕ ТО ВИНО",
+      "description_fr": "Le vino",
+      "name_ru": "Вино",
+      "name_fr": "vin",
+      "id": 15
+    },
+    "name": "Red",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "Красное",
+    "name_fr": "Rouge",
+    "id": 3
+  },
+  "sweetness": {
+    "name": "Sweet",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "Сладкое",
+    "name_fr": "",
+    "id": 1
+  },
+  "subregion": {
+    "region": {
+      "country": {
+        "name": "Russia",
+        "description": "Russian Federation",
+        "description_ru": "Российская федерация",
+        "description_fr": "Larusse",
+        "name_ru": "Россия",
+        "name_fr": "La Russe",
+        "id": 2
+      },
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 2
+    },
+    "name": "Krasnodar Region",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "Краснодарский край",
+    "name_fr": "string",
+    "id": 2
+  },
+  "title": "Cagor",
+  "title_native": "Кагор",
+  "subtitle_native": "Монастырский",
+  "subtitle": "Monastery",
+  "recommendation": "string",
+  "recommendation_ru": "string",
+  "recommendation_fr": "string",
+  "madeof": "string",
+  "madeof_ru": "string",
+  "alc": "40%",
+  "sugar": "50%",
+  "aging": 1,
+  "age": "string",
+  "sparkling": true,
+  "foods": [
+    {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 4
+    },
+    {
+      "name": "meeeeet",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "Мясо",
+      "name_fr": "",
+      "id": 5
+    }
+  ],
+  "varietals": [
+    {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 1
+    },
+    {
+      "name": "maalbeck",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "Мальбек",
+      "name_fr": null,
+      "id": 3
+    }
+  ],
+  "updated_at": "2025-09-25T20:25:14.218664",
+  "description": "The cagor",
+  "description_ru": "Вино Кагор",
+  "description_fr": "Le Kagor",
+  "id": 8,
+  "image_url": "http://123/string"
+}

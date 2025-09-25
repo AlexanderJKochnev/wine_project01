@@ -1,0 +1,112 @@
+{
+  "image_path": "string",
+  "subcategory": {
+    "category": {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string"
+    },
+    "name": "string",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "string",
+    "name_fr": "string"
+  },
+  "sweetness": {
+    "name": "string",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "string",
+    "name_fr": "string"
+  },
+  "subregion": {
+    "region": {
+      "country": {
+        "name": "string",
+        "description": "string",
+        "description_ru": "string",
+        "description_fr": "string",
+        "name_ru": "string",
+        "name_fr": "string"
+      },
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string"
+    },
+    "name": "string",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "string",
+    "name_fr": "string"
+  },
+  "title": "000_test_000",
+  "title_native": "string",
+  "subtitle_native": "string",
+  "subtitle": "string",
+  "recommendation": "string",
+  "recommendation_ru": "string",
+  "recommendation_fr": "string",
+  "madeof": "string",
+  "madeof_ru": "string",
+  "alc": 0,
+  "sugar": 0,
+  "aging": 0,
+  "age": "string",
+  "sparkling": false,
+  "foods": [
+    {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string"
+    },
+    {
+      "name": "meeeeet",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string"
+    }
+  ],
+  "varietals": [
+    {
+      "varietal": {
+        "name": "string",
+        "description": "string",
+        "description_ru": "string",
+        "description_fr": "string",
+        "name_ru": "string",
+        "name_fr": "string"
+      },
+      "percentage": 0.2,
+      "additionalProp1": {}
+    },
+    {
+      "varietal": {
+        "name": "maalbeck",
+        "description": "string",
+        "description_ru": "string",
+        "description_fr": "string",
+        "name_ru": "string",
+        "name_fr": "string"
+      },
+      "percentage": 0.8,
+      "additionalProp1": {}
+    }
+  ],
+  "description": "string",
+  "description_ru": "string",
+  "description_fr": "string"
+}
