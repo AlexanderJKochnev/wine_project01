@@ -10,13 +10,14 @@ from app.core.utils.common_utils import jprint
 pytestmark = pytest.mark.asyncio
 
 
-async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session):
+async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session, sample_image_paths):
     """ валидация генерируемых данных со связанными полями и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter as Router
     from app.support.drink.schemas import DrinkCreateRelations
     source = [Router]  # simple_router_list + complex_router_list
-    test_number = 1
+    
+    test_number = len(sample_image_paths)
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
@@ -42,7 +43,9 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
             # генератор тествых данных для mongodb
-            test_image_data = b"fake_image_876876876876_data"
+            with open(sample_image_paths[m], 'rb') as f:
+                test_image_data = f.read()
+            # test_image_data = b"fake_image_876876876876_data"
             files = {"file": (f"test_{m}.jpg", test_image_data, "image/jpeg")}
             
             try:

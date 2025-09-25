@@ -121,14 +121,19 @@ services:
     volumes:
       - ./mongodb_data:/data/db
       - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: >
+      mongod
+      --bind_ip_all
+      --wiredTigerCacheSizeGB 0.5
+      --storageEngine wiredTiger
     deploy:
       resources:
         limits:
           cpus: '2'
-          memory: 512M
+          memory: 1G
         reservations:
-          cpus: '0.250'
-          memory: 256M
+          cpus: '0.5'
+          memory: 512M
   
   mongo-express:
     image: mongo-express

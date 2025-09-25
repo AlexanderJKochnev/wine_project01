@@ -8,6 +8,7 @@
 # pytest -m 'not docker' --tb=no --disable-warnings -vv
 pytest tests/test_mongodb_crud.py
 pytest tests/test_mongodb_endpoints.py
+pytest tests/test_create_mongo.py
 pytest tests/test_auth.py \
        tests/test_configs.py \
        tests/test_database.py \

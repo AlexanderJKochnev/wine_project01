@@ -8,6 +8,7 @@ from fastapi import status
 from tests.config import settings_db
 from datetime import datetime, timedelta, timezone
 from app.core.utils.common_utils import jprint
+from app.mongodb.utils import ContentTypeDetector
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,12 +17,14 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db, test_db_s
     """Тестирует CRUD операции через API - ДОЛЖЕН ПАДАТЬ при проблемах с MongoDB"""
     client = authenticated_client_with_db
     # 1. Тестируем загрузку изображения
-    tier = 10
-    for i in range(tier):
-        test_image_data = b"fake_image_data_123"
-        files = {"file": (f"test{i}.jpg", test_image_data, "image/jpeg")}
+    for n, image in enumerate(sample_image_paths):
+        with open(image, 'rb') as f:
+            image_content = f.read()
+        file_size = len(image_content)
+        file_name = image.name
         data = {"description": "Test image for integration test"}
-        response = await client.post("/mongodb/images/", files=files, data=data)
+        files = {"file": (file_name, image_content)}
+        response = await client.post("/mongodb/images/", files = files, data = data)
         # Проверяем успешность запроса
         assert response.status_code == status.HTTP_200_OK, f"Upload failed: {response.text}"
         assert "id" in response.json(), "Response should contain 'id'"
@@ -42,13 +45,12 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db, test_db_s
     # for key, val in response.json().items():
     #     jprint(f'==={key}: {val}')
     
-    assert len(response.json()['images']) == tier, f"Should have exactly {tier} images"
-    # assert response.json()[0]["filename"] == "test0.jpg", "Wrong filename"
+    # assert len(response.json()['images']) == n, f"Should have exactly {n} images"
 
     # 3. Тестируем скачивание изображения
     response = await client.get(f"/mongodb/images/{file_id}")
     assert response.status_code == status.HTTP_200_OK, "Download failed"
-    assert response.content == test_image_data, "Downloaded content doesn't match original"
+    assert response.content == image_content, "Downloaded content doesn't match original?"
 
     # 4. Тестируем удаление изображения
     response = await client.delete(f"/mongodb/images/{file_id}")

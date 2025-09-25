@@ -12,8 +12,18 @@ class ImageRepository:
     def __init__(self, database: AsyncIOMotorDatabase = Depends(get_database)):
         self.db = database
         self.collection = self.db["images"]
+        self._indexes_created = False
+    
+    async def ensure_indexes(self):
+        """Создает индексы при первом использовании репозитория"""
+        if not self._indexes_created:
+            await self.collection.create_index([("created_at", -1)])
+            await self.collection.create_index([("filename", "text")])  # Текстовый поиск
+            self._indexes_created = True
+            print("Image repository indexes ensured")
 
     async def create_image(self, filename: str, content: bytes, content_type: str, description: str) -> str:
+        await self.ensure_indexes()
         document = {
             "filename": filename,
             "content": content,
@@ -26,6 +36,7 @@ class ImageRepository:
         return str(result.inserted_id)
 
     async def get_image(self, image_id: str):
+        await self.ensure_indexes()
         return await self.collection.find_one({"_id": ObjectId(image_id)})
 
 
@@ -33,6 +44,7 @@ class ImageRepository:
                              after_date: datetime,
                              skip: int = 0,
                              limit: int = 100) -> List[FileResponse]:
+        await self.ensure_indexes()
         query = {"created_at": {"$gt": after_date}}
         cursor = self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
         images = []

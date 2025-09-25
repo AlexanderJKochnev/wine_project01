@@ -8,7 +8,8 @@ from app.core.config.project_config import settings
 from app.mongodb.config import settings
 from app.mongodb.models import FileListResponse, FileResponse
 from app.mongodb.repository import ImageRepository
-from app.mongodb.utils import file_name, image_aligning, ContentTypeDetector
+from app.mongodb.utils import (file_name, image_aligning, ContentTypeDetector,
+                               remove_background, remove_background_with_mask, make_transparent_white_bg)
 
 
 class ImageService:
@@ -26,19 +27,16 @@ class ImageService:
         try:
             content_type = await ContentTypeDetector.detect(file)
             content = await file.read()
-            content = image_aligning(content)
+            content = make_transparent_white_bg(content)
+            # content = remove_background_with_mask(content)
+            if len(content) > 8 * 1024 * 1024:
+                content = image_aligning(content)
             # content = remove_background_with_mask(content)
             filename = file_name(file.filename, settings.LENGTH_RANDOM_NAME, '.png')
         except Exception as e:
             raise HTTPException(
                     status_code = status.HTTP_400_BAD_REQUEST, detail = f"image aligning fault: {e}"
                     )
-        if len(content) > 8 * 1024 * 1024:
-            # сюда вставить обработку изображения
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File too large"
-            )
         return await self.image_repository.create_image(filename, content, content_type, description)  # , drink_id)
 
     async def get_image(self,

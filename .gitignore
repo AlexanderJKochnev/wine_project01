@@ -27,6 +27,7 @@ migration_volume/
 mongodb_data/
 DOCS/
 DOCS/git.md
+tests/test_images/
 
 # Virtual environment
 .venv/
