@@ -12,7 +12,7 @@ from app.core.utils.common_utils import jprint
 pytestmark = pytest.mark.asyncio
 
 
-async def test_api_mongo_crud_operations(authenticated_client_with_db, test_db_session):
+async def test_api_mongo_crud_operations(authenticated_client_with_db, test_db_session, sample_image_paths):
     """Тестирует CRUD операции через API - ДОЛЖЕН ПАДАТЬ при проблемах с MongoDB"""
     client = authenticated_client_with_db
     # 1. Тестируем загрузку изображения

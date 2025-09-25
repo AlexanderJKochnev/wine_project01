@@ -85,9 +85,8 @@ class DrinkRouter(BaseRouter):
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
-        content = await file.read()
-        response = await image_service.upload_image(
-            filename = file.filename, content = content, description = drink_data.title
+        # content = await file.read()
+        response = await image_service.upload_image(file, description = drink_data.title
             )
         drink_data.image_path = response
         result = await super().create_relation(drink_data, session)

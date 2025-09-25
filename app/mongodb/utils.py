@@ -1,12 +1,16 @@
 # app/mongodb/utils.py
-from PIL import Image
-import io
 import string
 import random
 from app.mongodb.config import settings
 from fastapi import UploadFile, HTTPException
 import os
 import magic
+from pathlib import Path
+from typing import List, Tuple
+import io
+from PIL import Image
+
+
 
 
 def make_transparent_white_bg(content: bytes) -> bytes:
@@ -181,7 +185,6 @@ class ContentTypeDetector:
         """Определяет по содержимому файла"""
         try:
             # Используем python-magic если установлен
-            import magic
             return magic.from_buffer(content, mime = True)
         except ImportError:
             # Fallback на ручное определение
@@ -208,3 +211,43 @@ class ContentTypeDetector:
                 return mime_type
         
         return 'application/octet-stream'
+
+
+class TestFileUtils:
+    """Утилиты для работы с тестовыми файлами"""
+    
+    @staticmethod
+    def get_test_images(directory: Path) -> List[Path]:
+        """Возвращает список путей к тестовым изображениям"""
+        image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'}
+        return [f for f in directory.iterdir() if f.is_file() and f.suffix.lower() in image_extensions]
+    
+    @staticmethod
+    def read_image_file(image_path: Path) -> Tuple[bytes, str, int]:
+        """Читает файл изображения и возвращает (content, content_type, size)"""
+        with open(image_path, 'rb') as f:
+            content = f.read()
+        
+        content_type = TestFileUtils.get_content_type(image_path)
+        size = len(content)
+        
+        return content, content_type, size
+    
+    @staticmethod
+    def get_content_type(image_path: Path) -> str:
+        """Определяет MIME-type по расширению файла"""
+        extension = image_path.suffix.lower()
+        types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif',
+                '.webp': 'image/webp', '.bmp': 'image/bmp', '.tiff': 'image/tiff', '.tif': 'image/tiff',
+                '.svg': 'image/svg+xml'}
+        return types.get(extension, 'application/octet-stream')
+    
+    @staticmethod
+    def create_test_image(format: str = 'JPEG', size: Tuple[int, int] = (100, 100)) -> Tuple[bytes, str]:
+        """Создает тестовое изображение в памяти"""
+        image = Image.new('RGB', size, color = 'blue')
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format = format)
+        
+        mime_types = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'GIF': 'image/gif'}
+        return img_byte_arr.getvalue(), mime_types.get(format, 'image/jpeg')

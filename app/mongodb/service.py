@@ -27,16 +27,11 @@ class ImageService:
             content_type = await ContentTypeDetector.detect(file)
             content = await file.read()
             content = image_aligning(content)
+            # content = remove_background_with_mask(content)
+            filename = file_name(file.filename, settings.LENGTH_RANDOM_NAME, '.png')
         except Exception as e:
             raise HTTPException(
                     status_code = status.HTTP_400_BAD_REQUEST, detail = f"image aligning fault: {e}"
-                    )
-        try:
-            pass
-            # content = remove_background_with_mask(content)
-        except Exception:
-            raise HTTPException(
-                    status_code = status.HTTP_400_BAD_REQUEST, detail = "remove background fault"
                     )
         if len(content) > 8 * 1024 * 1024:
             # сюда вставить обработку изображения
@@ -44,7 +39,6 @@ class ImageService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="File too large"
             )
-        filename=file_name(filename, settings.LENGTH_RANDOM_NAME, '.png')
         return await self.image_repository.create_image(filename, content, content_type, description)  # , drink_id)
 
     async def get_image(self,
