@@ -17,6 +17,7 @@ from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
 from app.main import app, get_db
+from pathlib import Path
 from app.mongodb.config import MongoDB, get_mongodb, get_database
 # from app.mongodb.router import get_mongodb
 from tests.config import settings_db
@@ -29,7 +30,41 @@ scope = 'session'
 scope2 = 'session'
 example_count = 5      # количество тестовых записей - рекомедуется >20 для paging test
 
+# ----------REAL IMAGE FIXTURES-----------
 
+@pytest.fixture
+def test_images_dir():
+    """Возвращает путь к директории с тестовыми изображениями"""
+    return Path(__file__).parent / "test_images"
+
+
+@pytest.fixture
+def sample_image_paths(test_images_dir):
+    """Возвращает пути ко всем тестовым изображениям"""
+    image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+    image_paths = []
+    
+    for file_path in test_images_dir.iterdir():
+        if file_path.is_file() and file_path.suffix.lower() in image_extensions:
+            image_paths.append(file_path)
+    
+    return image_paths
+
+
+@pytest.fixture
+def sample_image_jpg(test_images_dir):
+    """Возвращает путь к конкретному JPG изображению"""
+    jpg_path = test_images_dir / "sample.jpg"
+    if jpg_path.exists():
+        return jpg_path
+    # Если файла нет, ищем любой JPG
+    for file_path in test_images_dir.iterdir():
+        if file_path.suffix.lower() in {'.jpg', '.jpeg'}:
+            return file_path
+    raise FileNotFoundError("No JPG images found in test directory")
+
+
+# ----------MONGODB FIXTURES--------------
 @pytest.fixture(scope="session")
 async def test_mongodb(clean_database):
     """Создает тестовый экземпляр MongoDB"""

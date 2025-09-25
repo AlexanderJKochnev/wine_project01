@@ -13,14 +13,14 @@ class ImageRepository:
         self.db = database
         self.collection = self.db["images"]
 
-    async def create_image(self, filename: str, content: bytes, description: str) -> str:
+    async def create_image(self, filename: str, content: bytes, content_type: str, description: str) -> str:
         document = {
             "filename": filename,
             "content": content,
             "description": description,
             "created_at": datetime.utcnow(),
             "size": len(content),
-            "content_type": 'image/jpeg'
+            "content_type": content_type
         }
         result = await self.collection.insert_one(document)
         return str(result.inserted_id)

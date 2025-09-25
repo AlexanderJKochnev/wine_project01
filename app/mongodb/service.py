@@ -2,13 +2,13 @@
 from datetime import datetime
 from typing import List
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, UploadFile
 
 from app.core.config.project_config import settings
 from app.mongodb.config import settings
 from app.mongodb.models import FileListResponse, FileResponse
 from app.mongodb.repository import ImageRepository
-from app.mongodb.utils import (file_name)
+from app.mongodb.utils import file_name, image_aligning, ContentTypeDetector
 
 
 class ImageService:
@@ -17,17 +17,19 @@ class ImageService:
 
 
     async def upload_image(self,
-                           filename: str,
-                           content: bytes,
+                           file: UploadFile,
+                           # filename: str,
+                           # content: bytes,
+                           # content_type: str,
                            description: str,
-                           # drink_id: int
                            ):
         try:
-            pass
-            # content = image_aligning(content)
-        except Exception:
+            content_type = await ContentTypeDetector.detect(file)
+            content = await file.read()
+            content = image_aligning(content)
+        except Exception as e:
             raise HTTPException(
-                    status_code = status.HTTP_400_BAD_REQUEST, detail = "image aligning fault"
+                    status_code = status.HTTP_400_BAD_REQUEST, detail = f"image aligning fault: {e}"
                     )
         try:
             pass
@@ -43,7 +45,7 @@ class ImageService:
                 detail="File too large"
             )
         filename=file_name(filename, settings.LENGTH_RANDOM_NAME, '.png')
-        return await self.image_repository.create_image(filename, content, description)  # , drink_id)
+        return await self.image_repository.create_image(filename, content, content_type, description)  # , drink_id)
 
     async def get_image(self,
                         image_id: str,

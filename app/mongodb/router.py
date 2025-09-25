@@ -28,8 +28,10 @@ async def upload_image(
     """
     загрузка изображения в базу данных
     """
-    content = await file.read()
-    file_id = await image_service.upload_image(file.filename, content, description)  # , current_user.id)
+    # content = await file.read()
+    # content_type = file.content_type
+    file_id = await image_service.upload_image(file, description)
+    # file_id = await image_service.upload_image(file.filename, content, content_type, description)
     return {"id": file_id, "message": "Image uploaded successfully"}
 
 

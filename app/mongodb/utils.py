@@ -4,6 +4,9 @@ import io
 import string
 import random
 from app.mongodb.config import settings
+from fastapi import UploadFile, HTTPException
+import os
+import magic
 
 
 def make_transparent_white_bg(content: bytes) -> bytes:
@@ -38,7 +41,6 @@ def make_transparent_white_bg(content: bytes) -> bytes:
     return img_bytes.getvalue()
 
 
-
 def remove_background(content: bytes, bg_color=(255, 255, 255), tolerance=20) -> bytes:
     """
     Удаляет фон указанного цвета с заданной допуском
@@ -65,6 +67,7 @@ def remove_background(content: bytes, bg_color=(255, 255, 255), tolerance=20) ->
     img_bytes.seek(0)
     
     return img_bytes.getvalue()
+
 
 def remove_background_with_mask(content: bytes) -> bytes:
     """
@@ -134,3 +137,74 @@ def image_aligning(content):
     except Exception as e:
         return content
         raise HTTPException(status_code = 400, detail = f"Ошибка обработки изображения: {str(e)}")
+
+
+
+class ContentTypeDetector:
+    """Класс для определения типа контента"""
+    
+    @staticmethod
+    async def detect(file: UploadFile) -> str:
+        """Определяет content_type файла"""
+        
+        # 1. Пробуем получить из заголовков HTTP
+        if file.content_type:
+            return file.content_type
+        
+        # 2. Пробуем определить по расширению
+        extension_type = ContentTypeDetector._by_extension(file.filename)
+        if extension_type != 'application/octet-stream':
+            return extension_type
+        
+        # 3. Определяем по содержимому
+        content = await file.read()
+        content_type = ContentTypeDetector._by_content(content)
+        
+        # Возвращаем указатель файла в начало
+        await file.seek(0)
+        
+        return content_type
+    
+    @staticmethod
+    def _by_extension(filename: str) -> str:
+        """Определяет по расширению файла"""
+        extension = os.path.splitext(filename)[1].lower()
+        
+        types = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.jpe': 'image/jpeg', '.png': 'image/png',
+                '.gif': 'image/gif', '.bmp': 'image/bmp', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+                '.tiff': 'image/tiff', '.tif': 'image/tiff', '.heic': 'image/heic', '.heif': 'image/heif', }
+        
+        return types.get(extension, 'application/octet-stream')
+    
+    @staticmethod
+    def _by_content(content: bytes) -> str:
+        """Определяет по содержимому файла"""
+        try:
+            # Используем python-magic если установлен
+            import magic
+            return magic.from_buffer(content, mime = True)
+        except ImportError:
+            # Fallback на ручное определение
+            return ContentTypeDetector._by_content_manual(content)
+    
+    @staticmethod
+    def _by_content_manual(content: bytes) -> str:
+        """Ручное определение по сигнатурам"""
+        if len(content) < 8:
+            return 'application/octet-stream'
+        
+        signatures = {b'\xff\xd8\xff': 'image/jpeg',  # JPEG
+                b'\x89PNG\r\n\x1a\n': 'image/png',  # PNG
+                b'GIF87a': 'image/gif',  # GIF
+                b'GIF89a': 'image/gif',  # GIF
+                b'RIFF....WEBPVP': 'image/webp',  # WebP
+                b'BM': 'image/bmp',  # BMP
+                b'II*\x00': 'image/tiff',  # TIFF little-endian
+                b'MM\x00*': 'image/tiff',  # TIFF big-endian
+                }
+        
+        for signature, mime_type in signatures.items():
+            if content.startswith(signature):
+                return mime_type
+        
+        return 'application/octet-stream'

@@ -22,3 +22,4 @@ pymongo==4.6.0
 Faker
 itsdangerous>=2.1.0
 pydantic_factories
+python-magic
