@@ -1,11 +1,11 @@
 # app/core/schemas/api_mixin.py
-from pydantic import BaseModel, computed_field, Field
-from typing import Optional
-from app.core.config.project_config import settings
-from app.core.schemas.base import PyModel, BaseModel
+from pydantic import computed_field
+
+from app.core.schemas.base import BaseModel
+
 
 class LangMixin(BaseModel):
-    """ языковая схема - доюавлять 'name_<lang>' """
+    """ языковая схема - добавлять 'name_<lang>' """
     
     def __get_schmema__(self):
         schema = None

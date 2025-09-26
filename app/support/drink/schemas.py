@@ -10,6 +10,7 @@ from app.mongodb.models import ImageCreate
 # from app.support.color.schemas import ColorCreateRelation, ColorRead
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
                                                      DrinkVarietalRelationApi)
+from app.support.drink.drink_food_schema import DrinkFoodRelationApi
 from app.support.food.schemas import FoodCreateRelation, FoodRead
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
@@ -97,7 +98,8 @@ class CustomReadApiSchema:
     aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
-    foods: List[FoodRead]
+    foods: Optional[List[FoodRead]]
+    food_associations: Optional[List[DrinkFoodRelationApi]]
     varietal_associations: Optional[List[DrinkVarietalRelationApi]]
     updated_at: Optional[datetime] = None
 
