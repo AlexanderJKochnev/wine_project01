@@ -6,13 +6,13 @@ from typing import Optional
 from pydantic import ConfigDict
 
 from app.core.schemas.base import BaseModel, CreateResponse, CreateNoNameSchema
-from app.support.drink.schemas import DrinkRead, DrinkCreateRelations
+from app.support.drink.schemas import DrinkRead, DrinkCreateRelations, DrinkReadApi
 from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
 
 
 class CustomReadSchema:
     id: int
-    drink: DrinkRead
+    drink: DrinkReadApi
     warehouse: Optional[WarehouseRead] = None
     volume: Optional[float] = None
     price: Optional[float] = None

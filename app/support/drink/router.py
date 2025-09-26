@@ -25,7 +25,7 @@ class DrinkRouter(BaseRouter):
             model=Drink,
             repo=DrinkRepository,
             create_schema=DrinkCreate,
-            read_schema=DrinkRead,
+            read_schema=DrinkReadApi,
             create_schema_relation=DrinkCreateRelations,
             create_response_schema=DrinkCreateResponseSchema,
             path_schema=DrinkUpdate,
