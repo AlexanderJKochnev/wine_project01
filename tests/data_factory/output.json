@@ -1,0 +1,28 @@
+{
+  "updated_at": "2025-09-25T20:25:14.218664",
+  "id": 8,
+  "image_url": "http://123/string",
+  "english": {
+    "category": "Wine",
+    "subcategory": "Red",
+    "sweetness": "Sweet",
+    "region": "Krasnodar Region, Chateux Maison",
+    "country": "Russia",
+    "recommendation": "recommendation in english",
+    "madeof": "grain, malt etc",
+    "pairing": "meat, vegetables",
+    "varietals": "aligote 50%, maalbeck 45%",
+    # поля указаные ниже одинаковые в каждой из секций english, russian, francaise
+    "alc": '0.2 %',
+    "sugar": '0.5 %',
+    "aging": '1 year',
+    "age": "One year",
+    "sparkling": true,
+    "title": "Cagor",
+    "title_native": "Кагор",
+    "subtitle_native": "Монастырский",
+    "subtitle": "Monastery"
+  },
+  "russian": {...},
+  "francaise": {...},
+}

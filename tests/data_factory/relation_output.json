@@ -1,73 +1,44 @@
 {
-  "image_path": "string",
   "subcategory": {
-    "category": {
-      "name": "string",
-      "description": "string",
-      "description_ru": "string",
-      "description_fr": "string",
-      "name_ru": "string",
-      "name_fr": "string",
-      "id": 0
-    },
-    "name": "string",
-    "description": "string",
-    "description_ru": "string",
-    "description_fr": "string",
-    "name_ru": "string",
-    "name_fr": "string",
-    "id": 0
+    "name": "Red",
+    "name_ru": "Красное",
+    "name_fr": "Rouge",
+    "category_ru": "Вино",
+    "category_fr": "vin",
+    "category_en": "Wine"
   },
   "sweetness": {
-    "name": "string",
-    "description": "string",
-    "description_ru": "string",
-    "description_fr": "string",
-    "name_ru": "string",
-    "name_fr": "string",
-    "id": 0
+    "name": "Sweet",
+    "name_ru": "Сладкое",
+    "name_fr": ""
   },
   "subregion": {
+    "name": "Chateux Maison",
+    "name_ru": "Шато Мэсон",
+    "name_fr": "Chateux Maison",
     "region": {
-      "country": {
-        "name": "string",
-        "description": "string",
-        "description_ru": "string",
-        "description_fr": "string",
-        "name_ru": "string",
-        "name_fr": "string",
-        "id": 0
-      },
-      "name": "string",
-      "description": "string",
-      "description_ru": "string",
-      "description_fr": "string",
-      "name_ru": "string",
-      "name_fr": "string",
-      "id": 0
-    },
-    "name": "string",
-    "description": "string",
-    "description_ru": "string",
-    "description_fr": "string",
-    "name_ru": "string",
-    "name_fr": "string",
-    "id": 0
+      "name": "Krasnodar Region",
+      "name_ru": "Краснодарский край",
+      "name_fr": "Krasnodar Region",
+      "country_ru": "Россия",
+      "country_fr": "La Russe",
+      "country_en": "Russia"
+    }
   },
-  "title": "string",
-  "title_native": "string",
-  "subtitle_native": "string",
-  "subtitle": "string",
-  "recommendation": "string",
-  "recommendation_ru": "string",
-  "recommendation_fr": "string",
-  "madeof": "string",
-  "madeof_ru": "string",
-  "alc": 0,
-  "sugar": 0,
-  "aging": 0,
-  "age": "string",
-  "sparkling": false,
+  "title": "Cagor",
+  "title_native": "Кагор",
+  "subtitle_native": "Монастырский",
+  "subtitle": "Monastery",
+  "recommendation": "recommendation in english",
+  "recommendation_ru": "рекомендации на русском",
+  "recommendation_fr": "recommendation in francaise",
+  "madeof": "grain, malt etc",
+  "madeof_ru": "зерно, солод и др.",
+  "alc": 0.2,
+  "sugar": 0.5,
+  "aging": 1,
+  "age": "One year",
+  "sparkling": true,
   "foods": [
     {
       "name": "string",
@@ -76,24 +47,46 @@
       "description_fr": "string",
       "name_ru": "string",
       "name_fr": "string",
-      "id": 0
-    }
-  ],
-  "varietals": [
+      "id": 4
+    },
     {
-      "name": "string",
+      "name": "meeeeet",
       "description": "string",
       "description_ru": "string",
       "description_fr": "string",
-      "name_ru": "string",
-      "name_fr": "string",
-      "id": 0
+      "name_ru": "Мясо",
+      "name_fr": "",
+      "id": 5
     }
   ],
-  "description": "string",
-  "description_ru": "string",
-  "description_fr": "string",
-  "id": 0,
-  "image_url": "string",
-  "additionalProp1": {}
+  "food_associations": [
+    {
+      "name_ru": "мясо",
+      "name_fr": "viage",
+      "name_en": "meat"
+    },
+    {
+      "name_ru": "овощи",
+      "name_fr": "veges",
+      "name_en": "vegetables"
+    }
+  ],
+  "varietal_associations": [
+    {
+      "name_ru": "алиготе 50%",
+      "name_fr": "aligote 50%",
+      "name_en": "aligote 50%"
+    },
+    {
+      "name_ru": "Мальбек 45%",
+      "name_fr": "maalbeck 45%",
+      "name_en": "maalbeck 45%"
+    }
+  ],
+  "updated_at": "2025-09-25T20:25:14.218664",
+  "description": "The cagor",
+  "description_ru": "Вино Кагор",
+  "description_fr": "Le Kagor",
+  "id": 8,
+  "image_url": "http://123/string"
 }

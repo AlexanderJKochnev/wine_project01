@@ -2,9 +2,10 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import ConfigDict, field_serializer
+from pydantic import ConfigDict, field_serializer, Field, computed_field
 
-from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, ReadNoNameSchema, UpdateNoNameSchema)
+from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse,
+                                   ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.mongodb.models import ImageCreate
 # from app.support.color.schemas import ColorCreateRelation, ColorRead
@@ -12,8 +13,8 @@ from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, Drin
                                                      DrinkVarietalRelationApi)
 from app.support.drink.drink_food_schema import DrinkFoodRelationApi
 from app.support.food.schemas import FoodCreateRelation, FoodRead
-from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
-from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
+from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead, SubcategoryReadApiSchema
+from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead, SubregionReadApiSchema
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
 
@@ -81,9 +82,9 @@ class CustomReadSchema:
 
 
 class CustomReadApiSchema:
-    subcategory: SubcategoryRead
-    sweetness: Optional[SweetnessRead] = None
-    subregion: Optional[SubregionRead] = None
+    subcategory: SubcategoryReadApiSchema = Field(exclude=True)
+    sweetness: Optional[ReadApiSchema] = None
+    subregion: Optional[SubregionReadApiSchema] = None
     title: str
     title_native: Optional[str] = None
     subtitle_native: Optional[str] = None
@@ -102,6 +103,26 @@ class CustomReadApiSchema:
     food_associations: Optional[List[DrinkFoodRelationApi]]
     varietal_associations: Optional[List[DrinkVarietalRelationApi]]
     updated_at: Optional[datetime] = None
+    
+    
+    def __parser__(self, lang:str, *args, **kwargs):
+        return 'result'
+    
+    
+    @computed_field
+    @property
+    def english(self) -> dict:
+        return self.__parser__('_en')
+    
+    @computed_field
+    @property
+    def english(self) -> dict:
+        return self.__parser__('_ru')
+    
+    @computed_field
+    @property
+    def english(self) -> dict:
+        return self.__parser__('_fr')
 
 class CustomUpdSchema:
     subcategory: Optional[int] = None

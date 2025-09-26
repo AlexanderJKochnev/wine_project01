@@ -4,8 +4,12 @@ from typing import Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, UpdateSchema, CreateResponse)
-from app.support.region.schemas import RegionCreateRelation, RegionRead
+from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, UpdateSchema, CreateResponse, ReadApiSchema)
+from app.support.region.schemas import RegionCreateRelation, RegionRead, RegionReadApiSchema
+
+
+class SubregionReadApiSchema(ReadApiSchema):
+    region: Optional[RegionReadApiSchema] = None
 
 
 class CustomCreateRelation:

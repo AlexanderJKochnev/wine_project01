@@ -63,10 +63,14 @@ class DescriptionSchema(BaseModel):
     description_fr: Optional[str] = None
 
 
-class LangSchema(DescriptionSchema):
+class NameSchema(BaseModel):
     """ добавлять поля на других языках """
     name_ru: Optional[str] = None
     name_fr: Optional[str] = None
+
+
+class LangSchema(NameSchema, DescriptionSchema):
+    pass
 
 
 class CreateSchema(LangSchema, UniqueSchema):
@@ -93,6 +97,10 @@ class UpdateNoNameSchema(DescriptionSchema):
 
 
 class ReadSchema(PkSchema, LangSchema, UniqueSchema):
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+class ReadApiSchema(NameSchema, UniqueSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 

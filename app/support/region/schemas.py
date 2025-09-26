@@ -2,10 +2,36 @@
 
 from typing import Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, computed_field
 
-from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, CreateResponse, UpdateSchema)
+from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, CreateResponse, UpdateSchema, ReadApiSchema)
 from app.support.country.schemas import CountryCreateRelation, CountryRead
+
+
+class RegionReadApiSchema(ReadApiSchema):
+    country: ReadApiSchema = Field(exclude=True)
+    
+    def __get_lang__(self, lang: str = '_ru', ) -> str:
+        schema, field_name = self.country, 'name'
+        if schema:
+            prefix = getattr(schema, f'{field_name}{lang}') or getattr(schema, f'{field_name}')
+            return prefix
+        return None
+    
+    @computed_field
+    @property
+    def country_ru(self) -> str:
+        return self.__get_lang__('_ru')
+    
+    @computed_field
+    @property
+    def country_fr(self) -> str:
+        return self.__get_lang__('_fr')
+    
+    @computed_field
+    @property
+    def country_en(self) -> str:
+        return self.__get_lang__('')
 
 
 class CustomCreateRelation:
