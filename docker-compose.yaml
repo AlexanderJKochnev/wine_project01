@@ -65,6 +65,7 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       WEB_PORT: ${API_PORT}
       WEB_HOST: ${API_HOST}
+      IMAGE_BASE_URL: ${IMAGE_BASE_URL}
     volumes:
       - ./templates:/app/templates
       - ./migration_volume:/app/app/migration/versions
@@ -74,10 +75,10 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 512M
+          memory: 1G
         reservations:
-          cpus: '0.125'
-          memory: 256M
+          cpus: '0.5'
+          memory: 512M
     
   
   django:
