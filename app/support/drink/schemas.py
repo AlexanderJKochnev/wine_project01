@@ -8,7 +8,7 @@ from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.mongodb.models import ImageCreate
 # from app.support.color.schemas import ColorCreateRelation, ColorRead
-from app.support.drink.drink_varietal_schema import DrinkVarietalRelation
+from app.support.drink.drink_varietal_schema import DrinkVarietalRelation, DrinkVarietalRelationFlat
 from app.support.food.schemas import FoodCreateRelation, FoodRead
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
@@ -62,6 +62,7 @@ class CustomReadSchema:
     sparkling: Optional[bool] = False
     foods: List[FoodRead]
     varietals: List[VarietalRead]
+    varietal_associations: Optional[List[DrinkVarietalRelationFlat]]
     updated_at: Optional[datetime] = None
     
     @field_serializer('alc', when_used = 'unless-none')

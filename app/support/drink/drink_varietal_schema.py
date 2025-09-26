@@ -1,5 +1,5 @@
 # app/support/drink/drink_varietal_schema.py
-from pydantic import field_serializer, computed_field
+from pydantic import field_serializer, computed_field, Field
 from typing import List, Optional
 from app.core.schemas.base import BaseModel, ConfigDict
 from app.support.varietal.router import VarietalCreateRelation
@@ -22,20 +22,34 @@ class DrinkVarietalRelationFlat(BaseModel):
                               extra='allow',
                               populate_by_name=True,
                               exclude_none=True)
-    varietal: VarietalCreateRelation
-    percentage: Optional[float] = None
-    
+    varietal: VarietalCreateRelation = Field(exclude=True)
+    percentage: Optional[float] = Field(default=None, exclude=True)
+
+
     @computed_field
     @property
-    
-    
-    
-    @field_serializer('varietal', when_used = 'unless-none')
-    def serialize_varietal(self, value: Optional[dict]) -> Optional[str]:
-        if value is None:
-            return None
-        
-        return f"{int(round(value * 100))}%"
+    def name_ru(self) -> str:
+        if self.varietal:
+            return (f"self.varietal.get('name_ru', self.varietal.get('name')) "
+                    f"{int(round(self.percentage * 100))}%")
+        return None
+
+
+    @computed_field
+    @property
+    def name_fr(self) -> str:
+        if self.varietal:
+            return (f"self.varietal.get('name_fr', self.varietal.get('name')) "
+                    f"{int(round(self.percentage * 100))}%")
+        return None
+
+    @computed_field
+    @property
+    def name_en(self) -> str:
+        if self.varietal:
+            return (f"self.varietal.get('name') "
+                    f"{int(round(self.percentage * 100))}%")
+        return None
 
 
 

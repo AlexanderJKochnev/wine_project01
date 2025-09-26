@@ -44,8 +44,10 @@ money = Annotated[Decimal, mapped_column(DECIMAL(10, 2), nullable=True)]
 volume = Annotated[Decimal, mapped_column(DECIMAL(5, 2), nullable=True)]
 
 # alc sugar percentage
-percent = Annotated[Decimal, mapped_column(DECIMAL(3, 2), nullable=True),
-CheckConstraint('volume >= 0 AND volume <= 1.00')]  # , name='volume_range_check')]
+percent = Annotated[Decimal, mapped_column(
+    DECIMAL(3, 2),
+    nullable=True
+)]
 
 # int or none
 ion = Annotated[int, mapped_column(nullable=True)]
