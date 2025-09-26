@@ -7,7 +7,8 @@ from app.core.config.project_config import settings
 class ImageUrlMixin(BaseModel):
     """Pydantic миксин для автоматической генерации image_url из image_path"""
 
-    image_path: Optional[str] = Field(default=None, exclude=True)  # Обязательно! Чтобы Pydantic знал, что это поле приходит из БД
+    image_path: Optional[str] = Field(default=None, exclude=True)
+    # Обязательно! Чтобы Pydantic знал, что это поле приходит из БД
 
     @computed_field
     @property

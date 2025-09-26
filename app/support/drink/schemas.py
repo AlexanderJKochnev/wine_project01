@@ -8,7 +8,8 @@ from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.mongodb.models import ImageCreate
 # from app.support.color.schemas import ColorCreateRelation, ColorRead
-from app.support.drink.drink_varietal_schema import DrinkVarietalRelation, DrinkVarietalRelationFlat
+from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
+                                                     DrinkVarietalRelationApi)
 from app.support.food.schemas import FoodCreateRelation, FoodRead
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead
@@ -77,6 +78,29 @@ class CustomReadSchema:
             return None
         return f"{int(round(value * 100))}%"
 
+
+class CustomReadApiSchema:
+    subcategory: SubcategoryRead
+    sweetness: Optional[SweetnessRead] = None
+    subregion: Optional[SubregionRead] = None
+    title: str
+    title_native: Optional[str] = None
+    subtitle_native: Optional[str] = None
+    subtitle: Optional[str] = None
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
+    aging: Optional[int] = None
+    age: Optional[str] = None
+    sparkling: Optional[bool] = False
+    foods: List[FoodRead]
+    varietal_associations: Optional[List[DrinkVarietalRelationApi]]
+    updated_at: Optional[datetime] = None
+
 class CustomUpdSchema:
     subcategory: Optional[int] = None
     # color: Optional[int] = None
@@ -125,6 +149,15 @@ class CustomCreateSchema:
 
 
 class DrinkRead(ReadNoNameSchema, CustomReadSchema, ImageUrlMixin):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extra='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
+    pass
+
+
+class DrinkReadApi(ReadNoNameSchema, CustomReadApiSchema, ImageUrlMixin):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',

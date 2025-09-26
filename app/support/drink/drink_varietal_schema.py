@@ -2,6 +2,7 @@
 from pydantic import field_serializer, computed_field, Field
 from typing import List, Optional
 from app.core.schemas.base import BaseModel, ConfigDict
+from app.core.schemas.api_mixin import LangMixin
 from app.support.varietal.router import VarietalCreateRelation
 
 
@@ -13,7 +14,7 @@ class DrinkVarietalRelation(BaseModel):
                               exclude_none=True)
     varietal: VarietalCreateRelation
     percentage: Optional[float] = None
-    # varietals: List[Tuple[VarietalCreateRelation, float]]
+
 
 
 class DrinkVarietalRelationFlat(BaseModel):
@@ -22,35 +23,28 @@ class DrinkVarietalRelationFlat(BaseModel):
                               extra='allow',
                               populate_by_name=True,
                               exclude_none=True)
+    varietal: VarietalCreateRelation
+    percentage: Optional[float]
+
+
+
+class DrinkVarietalRelationApi(LangMixin):
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extra='allow',
+                              populate_by_name=True,
+                              exclude_none=True)
     varietal: VarietalCreateRelation = Field(exclude=True)
     percentage: Optional[float] = Field(default=None, exclude=True)
 
-
-    @computed_field
-    @property
-    def name_ru(self) -> str:
-        if self.varietal:
-            return (f"self.varietal.get('name_ru', self.varietal.get('name')) "
-                    f"{int(round(self.percentage * 100))}%")
+    def __get_lang__(self, lang: str = '_ru', ) -> str:
+        schema, field_name = self.varietal, 'name'
+        if schema:
+            prefix = getattr(schema, f'{field_name}{lang}') or getattr(schema, f'{field_name}')
+            if self.percentage:
+                prefix = f"{prefix} {int(round(self.percentage * 100))}%"
+            return prefix
         return None
-
-
-    @computed_field
-    @property
-    def name_fr(self) -> str:
-        if self.varietal:
-            return (f"self.varietal.get('name_fr', self.varietal.get('name')) "
-                    f"{int(round(self.percentage * 100))}%")
-        return None
-
-    @computed_field
-    @property
-    def name_en(self) -> str:
-        if self.varietal:
-            return (f"self.varietal.get('name') "
-                    f"{int(round(self.percentage * 100))}%")
-        return None
-
 
 
 class DrinkVarietalLinkCreate(BaseModel):

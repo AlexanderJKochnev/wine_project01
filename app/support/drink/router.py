@@ -10,7 +10,7 @@ from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, DrinkRead,
-                                       DrinkCreateRelationsWithImage,
+                                       DrinkCreateRelationsWithImage, DrinkReadApi,
                                        DrinkUpdate, DrinkFoodLinkUpdate, DrinkCreateRelations)
 from app.support.drink.service import DrinkService
 from app.mongodb.models import ImageCreate
@@ -20,6 +20,7 @@ from app.mongodb.router import upload_image
 
 class DrinkRouter(BaseRouter):
     def __init__(self):
+        self.read_api_schema = DrinkReadApi
         super().__init__(
             model=Drink,
             repo=DrinkRepository,
@@ -32,10 +33,9 @@ class DrinkRouter(BaseRouter):
             tags=["drinks"],
             service=DrinkService
         )
-        self.create_relation_image = DrinkCreateRelationsWithImage
+        # self.create_relation_image = DrinkCreateRelationsWithImage
         self.image_service: ImageService = Depends()
-        # self.image_service=ImageService
-        # self.create_response_schema = DrinkCreateResponseSchema
+        
 
     def setup_routes(self):
         super().setup_routes()
@@ -48,6 +48,8 @@ class DrinkRouter(BaseRouter):
                                   methods=["PATCH"])
         self.router.add_api_route("/{id}/flat", self.get_one_flat,
                                    methods=['GET'], response_model=dict)
+        self.router.add_api_route("/{id}/api", self.get_one_api, methods = ['GET'],
+                                  response_model = self.read_api_schema)
 
     def get_drink_food_service(session: AsyncSession) -> DrinkFoodService:
         repo = DrinkFoodRepository(session)
@@ -100,4 +102,11 @@ class DrinkRouter(BaseRouter):
             Получение одной записи по ID
         """
         obj = await self.service.get_dict_by_id(id, self.repo, self.model, session)
+        return obj  # self.read_schema.model_validate(obj)
+
+    async def get_one_api(self, id: int, session: AsyncSession = Depends(get_db)) -> DrinkReadApi:
+        """
+            Получение одной записи по ID
+        """
+        obj = await self.service.get_by_id(id, self.repo, self.model, session)
         return obj  # self.read_schema.model_validate(obj)
