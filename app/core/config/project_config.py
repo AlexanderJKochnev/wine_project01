@@ -21,9 +21,6 @@ class Settings(BaseSettings):
     SECRET_KEY: str = 'gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt'
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 50
-    # SQLADMIN
-    COLUMN_LIST: str = 'name, name_ru'
-    EXCLUDE_LIST: str = ''
     # IMAGES
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10  # * 1024 * 1024  # 10MB
@@ -32,9 +29,15 @@ class Settings(BaseSettings):
     LAZY: str = 'selectin'
     CASCADE: str = 'all, delete-orphan'
     DJANGO_PORT: int = 8093
+    OUTER_PORT: int
     ADMIN_EMAIL: str
     ADMIN_PASSWORD: str
     IMAGE_BASE_URL: str
+    AUTH_PREFIX: str = 'auth'
+    USER_PREFIX: str = 'user'
+    IMAGES_PREFIX: str = 'images'
+    MONGODB_PREFIX: str = 'mongodb'
+
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

@@ -1,10 +1,14 @@
 # app/core/routers/image_router.py
+# удалить
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from app.core.config.project_config import settings
 import os
 
-router = APIRouter(prefix="/images", tags=["images"])
+
+
+prefix = settings.IMAGES_PREFIX
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 
 
 @router.get("/{filename}")

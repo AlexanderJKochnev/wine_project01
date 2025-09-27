@@ -8,13 +8,16 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, status, Uploa
 from fastapi.responses import StreamingResponse
 from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
+from app.core.config.project_config import settings
 
 # from app.auth.dependencies import get_current_user, User
+prefix = settings.MONGODB_PREFIX
 
-router = APIRouter(prefix="/mongodb", tags=["mongodb"])
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 
+subprefix = settings.IMAGES_PREFIX
 
-@router.post("/images/", response_model=dict)
+@router.post(f"/{subprefix}/", response_model=dict)
 async def upload_image(
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
@@ -31,7 +34,7 @@ async def upload_image(
     return {"id": file_id, "message": "Image uploaded successfully"}
 
 
-@router.get("/images/", response_model=FileListResponse)
+@router.get(f"/{subprefix}/", response_model=FileListResponse)
 async def get_images_after_date(
     after_date: datetime = Query(..., description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
@@ -56,7 +59,7 @@ async def get_images_after_date(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/images/{file_id}")
+@router.get(f"/{subprefix}/" + "{file_id}")
 async def download_image(
     file_id: str,
     # current_user: User = Depends(get_current_user),
@@ -72,7 +75,7 @@ async def download_image(
     )
 
 
-@router.delete("/images/{file_id}", response_model=dict)
+@router.delete(f"/{subprefix}/" + "{file_id}", response_model=dict)
 async def delete_image(
     file_id: str,
     # current_user: User = Depends(get_current_user),

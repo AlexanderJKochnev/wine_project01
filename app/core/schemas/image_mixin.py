@@ -16,6 +16,7 @@ class ImageUrlMixin(BaseModel):
         """
         Генерирует полный URL изображения на основе image_path и BASE_URL из настроек.
         Если image_path пустой — возвращает None.
+        http://83.167.126.4:18091/mongodb/images/68d6ead9da55b293d13a0f5d
         """
         if not self.image_path:
             return None

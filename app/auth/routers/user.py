@@ -6,8 +6,10 @@ from app.auth.repository import UserRepository
 from app.auth.schemas import UserCreate, UserRead, UserResponse, UserUpdate
 from app.auth.dependencies import get_current_active_user
 from app.auth.models import User
+from app.core.config.project_config import settings
 
-router = APIRouter(prefix="/users", tags=["users"])
+prefix = settings.USER_PREFIX
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 
 user_repo = UserRepository()
 

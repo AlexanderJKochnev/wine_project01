@@ -7,8 +7,11 @@ from app.auth.schemas import Token
 from app.auth.utils import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
 from app.auth.repository import UserRepository
+from app.core.config.project_config import settings
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+prefix = settings.AUTH_PREFIX
+
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 
 user_repo = UserRepository()
 
