@@ -11,7 +11,10 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session, sample_image_paths):
-    """ валидация генерируемых данных со связанными полями и загрузка """
+    """ валидация генерируемых данных со связанными полями,
+        присоедиенние реального рисунка изз папки tests/test_images
+        и загрузка всего пакета в базу данных через api
+    """
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter as Router
     from app.support.drink.schemas import DrinkCreateRelations

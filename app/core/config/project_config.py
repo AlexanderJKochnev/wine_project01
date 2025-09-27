@@ -29,14 +29,15 @@ class Settings(BaseSettings):
     LAZY: str = 'selectin'
     CASCADE: str = 'all, delete-orphan'
     DJANGO_PORT: int = 8093
-    OUTER_PORT: int
     ADMIN_EMAIL: str
     ADMIN_PASSWORD: str
-    IMAGE_BASE_URL: str
     AUTH_PREFIX: str = 'auth'
     USER_PREFIX: str = 'user'
     IMAGES_PREFIX: str = 'images'
+    FILES_PREFIX: str = 'files'
     MONGODB_PREFIX: str = 'mongodb'
+    BASE_URL: str
+    PORT: int
 
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),

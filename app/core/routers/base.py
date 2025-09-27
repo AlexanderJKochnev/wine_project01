@@ -111,6 +111,9 @@ class BaseRouter:
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
 
     async def create(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        """
+        Создание одной записи без зависимостей - удалить в production
+        """
         try:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.get_or_create(data, self.repo, self.model, session)
@@ -156,6 +159,10 @@ class BaseRouter:
             )
 
     async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        """
+        Создание одной записи с зависимостями - если в таблице есть зависимости
+        они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии)
+        """
         try:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.create_relation(data, self.repo, self.model, session)
@@ -194,6 +201,9 @@ class BaseRouter:
 
     async def patch(self, id: int, data: TUpdateSchema,
                     session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        """
+            Изменение одной записи по id
+        """
         try:
             existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
             if not existing_item:
@@ -234,6 +244,9 @@ class BaseRouter:
 
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
+        """
+            Удаление одной записи по id
+        """
         try:
             existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
             if not existing_item:
@@ -272,10 +285,7 @@ class BaseRouter:
                       id: int,
                       session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """
-            Получение одной записи по ID с четким разделением ошибок:
-            - 400: Неверный формат ID или параметры
-            - 404: Запись не найдена
-            - 500: Внутренняя ошибка сервера
+            Получение одной записи по ID
         """
         try:
             obj = await self.service.get_by_id(id, self.repo, self.model, session)
@@ -302,6 +312,9 @@ class BaseRouter:
                                          ge=paging.get('min', 1),
                                          le=paging.get('max', 1000)),
                   session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+        """
+        Получение всех записей постранично
+        """
         try:
             response = await self.service.get_all(page, page_size, self.repo, self.model, session)
             return response
@@ -336,7 +349,10 @@ class BaseRouter:
                                             ge=paging.get('min', 1),
                                             le=paging.get('max', 1000)),
                      session: AsyncSession = Depends(get_db)) -> dict:
-        """Поиск по всем текстовым полям основной таблицы"""
+        """
+            Поиск по всем текстовым полям основной таблицы
+            с постраничным выводлом результата
+        """
         try:
             items = await self.service.search_in_main_table(query, page, page_size, self.repo,
                                                             self.model, session=session)

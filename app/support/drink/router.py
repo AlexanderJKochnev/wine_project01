@@ -64,6 +64,10 @@ class DrinkRouter(BaseRouter):
         return {"status": "success"}
 
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
+        """
+        Создание одной запси с зависимостями - если в таблице есть зависимости
+        они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии)
+        """
         result = await super().create(data, session)
         return result
 
@@ -82,6 +86,11 @@ class DrinkRouter(BaseRouter):
                                     session: AsyncSession = Depends(get_db),
                                     image_service: ImageService = Depends()
                                     ) -> DrinkCreateResponseSchema:
+        """
+        Создание одной запси с зависимостями - если в таблице есть зависимости
+        они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
+        кроме того будет добавлено изображение
+        """
         try:
             data_dict = json.loads(data)
             drink_data = DrinkCreateRelations(**data_dict)
@@ -90,9 +99,9 @@ class DrinkRouter(BaseRouter):
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
         # content = await file.read()
-        response = await image_service.upload_image(file, description = drink_data.title
+        image_id, image_path = await image_service.upload_image(file, description = drink_data.title
             )
-        drink_data.image_path = response
+        drink_data.image_path = image_path
         result = await super().create_relation(drink_data, session)
         return result
 

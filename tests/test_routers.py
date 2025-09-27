@@ -612,6 +612,9 @@ async def test_create_item_relation(
 
 
 async def test_real_data_relation(authenticated_client_with_db, test_db_session, import_data):
+    """ импорт данных из файла data.json через api
+        падает по середине
+    """
     from app.support.drink.router import DrinkRouter as Router
     client = authenticated_client_with_db
     dataset = import_data
@@ -637,3 +640,34 @@ async def test_real_data_relation(authenticated_client_with_db, test_db_session,
         except Exception as e:
             jprint(data)
             assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
+
+
+async def test_upload_all_images(authenticated_client_with_db, test_db_session, sample_image_paths):
+    """
+        загрузка рисунков в базу данных
+        без изменения имени
+        с удалением фона
+        size alignment
+        direct (avoid api)
+    """
+    from app.mongodb.service import ImageService
+    from app.mongodb.repository import ImageRepository
+    from fastapi import UploadFile, Depends
+    from starlette.datastructures import UploadFile as StarletteUploadFile
+    import io
+    repository = ImageRepository()
+    service = ImageService(image_repository=repository)
+    for item in sample_image_paths:
+        ext = item.suffix.lstrip('.')
+        if ext not in ('jpeg', 'jpg', 'png', 'webp', 'tiff', 'bmp', 'raw'):
+            continue
+        with open(item, 'rb') as f:
+            test_image_data = f.read()
+            upload_file = UploadFile(
+                    file = io.BytesIO(test_image_data),
+                    filename = item.name,
+                    # content_type = f"image/{ext}"
+                    )
+        response = await service.direct_upload_image(upload_file, description='test_test')
+        assert response[1] == item.name, response
+    

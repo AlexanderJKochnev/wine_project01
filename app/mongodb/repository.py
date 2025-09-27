@@ -40,6 +40,10 @@ class ImageRepository:
         return await self.collection.find_one({"_id": ObjectId(image_id)})
 
 
+    async def get_image_by_filename(self, filename: str):
+        return await self.collection.find_one({"filename": filename})
+    
+
     async def get_images_after_date(self,
                              after_date: datetime,
                              skip: int = 0,

@@ -12,10 +12,9 @@ from app.core.config.project_config import settings
 
 # from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
-
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
-
 subprefix = settings.IMAGES_PREFIX
+fileprefix = settings.FILES_PREFIX
 
 @router.post(f"/{subprefix}/", response_model=dict)
 async def upload_image(
@@ -27,11 +26,8 @@ async def upload_image(
     """
     загрузка изображения в базу данных
     """
-    # content = await file.read()
-    # content_type = file.content_type
-    file_id = await image_service.upload_image(file, description)
-    # file_id = await image_service.upload_image(file.filename, content, content_type, description)
-    return {"id": file_id, "message": "Image uploaded successfully"}
+    file_id, filename = await image_service.upload_image(file, description)
+    return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
 
 
 @router.get(f"/{subprefix}/", response_model=FileListResponse)
@@ -62,15 +58,33 @@ async def get_images_after_date(
 @router.get(f"/{subprefix}/" + "{file_id}")
 async def download_image(
     file_id: str,
-    # current_user: User = Depends(get_current_user),
     image_service: ImageService = Depends()
 ):
-    image_data = await image_service.get_image(file_id
-                                               # , current_user.id
-                                               )
+    """
+        Получение одного изображения по _id
+    """
+    image_data = await image_service.get_image(file_id)
+
     return StreamingResponse(
         io.BytesIO(image_data["content"]),
-        media_type="image/jpeg",
+        media_type=image_data['content_type'],
+        headers={"Content-Disposition": f"attachment; filename={image_data['filename']}"}
+    )
+
+
+@router.get(f"/{fileprefix}/" + "{filename}")
+async def download_file(
+    filename: str,
+    image_service: ImageService = Depends()
+):
+    """
+        Получение одного изображения по имени файла
+    """
+    image_data = await image_service.get_image_by_filename(filename)
+
+    return StreamingResponse(
+        io.BytesIO(image_data["content"]),
+        media_type=image_data['content_type'],
         headers={"Content-Disposition": f"attachment; filename={image_data['filename']}"}
     )
 

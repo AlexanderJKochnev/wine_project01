@@ -65,10 +65,11 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       WEB_PORT: ${API_PORT}
       WEB_HOST: ${API_HOST}
-      IMAGE_BASE_URL: ${IMAGE_BASE_URL}
+      BASE_URL: ${BASE_URL}
     volumes:
       - ./templates:/app/templates
       - ./migration_volume:/app/app/migration/versions
+      - ./upload_volume:/app/upload_volume
   #   networks:
   #     - pgnetwork
     deploy:
@@ -164,3 +165,4 @@ volumes:
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
   mongodb_data:
+  upload_volume:

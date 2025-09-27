@@ -78,7 +78,9 @@ async def test_search(authenticated_client_with_db, test_db_session,
         for value in tmp:
             """ список всех слов """
             id = value['id']
-            data: list = ' '.join((val for val in value.values() if isinstance(val, str))).split(' ')
+            data: list = ' '.join((val for key, val in value.items()
+                                   if isinstance(val, str) and key not in ['created_at', 'updated_at'])
+                                  ).split(' ')
             exp[id] = ' '.join(data)
             tmp2.extend(data)
         tmp2 = count_and_sort_elements(tmp2)

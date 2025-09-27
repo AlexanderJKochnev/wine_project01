@@ -1,14 +1,13 @@
 # tests/test_mongodb.py
 # тесты запускать по одному иначе падают - особенность mongodb
 
+from datetime import datetime, timedelta
+
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient
 # from app.mongodb.config import mongodb
 from fastapi import status
-from tests.config import settings_db
-from datetime import datetime, timedelta, timezone
+
 from app.core.utils.common_utils import jprint
-from app.mongodb.utils import ContentTypeDetector
 
 pytestmark = pytest.mark.asyncio
 
