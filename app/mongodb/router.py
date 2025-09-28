@@ -30,6 +30,17 @@ async def upload_image(
     return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
 
 
+@router.post(f"/{subprefix}/direct", response_model=dict)
+async def direct_upload(image_service: ImageService = Depends()):
+    """ запуск импортирования рисунков из директории UPLOAD_DIR (см. .env file
+        загрузка происходит в обход api. Для того что бы выполнить импорт нужно
+        на сервере поместить файлы с изображениями в директорию UPLOAD_DIR
+    """
+    upload_dir = settings.UPLOAD_DIR
+    result = await image_service.direct_upload_image(upload_dir)
+    return result
+    
+
 @router.get(f"/{subprefix}/", response_model=FileListResponse)
 async def get_images_after_date(
     after_date: datetime = Query(..., description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),

@@ -1,14 +1,16 @@
 # app/mongodb/service.py
-from datetime import datetime
+from datetime import datetime, timezone
+import mimetypes
 from typing import List
-
+from pathlib import Path
 from fastapi import Depends, HTTPException, status, UploadFile
 
 from app.core.config.project_config import settings
+from app.core.utils.common_utils import get_path_to_root
 from app.mongodb.config import settings
 from app.mongodb.models import FileListResponse, FileResponse
 from app.mongodb.repository import ImageRepository
-from app.mongodb.utils import (file_name, image_aligning, ContentTypeDetector,
+from app.mongodb.utils import (file_name, image_aligning, ContentTypeDetector, read_image_generator,
                                remove_background, remove_background_with_mask, make_transparent_white_bg)
 
 
@@ -38,37 +40,50 @@ class ImageService:
         return _id, filename
 
     async def direct_upload_image(self,
-                                  file: UploadFile,
-                                  description: str,
-                                  change_name: bool = False,
-                                  remove_back: int = 0
+                                  upload_dir: str
                                   ):
-        """ прямая загрузка файлов """
+        """ прямая загрузка файлов
+            из upload_dir
+        """
         try:
-            # content_type = await ContentTypeDetector.detect(file)
-            content = await file.read()
-            content_type = "image/png"
-            match remove_back:
-                case 1:
-                    content = make_transparent_white_bg(content)
-                case 2:
+            image_dir = get_path_to_root(upload_dir)
+            image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+            image_paths = []  # cписок файлов изображений с путями
+            for n, file_path in enumerate(image_dir.iterdir()):
+                if file_path.is_file() and file_path.suffix.lower() in image_extensions:
+                    image_paths.append(file_path)
+            # запускаем
+            for m, upload_file in enumerate(read_image_generator(image_paths)):
+                try:
+                    content = await upload_file.read()
+                    filename = upload_file.filename
+                except Exception as e:
+                    raise Exception(f'filename = upload_file.filename. {e}')
+                # удаляем фон 3 способа доработать
+                try:
+                    # content = make_transparent_white_bg(content)
                     content = remove_background(content)
-                case 3:
-                    content = remove_background_with_mask(content)
-                case _:
-                    content_type = await ContentTypeDetector.detect(file)
-            if len(content) > 8 * 1024 * 1024:
-                content = image_aligning(content)
-            if change_name:
-                filename = file_name(file.filename, settings.LENGTH_RANDOM_NAME, '.png')
-            else:
-                filename = file.filename
+                    # content = remove_background_with_mask(content)
+                    content_type = 'image/png'
+                    filename = f'{filename.rsplit('.', 1)[0]}.png'
+                except Exception as e:
+                    raise Exception(f'Удаление фона не получилось для {filename}. {e}. Оставляем без изменения')
+                # подгоняем размер
+                try:
+                    if len(content) > 8 * 1024 * 1024:
+                        content = image_aligning(content)
+                except Exception as e:
+                    raise Exception(f'Изменение размера не получилось для {filename}. {e}. Оставляем без изменения')
+                description = f'импортированный файл {datetime.now(timezone.utc)}'
+                
+                
+                _id = await self.image_repository.create_image(filename, content, content_type, description)
+            
         except Exception as e:
             raise HTTPException(
-                    status_code = status.HTTP_400_BAD_REQUEST, detail = f"image aligning fault: {e}"
+                    status_code = status.HTTP_400_BAD_REQUEST, detail = f"error: {e}"
                     )
-        _id = await self.image_repository.create_image(filename, content, content_type, description)
-        return _id, filename
+        return {'result': m+1}
         
     async def get_image(self,
                         image_id: str

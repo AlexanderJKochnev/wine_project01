@@ -17,6 +17,7 @@ class ImageRepository:
     async def ensure_indexes(self):
         """Создает индексы при первом использовании репозитория"""
         if not self._indexes_created:
+            await self.collection.create_index([("filename", -1)], unique=True)
             await self.collection.create_index([("created_at", -1)])
             await self.collection.create_index([("filename", "text")])  # Текстовый поиск
             self._indexes_created = True

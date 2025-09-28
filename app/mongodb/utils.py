@@ -1,5 +1,7 @@
 # app/mongodb/utils.py
 import string
+import mimetypes
+from datetime import datetime, timezone
 import random
 from app.mongodb.config import settings
 from fastapi import UploadFile, HTTPException
@@ -251,3 +253,39 @@ class TestFileUtils:
         
         mime_types = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'GIF': 'image/gif'}
         return img_byte_arr.getvalue(), mime_types.get(format, 'image/jpeg')
+
+
+def read_image_generator(filepath_list: List[str]):
+    """ читает и преолбразует файлы изображений из списка в вид пригодный для загрузки """
+    for n, item in enumerate(filepath_list):
+        with open(item, "rb") as f:
+            try:
+                test_image_data = f.read()
+                content_type, _ = mimetypes.guess_type(str(item))
+                content_type = content_type or "application/octet-stream"
+                upload_file = UploadFile(file = io.BytesIO(test_image_data),
+                                         filename = item.name
+                                         )
+                yield upload_file
+            except Exception as e:
+                raise Exception(f'read_image_generator: {e}')
+            """
+            content = upload_file.read()
+            # удаляем фон 3 способа доработать
+            try:
+                # content = make_transparent_white_bg(content)
+                content = remove_background(content)
+                # content = remove_background_with_mask(content)
+                content_type = 'image/png'
+                filename = f'{item.stem}.png'
+            except Exception as e:
+                print(f'Удаление фона не получилось для {item.name}. {e}. Оставляем без изменения')
+            # подгоняем размер
+            try:
+                if len(content) > 8 * 1024 * 1024:
+                    content = image_aligning(content)
+            except Exception as e:
+                print(f'Изменение размера не получилось для {item.name}. {e}. Оставляем без изменения')
+            description = f'импортированный файл {datetime.now(timezone.utc)}'
+        yield filename, content, content_type, description
+        """

@@ -69,3 +69,5 @@ secrets.yaml
 
 # FastAPI
 *.pyc
+/upload_volume/
+/tests/test_images/

@@ -642,32 +642,16 @@ async def test_real_data_relation(authenticated_client_with_db, test_db_session,
             assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
 
 
-async def test_upload_all_images(authenticated_client_with_db, test_db_session, sample_image_paths):
+async def test_upload_all_images(authenticated_client_with_db, test_db_session):
     """
+        очень долгий тест
         загрузка рисунков в базу данных
         без изменения имени
         с удалением фона
         size alignment
         direct (avoid api)
     """
-    from app.mongodb.service import ImageService
-    from app.mongodb.repository import ImageRepository
-    from fastapi import UploadFile, Depends
-    from starlette.datastructures import UploadFile as StarletteUploadFile
-    import io
-    repository = ImageRepository()
-    service = ImageService(image_repository=repository)
-    for item in sample_image_paths:
-        ext = item.suffix.lstrip('.')
-        if ext not in ('jpeg', 'jpg', 'png', 'webp', 'tiff', 'bmp', 'raw'):
-            continue
-        with open(item, 'rb') as f:
-            test_image_data = f.read()
-            upload_file = UploadFile(
-                    file = io.BytesIO(test_image_data),
-                    filename = item.name,
-                    # content_type = f"image/{ext}"
-                    )
-        response = await service.direct_upload_image(upload_file, description='test_test')
-        assert response[1] == item.name, response
-    
+    client = authenticated_client_with_db
+    prefix = 'mongodb/images/direct'
+    response = await client.post(prefix)
+    assert response.status_code == 200, response.text

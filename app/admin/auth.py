@@ -1,5 +1,5 @@
 # app/admin/auth.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from jose import jwt, JWTError
 from sqladmin.authentication import AuthenticationBackend
@@ -27,7 +27,7 @@ class AdminAuth(AuthenticationBackend):
 
             if user and user.is_superuser:
                 # Создаем токен для админки
-                expire = datetime.utcnow() + timedelta(hours=1)
+                expire = datetime.now(timezone.utc) + timedelta(hours=1)
                 token = jwt.encode({"sub": username, "superuser": True, "exp": expire},
                                    settings.SECRET_KEY, algorithm=settings.ALGORITHM,)
                 request.session.update({"admin_token": token})

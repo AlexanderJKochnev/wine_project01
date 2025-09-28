@@ -38,7 +38,7 @@ def get_path_to_root(name: str = '.env'):
     """
         get path to fiile in root directory
     """
-    for k in range(5):
+    for k in range(1, 10):
         env_path = Path(__file__).resolve().parents[k] / name
         if env_path.exists():
             break
