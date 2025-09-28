@@ -98,6 +98,22 @@ def parse_unique_violation(error_msg: str) -> Optional[Tuple[str, str]]:
     return None
 
 
+def parse_unique_violation2(error_msg: str) -> dict:
+    tmp = error_msg.split('DETAIL:  Key ', 1)
+    tmp = tmp[1].split('already exists')
+    result = tmp[0]
+    if '=' in result:
+        key, val = result.split('=')
+        key = key.strip()[1:-1]
+        val = val.strip()[1:-1]
+        key = [a.strip() for a in key.split(',')]
+        val = re.sub(r'\(([^)]*)\)', replace_commas_in_parentheses, val)
+        val = [a.strip().replace('@', ',') for a in val.split(',', len(key))]
+        val = [int(a) if a.isnumeric() else a for a in val]
+        if all((key, val)):
+            return dict(zip(key, val))
+
+
 class JsonConverter():
     def __init__(self, filename: Union[str, Path] = 'data.json'):
         self.languages: dict = {'english': '',
@@ -446,15 +462,15 @@ class JsonConverter():
         varietals = []"""
         for key, val in data.items():
             subregion['name'] = self.camelcase(
-                self.data[key].pop('subregion', ''))
+                self.data[key].pop('subregion', None))
             subregion['name_ru'] = self.camelcase(
                 self.data[key].pop('subregion_ru', None))
             region['name'] = self.camelcase(
-                self.data[key].pop('region', ''))
+                self.data[key].pop('region', None))
             region['name_ru'] = self.camelcase(
                 self.data[key].pop('region_ru', None))
             country['name'] = self.camelcase(
-                self.data[key].pop('country', ''))
+                self.data[key].pop('country', None))
             country['name_ru'] = self.camelcase(
                 self.data[key].pop('country_ru', None))
             region['country'] = country
@@ -462,11 +478,11 @@ class JsonConverter():
             self.data[key]['subregion'] = subregion
 
             subcategory['name'] = self.camelcase(
-                self.data[key].pop('subcategory', ''))
+                self.data[key].pop('subcategory', None))
             subcategory['name_ru'] = self.camelcase(
                 self.data[key].pop('subcategory_ru', None))
             category['name'] = self.camelcase(
-                self.data[key].pop('category', ''))
+                self.data[key].pop('category', None))
             category['name_ru'] = self.camelcase(
                 self.data[key].pop('category_ru', None))
             subcategory['category'] = category
@@ -506,3 +522,22 @@ class JsonConverter():
             country: dict = {}
             region: dict = {}
             subcategory = {}
+
+
+def replace_commas_in_parentheses(match,rep: str = '@'):
+    # match.group(1) — содержимое внутри скобок
+    inner = match.group(1)
+    # Заменяем запятые на '@' только внутри скобок
+    inner_replaced = inner.replace(',', '@')
+    # Возвращаем скобки с изменённым содержимым
+    return f"({inner_replaced})"
+
+
+msg = ('duplicate key value violates unique constraint "ix_foods_name"\nDETAIL:  Key (name, coumtry)=(Rich fish ('
+       'salmon, tuna etc), meet (crabs, tuna etc)) already exists.\n[SQL: INSERT INTO foods (name, description, '
+       'name_ru, '
+       'name_fr, '
+       'description_ru, description_fr) VALUES (%(name)s::VARCHAR, %(description)s::VARCHAR, %(name_ru)s::VARCHAR, %(name_fr)s::VARCHAR, %(description_ru)s::VARCHAR, %(description_fr)s::VARCHAR) RETURNING foods.id, foods.created_at, foods.updated_at]\n[parameters: {\'name\': \'Rich fish (salmon, tuna etc)\', \'description\': None, \'name_ru\': \'С рыбой ценных пород (лососем, тунцом и т. д.)\', \'name_fr\': None, \'description_ru\': None, \'description_fr\': None}]\n(Background on this error at')
+msg2 = ('duplicate key value violates unique constraint "ix_foods_name"\nDETAIL:  Key (name)=(Fish) already exists.')
+
+print(parse_unique_violation2(msg2))

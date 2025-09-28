@@ -73,12 +73,12 @@ class LangSchema(NameSchema, DescriptionSchema):
     pass
 
 
-class CreateSchema(LangSchema, UniqueSchema):
+class CreateSchema(LangSchema):  #, UniqueSchema):
     """
     остальные поля добавить через CustomCreateSchema
     """
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
-
+    name: Optional[str] = None
 
 class CreateNoNameSchema(DescriptionSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)

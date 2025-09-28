@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.core.utils.alchemy_utils import get_models, parse_unique_violation
+from app.core.utils.alchemy_utils import get_models, parse_unique_violation, parse_unique_violation2
 
 
 class Service:
@@ -51,9 +51,13 @@ class Service:
                 error_msg = str(e)
                 print(f'========={error_msg=}')
                 await session.rollback()
-                filter = parse_unique_violation(error_msg)  # ищем какие ключи дали нарушение уникальности
+                # parse_unique_violation2(error_msg)
+                filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
+                print(f'============{filter=}')
                 if filter:
+                    print('=========isfilter')
                     existing_instance = await repository.get_by_fields(filter, model, session)
+                    print(f"=================={existing_instance}")
                     if existing_instance:
                         return existing_instance
                     else:
