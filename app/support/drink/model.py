@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 
 class Drink(Base, BaseDescription, BaseAt, ImageMixin):
-    __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 1.00', name = 'alc_range_check'),
-                      CheckConstraint('sugar >= 0 AND sugar <= 1.00', name = 'sugar_range_check'),)
+    __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name = 'alc_range_check'),
+                      CheckConstraint('sugar >= 0 AND sugar <= 100.00', name = 'sugar_range_check'),)
 
     lazy = settings.LAZY
     cascade = settings.CASCADE
@@ -41,9 +41,9 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     recommendation_fr: Mapped[descr]
     madeof: Mapped[descr]
     madeof_ru: Mapped[descr]
-    alc = mapped_column(DECIMAL(3, 2), nullable = True, default = 1.0)
+    alc = mapped_column(DECIMAL(6, 2), nullable = True, default = 0.0)
     # alc: Mapped[percent]
-    sugar = mapped_column(DECIMAL(3, 2), nullable = True, default = 1.0)
+    sugar = mapped_column(DECIMAL(6, 2), nullable = True)  #, default = 0.0)
     # sugar: Mapped[percent]
     aging: Mapped[ion]
     age: Mapped[str_null_true]
@@ -92,11 +92,6 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
 
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
 
-    """ ALTERNATIVE VERSION
-    @property
-    def foods(self):
-        return [association.food for association in self.food_associations]
-    """
 
     def __str__(self):
         return f"{self.title}"
@@ -118,12 +113,12 @@ class DrinkFood(Base):
 
 class DrinkVarietal(Base):
     __tablename__ = "drink_varietal_associations"
-    __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 1.00',
+    __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 100.00',
                                       name = 'percentage_range_check'),)
 
     drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
     varietal_id = Column(Integer, ForeignKey("varietals.id"), primary_key=True)
-    percentage = mapped_column(DECIMAL(3, 2), nullable = True, default = 1.0)
+    percentage = mapped_column(DECIMAL(6, 2), nullable = True, default = 100.0)
     
     # Relationships
     drink = relationship("Drink", back_populates="varietal_associations", overlaps='varietals')

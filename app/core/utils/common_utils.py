@@ -36,7 +36,7 @@ def sort_strings_by_alphabet_and_length(strings: List[str]) -> List[str]:
 
 def get_path_to_root(name: str = '.env'):
     """
-        get path to fiile in root directory
+        get path to file or directory in root directory
     """
     for k in range(1, 10):
         env_path = Path(__file__).resolve().parents[k] / name

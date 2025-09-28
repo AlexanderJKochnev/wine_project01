@@ -97,10 +97,32 @@ class Repository:
 
     @classmethod
     async def get_by_field(cls, field_name: str, field_value: Any, model: ModelType, session: AsyncSession):
-        stmt = select(model).where(getattr(model, field_name) == field_value)
-        result = await session.execute(stmt)
-        return result.scalar_one_or_none()
+        """
+            не гибкий поиск по одному полю. оставлен для совместимости. лучше использовать
+            get_by_fields
+        """
+        try:
+            stmt = select(model).where(getattr(model, field_name) == field_value)
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception as e:
+            raise Exception(f'repo.get_by_field: {field_name=} {field_value=}, {model.__name__=}, {e}')
 
+    @classmethod
+    async def get_by_fields(cls, filter:dict, model: ModelType, session:AsyncSession):
+        """
+            фильтр по нескольким поля
+            filter = {<имя поля>: <искомое значение>, ...},
+            AND
+        """
+        try:
+            stmt = select(model).filter_by(**filter)
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception as e:
+            raise Exception(f'repo.get_by_fields: {filter=}, {model.__name__=}, {e}')
+
+    
     @classmethod
     async def get_count(cls, model: ModelType, session: AsyncSession) -> int:
         count_stmt = select(func.count()).select_from(model)

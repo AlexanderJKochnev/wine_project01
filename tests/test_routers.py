@@ -644,7 +644,7 @@ async def test_real_data_relation(authenticated_client_with_db, test_db_session,
 
 async def test_upload_all_images(authenticated_client_with_db, test_db_session):
     """
-        очень долгий тест
+        очень долгий тест 2-3 мин в зависимости от кол-ва картинок
         загрузка рисунков в базу данных
         без изменения имени
         с удалением фона
@@ -655,3 +655,14 @@ async def test_upload_all_images(authenticated_client_with_db, test_db_session):
     prefix = 'mongodb/images/direct'
     response = await client.post(prefix)
     assert response.status_code == 200, response.text
+
+
+async def test_upload_json_data(authenticated_client_with_db, test_db_session):
+    """
+        импорт json_data в postgresql
+        выполнять после test_upload_all_images
+    """
+    client = authenticated_client_with_db
+    prefix = '/drinks/direct'
+    response = await client.post(prefix)
+    assert response.status_code == 200, response

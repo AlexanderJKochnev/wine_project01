@@ -34,10 +34,10 @@ class Service:
     async def get_or_create(cls, data: ModelType, repository: Type[Repository],
                             model: ModelType, session: Session) -> ModelType:
         """ использовать вместо create """
-
+        
         data_dict = data.model_dump(exclude_unset=True)
         # data_dict = data.get_required_structure()   # поиск только по обязательным полям
-
+        # поиск по полному совпадению объектов
         result = await repository.get_by_obj(data_dict, model, session)
         if result:
             return result
@@ -47,21 +47,19 @@ class Service:
                 result = await repository.create(obj, model, session)
                 # тут можно добавить преобразования результата потом commit в роутере
                 return result
-            except IntegrityError as e:
+            except IntegrityError as e:     # поиск по объекту не всегда дает верный результат
                 error_msg = str(e)
+                print(f'========={error_msg=}')
                 await session.rollback()
-                parsed_info = parse_unique_violation(error_msg)
-
-                if parsed_info:
-                    field_name, conflict_value = parsed_info
-                    existing_instance = await repository.get_by_field(field_name, conflict_value, model, session)
-
+                filter = parse_unique_violation(error_msg)  # ищем какие ключи дали нарушение уникальности
+                if filter:
+                    existing_instance = await repository.get_by_fields(filter, model, session)
                     if existing_instance:
                         return existing_instance
                     else:
                         raise HTTPException(status_code=409,
                                             detail=f"Unique constraint violation for "
-                                                   f"{field_name}='{conflict_value}' "
+                                                   f"{filter=}' "
                                                    f"but existing record not found")
 
     @classmethod

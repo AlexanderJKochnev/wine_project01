@@ -1,21 +1,21 @@
 # app/support/drink/router.py
-from fastapi import Depends, status, UploadFile, File, HTTPException, Form
+import json
+
+from fastapi import Depends, File, Form, HTTPException, status, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-import json
+
 from app.core.config.database.db_async import get_db
+from app.core.config.project_config import settings
 from app.core.routers.base import BaseRouter
+from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
-from app.support.drink.schemas import (DrinkCreate, DrinkCreateResponseSchema, DrinkRead,
-                                       DrinkCreateRelationsWithImage, DrinkReadApi,
-                                       DrinkUpdate, DrinkFoodLinkUpdate, DrinkCreateRelations)
+from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelations, DrinkCreateResponseSchema,
+                                       DrinkFoodLinkUpdate, DrinkRead, DrinkReadApi, DrinkUpdate)
 from app.support.drink.service import DrinkService
-from app.mongodb.models import ImageCreate
-from app.mongodb.service import ImageService
-from app.mongodb.router import upload_image
 
 
 class DrinkRouter(BaseRouter):
@@ -43,6 +43,9 @@ class DrinkRouter(BaseRouter):
                                   self.create_relation_image,
                                   status_code=status.HTTP_200_OK,
                                   methods=["POST"], response_model=self.read_schema)
+        self.router.add_api_route("/direct", self.direct_import_data,
+                                  status_code=status.HTTP_200_OK, methods=["POST"],
+                                  response_model = dict)
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
@@ -119,3 +122,18 @@ class DrinkRouter(BaseRouter):
         """
         obj = await self.service.get_by_id(id, self.repo, self.model, session)
         return obj  # self.read_schema.model_validate(obj)
+
+    async def direct_import_data(self,
+                                 session: AsyncSession = Depends(get_db),
+                                 image_service: ImageService = Depends()) -> dict:
+        """
+        Создание одной запси с зависимостями - если в таблице есть зависимости
+        они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
+        кроме того будет добавлено изображение
+        """
+        try:
+            filename = 'data.json'
+            result = await self.service.direct_upload(filename, session)
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=e)
