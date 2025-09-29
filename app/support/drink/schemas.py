@@ -272,9 +272,15 @@ class CustomReadApiSchema:
         
         # Категория и подкатегория
         if self.subcategory:
-            result["category"] = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
-            result["subcategory"] = self.__get_nested_field__(self.subcategory, "name", lang_suffix)
-        
+            # result["category"] = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
+            # result["subcategory"] = self.__get_nested_field__(self.subcategory, "name", lang_suffix)
+            category_name = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
+            subcategory_name = self.__get_nested_field__(self.subcategory, "name", lang_suffix)
+            if category_name and subcategory_name:
+                result['category'] = f"{category_name} {subcategory_name}"
+            else:
+                result['category'] = f"{category_name}"
+
         # Сладость
         if self.sweetness:
             result["sweetness"] = self.__get_nested_field__(self.sweetness, "name", lang_suffix)
