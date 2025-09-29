@@ -42,7 +42,7 @@ class DrinkVarietalRelationApi(LangMixin):
         if schema:
             prefix = getattr(schema, f'{field_name}{lang}') or getattr(schema, f'{field_name}')
             if self.percentage:
-                prefix = f"{prefix} {int(round(self.percentage * 100))}%"
+                prefix = f"{prefix} {int(round(self.percentage))}%"
             return prefix
         return None
 

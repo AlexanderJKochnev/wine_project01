@@ -129,8 +129,6 @@ class JsonConverter():
         self.json_postpocessing()
 
     def __call__(self, *args, **kwargs):
-        # print(self.get_keys(self.data))
-        # jprint(self.data)
         return self.data
 
     def transform_pairings(self, data):
@@ -416,25 +414,6 @@ class JsonConverter():
                             self.data[key][k2] = v2  # !
             for subkey in ['subregion', 'subregion_ru', 'subcategory']:
                 self.data[key][subkey] = self.data[key].get(subkey, None)
-                
-        """             try:
-                            if result.get(k2):
-                                tmp = result.get(k2)
-                            else:
-                                tmp = []
-                            if isinstance(v2, Union[List, Tuple]):
-                                tmp.extend(v2)
-                            elif isinstance(v2, dict):
-                                tmp.extend(list(v2.keys()))
-                            else:
-                                tmp.append(v2)
-                            result[k2] = tmp
-                        except Exception as e:
-                            print(f'========================{e}')
-        result = {key: list(set(val)) for key, val in result.items()
-                  if self.is_hashable(val)}
-        """
-    
         return
 
     def field_processing(self, key: str, val: str):

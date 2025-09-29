@@ -42,9 +42,6 @@ class Service:
         result = await repository.get_by_obj(data_dict, model, session)
         
         if result:
-            # if data_dict.get('name') == 'Dump':
-            #     print(f'==={data_dict=}, {result.to_dict()}')
-            #     assert False
             return result
         else:
             obj = model(**data_dict)

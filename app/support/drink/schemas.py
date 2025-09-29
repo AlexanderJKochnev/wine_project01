@@ -72,13 +72,13 @@ class CustomReadSchema:
     def serialize_alc(self, value: Optional[float]) -> Optional[str]:
         if value is None:
             return None
-        return f"{int(round(value * 100))}%"
+        return f"{int(round(value))}%"
     
     @field_serializer('sugar', when_used = 'unless-none')
     def serialize_sugar(self, value: Optional[float]) -> Optional[str]:
         if value is None:
             return None
-        return f"{int(round(value * 100))}%"
+        return f"{int(round(value))}%"
 
 
 class CustomUpdSchema:
@@ -308,10 +308,10 @@ class CustomReadApiSchema:
         
         # Общие поля (одинаковые для всех языков)
         if self.alc is not None:
-            result["alc"] = f"{self.alc * 100}%" if current_lang == "en" else f"{self.alc * 100}%"
+            result["alc"] = f"{self.alc}%" if current_lang == "en" else f"{self.alc}%"
         
         if self.sugar is not None:
-            result["sugar"] = f"{self.sugar * 100}%" if current_lang == "en" else f"{self.sugar * 100}%"
+            result["sugar"] = f"{self.sugar}%" if current_lang == "en" else f"{self.sugar}%"
         
         if self.aging is not None:
             result[
