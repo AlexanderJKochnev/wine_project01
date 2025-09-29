@@ -1,6 +1,6 @@
 # app/mongodb/router.py
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, status, UploadFile
@@ -45,7 +45,7 @@ async def direct_upload(image_service: ImageService = Depends()):
 
 @router.get(f"/{subprefix}/", response_model=FileListResponse)
 async def get_images_after_date(
-    after_date: datetime = Query(..., description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
+    after_date: datetime = Query(..., description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
     per_page: int = Query(100, ge=1, le=1000, description="Количество элементов на странице"),
     image_service: ImageService = Depends()
@@ -55,7 +55,9 @@ async def get_images_after_date(
     """
     try:
         # Проверяем, что дата не в будущем
-        if after_date > datetime.utcnow():
+        if after_date.tzinfo is None:
+            after_date = after_date.replace(tzinfo = timezone.utc)
+        if after_date > datetime.now(timezone.utc):   # datetime.utcnow():
             raise HTTPException(
                 status_code=400, 
                 detail="Date cannot be in the future"

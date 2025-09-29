@@ -6,7 +6,7 @@ from app.core.config.project_config import settings
 
 class ImageUrlMixin(BaseModel):
     """Pydantic миксин для автоматической генерации image_url из image_path"""
-    image_path: Optional[str] = Field(default=None)  # , exclude=True)
+    image_path: Optional[str] = Field(default=None, exclude=True)
 
     @computed_field
     @property
