@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta
 
@@ -69,10 +69,10 @@ class Repository:
     @classmethod
     async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
         valid_fields = {key: value for key, value in data.items()
-                        if hasattr(model, key) and not key.endswith('_id')}
+                        if hasattr(model, key)}
         if not valid_fields:
             return None
-
+        # print('========', valid_fields, data)
         stmt = select(model).filter_by(**valid_fields)
         result = await session.execute(stmt)
         item = result.scalar_one_or_none()
@@ -116,7 +116,15 @@ class Repository:
             AND
         """
         try:
-            stmt = select(model).filter_by(**filter)
+            conditions = []
+            for key, value in filter.items():
+                column = getattr(model, key)
+                if value is None:
+                    conditions.append(column.is_(None))
+                else:
+                    conditions.append(column == value)
+            stmt = select(model).where(and_(*conditions))
+            # stmt = select(model).filter_by(**filter)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:

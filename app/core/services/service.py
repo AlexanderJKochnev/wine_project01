@@ -36,10 +36,15 @@ class Service:
         """ использовать вместо create """
         
         data_dict = data.model_dump(exclude_unset=True)
+
         # data_dict = data.get_required_structure()   # поиск только по обязательным полям
         # поиск по полному совпадению объектов
         result = await repository.get_by_obj(data_dict, model, session)
+        
         if result:
+            # if data_dict.get('name') == 'Dump':
+            #     print(f'==={data_dict=}, {result.to_dict()}')
+            #     assert False
             return result
         else:
             obj = model(**data_dict)
@@ -49,15 +54,11 @@ class Service:
                 return result
             except IntegrityError as e:     # поиск по объекту не всегда дает верный результат
                 error_msg = str(e)
-                print(f'========={error_msg=}')
                 await session.rollback()
                 # parse_unique_violation2(error_msg)
                 filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
-                print(f'============{filter=}')
                 if filter:
-                    print('=========isfilter')
                     existing_instance = await repository.get_by_fields(filter, model, session)
-                    print(f"=================={existing_instance}")
                     if existing_instance:
                         return existing_instance
                     else:

@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Dict, Union
 import json
 from pathlib import Path
 import copy
-from app.core.utils.common_utils import get_path_to_root
+from app.core.utils.common_utils import get_path_to_root, jprint
 from fastapi import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -87,12 +87,9 @@ def parse_unique_violation(error_msg: str) -> Optional[Tuple[str, str]]:
         match = re.search(pattern, error_msg, re.IGNORECASE)
         if match:
             if len(match.groups()) == 2:
-                print(f'=============={match.group(1)=}:: {match.group(2)=}')
-                
                 group1 = match.group(1).split(', ')
                 group2 = match.group(2).split(', ')
                 group2 = [int(a) if a.isnumeric() else a for a in group2]
-                print(f'=========={dict(zip(group1, group2))=}')
                 return dict(zip(group1, group2))
 
     return None
@@ -123,10 +120,12 @@ class JsonConverter():
         self.exclude_list: list = ['index', 'isHidden',
                                    'uid', 'imageTimestamp',
                                    'count']
+        self.subcategory_list: list = ['red', 'white', 'rose', 'port', 'sparkling'] # это вино
+
         self.data: dict = self.json_reader(filename)
         self.json_preprocessing()
         self.json_list(self.data)  # преобразует в плоский словарь
-        self.fields_list = self.get_key_values(self.data)
+        self.fields_list = self.get_key_values(self.data)  # словарь поле: (набор значегтй)
         self.json_postpocessing()
 
     def __call__(self, *args, **kwargs):
@@ -335,7 +334,7 @@ class JsonConverter():
             return None
 
     def input_validate(self, data: dict) -> dict:
-        """ валидирует полученный словарь"""
+        """ валидирует полученный словарь """
         if isinstance(data, dict):
             result = data.get('items')
             if all((result, isinstance(result, dict))):
@@ -376,6 +375,10 @@ class JsonConverter():
         return result
 
     def json_preprocessing(self) -> dict:
+        """
+            1. удаляет данные по ключам из exclude_list
+            2. удляет интернациональные данные из russian
+        """
         for key, val in self.data.items():
             for item in self.sinle_lang:
                 val['russian'].pop(item, None)
@@ -388,11 +391,16 @@ class JsonConverter():
         result: dict = {}
         data = copy.deepcopy(data1)
         for key, val in data.items():
-            self.data[key]['image_path'] = key
+            self.data[key]['image_path'] = f'{key}.png'
             if isinstance(val, dict):
                 for k2, v2 in val.items():
+                    if k2 == 'category' and v2 in self.subcategory_list:
+                        k2 = 'subcategory'
+                        self.data[key]['category'] = 'Wine'
+                        self.data[key][k2] = v2
                     if k2 in ['type', 'type_ru']:
-                        k2 = k2.replace('type', 'subcaterory')
+                        k2 = k2.replace('type', 'subcategory')
+                        self.data[key][k2] = v2.strip('.')
                     if v2:
                         """ """
                         v2 = self.field_processing(k2, v2)
@@ -401,11 +409,15 @@ class JsonConverter():
                                 region, subregion = v2.split(',', 1)
                                 self.data[key][k2] = region.strip()
                                 self.data[key][f'sub{k2}'] = subregion.strip()
-                            else:
+                            else:  # if no subregion add subregion none
                                 self.data[key][k2] = v2
+                                # self.data[key][f'sub{k2}'] = None
                         else:
                             self.data[key][k2] = v2  # !
-                        try:
+            for subkey in ['subregion', 'subregion_ru', 'subcategory']:
+                self.data[key][subkey] = self.data[key].get(subkey, None)
+                
+        """             try:
                             if result.get(k2):
                                 tmp = result.get(k2)
                             else:
@@ -421,27 +433,25 @@ class JsonConverter():
                             print(f'========================{e}')
         result = {key: list(set(val)) for key, val in result.items()
                   if self.is_hashable(val)}
-        return result
+        """
+    
+        return
 
     def field_processing(self, key: str, val: str):
         """Преобразование значений"""
         match key:
             case 'alc':
                 result = self.extract_float_advanced(val)
-            case 'pairing':
+            case 'pairing' | 'pairing_ru':
                 result = self.robust_string_to_list(val)
-                # result = tuple(v1.strip('.').rstrip(' ')
-                #                for v1 in val.split(','))
-            case 'pairing_ru':
-                result = self.robust_string_to_list(val)
-                # result = tuple(v1.strip('.').rstrip(' ')
-                #                for v1 in val.split(','))
             case 'vol':
                 result = float(val.rstrip(' l'))
             case 'varietal':
                 result = self.parse_varietal_string_clean(val, 'name')
             case 'varietal_ru':
                 result = self.parse_varietal_string_clean(val, 'name_ru')
+            case 'subcategory' | 'subcategory_ru':
+                result = val.rstrip('.')
             case _:
                 result = val
         return result

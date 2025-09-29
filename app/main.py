@@ -46,7 +46,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.include_router(image_router)
+app.include_router(DrinkRouter().router)
+app.include_router(MongoRouter)
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(CategoryRouter().router)
@@ -59,10 +60,8 @@ app.include_router(VarietalRouter().router)
 app.include_router(RegionRouter().router)
 app.include_router(SubregionRouter().router)
 app.include_router(WarehouseRouter().router)
-app.include_router(DrinkRouter().router)  # ← очень важно
 app.include_router(ItemRouter().router)
 app.include_router(SubcategoryRouter().router)
-app.include_router(MongoRouter)
 
 
 @app.exception_handler(NotFoundException)
