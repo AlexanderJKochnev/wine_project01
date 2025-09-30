@@ -32,9 +32,11 @@ class DrinkService(Service):
             subresult = model_to_dict(result)
             flatresult = flatten_dict(subresult, ['name', 'name_ru'])
             for key, val in subresult.items():
-                print(f'1.    {key}: {val}')
+                pass
+                # print(f'1.    {key}: {val}')
             for key, val in flatresult.items():
-                print(f'2.    {key}: {val}')
+                pass
+                # print(f'2.    {key}: {val}')
             return flatresult
         except Exception as e:
             print(f'drink.service..get_by_id error {e}')

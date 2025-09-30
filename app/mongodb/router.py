@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
 from app.core.config.project_config import settings
+from app.core.utils.common_utils import back_to_the_future
 from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
 
@@ -55,13 +56,16 @@ async def get_images_after_date(
     """
     try:
         # Проверяем, что дата не в будущем
+        after_date = back_to_the_future(after_date)
+        """
         if after_date.tzinfo is None:
             after_date = after_date.replace(tzinfo = timezone.utc)
         if after_date > datetime.now(timezone.utc):   # datetime.utcnow():
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="Date cannot be in the future"
             )
+        """
         
         return await image_service.get_images_after_date(after_date, page, per_page)
     

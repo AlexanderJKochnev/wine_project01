@@ -2,6 +2,7 @@
 # some useful utilits
 
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional, Set, TypeVar
 import json
 # from sqlalchemy.sql.sqltypes import String, Text, Boolean
@@ -548,4 +549,16 @@ def pop_nested(d: dict, path: str, default=None):
 
 
 def jprint(data: dict):
+    """ красивая печать словарей, списков """
     print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def back_to_the_future(after_date: datetime) -> datetime:
+    """ преобразует дату naive to time zone aware и проверяет не будущее ли это"""
+    if after_date.tzinfo is None:
+        after_date = after_date.replace(tzinfo = timezone.utc)
+    if after_date > datetime.now(timezone.utc):  # datetime.utcnow():
+        raise HTTPException(
+                status_code = 400, detail = "Date cannot be in the future"
+                )
+    return after_date

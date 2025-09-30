@@ -14,7 +14,6 @@ def ListField(delimiter: str = ',') -> Any:
         def __get_pydantic_core_schema__(
                 cls, _source_type: Any, _handler: GetCoreSchemaHandler, ) -> core_schema.CoreSchema:
             def validate(value: Any) -> List[str]:
-                print(f'======={value=}========')
                 if isinstance(value, list):
                     return value
                 if isinstance(value, str):

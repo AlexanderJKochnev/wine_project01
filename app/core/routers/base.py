@@ -16,6 +16,7 @@ from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema
                                    CreateResponse, UpdateSchema, CreateSchema)
 # from app.core.services.logger import logger
 from app.core.services.service import Service
+from app.core.config.project_config import settings
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
@@ -23,8 +24,9 @@ TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 TReadSchema = TypeVar("TReadSchema", bound=ReadSchema)
 TCreateResponse = TypeVar("TCreateResponse", bound=CreateResponse)
 TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
-
+dev = settings.DEV
 logger = logging.getLogger(__name__)
+
 
 # Кастомные исключения
 
@@ -96,11 +98,13 @@ class BaseRouter:
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
+        
         self.router.add_api_route("/deepsearch", self.deep_search, methods=["GET"],
                                   response_model=self.paginated_response)
         self.router.add_api_route(
             "/advsearch", self.advanced_search, methods=["GET"], response_model=self.paginated_response
         )
+        
         self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],

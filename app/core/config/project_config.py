@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     MONGODB_PREFIX: str = 'mongodb'
     BASE_URL: str
     PORT: int
-
+    # DEV 0 production, DEV 1 development
+    DEV: int = 0
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
