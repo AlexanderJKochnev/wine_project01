@@ -2,6 +2,8 @@
 
 import logging
 from typing import Any, List, Optional, Type, TypeVar
+from dateutil.relativedelta import relativedelta
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import create_model
@@ -11,12 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_active_user
 # from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
-from app.core.config.project_config import get_paging
+from app.core.config.project_config import get_paging, settings
+from app.core.utils.common_utils import back_to_the_future
 from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
                                    CreateResponse, UpdateSchema, CreateSchema)
 # from app.core.services.logger import logger
 from app.core.services.service import Service
-from app.core.config.project_config import settings
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
@@ -311,16 +313,20 @@ class BaseRouter:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
             )
 
-    async def get(self, page: int = Query(1, ge=1),
+    async def get(self,
+        after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years = 2)).isoformat(),
+                                     description = "Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
+                  page: int = Query(1, ge=1),
                   page_size: int = Query(paging.get('def', 20),
                                          ge=paging.get('min', 1),
                                          le=paging.get('max', 1000)),
                   session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
         """
-        Получение всех записей постранично
+        Получение постранично всех записей после заданной даты
         """
         try:
-            response = await self.service.get_all(page, page_size, self.repo, self.model, session)
+            after_date = back_to_the_future(after_date)
+            response = await self.service.get_all(after_date, page, page_size, self.repo, self.model, session)
             return response
             result = self.paginated_response(**response)
             return result
@@ -334,9 +340,17 @@ class BaseRouter:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail="Internal server error")
 
-    async def get_all(self, session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
+    async def get_all(self, after_date: datetime = Query(
+            (datetime.now(timezone.utc) - relativedelta(years = 2)).isoformat(),
+            description = "Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"
+            ),
+                      session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
+        """
+            получение все записей списком после указанной даты
+        """
         try:
-            return await self.service.get(self.repo, self.model, session)
+            after_date = back_to_the_future(after_date)
+            return await self.service.get(after_date, self.repo, self.model, session)
         except SQLAlchemyError as e:
             logger.error(f"Database error in get: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

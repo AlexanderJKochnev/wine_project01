@@ -1,7 +1,7 @@
 # app.core.service/service.py
 
 from typing import Any, Dict, List, Optional, Type
-
+from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 # import json
@@ -113,11 +113,11 @@ class Service:
             raise
 
     @classmethod
-    async def get_all(cls, page: int, page_size: int, repository: Type[Repository], model: ModelType,
+    async def get_all(cls, ater_date: datetime, page: int, page_size: int, repository: Type[Repository], model: ModelType,
                       session: AsyncSession, ) -> List[dict]:
         # Запрос с загрузкой связей и пагинацией
         skip = (page - 1) * page_size
-        items, total = await repository.get_all(skip, page_size, model, session)
+        items, total = await repository.get_all(ater_date, skip, page_size, model, session)
         result = {"items": items,
                   "total": total,
                   "page": page,
@@ -127,9 +127,10 @@ class Service:
         return result
 
     @classmethod
-    async def get(cls, repository: Type[Repository], model: ModelType, session: AsyncSession, ) -> List:
+    async def get(cls, after_date: datetime, repository: Type[Repository], model: ModelType, session: AsyncSession,
+    ) -> List:
         # Запрос с загрузкой связей
-        result = await repository.get(model, session)
+        result = await repository.get(after_date, model, session)
         return result
 
     @classmethod

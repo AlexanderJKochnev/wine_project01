@@ -21,7 +21,8 @@ created_at = Annotated[datetime, mapped_column(DateTime(timezone=True), server_d
 # datetime field with default and update value now()
 updated_at = Annotated[datetime, mapped_column(DateTime(timezone=True),
                                                server_default=func.now(),
-                                               onupdate=datetime.now(timezone.utc))]
+                                               onupdate=datetime.now(timezone.utc),
+                                               index=True)]
 
 # unique non-null string field
 str_uniq = Annotated[str, mapped_column(unique=True,

@@ -2,7 +2,7 @@
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
 from typing import Any, Dict, List, Optional, Type, TypeVar
-
+from datetime import datetime
 from sqlalchemy import func, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta
@@ -72,25 +72,24 @@ class Repository:
                         if hasattr(model, key)}
         if not valid_fields:
             return None
-        # print('========', valid_fields, data)
         stmt = select(model).filter_by(**valid_fields)
         result = await session.execute(stmt)
         item = result.scalar_one_or_none()
         return item
 
     @classmethod
-    async def get_all(cls, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
+    async def get_all(cls, after_date: datetime, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
         # Запрос с загрузкой связей и пагинацией
-        stmt = cls.get_query(model).offset(skip).limit(limit)
-        total = await cls.get_count(model, session)
+        stmt = cls.get_query(model).where(model.updated_at > after_date).offset(skip).limit(limit)
+        total = await cls.get_count(after_date, model, session)
         result = await session.execute(stmt)
         items = result.scalars().all()
         return items, total
 
     @classmethod
-    async def get(cls, model: ModelType, session: AsyncSession, ) -> list:
+    async def get(cls, after_date: datetime, model: ModelType, session: AsyncSession, ) -> list:
         # Запрос с загрузкой связей NO PAGINATION
-        stmt = cls.get_query(model)
+        stmt = cls.get_query(model).where(model.updated_at > after_date)
         result = await session.execute(stmt)
         items = result.scalars().all()
         return items
@@ -132,8 +131,8 @@ class Repository:
 
     
     @classmethod
-    async def get_count(cls, model: ModelType, session: AsyncSession) -> int:
-        count_stmt = select(func.count()).select_from(model)
+    async def get_count(cls, after_date: datetime, model: ModelType, session: AsyncSession) -> int:
+        count_stmt = select(func.count()).select_from(model).where(model.updated_at > after_date)
         count_result = await session.execute(count_stmt)
         total = count_result.scalar()
         return total

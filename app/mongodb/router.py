@@ -1,6 +1,7 @@
 # app/mongodb/router.py
 import io
 from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, status, UploadFile
@@ -16,6 +17,7 @@ prefix = settings.MONGODB_PREFIX
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 subprefix = settings.IMAGES_PREFIX
 fileprefix = settings.FILES_PREFIX
+now = datetime.now(timezone.utc).isoformat()
 
 @router.post(f"/{subprefix}/", response_model=dict)
 async def upload_image(
@@ -46,7 +48,8 @@ async def direct_upload(image_service: ImageService = Depends()):
 
 @router.get(f"/{subprefix}/", response_model=FileListResponse)
 async def get_images_after_date(
-    after_date: datetime = Query(..., description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00)"),
+    after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
+                                 description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
     per_page: int = Query(100, ge=1, le=1000, description="Количество элементов на странице"),
     image_service: ImageService = Depends()
@@ -57,16 +60,6 @@ async def get_images_after_date(
     try:
         # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
-        """
-        if after_date.tzinfo is None:
-            after_date = after_date.replace(tzinfo = timezone.utc)
-        if after_date > datetime.now(timezone.utc):   # datetime.utcnow():
-            raise HTTPException(
-                status_code=400,
-                detail="Date cannot be in the future"
-            )
-        """
-        
         return await image_service.get_images_after_date(after_date, page, per_page)
     
     except HTTPException:
