@@ -8,6 +8,8 @@
 !/.env
 !/alembic.ini
 !/alembic.sh
+!/streamlit_app
+!/requirements_streamlit.txt
 # Разрешить тесты (убрать в production)
 !/tests/
 

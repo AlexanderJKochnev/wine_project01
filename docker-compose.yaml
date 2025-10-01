@@ -133,32 +133,32 @@ services:
         reservations:
           cpus: '0.250'
           memory: 256M
-
-  directus:
-    container_name: directus
-    image: directus/directus:latest
+  
+  streamlit:
+    container_name: streamlit_admin
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
     restart: unless-stopped
     ports:
-      - "${DIRECTUS_PORT:-8055}:8055"
+      - "${STREAMLIT_PORT}:8501"
     environment:
-      KEY: "your-super-secret-key-change-in-production"  # ← обязательно измените!
-      SECRET: "your-another-super-secret-change-in-production"
-      DB_CLIENT: "pg"
-      DB_HOST: "${POSTGRES_HOST}"
-      DB_PORT: "${POSTGRES_PORT}"
-      DB_DATABASE: "${POSTGRES_DB}"
-      DB_USER: "${POSTGRES_USER}"
-      DB_PASSWORD: "${POSTGRES_PASSWORD}"
-      # Админ-аккаунт по умолчанию (создаётся при первой инициализации)
-      ADMIN_EMAIL: "admin@admin.com"
-      ADMIN_PASSWORD: "password"  # ← измените!
-      # URL для генерации ссылок (важно для медиа)
-      PUBLIC_URL: "http://localhost:8055"
-    depends_on:
-      - wine_host
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MONGO_HOST=${MONGO_HOSTNAME}
+      - MONGO_PORT=${MONGO_INN_PORT}
+      - MONGO_USER=admin
+      - MONGO_PASSWORD=admin
+      - FASTAPI_URL=http://app:${API_PORT}
     volumes:
-      # - ./directus_data:/directus/database  # для SQLite (если используете), но у вас PostgreSQL → можно не использовать
-      - ./directus_upload:/directus/uploads  # медиафайлы
+      - ./streamlit_data:/app/data
+    depends_on:
+      - app
+      - wine_host
+      - mongo
     deploy:
       resources:
         limits:
@@ -174,3 +174,4 @@ volumes:
   pg_dump: # postgres dump/restore
   mongodb_data:
   upload_volume:
+  streamlit_data:

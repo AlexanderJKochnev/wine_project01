@@ -7,7 +7,6 @@ ENV APP_PORT=${WEB_PORT}
 ENV APP_HOST=${WEB_HOST}
 
 WORKDIR /app
-
 COPY requirements.txt .
 ENV PYTHONUNBUFFERED=1
 RUN apt-get update && \
