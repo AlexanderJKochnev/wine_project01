@@ -80,32 +80,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    
-  
-  django:
-    # build: ./django_admin
-    restart: unless-stopped
-    build:
-      context: .
-      dockerfile: django_admin/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - "${DJANGO_PORT}:8000"
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}
-      # ADMIN_EMAIL: ${ADMIN_EMAIL}
-      # ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    depends_on:
-      - wine_host
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.125'
-          memory: 256M
   
   mongo:
     image: mongo:4.4.20
@@ -158,6 +132,40 @@ services:
           memory: 512M
         reservations:
           cpus: '0.250'
+          memory: 256M
+
+  directus:
+    container_name: directus
+    image: directus/directus:latest
+    restart: unless-stopped
+    ports:
+      - "${DIRECTUS_PORT:-8055}:8055"
+    environment:
+      KEY: "your-super-secret-key-change-in-production"  # ← обязательно измените!
+      SECRET: "your-another-super-secret-change-in-production"
+      DB_CLIENT: "pg"
+      DB_HOST: "${POSTGRES_HOST}"
+      DB_PORT: "${POSTGRES_PORT}"
+      DB_DATABASE: "${POSTGRES_DB}"
+      DB_USER: "${POSTGRES_USER}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      # Админ-аккаунт по умолчанию (создаётся при первой инициализации)
+      ADMIN_EMAIL: "admin@admin.com"
+      ADMIN_PASSWORD: "password"  # ← измените!
+      # URL для генерации ссылок (важно для медиа)
+      PUBLIC_URL: "http://localhost:8055"
+    depends_on:
+      - wine_host
+    volumes:
+      # - ./directus_data:/directus/database  # для SQLite (если используете), но у вас PostgreSQL → можно не использовать
+      - ./directus_upload:/directus/uploads  # медиафайлы
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
           memory: 256M
 
 volumes:
