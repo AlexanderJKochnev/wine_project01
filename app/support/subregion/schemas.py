@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema, UpdateSchema, CreateResponse, ReadApiSchema)
+from app.core.schemas.base import (CreateSchemaSub, FullSchema, ReadSchema, UpdateSchema, CreateResponse, ReadApiSchema)
 from app.support.region.schemas import RegionCreateRelation, RegionRead, RegionReadApiSchema
 
 
@@ -32,11 +32,11 @@ class SubregionRead(ReadSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class SubregionCreate(CreateSchema, CustomCreateSchema):
+class SubregionCreate(CreateSchemaSub, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
-class SubregionCreateRelation(CreateSchema, CustomCreateRelation):
+class SubregionCreateRelation(CreateSchemaSub, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

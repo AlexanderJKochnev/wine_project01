@@ -19,6 +19,7 @@ subprefix = settings.IMAGES_PREFIX
 fileprefix = settings.FILES_PREFIX
 now = datetime.now(timezone.utc).isoformat()
 
+
 @router.post(f"/{subprefix}/", response_model=dict)
 async def upload_image(
     file: UploadFile = File(...),
@@ -44,9 +45,9 @@ async def direct_upload(image_service: ImageService = Depends()):
     upload_dir = settings.UPLOAD_DIR
     result = await image_service.direct_upload_image(upload_dir)
     return result
-    
 
-@router.get(f"/{subprefix}/", response_model=FileListResponse)
+
+@router.get(f"/{subprefix}/api", response_model=FileListResponse)
 async def get_images_after_date(
     after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
                                  description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
@@ -61,11 +62,12 @@ async def get_images_after_date(
         # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
         return await image_service.get_images_after_date(after_date, page, per_page)
-    
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get(f"/{subprefix}/" + "{file_id}")
 async def download_image(

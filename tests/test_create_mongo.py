@@ -17,9 +17,9 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
     """
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter as Router
-    from app.support.drink.schemas import DrinkCreateRelations
+    # from app.support.drink.schemas import DrinkCreateRelations
     source = [Router]  # simple_router_list + complex_router_list
-    
+
     test_number = len(sample_image_paths)
     client = authenticated_client_with_db
     for n, item in enumerate(source):
@@ -36,21 +36,20 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
              # 'field_overrides': {'name': 'Special Product'},
              'faker_seed': 42}
         )
-
+        # перебираем тестовые данные для роутера
         for m, data in enumerate(test_data):
             try:
-                # _ = schema(**data)      # валидация данных
                 json_data = json.dumps(data)
                 adapter.validate_json(json_data)
                 assert True
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
-            # генератор тествых данных для mongodb
+            # генератор тествых данных для mongodb - берем изображения из папки с изображениями
             with open(sample_image_paths[m], 'rb') as f:
                 test_image_data = f.read()
             # test_image_data = b"fake_image_876876876876_data"
             files = {"file": (f"test_{m}.jpg", test_image_data, "image/jpeg")}
-            
+
             try:
                 # Отправляем данные в поле "data" как JSON строку
                 form_data = {"data": json.dumps(data)}
@@ -58,7 +57,7 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
                 assert False, e
             try:
                 response = await client.post(f'{prefix}/full', data=form_data, files=files)
-                assert response.status_code in [200, 201], response.text  # response["message"] == "Image uploaded successfully", response
+                assert response.status_code in [200, 201], response.text
             except Exception as e:
                 # jprint(data)
                 if 'response' in locals():

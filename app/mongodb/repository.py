@@ -5,7 +5,7 @@ from fastapi import Depends
 from typing import List
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.mongodb.config import get_database
-from app.mongodb.models import FileResponse
+from app.mongodb.models import FileResponse, ZeroBase
 
 
 class ImageRepository:
@@ -13,7 +13,7 @@ class ImageRepository:
         self.db = database
         self.collection = self.db["images"]
         self._indexes_created = False
-    
+
     async def ensure_indexes(self):
         """Создает индексы при первом использовании репозитория"""
         if not self._indexes_created:
@@ -40,15 +40,13 @@ class ImageRepository:
         await self.ensure_indexes()
         return await self.collection.find_one({"_id": ObjectId(image_id)})
 
-
     async def get_image_by_filename(self, filename: str):
         return await self.collection.find_one({"filename": filename})
-    
 
     async def get_images_after_date(self,
-                             after_date: datetime,
-                             skip: int = 0,
-                             limit: int = 100) -> List[FileResponse]:
+                                    after_date: datetime,
+                                    skip: int = 0,
+                                    limit: int = 100) -> List[FileResponse]:
         await self.ensure_indexes()
         query = {"created_at": {"$gt": after_date}}
         cursor = self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
@@ -58,7 +56,7 @@ class ImageRepository:
             # images.append(image)
             images.append(FileResponse(**image))
         return images
-    
+
     async def count_images_after_date(self, after_date: datetime) -> int:
         """
         Подсчитывает количество изображений, созданных после указанной даты
@@ -69,9 +67,17 @@ class ImageRepository:
         except Exception as e:
             raise Exception(f"Error counting images: {str(e)}")
 
-
     async def delete_image(self, image_id: str):
         result = await self.collection.delete_one({"_id": ObjectId(image_id)})
         return result.deleted_count > 0
 
-
+    async def get_images_list(self, after_date: datetime,) -> List[ZeroBase]:
+        await self.ensure_indexes()
+        query = {"created_at": {"$gt": after_date}}
+        cursor = self.collection.find(query).sort("created_at", -1)
+        images = []
+        async for image in cursor:
+            image["_id"] = str(image["_id"])
+            # images.append(image)
+            images.append(ZeroBase(**image))
+        return images

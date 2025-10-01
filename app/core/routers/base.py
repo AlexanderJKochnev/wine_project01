@@ -100,13 +100,13 @@ class BaseRouter:
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
-        
+
         self.router.add_api_route("/deepsearch", self.deep_search, methods=["GET"],
                                   response_model=self.paginated_response)
         self.router.add_api_route(
             "/advsearch", self.advanced_search, methods=["GET"], response_model=self.paginated_response
         )
-        
+
         self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
@@ -172,7 +172,6 @@ class BaseRouter:
         try:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.create_relation(data, self.repo, self.model, session)
-            # await session.commit()
             return await self.service.get_by_id(obj.id, self.repo, self.model, session)
         except ValidationException as e:
             await session.rollback()
@@ -314,13 +313,12 @@ class BaseRouter:
             )
 
     async def get(self,
-        after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years = 2)).isoformat(),
-                                     description = "Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
+                  after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
+                                               description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
                   page: int = Query(1, ge=1),
-                  page_size: int = Query(paging.get('def', 20),
-                                         ge=paging.get('min', 1),
-                                         le=paging.get('max', 1000)),
-                  session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+                  page_size: int = Query(paging.get('def', 20), ge=paging.get('min', 1), le=paging.get('max', 1000)),
+                  session: AsyncSession = Depends(get_db)
+                  ) -> PaginatedResponse:
         """
         Получение постранично всех записей после заданной даты
         """
@@ -341,10 +339,9 @@ class BaseRouter:
                                 detail="Internal server error")
 
     async def get_all(self, after_date: datetime = Query(
-            (datetime.now(timezone.utc) - relativedelta(years = 2)).isoformat(),
-            description = "Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"
-            ),
-                      session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
+        (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
+        description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"
+    ), session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
         """
             получение все записей списком после указанной даты
         """

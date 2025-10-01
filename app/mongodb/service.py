@@ -1,30 +1,27 @@
 # app/mongodb/service.py
 from datetime import datetime, timezone
-import mimetypes
 from typing import List
-from pathlib import Path
+
 from fastapi import Depends, HTTPException, status, UploadFile
 
-from app.core.config.project_config import settings
+# from app.core.config.project_config import settings
 from app.core.utils.common_utils import get_path_to_root
 from app.mongodb.config import settings
-from app.mongodb.models import FileListResponse, FileResponse
+from app.mongodb.models import FileListResponse, FileResponse, JustListResponse, ZeroBase
 from app.mongodb.repository import ImageRepository
-from app.mongodb.utils import (file_name, image_aligning, ContentTypeDetector, read_image_generator,
-                               remove_background, remove_background_with_mask, make_transparent_white_bg)
+from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
+                               remove_background)
 
 
 class ImageService:
     def __init__(self, image_repository: ImageRepository = Depends()):
         self.image_repository = image_repository
 
-
     async def upload_image(self,
                            file: UploadFile,
                            description: str,
                            ):
         try:
-            # content_type = await ContentTypeDetector.detect(file)
             content = await file.read()
             content = make_transparent_white_bg(content)
             content_type = "image/png"
@@ -34,14 +31,12 @@ class ImageService:
             filename = file_name(file.filename, settings.LENGTH_RANDOM_NAME, '.png')
         except Exception as e:
             raise HTTPException(
-                    status_code = status.HTTP_400_BAD_REQUEST, detail = f"image aligning fault: {e}"
-                    )
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"image aligning fault: {e}"
+            )
         _id = await self.image_repository.create_image(filename, content, content_type, description)
         return _id, filename
 
-    async def direct_upload_image(self,
-                                  upload_dir: str
-                                  ):
+    async def direct_upload_image(self, upload_dir: str):
         """ прямая загрузка файлов
             из upload_dir
         """
@@ -75,16 +70,15 @@ class ImageService:
                 except Exception as e:
                     raise Exception(f'Изменение размера не получилось для {filename}. {e}. Оставляем без изменения')
                 description = f'импортированный файл {datetime.now(timezone.utc)}'
-                
-                
-                _id = await self.image_repository.create_image(filename, content, content_type, description)
-            
+
+                _ = await self.image_repository.create_image(filename, content, content_type, description)
+
         except Exception as e:
             raise HTTPException(
-                    status_code = status.HTTP_400_BAD_REQUEST, detail = f"error: {e}"
-                    )
-        return {'result': m+1}
-        
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"error: {e}"
+            )
+        return {'result': m + 1}
+
     async def get_image(self,
                         image_id: str
                         ):
@@ -95,11 +89,10 @@ class ImageService:
         #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return image
 
-
     async def get_image_by_filename(self, filename: str):
         image = await self.image_repository.get_image_by_filename(filename)
         if not image:
-            raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f'Image "{filename}" not found')
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Image "{filename}" not found')
         return image
 
     async def delete_image(self,
@@ -112,10 +105,10 @@ class ImageService:
         # if image["drink_id"] != drink_id:
         #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return await self.image_repository.delete_image(image_id)
-    
+
     async def get_images_after_date(
-            self, after_date: datetime, page: int = 1, per_page: int = 100
-            ) -> FileListResponse:
+        self, after_date: datetime, page: int = 1, per_page: int = 100
+    ) -> FileListResponse:
         """
         Сервисный метод для получения изображений с пагинацией
 
@@ -135,26 +128,46 @@ class ImageService:
             skip = (page - 1) * per_page
             # Получаем изображения
             images = await self.image_repository.get_images_after_date(
-                    after_date, skip, per_page
-                    )
+                after_date, skip, per_page
+            )
             # Получаем общее количество для пагинации
             total = await self.image_repository.count_images_after_date(after_date)
-            
+
             # Проверяем, есть ли еще страницы
             has_more = (skip + len(images)) < total
-            
+
             return FileListResponse(
-                    images = images, total = total, has_more = has_more
-                    )
-        
+                images=images, total=total, has_more=has_more
+            )
+
         except Exception as e:
             raise Exception(f"Service error: {str(e)}")
-    
+
     async def get_recent_images(self, hours: int = 24) -> List[FileResponse]:
         """
         Упрощенный метод для получения изображений за последние N часов
         """
         from datetime import datetime, timedelta
-        
-        after_date = datetime.utcnow() - timedelta(hours = hours)
+
+        after_date = datetime.utcnow() - timedelta(hours=hours)
         return await self.image_repository.get_images_after_date(after_date)
+
+    async def get_images_list_after_date(
+        self, after_date: datetime
+    ) -> JustListResponse:
+        """
+        Сервисный метод для получения простого списка изображений
+        Args:
+            after_date: Дата для фильтрации
+        Returns:
+            Лист со ссылками на изображения
+        """
+        try:
+            # Валидация параметров
+            images = await self.image_repository.get_images_list(
+                after_date
+            )
+            return images
+
+        except Exception as e:
+            raise Exception(f"Service error: {str(e)}")

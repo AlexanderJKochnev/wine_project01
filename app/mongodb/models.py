@@ -5,10 +5,9 @@ from typing import Optional, List
 from app.core.config.project_config import settings
 
 
-class FileBase(BaseModel):
+class ZeroBase(BaseModel):
     filename: str = Field(default=None, exclude=True)
-    description: Optional[str] = None
-    
+
     @computed_field
     @property
     def image_url(self) -> Optional[str]:
@@ -28,7 +27,11 @@ class FileBase(BaseModel):
         except Exception as e:
             print(f'image_url.error: {e}')
             return None
-    
+
+
+class FileBase(ZeroBase):
+    description: Optional[str] = None
+
 
 class ImageCreate(FileBase):
     content: bytes
@@ -39,6 +42,10 @@ class FileResponse(FileBase):
     created_at: datetime
     size: int
     content_type: str
+
+
+class JustListResponse(ZeroBase):
+    images: List[FileResponse]
 
 
 class FileListResponse(BaseModel):

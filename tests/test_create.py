@@ -32,8 +32,6 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
         )
         for m, data in enumerate(test_data):
             try:
-                # print(json.dumps(data, indent = 2, ensure_ascii = False))
-                # _ = schema(**data)      # валидация данных
                 json_data = json.dumps(data)
                 adapter.validate_json(json_data)
                 assert True
@@ -44,6 +42,8 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                 response = await client.post(f'{prefix}', json=data)
                 assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
+                print(prefix)
+                jprint(data)
                 assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
 
 
