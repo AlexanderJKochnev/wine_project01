@@ -28,6 +28,7 @@ from app.support.subregion.router import SubregionRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
 from app.support.warehouse.router import WarehouseRouter
+from app.support.api.router import router as ApiRouter
 
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
@@ -46,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(ApiRouter)
 app.include_router(DrinkRouter().router)
 app.include_router(MongoRouter)
 app.include_router(CategoryRouter().router)

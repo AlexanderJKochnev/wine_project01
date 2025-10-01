@@ -28,7 +28,7 @@ TCreateResponse = TypeVar("TCreateResponse", bound=CreateResponse)
 TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 dev = settings.DEV
 logger = logging.getLogger(__name__)
-
+delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 
 # Кастомные исключения
 
@@ -313,7 +313,7 @@ class BaseRouter:
             )
 
     async def get(self,
-                  after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
+                  after_date: datetime = Query(delta,
                                                description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
                   page: int = Query(1, ge=1),
                   page_size: int = Query(paging.get('def', 20), ge=paging.get('min', 1), le=paging.get('max', 1000)),

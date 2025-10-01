@@ -3,7 +3,8 @@ import asyncio
 import json
 import logging
 from typing import Any, Dict, List
-
+from dateutil.relativedelta import relativedelta
+from datetime import datetime, timezone
 import pytest
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
@@ -32,6 +33,7 @@ example_count = 5      # количество тестовых записей - 
 
 # ----------REAL IMAGE FIXTURES-----------
 
+
 @pytest.fixture
 def test_images_dir():
     """Возвращает путь к директории с тестовыми изображениями"""
@@ -39,15 +41,30 @@ def test_images_dir():
 
 
 @pytest.fixture
+def todayutc():
+    return datetime.now(timezone.utc).isoformat()
+
+
+@pytest.fixture
+def pastutc():
+    return (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
+
+
+@pytest.fixture()
+def futureutc():
+    return (datetime.now(timezone.utc) + relativedelta(years=2)).isoformat()
+
+
+@pytest.fixture
 def sample_image_paths(test_images_dir):
     """Возвращает пути ко всем тестовым изображениям"""
     image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
     image_paths = []
-    
+
     for file_path in test_images_dir.iterdir():
         if file_path.is_file() and file_path.suffix.lower() in image_extensions:
             image_paths.append(file_path)
-    
+
     return image_paths
 
 

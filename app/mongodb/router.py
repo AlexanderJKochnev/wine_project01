@@ -1,12 +1,12 @@
 # app/mongodb/router.py
 import io
 from datetime import datetime, timezone
-from dateutil.relativedelta import relativedelta
 from typing import Optional
 
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, status, UploadFile
 from fastapi.responses import StreamingResponse
-
+from app.auth.dependencies import get_current_active_user
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
 from app.mongodb.models import FileListResponse
@@ -14,17 +14,21 @@ from app.mongodb.service import ImageService
 
 # from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
-router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
-subprefix = settings.IMAGES_PREFIX
-fileprefix = settings.FILES_PREFIX
+# router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_current_active_user)])
+subprefix = f"/{settings.IMAGES_PREFIX}"
+fileprefix = f"/{settings.FILES_PREFIX}"
+directprefix = f"{subprefix}/direct"
+
+
 now = datetime.now(timezone.utc).isoformat()
+delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 
 
-@router.post(f"/{subprefix}/", response_model=dict)
+@router.post(subprefix, response_model=dict)
 async def upload_image(
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
-    # current_user: User = Depends(get_current_user),
     image_service: ImageService = Depends()
 ):
     """
@@ -34,7 +38,7 @@ async def upload_image(
     return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
 
 
-@router.post(f"/{subprefix}/direct", response_model=dict)
+@router.post(directprefix, response_model=dict)
 async def direct_upload(image_service: ImageService = Depends()):
     """
         импортирование рисунков из директории UPLOAD_DIR (см. .env file
@@ -47,10 +51,9 @@ async def direct_upload(image_service: ImageService = Depends()):
     return result
 
 
-@router.get(f"/{subprefix}/api", response_model=FileListResponse)
+@router.get(subprefix, response_model=FileListResponse)
 async def get_images_after_date(
-    after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
-                                 description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
+    after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
     per_page: int = Query(100, ge=1, le=1000, description="Количество элементов на странице"),
     image_service: ImageService = Depends()
@@ -69,7 +72,7 @@ async def get_images_after_date(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get(f"/{subprefix}/" + "{file_id}")
+@router.get(subprefix + "/{file_id}")
 async def download_image(
     file_id: str,
     image_service: ImageService = Depends()
@@ -86,7 +89,7 @@ async def download_image(
     )
 
 
-@router.get(f"/{fileprefix}/" + "{filename}")
+@router.get(fileprefix + "/{filename}")
 async def download_file(
     filename: str,
     image_service: ImageService = Depends()
@@ -103,7 +106,7 @@ async def download_file(
     )
 
 
-@router.delete(f"/{subprefix}/" + "{file_id}", response_model=dict)
+@router.delete(subprefix + "/{file_id}", response_model=dict)
 async def delete_image(
     file_id: str,
     # current_user: User = Depends(get_current_user),

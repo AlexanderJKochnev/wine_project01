@@ -2,7 +2,8 @@
 # some useful utilits
 
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
+from fastapi import HTTPException
 from typing import Any, Dict, List, Optional, Set, TypeVar
 import json
 # from sqlalchemy.sql.sqltypes import String, Text, Boolean
@@ -556,9 +557,7 @@ def jprint(data: dict):
 def back_to_the_future(after_date: datetime) -> datetime:
     """ преобразует дату naive to time zone aware и проверяет не будущее ли это"""
     if after_date.tzinfo is None:
-        after_date = after_date.replace(tzinfo = timezone.utc)
+        after_date = after_date.replace(tzinfo=timezone.utc)
     if after_date > datetime.now(timezone.utc):  # datetime.utcnow():
-        raise HTTPException(
-                status_code = 400, detail = "Date cannot be in the future"
-                )
+        raise HTTPException(status_code=400, detail="Date cannot be in the future")
     return after_date

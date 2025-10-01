@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     PORT: int
     # DEV 0 production, DEV 1 development
     DEV: int = 0
+    API_PREFIX: str = 'api'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

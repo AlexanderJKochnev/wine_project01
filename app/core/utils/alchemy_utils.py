@@ -529,4 +529,4 @@ msg = ('duplicate key value violates unique constraint "ix_foods_name"\nDETAIL: 
        'description_ru, description_fr) VALUES (%(name)s::VARCHAR, %(description)s::VARCHAR, %(name_ru)s::VARCHAR, %(name_fr)s::VARCHAR, %(description_ru)s::VARCHAR, %(description_fr)s::VARCHAR) RETURNING foods.id, foods.created_at, foods.updated_at]\n[parameters: {\'name\': \'Rich fish (salmon, tuna etc)\', \'description\': None, \'name_ru\': \'С рыбой ценных пород (лососем, тунцом и т. д.)\', \'name_fr\': None, \'description_ru\': None, \'description_fr\': None}]\n(Background on this error at')
 msg2 = ('duplicate key value violates unique constraint "ix_foods_name"\nDETAIL:  Key (name)=(Fish) already exists.')
 
-print(parse_unique_violation2(msg2))
+# print(parse_unique_violation2(msg2))
