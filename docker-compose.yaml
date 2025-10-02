@@ -145,14 +145,14 @@ services:
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}  # из вашего .env
+      - POSTGRES_USER=${POSTGRES_USER}  # из вашего .env
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}  # из вашего .env
       - MONGO_HOST=${MONGO_HOSTNAME}
-      - MONGO_PORT=${MONGO_INN_PORT}
-      - MONGO_USER=admin
-      - MONGO_PASSWORD=admin
-      - FASTAPI_URL=${BASE_URL}:${PORT}}
+      - MONGO_PORT=${MONGO_OUT_PORT}
+      - MONGO_USER=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - FASTAPI_URL=http://app:${API_PORT}
     volumes:
       - ./streamlit_data:/app/data
     depends_on:
