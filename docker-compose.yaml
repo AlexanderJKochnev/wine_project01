@@ -152,7 +152,7 @@ services:
       - MONGO_PORT=${MONGO_INN_PORT}
       - MONGO_USER=admin
       - MONGO_PASSWORD=admin
-      - FASTAPI_URL=http://app:${API_PORT}
+      - FASTAPI_URL=${BASE_URL}:${PORT}}
     volumes:
       - ./streamlit_data:/app/data
     depends_on:
