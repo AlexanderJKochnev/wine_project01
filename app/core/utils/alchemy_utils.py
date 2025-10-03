@@ -113,19 +113,23 @@ def parse_unique_violation2(error_msg: str) -> dict:
 
 class JsonConverter():
     def __init__(self, filename: Union[str, Path] = 'data.json'):
+        # языковые уровни в корне
         self.languages: dict = {'english': '',
                                 'russian': '_ru',
                                 'francaise': '_fr'}
+        # это не переводится и разносится по языкам без перевода
         self.sinle_lang: list = ['age', 'alc', 'vol']
+        # эти поля игнорируются
         self.exclude_list: list = ['index', 'isHidden',
                                    'uid', 'imageTimestamp',
                                    'count']
-        self.subcategory_list: list = ['red', 'white', 'rose', 'port', 'sparkling'] # это вино
+        # это подкатегории вина оставляем
+        self.subcategory_list: list = ['red', 'white', 'rose', 'port', 'sparkling']  # это вино
 
         self.data: dict = self.json_reader(filename)
         self.json_preprocessing()
         self.json_list(self.data)  # преобразует в плоский словарь
-        self.fields_list = self.get_key_values(self.data)  # словарь поле: (набор значегтй)
+        self.fields_list = self.get_key_values(self.data)  # словарь поле: (набор значений)
         self.json_postpocessing()
 
     def __call__(self, *args, **kwargs):
@@ -335,6 +339,7 @@ class JsonConverter():
         """ валидирует полученный словарь """
         if isinstance(data, dict):
             result = data.get('items')
+            # print(f'{len(result)=}')
             if all((result, isinstance(result, dict))):
                 return result
         return None
@@ -513,7 +518,7 @@ class JsonConverter():
             subcategory = {}
 
 
-def replace_commas_in_parentheses(match,rep: str = '@'):
+def replace_commas_in_parentheses(match, rep: str = '@'):
     # match.group(1) — содержимое внутри скобок
     inner = match.group(1)
     # Заменяем запятые на '@' только внутри скобок
@@ -521,12 +526,12 @@ def replace_commas_in_parentheses(match,rep: str = '@'):
     # Возвращаем скобки с изменённым содержимым
     return f"({inner_replaced})"
 
+"""
+from app.core.config.project_config import settings  # noqa: 527
 
-msg = ('duplicate key value violates unique constraint "ix_foods_name"\nDETAIL:  Key (name, coumtry)=(Rich fish ('
-       'salmon, tuna etc), meet (crabs, tuna etc)) already exists.\n[SQL: INSERT INTO foods (name, description, '
-       'name_ru, '
-       'name_fr, '
-       'description_ru, description_fr) VALUES (%(name)s::VARCHAR, %(description)s::VARCHAR, %(name_ru)s::VARCHAR, %(name_fr)s::VARCHAR, %(description_ru)s::VARCHAR, %(description_fr)s::VARCHAR) RETURNING foods.id, foods.created_at, foods.updated_at]\n[parameters: {\'name\': \'Rich fish (salmon, tuna etc)\', \'description\': None, \'name_ru\': \'С рыбой ценных пород (лососем, тунцом и т. д.)\', \'name_fr\': None, \'description_ru\': None, \'description_fr\': None}]\n(Background on this error at')
-msg2 = ('duplicate key value violates unique constraint "ix_foods_name"\nDETAIL:  Key (name)=(Fish) already exists.')
-
-# print(parse_unique_violation2(msg2))
+filename = 'data.json'
+upload_dir = settings.UPLOAD_DIR
+dirpath: Path = get_path_to_root(upload_dir)
+filepath = dirpath / filename
+dataconv: list = list(JsonConverter(filepath)().values())
+"""

@@ -7,7 +7,7 @@ from app.core.config.project_config import settings
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import ModelType, Service
 from app.core.utils.alchemy_utils import model_to_dict
-from app.core.utils.common_utils import flatten_dict, get_path_to_root, jprint
+from app.core.utils.common_utils import flatten_dict, get_path_to_root
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 from app.support.drink.router import Drink, DrinkCreate, DrinkCreateRelations, DrinkRead, DrinkRepository
@@ -24,10 +24,10 @@ class DrinkService(Service):
 
     @classmethod
     async def get_dict_by_id(cls, id: int, repository: Type[Repository],
-                          model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+                             model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         result = await super().get_by_id(id, repository, model, session)
         # return result
-        
+
         try:
             subresult = model_to_dict(result)
             flatresult = flatten_dict(subresult, ['name', 'name_ru'])
@@ -40,9 +40,6 @@ class DrinkService(Service):
             return flatresult
         except Exception as e:
             print(f'drink.service..get_by_id error {e}')
-        # finally:
-        #     return result
-        
 
     @classmethod
     async def create_relation(cls, data: DrinkCreateRelations,
@@ -100,29 +97,25 @@ class DrinkService(Service):
         return drink_instance
 
     @classmethod
-    async def direct_upload(cls, filename:str, session: AsyncSession) -> dict:
+    async def direct_upload(cls, filename: str, session: AsyncSession) -> dict:
         try:
             # получаем путь к файлу
+            lost_data: list = []
             upload_dir = settings.UPLOAD_DIR
             dirpath: Path = get_path_to_root(upload_dir)
             filepath = dirpath / filename
             if not filepath.exists():
                 raise Exception(f'file {filename} is not exists in {upload_dir}')
-            # загружаем jsno файл, конвертируем в формат relation и собираем в список:
+            # загружаем json файл, конвертируем в формат relation и собираем в список:
             dataconv: list = list(JsonConverter(filepath)().values())
             # проходим по списку и загружаем в postgresql
             for n, item in enumerate(dataconv):
                 try:
                     data_model = DrinkCreateRelations(**item)
                     result = await cls.create_relation(data_model, DrinkRepository, Drink, session)
+
                 except Exception as e:
                     raise Exception(f'data_model:: {e}')
             return {'filepath': len(dataconv)}
         except Exception as e:
             raise Exception(f'drink.service.direct_upload.error: {e}')
-"""
-    async def create_relation(cls, data: DrinkCreateRelations,
-                              repository: DrinkRepository, model: Drink,
-                              session: AsyncSession) -> DrinkRead:
-
-"""

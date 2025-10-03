@@ -3,8 +3,6 @@
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
-# from app.mongodb.config import mongodb
-from fastapi import status
 from tests.config import settings_db
 
 pytestmark = pytest.mark.asyncio

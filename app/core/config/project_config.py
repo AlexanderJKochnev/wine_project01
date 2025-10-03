@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # DEV 0 production, DEV 1 development
     DEV: int = 0
     API_PREFIX: str = 'api'
+    JSON_FILENAME: str = 'data.json'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

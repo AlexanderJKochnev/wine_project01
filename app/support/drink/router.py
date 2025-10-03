@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
+from app.core.config.project_config import settings
 from app.core.routers.base import BaseRouter
 from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
@@ -123,14 +124,15 @@ class DrinkRouter(BaseRouter):
                                  image_service: ImageService = Depends()) -> dict:
         """
         Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
-        на сервере поместить файл data.json в директорию UPLOAD_DIR
+        на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с
+        изображениями.
         - если в таблице есть зависимости они будут рекурсивно найдены в связанных таблицах (или добавлены при
         отсутсвии), кроме того будет добавлено изображение по его имени (перед этим выполнить импорт изображений
         /mongodb/images/direct.
         операция длительная - наберитесь терпения
         """
         try:
-            filename = 'data.json'
+            filename = settings.JSON_FILENAME  # имя файла для импорта
             result = await self.service.direct_upload(filename, session)
             return result
         except Exception as e:

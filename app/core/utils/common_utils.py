@@ -40,14 +40,17 @@ def get_path_to_root(name: str = '.env'):
     """
         get path to file or directory in root directory
     """
-    for k in range(1, 10):
-        env_path = Path(__file__).resolve().parents[k] / name
-        if env_path.exists():
-            break
-    else:
-        env_path = None
-        raise Exception('environment file is not found')
-    return env_path
+    try:
+        for k in range(1, 10):
+            env_path = Path(__file__).resolve().parents[k] / name
+            if env_path.exists():
+                break
+        else:
+            env_path = None
+            raise Exception('environment file is not found')
+        return env_path
+    except Exception:
+        return None
 
 
 def get_searchable_fields(model: type) -> Dict[str, type]:
@@ -561,3 +564,18 @@ def back_to_the_future(after_date: datetime) -> datetime:
     if after_date > datetime.now(timezone.utc):  # datetime.utcnow():
         raise HTTPException(status_code=400, detail="Date cannot be in the future")
     return after_date
+
+
+def enum_to_camel(input: str) -> str:
+    if input:
+        input = input.replace('_', ' ')
+        return ' '.join((a.title() for a in input.split(' ')))
+    else:
+        return input
+
+
+def camel_to_enum(input: str) -> str:
+    if input:
+        return input.lower().replace(' ', '_')
+    else:
+        return None
