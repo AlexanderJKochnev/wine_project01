@@ -34,7 +34,10 @@ class ImageRepository:
             "content_type": content_type
         }
         result = await self.collection.insert_one(document)
-        return str(result.inserted_id)
+        if hasattr(result, 'inserted_id'):
+            return str(result.inserted_id)
+        else:
+            return None
 
     async def get_image(self, image_id: str):
         await self.ensure_indexes()

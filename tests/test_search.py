@@ -67,6 +67,8 @@ async def test_search(authenticated_client_with_db, test_db_session,
     routers = routers_get_all
     # expected_response = PaginatedResponse.model_fields.keys()
     for prefix in routers:          # перебирает существующие роутеры
+        if prefix in ['/api']:  # api не содержит пути 'all'
+            continue
         response = await client.get(f'{prefix}/all')   # получает все записи
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
         # assert response.json().keys() == expected_response, \

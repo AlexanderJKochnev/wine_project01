@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, status, UploadFile
 # from app.core.config.project_config import settings
 from app.core.utils.common_utils import get_path_to_root
 from app.mongodb.config import settings
-from app.mongodb.models import FileListResponse, FileResponse, JustListResponse, ZeroBase
+from app.mongodb.models import FileListResponse, FileResponse, JustListResponse
 from app.mongodb.repository import ImageRepository
 from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
                                remove_background)
@@ -44,6 +44,7 @@ class ImageService:
             image_dir = get_path_to_root(upload_dir)
             image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
             image_paths = []  # cписок файлов изображений с путями
+            lost_images = []  # список потерянных файлов
             for n, file_path in enumerate(image_dir.iterdir()):
                 if file_path.is_file() and file_path.suffix.lower() in image_extensions:
                     image_paths.append(file_path)
@@ -71,13 +72,19 @@ class ImageService:
                     raise Exception(f'Изменение размера не получилось для {filename}. {e}. Оставляем без изменения')
                 description = f'импортированный файл {datetime.now(timezone.utc)}'
 
-                _ = await self.image_repository.create_image(filename, content, content_type, description)
+                id = await self.image_repository.create_image(filename, content, content_type, description)
+                if not id:
+                    lost_images.append(filename)
 
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=f"error: {e}"
             )
-        return {'result': m + 1}
+        result = {'number of images': n + 1,
+                  'loaded images': m + 1}
+        if lost_images:
+            result['lost images': lost_images]
+        return result
 
     async def get_image(self,
                         image_id: str

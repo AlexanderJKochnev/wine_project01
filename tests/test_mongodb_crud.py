@@ -1,15 +1,11 @@
 # tests/test_mongodb.py
 # тесты запускать по одному иначе падают - особенность mongodb
 
-from datetime import datetime, timedelta
-
 import pytest
 # from app.mongodb.config import mongodb
 from fastapi import status
 
-from app.core.utils.common_utils import jprint
-from app.mongodb.router import prefix, subprefix, fileprefix, directprefix
-
+from app.mongodb.router import prefix, subprefix
 
 pytestmark = pytest.mark.asyncio
 
@@ -45,7 +41,7 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
     # params = {"after_date": iso_date, "page": 1, "per_page": 10}
     # дата по умолчанию
     params = [({"page": 1, "per_page": 10}, 200, n),
-              ({"page": 1, "per_page": 10, "after_date": pastutc}, 201, n),
+              ({"page": 1, "per_page": 10, "after_date": pastutc}, 200, n),
               ({"page": 1, "per_page": 10, "after_date": todayutc}, 200, 0),
               ({"page": 1, "per_page": 10, "after_date": futureutc}, 400, 0),
               ]
