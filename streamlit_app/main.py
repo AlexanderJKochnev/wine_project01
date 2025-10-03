@@ -222,7 +222,85 @@ def show_image_management():
         st.error("MongoDB not connected")
         return
     
-    db = mongo_client.admin
+    # ДИАГНОСТИКА: Покажем какие базы и коллекции есть
+    with st.expander("🔍 MongoDB Diagnostics", expanded = True):
+        try:
+            # Получим список всех баз данных и коллекций
+            database_names = mongo_client.list_database_names()
+            st.write("**Available Databases:**", database_names)
+            
+            # Проверим каждую базу данных
+            for db_name in database_names:
+                if db_name not in ['admin', 'local', 'config']:  # Пропускаем системные
+                    db = mongo_client[db_name]
+                    collections = db.list_collection_names()
+                    st.write(f"**Database '{db_name}' collections:**", collections)
+                    
+                    # Посчитаем документы в каждой коллекции
+                    for collection_name in collections:
+                        count = db[collection_name].count_documents({})
+                        st.write(f"  - {collection_name}: {count} documents")
+                        
+                        # Покажем пример документа (без бинарных данных)
+                        if count > 0:
+                            sample_doc = db[collection_name].find_one()
+                            if sample_doc:
+                                # Уберем бинарные данные для показа
+                                clean_doc = {k: v for k, v in sample_doc.items() if
+                                             k != 'image_data' and k != 'file_data'}
+                                st.json(clean_doc)
+                                break
+        
+        except Exception as e:
+            st.error(f"Diagnostics error: {e}")
+    
+    # Автоматически определим правильную базу и коллекцию
+    target_db_name = None
+    target_collection_name = None
+    
+    try:
+        for db_name in mongo_client.list_database_names():
+            if db_name not in ['admin', 'local', 'config']:
+                db = mongo_client[db_name]
+                for collection_name in db.list_collection_names():
+                    # Проверим, есть ли в коллекции документы с изображениями
+                    sample_doc = db[collection_name].find_one()
+                    if sample_doc:
+                        # Ищем поля, которые могут содержать изображения
+                        image_fields = [k for k in sample_doc.keys() if
+                                        'image' in k.lower() or 'file' in k.lower() or 'img' in k.lower()]
+                        if image_fields:
+                            target_db_name = db_name
+                            target_collection_name = collection_name
+                            st.success(f"🎯 Auto-detected: {db_name}.{collection_name} (image fields: {image_fields})")
+                            break
+                if target_db_name:
+                    break
+    except Exception as e:
+        st.error(f"Auto-detection error: {e}")
+    
+    # Если автоматическое определение не сработало, позволим пользователю выбрать
+    if not target_db_name:
+        st.warning("⚠️ Could not auto-detect image collection. Please select manually:")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            available_dbs = [db for db in mongo_client.list_database_names() if db not in ['admin', 'local', 'config']]
+            selected_db = st.selectbox("Select Database", available_dbs)
+        with col2:
+            if selected_db:
+                db = mongo_client[selected_db]
+                collections = db.list_collection_names()
+                selected_collection = st.selectbox("Select Collection", collections)
+                target_db_name = selected_db
+                target_collection_name = selected_collection
+    
+    if not target_db_name or not target_collection_name:
+        st.error("Please select a database and collection")
+        return
+    
+    db = mongo_client[target_db_name]
+    collection = db[target_collection_name]
     
     tab1, tab2, tab3 = st.tabs(["📤 Upload Images", "🖼️ Browse Images", "🔍 Search & Edit"])
     
@@ -257,7 +335,7 @@ def show_image_management():
                         col1, col2 = st.columns(2)
                         with col1:
                             if st.form_submit_button("💾 Save to MongoDB", use_container_width = True):
-                                save_image_to_mongodb(db, uploaded_file, name, category, tags, description)
+                                save_image_to_mongodb(collection, uploaded_file, name, category, tags, description)
                         with col2:
                             if st.form_submit_button("🚫 Cancel", use_container_width = True):
                                 st.info("Upload cancelled")
@@ -287,11 +365,11 @@ def show_image_management():
             sort_field = {"Newest": "_id", "Oldest": "_id", "Name": "name"}[sort_by]
             sort_order = -1 if sort_by == "Newest" else 1
             
-            total_images = db.images.count_documents(query)
+            total_images = collection.count_documents(query)
             total_pages = (total_images + items_per_page - 1) // items_per_page
             
             images = list(
-                db.images.find(query).sort(sort_field, sort_order).skip(st.session_state.page * items_per_page).limit(
+                collection.find(query).sort(sort_field, sort_order).skip(st.session_state.page * items_per_page).limit(
                     items_per_page
                     )
                 )
@@ -304,13 +382,41 @@ def show_image_management():
                 for idx, img in enumerate(images):
                     with cols[idx % 4]:
                         with st.container():
-                            if 'image_data' in img:
+                            # Попробуем разные способы отображения изображений
+                            image_displayed = False
+                            
+                            # Способ 1: image_data (base64)
+                            if 'image_data' in img and img['image_data']:
                                 try:
                                     image_data = base64.b64decode(img['image_data'])
                                     image = Image.open(io.BytesIO(image_data))
                                     st.image(image, use_column_width = True)
+                                    image_displayed = True
+                                except Exception as e:
+                                    st.error(f"❌ Base64 decode error")
+                            
+                            # Способ 2: file_data (бинарные данные)
+                            if not image_displayed and 'file_data' in img and img['file_data']:
+                                try:
+                                    if isinstance(img['file_data'], bytes):
+                                        image = Image.open(io.BytesIO(img['file_data']))
+                                        st.image(image, use_column_width = True)
+                                        image_displayed = True
                                 except:
-                                    st.error("❌ Invalid image")
+                                    st.error("❌ Binary data error")
+                            
+                            # Способ 3: GridFS (если используется)
+                            if not image_displayed and 'filename' in img:
+                                st.info(f"📄 {img.get('filename', 'File')}")
+                                image_displayed = True
+                            
+                            # Если ничего не сработало
+                            if not image_displayed:
+                                st.warning("🖼️ No displayable image data")
+                                st.json(
+                                        {k: v for k, v in img.items() if
+                                         k not in ['image_data', 'file_data'] and not isinstance(v, bytes)}
+                                        )
                             
                             st.caption(f"**{img.get('name', 'Unnamed')}**")
                             st.caption(f"Category: {img.get('category', 'N/A')}")
@@ -322,23 +428,24 @@ def show_image_management():
                                     st.session_state.selected_image = img
                             with col_btn2:
                                 if st.button("🗑️", key = f"del_{idx}", help = "Delete"):
-                                    db.images.delete_one({'_id': img['_id']})
+                                    collection.delete_one({'_id': img['_id']})
                                     st.rerun()
                 
                 # Навигация по страницам
-                col_prev, col_info, col_next = st.columns([1, 2, 1])
-                with col_prev:
-                    if st.button("⬅️ Previous") and st.session_state.page > 0:
-                        st.session_state.page -= 1
-                        st.rerun()
-                with col_info:
-                    st.write(f"Page {st.session_state.page + 1} of {total_pages}")
-                with col_next:
-                    if st.button("Next ➡️") and st.session_state.page < total_pages - 1:
-                        st.session_state.page += 1
-                        st.rerun()
+                if total_pages > 1:
+                    col_prev, col_info, col_next = st.columns([1, 2, 1])
+                    with col_prev:
+                        if st.button("⬅️ Previous") and st.session_state.page > 0:
+                            st.session_state.page -= 1
+                            st.rerun()
+                    with col_info:
+                        st.write(f"Page {st.session_state.page + 1} of {total_pages}")
+                    with col_next:
+                        if st.button("Next ➡️") and st.session_state.page < total_pages - 1:
+                            st.session_state.page += 1
+                            st.rerun()
             else:
-                st.info("No images found")
+                st.info("No images found with current filters")
         
         except Exception as e:
             st.error(f"Error loading images: {e}")
@@ -351,13 +458,29 @@ def show_image_management():
             col1, col2 = st.columns(2)
             
             with col1:
-                if 'image_data' in img:
+                # Показ изображения разными способами
+                image_displayed = False
+                
+                if 'image_data' in img and img['image_data']:
                     try:
                         image_data = base64.b64decode(img['image_data'])
                         image = Image.open(io.BytesIO(image_data))
                         st.image(image, use_column_width = True)
+                        image_displayed = True
                     except:
-                        st.error("Invalid image data")
+                        st.error("Invalid base64 image data")
+                
+                if not image_displayed and 'file_data' in img and img['file_data']:
+                    try:
+                        if isinstance(img['file_data'], bytes):
+                            image = Image.open(io.BytesIO(img['file_data']))
+                            st.image(image, use_column_width = True)
+                            image_displayed = True
+                    except:
+                        st.error("Invalid binary image data")
+                
+                if not image_displayed:
+                    st.warning("Cannot display image - unsupported format")
             
             with col2:
                 st.subheader("Image Details")
@@ -366,7 +489,12 @@ def show_image_management():
                 st.write(f"**Category:** {img.get('category', 'N/A')}")
                 st.write(f"**Tags:** {', '.join(img.get('tags', []))}")
                 st.write(f"**Size:** {img.get('size', 0) // 1024} KB")
+                st.write(f"**Content Type:** {img.get('content_type', 'N/A')}")
                 st.write(f"**Uploaded:** {img.get('upload_date', 'N/A')}")
+                
+                # Показать все поля документа
+                with st.expander("📄 Full Document"):
+                    st.json({k: v for k, v in img.items() if not isinstance(v, bytes)})
                 
                 if st.button("Close Details"):
                     del st.session_state.selected_image
@@ -375,16 +503,19 @@ def show_image_management():
             st.info("Select an image from the gallery to view details")
 
 
-def save_image_to_mongodb(db, uploaded_file, name, category, tags, description):
+def save_image_to_mongodb(collection, uploaded_file, name, category, tags, description):
     try:
+        # Кодируем изображение в base64
         image_data = base64.b64encode(uploaded_file.getvalue()).decode()
         
         document = {'name': name, 'filename': uploaded_file.name, 'category': category,
                 'tags': [tag.strip() for tag in tags.split(',')] if tags else [], 'description': description,
-                'image_data': image_data, 'size': len(uploaded_file.getvalue()), 'content_type': uploaded_file.type,
+                'image_data': image_data,  # Сохраняем как base64
+                'file_data': uploaded_file.getvalue(),  # И как бинарные данные
+                'size': len(uploaded_file.getvalue()), 'content_type': uploaded_file.type,
                 'upload_date': datetime.now().isoformat()}
         
-        result = db.images.insert_one(document)
+        result = collection.insert_one(document)
         st.success(f"✅ Image '{name}' saved successfully! (ID: {result.inserted_id})")
         
         # Очистка формы
@@ -392,7 +523,6 @@ def save_image_to_mongodb(db, uploaded_file, name, category, tags, description):
     
     except Exception as e:
         st.error(f"❌ Error saving image: {e}")
-
 
 def show_data_management():
     st.header("📈 Data Management")

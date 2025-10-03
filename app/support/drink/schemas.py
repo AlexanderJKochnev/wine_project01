@@ -1,7 +1,6 @@
 # app/support/drink/schemas.py
+from typing import Dict, Any, List, Optional
 from datetime import datetime
-from typing import List, Optional
-
 from pydantic import ConfigDict, field_serializer, Field, computed_field
 
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
@@ -67,14 +66,14 @@ class CustomReadSchema:
     varietals: List[VarietalRead]
     varietal_associations: Optional[List[DrinkVarietalRelationFlat]]
     updated_at: Optional[datetime] = None
-    
-    @field_serializer('alc', when_used = 'unless-none')
+
+    @field_serializer('alc', when_used='unless-none')
     def serialize_alc(self, value: Optional[float]) -> Optional[str]:
         if value is None:
             return None
         return f"{int(round(value))}%"
-    
-    @field_serializer('sugar', when_used = 'unless-none')
+
+    @field_serializer('sugar', when_used='unless-none')
     def serialize_sugar(self, value: Optional[float]) -> Optional[str]:
         if value is None:
             return None
@@ -146,13 +145,12 @@ class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
 
 
 class DrinkCreateRelationsWithImage(DrinkCreateRelations):
-    model_config = ConfigDict(from_attributes = True, arbitrary_types_allowed =True, exclude_none = True)
-    
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+
     @property
     def image(self) -> Optional[ImageCreate]:
         return Optional[ImageCreate]
-    
-    
+
 
 class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
@@ -173,11 +171,6 @@ class DrinkFoodLinkUpdate(BaseModel):
 
 class DrinkVarietalLinkCreate(BaseModel):
     drink: DrinkRead
-
-
-from pydantic import computed_field, Field
-from typing import Dict, Any, List, Optional
-from datetime import datetime
 
 
 class CustomReadApiSchema:
@@ -205,6 +198,7 @@ class CustomReadApiSchema:
     description: Optional[str] = Field(exclude=True)
     description_ru: Optional[str] = Field(exclude=True)
     description_fr: Optional[str] = Field(exclude=True)
+
     def __get_field_value__(self, field_name: str, lang_suffix: str) -> Any:
         """Получить значение поля с учетом языкового суффикса"""
         # Пробуем поле с языковым суффиксом
@@ -213,40 +207,40 @@ class CustomReadApiSchema:
             value = getattr(self, lang_field)
             if value is not None:
                 return value
-        
+
         # Если нет поля с суффиксом, пробуем базовое поле
         if hasattr(self, field_name):
             return getattr(self, field_name)
-        
+
         return None
-    
+
     def __get_nested_field__(self, obj, field_path: str, lang_suffix: str) -> Any:
         """Получить значение из вложенного объекта"""
         if obj is None:
             return None
-        
+
         fields = field_path.split('.')
         current_obj = obj
-        
+
         for field in fields:
             if hasattr(current_obj, field):
                 current_obj = getattr(current_obj, field)
             else:
                 return None
-        
+
         # Для вложенных объектов рекурсивно ищем языковые версии
         if hasattr(current_obj, f"name{lang_suffix}"):
             return getattr(current_obj, f"name{lang_suffix}")
         elif hasattr(current_obj, "name"):
             return current_obj.name
-        
+
         return str(current_obj) if current_obj else None
-    
+
     def __get_association_names__(self, associations: List, lang_suffix: str) -> str:
         """Получить строку названий ассоциаций"""
         if not associations:
             return ""
-        
+
         names = []
         for assoc in associations:
             if hasattr(assoc, f"name{lang_suffix}"):
@@ -255,21 +249,21 @@ class CustomReadApiSchema:
                 name = assoc.name
             else:
                 continue
-            
+
             if name:
                 names.append(name)
-        
+
         return ", ".join(names) if names else ""
-    
+
     def __parser__(self, lang_suffix: str) -> Dict[str, Any]:
         """Парсер для преобразования полей в словарь по языкам"""
-        
+
         # Маппинг суффиксов на названия полей
         lang_map = {"": "en", "_ru": "ru", "_fr": "fr"}
         current_lang = lang_map.get(lang_suffix, "en")
-        
+
         result = {}
-        
+
         # Категория и подкатегория
         if self.subcategory:
             # result["category"] = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
@@ -284,84 +278,87 @@ class CustomReadApiSchema:
         # Сладость
         if self.sweetness:
             result["sweetness"] = self.__get_nested_field__(self.sweetness, "name", lang_suffix)
-        
+
         # Регион и страна
         if self.subregion:
             region_name = self.__get_nested_field__(self.subregion, "name", lang_suffix)
             country_name = self.__get_nested_field__(self.subregion, "region.country.name", lang_suffix)
-            
+
             if region_name and country_name:
                 result["region"] = f"{region_name}, {country_name}"
                 result["country"] = country_name
             elif region_name:
                 result["region"] = region_name
                 result["country"] = self.__get_nested_field__(self.subregion, "region.country.name", lang_suffix)
-        
+
         # Рекомендации
         result["recommendation"] = self.__get_field_value__("recommendation", lang_suffix)
-        
+
         # Description
         result["description"] = self.__get_field_value__("description", lang_suffix)
-        
+
         # Состав
         result["madeof"] = self.__get_field_value__("madeof", lang_suffix)
-        
+
         # Пайринг (еда)
         result["pairing"] = self.__get_association_names__(self.food_associations, lang_suffix)
-        
+
         # Сорта винограда
         result["varietals"] = self.__get_association_names__(self.varietal_associations, lang_suffix)
-        
+
         # Общие поля (одинаковые для всех языков)
         if self.alc is not None:
             result["alc"] = f"{self.alc}%" if current_lang == "en" else f"{self.alc}%"
-        
+
         if self.sugar is not None:
             result["sugar"] = f"{self.sugar}%" if current_lang == "en" else f"{self.sugar}%"
-        
+
         if self.aging is not None:
-            result[
-                "aging"] = f"{self.aging} year{'s' if self.aging > 1 else ''}" if current_lang == "en" else f"{self.aging} год{'а' if 2 <= self.aging <= 4 else 'ов' if self.aging >= 5 else ''}"
-        
+            result["aging"] = f"{self.aging} year{'s' if self.aging > 1 else ''}" \
+                if current_lang == "en" else (f"{self.aging} "
+                                              f"год{'а' if 2 <= self.aging <= 4 else 'ов' if self.aging >= 5 else ''}")
+
         result["age"] = self.age
         result["sparkling"] = self.sparkling
         result["title"] = self.title
         result["title_native"] = self.title_native
         result["subtitle_native"] = self.subtitle_native
         result["subtitle"] = self.subtitle
-        
+
         # Убираем None значения
         return {k: v for k, v in result.items() if v is not None}
-    
+
     @computed_field
     @property
-    def english(self) -> Dict[str, Any]:
+    def en(self) -> Dict[str, Any]:
         """Английская версия"""
         return self.__parser__("")
-    
+
     @computed_field
     @property
-    def russian(self) -> Dict[str, Any]:
+    def ru(self) -> Dict[str, Any]:
         """Русская версия"""
         return self.__parser__("_ru")
-    
+
     @computed_field
     @property
-    def francaise(self) -> Dict[str, Any]:
+    def fr(self) -> Dict[str, Any]:
         """Французская версия"""
         return self.__parser__("_fr")
 
 
 class DrinkReadApi(PkSchema, CustomReadApiSchema, ImageUrlMixin):
-    model_config = ConfigDict(
-            from_attributes = True, arbitrary_types_allowed = True, extra = 'allow', populate_by_name = True,
-            exclude_none = True
-            )
-    
+    model_config = ConfigDict(from_attributes=True,
+                              arbitrary_types_allowed=True,
+                              extra='allow', populate_by_name=True,
+                              exclude_none=True
+                              )
+
     # Эти поля остаются на верхнем уровне
     # updated_at: Optional[datetime] = None
     id: int
+
     # image_url: Optional[str] = None
-    
+
     # Вычисляемые поля уже объявлены в CustomReadApiSchema
     pass

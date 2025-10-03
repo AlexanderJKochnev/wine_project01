@@ -6,7 +6,6 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
-from app.core.config.project_config import settings
 from app.core.routers.base import BaseRouter
 from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
@@ -19,7 +18,7 @@ from app.support.drink.service import DrinkService
 
 
 class DrinkRouter(BaseRouter):
-    def __init__(self):
+    def __init__(self, prefix: str = '/drinks', tags=['drinks']):
         self.read_api_schema = DrinkReadApi
         super().__init__(
             model=Drink,
@@ -29,13 +28,11 @@ class DrinkRouter(BaseRouter):
             create_schema_relation=DrinkCreateRelations,
             create_response_schema=DrinkCreateResponseSchema,
             path_schema=DrinkUpdate,
-            prefix="/drinks",
-            tags=["drinks"],
+            prefix=prefix,
+            tags=tags,
             service=DrinkService
         )
-        # self.create_relation_image = DrinkCreateRelationsWithImage
         self.image_service: ImageService = Depends()
-        
 
     def setup_routes(self):
         super().setup_routes()
@@ -45,14 +42,14 @@ class DrinkRouter(BaseRouter):
                                   methods=["POST"], response_model=self.read_schema)
         self.router.add_api_route("/direct", self.direct_import_data,
                                   status_code=status.HTTP_200_OK, methods=["POST"],
-                                  response_model = dict)
+                                  response_model=dict)
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
         self.router.add_api_route("/{id}/flat", self.get_one_flat,
-                                   methods=['GET'], response_model=dict)
-        self.router.add_api_route("/{id}/api", self.get_one_api, methods = ['GET'],
-                                  response_model = self.read_api_schema)
+                                  methods=['GET'], response_model=dict)
+        self.router.add_api_route("/{id}/api", self.get_one_api, methods=['GET'],
+                                  response_model=self.read_api_schema)
 
     def get_drink_food_service(session: AsyncSession) -> DrinkFoodService:
         repo = DrinkFoodRepository(session)
@@ -102,12 +99,10 @@ class DrinkRouter(BaseRouter):
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
         # content = await file.read()
-        image_id, image_path = await image_service.upload_image(file, description = drink_data.title
-            )
+        image_id, image_path = await image_service.upload_image(file, description=drink_data.title)
         drink_data.image_path = image_path
         result = await super().create_relation(drink_data, session)
         return result
-
 
     async def get_one_flat(self, id: int, session: AsyncSession = Depends(get_db)) -> dict:
         """

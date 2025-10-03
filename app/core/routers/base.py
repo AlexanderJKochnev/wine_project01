@@ -17,8 +17,10 @@ from app.core.config.project_config import get_paging, settings
 from app.core.utils.common_utils import back_to_the_future
 from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
                                    CreateResponse, UpdateSchema, CreateSchema)
-# from app.core.services.logger import logger
+from app.core.utils.pydantic_utils import PyUtils as py
 from app.core.services.service import Service
+from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.models.base_model import Base
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
@@ -69,8 +71,8 @@ class BaseRouter:
         # session: AsyncSession = Depends(get_db)
     ):
         self.model = model
-        self.repo = repo()
-        self.service = service()
+        self.repo = repo
+        self.service = service
         self.create_schema = create_schema
         self.read_schema = read_schema
         self.create_schema_relation = create_schema_relation
@@ -82,6 +84,8 @@ class BaseRouter:
                                                __base__=PaginatedResponse[read_schema])
         self.read_response = create_model(f'{read_schema.__name__}Response',
                                           __base__=read_schema)
+        self.paginated_response = py.paginated_response(read_schema)
+        self.read_response = read_schema
         self.delete_response = DeleteResponse
         self.responses = {404: {"description": "Record not found",
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
@@ -317,6 +321,9 @@ class BaseRouter:
                                                description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
                   page: int = Query(1, ge=1),
                   page_size: int = Query(paging.get('def', 20), ge=paging.get('min', 1), le=paging.get('max', 1000)),
+                  # repository: Type[Repository],
+                  # model: Type[Base],
+                  # service: Type[Service],
                   session: AsyncSession = Depends(get_db)
                   ) -> PaginatedResponse:
         """

@@ -72,7 +72,7 @@ async def get_images_after_date(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get(subprefix + "/{file_id}")
+@router.get(subprefix + "/{file_id}")  # , response_model=StreamingResponse)
 async def download_image(
     file_id: str,
     image_service: ImageService = Depends()

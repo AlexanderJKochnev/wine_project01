@@ -29,7 +29,12 @@ class ZeroBase(BaseModel):
             return None
 
 
-class FileBase(ZeroBase):
+class NoPathBase(BaseModel):
+    filename: str = Field(default=None, exclude=True)
+
+
+class FileBase(NoPathBase):
+    # если нужно что бы возвращался путь к файлу замени NoPathBase на ZeroBase
     description: Optional[str] = None
 
 

@@ -1,57 +1,59 @@
 # app/support/api/router.py
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from dateutil.relativedelta import relativedelta
-from fastapi import APIRouter, Depends, HTTPException, Query
-from app.auth.dependencies import get_current_active_user
+from fastapi import Depends, Query
+
 from app.core.config.project_config import settings
-from app.core.utils.common_utils import back_to_the_future
-from app.mongodb.models import JustListResponse
+from app.mongodb import router as mongorouter
+from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
-
-# from app.auth.dependencies import get_current_user, User
-prefix = settings.API_PREFIX
-router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
-# subprefix = settings.IMAGES_PREFIX
-# fileprefix = settings.FILES_PREFIX
-now = datetime.now(timezone.utc).isoformat()
+from app.support.drink.router import DrinkRouter
 
 
-@router.get("", response_model=JustListResponse)
-async def get_images_after_date_nopage(
-    after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
-                                 description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
-    image_service: ImageService = Depends()
-):
-    """
-    Получить изображения, созданные после указанной даты
-    """
-    try:
-        # Проверяем, что дата не в будущем
-        after_date = back_to_the_future(after_date)
-        return await (image_service.get_images_list_after_date(after_date))
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@dataclass
+class Data:
+    prefix: str
+    delta: str
+    # drink_paginated_response: Type[BaseModel]
+    mongo: str
+    drink: str
 
 
-@router.get("/paging", response_model=JustListResponse)
-async def get_images_after_date(
-    after_date: datetime = Query((datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
-                                 description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
-    page: int = Query(1, ge=1, description="Номер страницы"),
-    per_page: int = Query(100, ge=1, le=1000, description="Количество элементов на странице"),
-    image_service: ImageService = Depends()
-):
-    """
-    Получить изображения, созданные после указанной даты
-    """
-    try:
-        # Проверяем, что дата не в будущем
-        after_date = back_to_the_future(after_date)
-        return await (image_service.get_images_list_after_date(after_date, page, per_page))
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+data = Data(prefix=settings.API_PREFIX,
+            delta=(datetime.now(timezone.utc) - relativedelta(years=2)).isoformat(),
+            mongo='mongo',
+            drink='drink'
+            )
+
+
+class ApiRouter(DrinkRouter):
+    def __init__(self):
+        super().__init__(prefix='/api', tags=['api'])
+        self.prefix = data.prefix
+        self.tags = data.prefix
+
+    def setup_routes(self):
+        self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
+        self.router.add_api_route(f"/{data.mongo}", self.get_images_after_date, response_model=FileListResponse)
+        self.router.add_api_route(f"/{data.mongo}" + "/{id}", self.download_image)
+
+    async def get_images_after_date(self, after_date: datetime = Query(data.delta, description="Дата в формате ISO "
+                                                                                               "8601 (например, "
+                                                                                               "2024-01-01T00:00:00Z)"),
+                                    page: int = Query(1, ge=1, description="Номер страницы"),
+                                    per_page: int = Query(100, ge=1, le=1000,
+                                                          description="Количество элементов на странице"),
+                                    image_service: ImageService = Depends()
+                                    ):
+        """
+        Получение списка изображений, созданных после заданной даты (по умолчанию за два года до нстоящего времени)
+        """
+        return await mongorouter.get_images_after_date(after_date, page, per_page, image_service)
+
+    async def download_image(self, file_id: str, image_service: ImageService = Depends()):
+        """
+            Получение одного изображения по _id
+        """
+        return await mongorouter.download_image(file_id, image_service)
