@@ -132,8 +132,7 @@ class DrinkRouter(BaseRouter):
         операция длительная - наберитесь терпения
         """
         try:
-            filename = settings.JSON_FILENAME  # имя файла для импорта
-            result = await self.service.direct_upload(filename, session)
+            result = await self.service.direct_upload(session)
             return result
         except Exception as e:
             raise HTTPException(status_code=422, detail=e)

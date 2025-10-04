@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Dict, Union
 import json
 from pathlib import Path
 import copy
-from app.core.utils.common_utils import get_path_to_root, jprint
+from app.core.utils.common_utils import get_path_to_root, jprint  # NOQA: F401
 from fastapi import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -118,11 +118,10 @@ class JsonConverter():
                                 'russian': '_ru',
                                 'francaise': '_fr'}
         # это не переводится и разносится по языкам без перевода
-        self.sinle_lang: list = ['age', 'alc', 'vol']
+        self.sinle_lang: list = ['age', 'alc', 'vol', 'count']
         # эти поля игнорируются
         self.exclude_list: list = ['index', 'isHidden',
-                                   'uid', 'imageTimestamp',
-                                   'count']
+                                   'uid', 'imageTimestamp']  # 'count']
         # это подкатегории вина оставляем
         self.subcategory_list: list = ['red', 'white', 'rose', 'port', 'sparkling']  # это вино
 
@@ -133,7 +132,8 @@ class JsonConverter():
         self.json_postpocessing()
 
     def __call__(self, *args, **kwargs):
-        return self.data
+        return self.json_itemization()
+        # self.data
 
     def transform_pairings(self, data):
         result = {"name": data["name"], "foods": []}
@@ -391,7 +391,7 @@ class JsonConverter():
                 val.pop(item, None)
 
     def get_key_values(self, data1: dict) -> dict:
-        result: dict = {}
+        # result: dict = {}
         data = copy.deepcopy(data1)
         for key, val in data.items():
             self.data[key]['image_path'] = f'{key}.png'
@@ -516,6 +516,21 @@ class JsonConverter():
             country: dict = {}
             region: dict = {}
             subcategory = {}
+
+    def json_itemization(self):
+        """
+            готовит словарь для Item
+            поднимает на верхний уровень vol, count, image_path
+            :return:
+            :rtype:
+        """
+        data: dict = {}  # copy.deepcopy(self.data)
+        for key, val in self.data.items():
+            data[key] = {}
+            for item in ['vol', 'count', 'image_path']:
+                data[key][item] = val.pop(item, None)
+                data[key]['drink'] = val
+        return data
 
 
 def replace_commas_in_parentheses(match, rep: str = '@'):

@@ -1,12 +1,12 @@
 # app/support/item/schemas.py
 
-from decimal import Decimal
+# from decimal import Decimal
 from typing import Optional
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import BaseModel, CreateResponse, CreateNoNameSchema
-from app.support.drink.schemas import DrinkRead, DrinkCreateRelations, DrinkReadApi
+from app.core.schemas.base import BaseModel, CreateResponse
+from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
 from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
 
 
@@ -21,7 +21,7 @@ class CustomReadSchema:
 
 class CustomCreateSchema:
     drink_id: int
-    warehouse_id: int
+    warehouse_id: Optional[int]
     volume: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
@@ -29,7 +29,7 @@ class CustomCreateSchema:
 
 class CustomCreateRelation:
     drink: DrinkCreateRelations
-    warehouse: WarehouseCreateRelation
+    warehouse: Optional[WarehouseCreateRelation] = None
     volume: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0

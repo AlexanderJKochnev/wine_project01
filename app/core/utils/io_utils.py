@@ -2,6 +2,7 @@
 from pathlib import Path
 from app.core.utils.common_utils import get_path_to_root, enum_to_camel
 from app.core.config.project_config import settings
+from app.core.utils.alchemy_utils import JsonConverter
 
 
 def read_file_lines_stripped(filename: Path):
@@ -34,3 +35,13 @@ def read_enum_to_camel(filename: str = 'country.json') -> dict:
         result = None
     finally:
         return result
+
+
+def loadJsonConverter(filename: str, upload_dir: str):
+    dirpath: Path = get_path_to_root(upload_dir)
+    filepath = dirpath / filename
+    if not filepath.exists():
+        raise Exception(f'file {filename} is not exists in {upload_dir}')
+    # загружаем json файл, конвертируем в формат relation и собираем в список:
+    dataconv: list = list(JsonConverter(filepath)().values())
+    return dataconv

@@ -97,10 +97,11 @@ class DrinkService(Service):
         return drink_instance
 
     @classmethod
-    async def direct_upload(cls, filename: str, session: AsyncSession) -> dict:
+    async def direct_upload(cls, session: AsyncSession) -> dict:
         try:
             # получаем путь к файлу
             lost_data: list = []
+            filename = settings.JSON_FILENAME  # имя файла для импорта
             upload_dir = settings.UPLOAD_DIR
             dirpath: Path = get_path_to_root(upload_dir)
             filepath = dirpath / filename
