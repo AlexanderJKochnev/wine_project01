@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Dict, Union
 import json
 from pathlib import Path
 import copy
-from app.core.utils.common_utils import get_path_to_root, jprint  # NOQA: F401
+from app.core.utils.common_utils import get_path_to_root, jprint, clean_string  # NOQA: F401
 from fastapi import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -133,7 +133,7 @@ class JsonConverter():
 
     def __call__(self, *args, **kwargs):
         return self.json_itemization()
-        # self.data
+        # return self.data
 
     def transform_pairings(self, data):
         result = {"name": data["name"], "foods": []}
@@ -402,8 +402,12 @@ class JsonConverter():
                         self.data[key]['category'] = 'Wine'
                         self.data[key][k2] = v2
                     if k2 in ['type', 'type_ru']:
+                        self.data[key].pop(k2)
                         k2 = k2.replace('type', 'subcategory')
                         self.data[key][k2] = v2.strip('.')
+                    if k2 in ['madeOf', 'madeOf_ru']:
+                        k3, k2 = k2, k2.lower()
+                        self.data[key][k2] = self.data[key].pop(k3)
                     if v2:
                         """ """
                         v2 = self.field_processing(k2, v2)
@@ -419,6 +423,10 @@ class JsonConverter():
                             self.data[key][k2] = v2  # !
             for subkey in ['subregion', 'subregion_ru', 'subcategory']:
                 self.data[key][subkey] = self.data[key].get(subkey, None)
+            for k1 in ['title', 'subtitle']:
+                x = self.data[key].pop(f'{k1}_ru', None)
+                if self.data[key][k1] != x:
+                    self.data[key][f'{k1}_native'] = x
         return
 
     def field_processing(self, key: str, val: str):
@@ -436,6 +444,13 @@ class JsonConverter():
                 result = self.parse_varietal_string_clean(val, 'name_ru')
             case 'subcategory' | 'subcategory_ru':
                 result = val.rstrip('.')
+            case 'title' | 'title_ru' | 'subtitle' | 'subtitle_ru':
+                result = clean_string(val.rstrip('.'))
+            case 'description' | 'description_ru':
+                result = clean_string(val)
+            case 'age':
+                result = val.rstrip('.')
+
             case _:
                 result = val
         return result
@@ -530,6 +545,8 @@ class JsonConverter():
             for item in ['vol', 'count', 'image_path']:
                 data[key][item] = val.pop(item, None)
                 data[key]['drink'] = val
+                data[key]['drink'].pop('varietal', None)
+                data[key]['drink'].pop('varietal_ru', None)
         return data
 
 

@@ -100,7 +100,6 @@ class DrinkService(Service):
     async def direct_upload(cls, session: AsyncSession) -> dict:
         try:
             # получаем путь к файлу
-            lost_data: list = []
             filename = settings.JSON_FILENAME  # имя файла для импорта
             upload_dir = settings.UPLOAD_DIR
             dirpath: Path = get_path_to_root(upload_dir)
@@ -113,8 +112,7 @@ class DrinkService(Service):
             for n, item in enumerate(dataconv):
                 try:
                     data_model = DrinkCreateRelations(**item)
-                    result = await cls.create_relation(data_model, DrinkRepository, Drink, session)
-
+                    await cls.create_relation(data_model, DrinkRepository, Drink, session)
                 except Exception as e:
                     raise Exception(f'data_model:: {e}')
             return {'filepath': len(dataconv)}

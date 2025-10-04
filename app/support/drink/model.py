@@ -3,14 +3,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, CheckConstraint
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DECIMAL
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone,
-                                        descr, ion, str_null_true, str_uniq,
-                                        volume, percent)
+from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone, descr, str_null_true, str_uniq)
 from app.core.models.image_mixin import ImageMixin
 from app.core.utils.common_utils import plural
 
@@ -20,9 +18,9 @@ if TYPE_CHECKING:
     from app.support.subregion.model import Subregion
 
 
-class Drink(Base, BaseDescription, BaseAt, ImageMixin):
-    __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name = 'alc_range_check'),
-                      CheckConstraint('sugar >= 0 AND sugar <= 100.00', name = 'sugar_range_check'),)
+class Drink(Base, BaseDescription, BaseAt):
+    __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
+                      CheckConstraint('sugar >= 0 AND sugar <= 100.00', name='sugar_range_check'),)
 
     lazy = settings.LAZY
     cascade = settings.CASCADE
@@ -41,11 +39,11 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
     recommendation_fr: Mapped[descr]
     madeof: Mapped[descr]
     madeof_ru: Mapped[descr]
-    alc = mapped_column(DECIMAL(6, 2), nullable = True, default = 0.0)
+    alc = mapped_column(DECIMAL(6, 2), nullable=True, default=0.0)
     # alc: Mapped[percent]
-    sugar = mapped_column(DECIMAL(6, 2), nullable = True)  #, default = 0.0)
+    sugar = mapped_column(DECIMAL(6, 2), nullable=True)  # , default = 0.0)
     # sugar: Mapped[percent]
-    aging: Mapped[ion]
+    # aging: Mapped[ion]
     age: Mapped[str_null_true]
     sparkling: Mapped[boolnone]
     # Foreign Keys on-to-many
@@ -92,7 +90,6 @@ class Drink(Base, BaseDescription, BaseAt, ImageMixin):
 
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
 
-
     def __str__(self):
         return f"{self.title}"
 
@@ -114,12 +111,12 @@ class DrinkFood(Base):
 class DrinkVarietal(Base):
     __tablename__ = "drink_varietal_associations"
     __table_args__ = (CheckConstraint('percentage >= 0 AND percentage <= 100.00',
-                                      name = 'percentage_range_check'),)
+                                      name='percentage_range_check'),)
 
     drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
     varietal_id = Column(Integer, ForeignKey("varietals.id"), primary_key=True)
-    percentage = mapped_column(DECIMAL(6, 2), nullable = True, default = 100.0)
-    
+    percentage = mapped_column(DECIMAL(6, 2), nullable=True, default=100.0)
+
     # Relationships
     drink = relationship("Drink", back_populates="varietal_associations", overlaps='varietals')
     varietal = relationship("Varietal", back_populates="drink_associations", overlaps='drinks,varietals')

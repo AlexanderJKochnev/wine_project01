@@ -1,5 +1,9 @@
 # app.support.item.service.py
+from pathlib import Path
 from app.core.services.service import Service
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import get_path_to_root
+from app.core.utils.alchemy_utils import JsonConverter
 from app.support.item.router import Item, ItemCreate, ItemCreateRelations, ItemRepository, ItemRead, AsyncSession
 from app.support.drink.router import DrinkService, DrinkRepository, Drink
 from app.support.warehouse.router import Warehouse, WarehouseService, WarehouseRepository
@@ -24,3 +28,26 @@ class ItemService(Service):
         item = ItemCreate(**item_data)
         item_instance = await ItemService.get_or_create(item, ItemRepository, Item, session)
         return item_instance
+
+    @classmethod
+    async def direct_upload(cls, session: AsyncSession) -> dict:
+        try:
+            # получаем путь к файлу
+            filename = settings.JSON_FILENAME  # имя файла для импорта
+            upload_dir = settings.UPLOAD_DIR
+            dirpath: Path = get_path_to_root(upload_dir)
+            filepath = dirpath / filename
+            if not filepath.exists():
+                raise Exception(f'file {filename} is not exists in {upload_dir}')
+            # загружаем json файл, конвертируем в формат relation и собираем в список:
+            dataconv: list = list(JsonConverter(filepath)().values())
+            # проходим по списку и загружаем в postgresql
+            for n, item in enumerate(dataconv):
+                try:
+                    data_model = ItemCreateRelations(**item)
+                    await cls.create_relation(data_model, ItemRepository, Item, session)
+                except Exception as e:
+                    raise Exception(f'data_model:: {e}')
+            return {'filepath': len(dataconv)}
+        except Exception as e:
+            raise Exception(f'drink.service.direct_upload.error: {e}')

@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
-from app.core.config.project_config import settings
+# from app.core.config.project_config import settings
 from app.core.routers.base import BaseRouter
 from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
@@ -41,9 +41,9 @@ class DrinkRouter(BaseRouter):
                                   self.create_relation_image,
                                   status_code=status.HTTP_200_OK,
                                   methods=["POST"], response_model=self.read_schema)
-        self.router.add_api_route("/direct", self.direct_import_data,
-                                  status_code=status.HTTP_200_OK, methods=["POST"],
-                                  response_model=dict)
+        # self.router.add_api_route("/direct", self.direct_import_data,
+        #                           status_code=status.HTTP_200_OK, methods=["POST"],
+        #                           response_model=dict)
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])

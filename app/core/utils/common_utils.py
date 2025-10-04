@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 from typing import Any, Dict, List, Optional, Set, TypeVar
 import json
+import re
 # from sqlalchemy.sql.sqltypes import String, Text, Boolean
 from sqlalchemy import Boolean, inspect, String, Text, Unicode, UnicodeText
 from sqlalchemy.dialects.postgresql import CITEXT  # если используешь PostgreSQL
@@ -579,3 +580,24 @@ def camel_to_enum(input: str) -> str:
         return input.lower().replace(' ', '_')
     else:
         return None
+
+
+def clean_string(s: str) -> str:
+    """
+         очистка строки от битых экранированных скобок, служебных символов
+    """
+    if not isinstance(s, str):
+        return s  # или raise ValueError, если нужно
+
+    # Удаляем: скобки, кавычки, слэши, обратные слэши
+    # Также заменяем управляющие символы на пробел или удаляем
+    # Шаг 1: заменяем управляющие символы (\n, \r, \t и т.д.) на пробел
+    s = re.sub(r'[\n\r\t\x00-\x1f\x7f]', ' ', s)
+
+    # Шаг 2: удаляем нежелательные символы
+    s = re.sub(r'[()\'"/\\»]', '', s)
+
+    # Шаг 3 (опционально): сжать множественные пробелы в один и убрать по краям
+    s = re.sub(r'\s+', ' ', s).strip()
+
+    return s

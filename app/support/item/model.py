@@ -8,19 +8,20 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models.base_model import Base, BaseAt, ion, money, volume
+from app.core.models.image_mixin import ImageMixin
 
 if TYPE_CHECKING:
     from app.support.drink.model import Drink
-    from app.support.warehouse.model import Warehouse
+    # from app.support.warehouse.model import Warehouse
 
 
-class Item(Base, BaseAt):
-    volume: Mapped[volume]  # объем тары
+class Item(Base, BaseAt, ImageMixin):
+    vol: Mapped[volume]  # объем тары
     price: Mapped[money]    # цена
     count: Mapped[ion]      # количество
 
     drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), nullable=False)
-    warehouse_id: Mapped[int] = mapped_column(ForeignKey("warehouses.id"), nullable=True)
+    # warehouse_id: Mapped[int] = mapped_column(ForeignKey("warehouses.id"), nullable=True)
 
-    warehouse: Mapped["Warehouse"] = relationship(back_populates="items")
+    # warehouse: Mapped["Warehouse"] = relationship(back_populates="items")
     drink: Mapped["Drink"] = relationship(back_populates="items")

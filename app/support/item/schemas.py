@@ -4,46 +4,50 @@
 from typing import Optional
 
 from pydantic import ConfigDict
-
+from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
 from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
-from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
+# from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
 
 
 class CustomReadSchema:
     id: int
     drink: DrinkReadApi
-    warehouse: Optional[WarehouseRead] = None
-    volume: Optional[float] = None
+    # warehouse: Optional[WarehouseRead] = None
+    vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
+    # image_id: Optional[str] = 0
 
 
 class CustomCreateSchema:
     drink_id: int
-    warehouse_id: Optional[int]
-    volume: Optional[float] = None
+    # warehouse_id: Optional[int]
+    vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
+    image_path: Optional[str] = None
 
 
 class CustomCreateRelation:
     drink: DrinkCreateRelations
-    warehouse: Optional[WarehouseCreateRelation] = None
-    volume: Optional[float] = None
+    # warehouse: Optional[WarehouseCreateRelation] = None
+    vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
+    image_path: Optional[str] = None
 
 
 class CustomUpdSchema:
     drink_id: Optional[int] = None
-    warehouse_id: Optional[int] = None
-    volume: Optional[float] = None
+    # warehouse_id: Optional[int] = None
+    vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
+    image_path: Optional[str] = None
 
 
-class ItemRead(BaseModel, CustomReadSchema):
+class ItemRead(BaseModel, CustomReadSchema, ImageUrlMixin):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

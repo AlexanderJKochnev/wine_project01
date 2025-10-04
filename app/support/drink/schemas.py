@@ -5,7 +5,7 @@ from pydantic import ConfigDict, field_serializer, Field, computed_field
 
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
-from app.core.schemas.image_mixin import ImageUrlMixin
+# from app.core.schemas.image_mixin import ImageUrlMixin
 from app.mongodb.models import ImageCreate
 # from app.support.color.schemas import ColorCreateRelation, ColorRead
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
@@ -19,7 +19,7 @@ from app.support.varietal.schemas import VarietalRead
 
 
 class CustomCreateRelation:
-    image_path: Optional[str] = None
+    # image_path: Optional[str] = None
     subcategory: SubcategoryCreateRelation
     # color: Optional[ColorCreateRelation] = None
     sweetness: Optional[SweetnessCreateRelation] = None
@@ -40,7 +40,7 @@ class CustomCreateRelation:
     sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
-    image_path: Optional[str]
+    # image_path: Optional[str]
 
 
 class CustomReadSchema:
@@ -99,7 +99,7 @@ class CustomUpdSchema:
     aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
-    image_path: Optional[str]
+    # image_path: Optional[str]
 
 
 class CustomCreateSchema:
@@ -121,13 +121,13 @@ class CustomCreateSchema:
     aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
-    image_path: Optional[str]
+    # image_path: Optional[str]
     # description: Optional[str] = None
     # description_fr: Optional[str] = None
     # description_ru: Optional[str] = None
 
 
-class DrinkRead(ReadNoNameSchema, CustomReadSchema, ImageUrlMixin):
+class DrinkRead(ReadNoNameSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',
@@ -145,6 +145,7 @@ class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
 
 
 class DrinkCreateRelationsWithImage(DrinkCreateRelations):
+    """ уделить ?"""
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
     @property
@@ -347,7 +348,7 @@ class CustomReadApiSchema:
         return self.__parser__("_fr")
 
 
-class DrinkReadApi(PkSchema, CustomReadApiSchema, ImageUrlMixin):
+class DrinkReadApi(PkSchema, CustomReadApiSchema):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow', populate_by_name=True,
@@ -357,8 +358,3 @@ class DrinkReadApi(PkSchema, CustomReadApiSchema, ImageUrlMixin):
     # Эти поля остаются на верхнем уровне
     # updated_at: Optional[datetime] = None
     id: int
-
-    # image_url: Optional[str] = None
-
-    # Вычисляемые поля уже объявлены в CustomReadApiSchema
-    pass
