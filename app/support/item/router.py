@@ -68,6 +68,8 @@ class ItemRouter(BaseRouter):
         """
         try:
             result = await self.service.direct_upload(session)
+            # if result.get('error_nmbr', 0) > 0:
+            #     raise HTTPException(status_code=423, detail=result)
             return result
         except Exception as e:
             raise HTTPException(status_code=422, detail=e)

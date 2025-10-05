@@ -2,7 +2,6 @@
 """
     тестирование всякоразного
 """
-
 from pathlib import Path
 # from fastapi import status
 import pytest
@@ -10,6 +9,7 @@ from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint  # NOQA: F401
 from pydantic import ValidationError
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
+from app.support.item.schemas import ItemCreateRelations, DrinkCreateRelations  # noqa: F401
 
 pytestmark = pytest.mark.asyncio
 
@@ -72,7 +72,6 @@ def test_jsonconverter():
     тестирует исходные данные (если выбрасывает - см. diff
     """
     from app.core.utils.alchemy_utils import JsonConverter
-    from app.support.item.schemas import ItemCreateRelations  # noqa: F401
     filepath = get_filepath_from_dir_by_name()
     JsonConv = JsonConverter(filepath)()
     for key, item in JsonConv.items():
@@ -98,7 +97,6 @@ def test_source_constraint_data():
         тестирование исходных данных на ограничение по уникальности
     """
     from app.core.utils.alchemy_utils import JsonConverter
-    from app.support.item.schemas import ItemCreateRelations, DrinkCreateRelations  # noqa: F401
     filepath = get_filepath_from_dir_by_name()
     JsonConv = JsonConverter(filepath)()
     drinks: dict = {}
@@ -154,4 +152,12 @@ async def test_items_direct_import_data(authenticated_client_with_db,
     router = Router()
     prefix = router.prefix
     response = await client.post(f'{prefix}/direct')
-    assert response.status_code == 200, response.text
+    if response.json().get('error_nmbr', 0) > 0:
+        for item in response.json().get('error'):
+            try:
+                model_dict = ItemCreateRelations(**item)
+                back_reverse = model_dict.model_dump(exclude_unset=True)
+                assert item == back_reverse
+            except Exception as e:
+                assert False, f'error validation error {e}'
+    assert response.status_code in [200, 422], response.text

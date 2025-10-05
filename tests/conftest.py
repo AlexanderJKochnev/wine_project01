@@ -461,7 +461,10 @@ async def mock_engine(mock_db_url):
     engine = create_async_engine(
         mock_db_url,
         echo=False,
-        pool_pre_ping=True
+        # pool_pre_ping=True
+        pool_pre_ping=False,  # ❗️ Отключите для async
+        pool_recycle=3600,  # Вместо этого используйте pool_recycle
+        pool_size=20, max_overflow=0  # !
     )
     # Создает все таблицы в базе данных
     async with engine.begin() as conn:
@@ -478,12 +481,20 @@ async def mock_engine(mock_db_url):
 async def test_db_session(mock_engine):
     """Создает сессию для тестовой базы данных"""
     AsyncSessionLocal = sessionmaker(
-        bind=mock_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
+        bind=mock_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False
     )
     # async with mock_engine.connect() as session:
     async with AsyncSessionLocal() as session:
-        yield session
-        await session.close()
+        try:  # !
+            yield session
+            await session.commit()   # !
+            # await session.close()
+        except Exception:
+            await session.rollback()  # Откат при ошибках
+            raise
 
 
 @pytest.fixture(scope=scope2)
