@@ -21,7 +21,6 @@ from app.support.varietal.schemas import VarietalRead
 class CustomCreateRelation:
     # image_path: Optional[str] = None
     subcategory: SubcategoryCreateRelation
-    # color: Optional[ColorCreateRelation] = None
     sweetness: Optional[SweetnessCreateRelation] = None
     subregion: SubregionCreateRelation
     title: str
@@ -35,12 +34,10 @@ class CustomCreateRelation:
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
-    aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
-    # image_path: Optional[str]
 
 
 class CustomReadSchema:
@@ -59,7 +56,6 @@ class CustomReadSchema:
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
-    aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
     foods: List[FoodRead]
@@ -96,7 +92,6 @@ class CustomUpdSchema:
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
-    aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
     # image_path: Optional[str]
@@ -118,7 +113,6 @@ class CustomCreateSchema:
     madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
-    aging: Optional[int] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
     # image_path: Optional[str]
@@ -145,7 +139,7 @@ class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
 
 
 class DrinkCreateRelationsWithImage(DrinkCreateRelations):
-    """ уделить ?"""
+    """ удлить ?"""
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
     @property
@@ -189,7 +183,6 @@ class CustomReadApiSchema:
     madeof_ru: Optional[str] = Field(exclude=True)
     alc: Optional[float] = Field(exclude=True)
     sugar: Optional[float] = Field(exclude=True)
-    aging: Optional[int] = Field(exclude=True)
     age: Optional[str] = Field(exclude=True)
     sparkling: Optional[bool] = Field(exclude=True)
     foods: Optional[List[FoodRead]] = Field(exclude=True)
@@ -313,11 +306,6 @@ class CustomReadApiSchema:
 
         if self.sugar is not None:
             result["sugar"] = f"{self.sugar}%" if current_lang == "en" else f"{self.sugar}%"
-
-        if self.aging is not None:
-            result["aging"] = f"{self.aging} year{'s' if self.aging > 1 else ''}" \
-                if current_lang == "en" else (f"{self.aging} "
-                                              f"год{'а' if 2 <= self.aging <= 4 else 'ов' if self.aging >= 5 else ''}")
 
         result["age"] = self.age
         result["sparkling"] = self.sparkling

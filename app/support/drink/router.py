@@ -1,7 +1,7 @@
 # app/support/drink/router.py
 import json
 
-from fastapi import Depends, File, Form, HTTPException, status, UploadFile
+from fastapi import Depends, File, Form, HTTPException, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,10 +37,10 @@ class DrinkRouter(BaseRouter):
 
     def setup_routes(self):
         super().setup_routes()
-        self.router.add_api_route("/full",
-                                  self.create_relation_image,
-                                  status_code=status.HTTP_200_OK,
-                                  methods=["POST"], response_model=self.read_schema)
+        # self.router.add_api_route("/full",
+        #                           self.create_relation_image,
+        #                           status_code=status.HTTP_200_OK,
+        #                           methods=["POST"], response_model=self.read_schema)
         # self.router.add_api_route("/direct", self.direct_import_data,
         #                           status_code=status.HTTP_200_OK, methods=["POST"],
         #                           response_model=dict)
@@ -88,7 +88,7 @@ class DrinkRouter(BaseRouter):
                                     image_service: ImageService = Depends()
                                     ) -> DrinkCreateResponseSchema:
         """
-        Создание одной запси с зависимостями - если в таблице есть зависимости
+        Создание одной записи с зависимостями - если в таблице есть зависимости
         они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
         кроме того будет добавлено изображение
         """

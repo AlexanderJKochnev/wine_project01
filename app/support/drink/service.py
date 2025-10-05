@@ -2,12 +2,11 @@
 from typing import Optional, Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from pathlib import Path
-from app.core.config.project_config import settings
+
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import ModelType, Service
 from app.core.utils.alchemy_utils import model_to_dict
-from app.core.utils.common_utils import flatten_dict, get_path_to_root
+from app.core.utils.common_utils import flatten_dict
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 from app.support.drink.router import Drink, DrinkCreate, DrinkCreateRelations, DrinkRead, DrinkRepository
@@ -16,7 +15,6 @@ from app.support.subcategory.router import (Subcategory, SubcategoryRepository, 
 from app.support.subregion.router import (Subregion, SubregionRepository, SubregionService)
 from app.support.sweetness.router import (Sweetness, SweetnessRepository, SweetnessService)
 from app.support.varietal.router import (Varietal, VarietalRepository, VarietalService)
-from app.core.utils.alchemy_utils import JsonConverter
 
 
 class DrinkService(Service):
@@ -95,26 +93,3 @@ class DrinkService(Service):
                 pass
                 await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
         return drink_instance
-
-    @classmethod
-    async def direct_upload(cls, session: AsyncSession) -> dict:
-        try:
-            # получаем путь к файлу
-            filename = settings.JSON_FILENAME  # имя файла для импорта
-            upload_dir = settings.UPLOAD_DIR
-            dirpath: Path = get_path_to_root(upload_dir)
-            filepath = dirpath / filename
-            if not filepath.exists():
-                raise Exception(f'file {filename} is not exists in {upload_dir}')
-            # загружаем json файл, конвертируем в формат relation и собираем в список:
-            dataconv: list = list(JsonConverter(filepath)().values())
-            # проходим по списку и загружаем в postgresql
-            for n, item in enumerate(dataconv):
-                try:
-                    data_model = DrinkCreateRelations(**item)
-                    await cls.create_relation(data_model, DrinkRepository, Drink, session)
-                except Exception as e:
-                    raise Exception(f'data_model:: {e}')
-            return {'filepath': len(dataconv)}
-        except Exception as e:
-            raise Exception(f'drink.service.direct_upload.error: {e}')

@@ -19,8 +19,8 @@ from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema
                                    CreateResponse, UpdateSchema, CreateSchema)
 from app.core.utils.pydantic_utils import PyUtils as py
 from app.core.services.service import Service
-from app.core.repositories.sqlalchemy_repository import Repository
-from app.core.models.base_model import Base
+# from app.core.repositories.sqlalchemy_repository import Repository
+# from app.core.models.base_model import Base
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)

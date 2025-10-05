@@ -423,10 +423,10 @@ class JsonConverter():
                             self.data[key][k2] = v2  # !
             for subkey in ['subregion', 'subregion_ru', 'subcategory']:
                 self.data[key][subkey] = self.data[key].get(subkey, None)
-            for k1 in ['title', 'subtitle']:
-                x = self.data[key].pop(f'{k1}_ru', None)
-                if self.data[key][k1] != x:
-                    self.data[key][f'{k1}_native'] = x
+            # for k1 in ['title', 'subtitle']:
+            #    x = self.data[key].pop(f'{k1}_ru', None)
+            #    if self.data[key][k1] != x:
+            #        self.data[key][f'{k1}_native'] = x
         return
 
     def field_processing(self, key: str, val: str):

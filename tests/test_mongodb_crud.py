@@ -26,7 +26,7 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
         file_name = image.name
         data = {"description": "Test image for integration test"}
         files = {"file": (file_name, image_content)}
-        response = await client.post(f'{prefix}{subprefix}', files=files, data=data)
+        response = await client.post(f'{prefix}/{subprefix}', files=files, data=data)
         # Проверяем успешность запроса
         assert response.status_code == status.HTTP_200_OK, f"Upload failed: {response.text}"
         assert "id" in response.json(), "Response should contain 'id'"
@@ -46,7 +46,7 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
               ({"page": 1, "per_page": 10, "after_date": futureutc}, 400, 0),
               ]
     for param, sts, nmb in params:
-        response = await client.get(f"{prefix}{subprefix}", params=param)
+        response = await client.get(f"{prefix}/{subprefix}", params=param)
         assert response.status_code == sts, f'{response.json()=}, {n=}'
         assert isinstance(response.json(), dict), "response type is not dict"
 
@@ -58,12 +58,12 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
     assert False
     """
     # 4. Тестируем удаление изображения
-    response = await client.delete(f"{prefix}{subprefix}/{file_id}")
+    response = await client.delete(f"{prefix}/{subprefix}/{file_id}")
     assert response.status_code == status.HTTP_200_OK, "Delete failed"
     assert response.json()["message"] == "Image deleted successfully", "Wrong delete message"
 
     # 5. Проверяем что изображение действительно удалено
-    response = await client.get(f"{prefix}{subprefix}/{file_id}")
+    response = await client.get(f"{prefix}/{subprefix}/{file_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND, "Image should be deleted"
 
 
@@ -77,7 +77,7 @@ async def test_api_authentication_required(test_client_with_mongo):
         del client.headers["Authorization"]
 
     # Пытаемся получить доступ без аутентификации
-    response = await client.get(f"{prefix}{subprefix}")
+    response = await client.get(f"{prefix}/{subprefix}")
 
     # Должен вернуть 401
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, "Should require authentication"

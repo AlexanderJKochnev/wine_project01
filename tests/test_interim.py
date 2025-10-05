@@ -4,10 +4,14 @@
 """
 
 from pathlib import Path
-# import pytest
+# from fastapi import status
+import pytest
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint  # NOQA: F401
 from pydantic import ValidationError
+from app.core.utils.io_utils import get_filepath_from_dir_by_name
+
+pytestmark = pytest.mark.asyncio
 
 
 def test_get_path_to_root():
@@ -42,35 +46,39 @@ def test_enum_to_camel_and_back():
         assert camel_to_enum(val) == key, f'2: {key=} {val=} {camel_to_enum(val)=}'
 
 
+def test_get_filepath_from_dir():
+    """
+    тестирование метода get_filepath_from_dir
+    проверяем как работает без аргументов
+    """
+    from app.core.utils.io_utils import get_filepath_from_dir
+    result = get_filepath_from_dir()
+    assert isinstance(result, list), f'получен неожидаемый ответ  {type(result)}'
+    for key in result:
+        assert isinstance(key, Path), f'ответ не сооветствует ожидаемому. {key}'
+
+
+def test_get_filepath_from_dir_by_name():
+    """
+    тестирование метода get_filepath_from_dir_by_name (получение data.json)
+    """
+    result = get_filepath_from_dir_by_name()
+    assert isinstance(result, Path), f'получен неожидаемый ответ  {type(result)}'
+
+
 def test_jsonconverter():
     """
     тестирует from app.core.utils.io_utils import loadJsonConverter
     тестирует исходные данные (если выбрасывает - см. diff
     """
-    # from app.core.utils.io_utils import loadJsonConverter
-    from app.core.utils.common_utils import get_path_to_root
     from app.core.utils.alchemy_utils import JsonConverter
     from app.support.item.schemas import ItemCreateRelations  # noqa: F401
-    from app.support.drink.schemas import DrinkCreateRelations  # noqa: F401
-    filename = settings.JSON_FILENAME  # имя файла для импорта
-    upload_dir = settings.UPLOAD_DIR
-    dirpath: Path = get_path_to_root(upload_dir)
-    filepath = dirpath / filename
-    if not filepath.exists():
-        assert False, f'file {filename} is not exists in {upload_dir}'
+    filepath = get_filepath_from_dir_by_name()
     JsonConv = JsonConverter(filepath)()
-    # item: dict = JsonConv.get('-OIbS7K9nu7iw-VcdHaO')  # .get('drink')
-    # item: dict = JsonConv.get('-M-VI9jGOA37Fcg_feq1')  # .get('drink')
-    # item: dict = JsonConv.get('-LysMchkUQcevNT2wAhG')  # .get('drink')
-    # jprint(item)
-    # assert False
     for key, item in JsonConv.items():
         try:
-            # pymodel = DrinkCreateRelations(**item)
             pymodel = ItemCreateRelations(**item)
             back_item = pymodel.model_dump(exclude_unset=True)
-            # jprint(back_item)
-            # jprint(JsonConv.get('-OIbS7K9nu7iw-VcdHaO'))
             assert item == back_item, (f"валидация исходных данных не прошла. см. diff в лога. "
                                        f"скорее всего проблема в именах ключей или формате значений (int vs str)"
                                        f" {key}")
@@ -83,3 +91,67 @@ def test_jsonconverter():
                 print(f"  Input: {error['input']}")
                 print()
             assert False, "Validation failed"
+
+
+def test_source_constraint_data():
+    """
+        тестирование исходных данных на ограничение по уникальности
+    """
+    from app.core.utils.alchemy_utils import JsonConverter
+    from app.support.item.schemas import ItemCreateRelations, DrinkCreateRelations  # noqa: F401
+    filepath = get_filepath_from_dir_by_name()
+    JsonConv = JsonConverter(filepath)()
+    drinks: dict = {}
+    for n, (key, item) in enumerate(JsonConv.items()):
+        try:
+            if n == 1:
+                jprint(item.get('drink'))
+            drink = DrinkCreateRelations(**item.get('drink'))
+        except ValidationError as e:
+            print("Validation errors:")
+            for error in e.errors():
+                print(f"  Field: {' -> '.join(str(loc) for loc in error['loc'])}")
+                print(f"  Type: {error['type']}")
+                print(f"  Message: {error['msg']}")
+                print(f"  Input: {error['input']}")
+                print()
+            assert False, "Validation failed"
+        if drinks.get((drink.title, drink.subtitle)):
+            expected_result = drinks.get((drink.title, drink.subtitle))
+            assert expected_result.model_dump(exclude_unset=True) == drink.model_dump(exclude_unset=True), drink.title
+        else:
+            drinks[(drink.title, drink.subtitle)] = drink
+    # assert False
+
+
+async def test_items_direct_import_image(authenticated_client_with_db,
+                                         test_db_session
+                                         ):
+    """
+        Тестирует импорт изображений из директории
+        и последующий импорт data.json c relation & image_id
+        очень долгий тест
+    """
+    from app.mongodb.router import directprefix, prefix
+    # from app.support.item.router import ItemRouter as Router
+    client = authenticated_client_with_db
+    # загрузка файлов из upload_dir
+    response = await client.post(f'{prefix}/{directprefix}')
+    assert response.status_code == 200, response.text
+
+
+async def test_items_direct_import_data(authenticated_client_with_db,
+                                        test_db_session
+                                        ):
+    """
+        Тестирует импорт изображений из директории
+        и последующий импорт data.json c relation & image_id
+        очень долгий тест
+    """
+    # from app.mongodb.router import directprefix, prefix
+    from app.support.item.router import ItemRouter as Router
+    client = authenticated_client_with_db
+    router = Router()
+    prefix = router.prefix
+    response = await client.post(f'{prefix}/direct')
+    assert response.status_code == 200, response.text

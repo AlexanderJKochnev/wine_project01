@@ -5,7 +5,7 @@ from typing import List
 from fastapi import Depends, HTTPException, status, UploadFile
 
 # from app.core.config.project_config import settings
-from app.core.utils.common_utils import get_path_to_root
+from app.core.utils.io_utils import get_filepath_from_dir
 from app.mongodb.config import settings
 from app.mongodb.models import FileListResponse, FileResponse, JustListResponse
 from app.mongodb.repository import ImageRepository
@@ -41,20 +41,26 @@ class ImageService:
             из upload_dir
         """
         try:
-            image_dir = get_path_to_root(upload_dir)
-            image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
-            image_paths = []  # cписок файлов изображений с путями
+            # image_dir = get_path_to_root(upload_dir)
+            # image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+            # image_paths = []  # cписок файлов изображений с путями
             lost_images = []  # список потерянных файлов
-            for n, file_path in enumerate(image_dir.iterdir()):
-                if file_path.is_file() and file_path.suffix.lower() in image_extensions:
-                    image_paths.append(file_path)
+            # for n, file_path in enumerate(image_dir.iterdir()):
+            #     if file_path.is_file() and file_path.suffix.lower() in image_extensions:
+            #        image_paths.append(file_path)
+            image_paths = get_filepath_from_dir()
+            n = len(image_paths)
+            print(f'==============={n}================')
             # запускаем
             for m, upload_file in enumerate(read_image_generator(image_paths)):
                 try:
                     content = await upload_file.read()
                     filename = upload_file.filename
                 except Exception as e:
-                    raise Exception(f'filename = upload_file.filename. {e}')
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"upload_file fault: {e}"
+                    )
                 # удаляем фон 3 способа доработать
                 try:
                     # content = make_transparent_white_bg(content)
@@ -63,13 +69,18 @@ class ImageService:
                     content_type = 'image/png'
                     filename = f'{filename.rsplit('.', 1)[0]}.png'
                 except Exception as e:
-                    raise Exception(f'Удаление фона не получилось для {filename}. {e}. Оставляем без изменения')
+                    HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Удаление фона не получилось для {filename}. {e}. Оставляем без изменения')
                 # подгоняем размер
                 try:
                     if len(content) > 8 * 1024 * 1024:
                         content = image_aligning(content)
                 except Exception as e:
-                    raise Exception(f'Изменение размера не получилось для {filename}. {e}. Оставляем без изменения')
+                    HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Изменение размера не получилось для {filename}. {e}. Оставляем без изменения'
+                    )
                 description = f'импортированный файл {datetime.now(timezone.utc)}'
 
                 id = await self.image_repository.create_image(filename, content, content_type, description)

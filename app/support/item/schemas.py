@@ -7,7 +7,6 @@ from pydantic import ConfigDict
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
 from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
-# from app.support.warehouse.schemas import WarehouseRead, WarehouseCreateRelation
 
 
 class CustomReadSchema:
@@ -27,6 +26,7 @@ class CustomCreateSchema:
     price: Optional[float] = None
     count: Optional[int] = 0
     image_path: Optional[str] = None
+    image_id: Optional[str] = None
 
 
 class CustomCreateRelation:
@@ -36,6 +36,7 @@ class CustomCreateRelation:
     price: Optional[float] = None
     count: Optional[int] = 0
     image_path: Optional[str] = None
+    image_id: Optional[str] = None
 
 
 class CustomUpdSchema:

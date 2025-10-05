@@ -19,18 +19,38 @@ class ItemRepository(Repository):
     model = Item
 
     @classmethod
-    def get_query(cls, model: ModelType):
-        return select(model).options(selectinload(Item.drink).options(
-            selectinload(Drink.subregion).options(
-                selectinload(Subregion.region).options(
-                    selectinload(Region.country))),
-            selectinload(Drink.subcategory).
-            selectinload(Subcategory.category),
-            selectinload(Drink.sweetness),
-            selectinload(Drink.foods),
-            selectinload(Drink.food_associations).joinedload(DrinkFood.food),
-            selectinload(Drink.varietals),
-            selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)),
-            selectinload(Item.warehouse)
-        )
+    def get_query2(csl, model: ModelType):
+        """ Добавляем загрузку связи с relationships
+            Обратить внимание! для последовательной загрузки использовать точку.
+            параллельно запятая
+        """
+        return select(Item).options(selectinload(Item.drink).
+                                    selectinload(Drink.subregion).
+                                    selectinload(Subregion.region).
+                                    selectinload(Region.country),
+                                    selectinload(Item.drink).
+                                    selectinload(Drink.subcategory).
+                                    selectinload(Subcategory.category),
+                                    selectinload(Drink.sweetness),
+                                    selectinload(Item.drink).
+                                    selectinload(Drink.foods),
+                                    selectinload(Drink.food_associations).joinedload(DrinkFood.food),
+                                    selectinload(Drink.varietals),
+                                    selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal))
 
+    @classmethod
+    def get_query(cls, model: ModelType):
+        return select(model).options(
+            selectinload(Item.drink).options(
+                selectinload(Drink.subregion).options(
+                    selectinload(Subregion.region).options(
+                        selectinload(Region.country)
+                    )
+                ),
+                selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness), selectinload(Drink.foods),
+                selectinload(Drink.food_associations).joinedload(DrinkFood.food), selectinload(Drink.varietals),
+                selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
+            ),
+            # selectinload(Item.warehouse)
+        )

@@ -12,7 +12,6 @@ from app.core.models.image_mixin import ImageMixin
 
 if TYPE_CHECKING:
     from app.support.drink.model import Drink
-    # from app.support.warehouse.model import Warehouse
 
 
 class Item(Base, BaseAt, ImageMixin):

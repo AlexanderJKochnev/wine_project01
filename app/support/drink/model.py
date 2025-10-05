@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DECIMAL
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import (Base, BaseAt, BaseDescription, boolnone, descr, str_null_true, str_uniq)
-from app.core.models.image_mixin import ImageMixin
+from app.core.models.base_model import (Base, BaseAt, BaseDescription, str_null_false,
+                                        boolnone, descr, str_null_true, str_uniq)
+# from app.core.models.image_mixin import ImageMixin
 from app.core.utils.common_utils import plural
 
 if TYPE_CHECKING:
@@ -20,8 +21,8 @@ if TYPE_CHECKING:
 
 class Drink(Base, BaseDescription, BaseAt):
     __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
-                      CheckConstraint('sugar >= 0 AND sugar <= 100.00', name='sugar_range_check'),)
-
+                      CheckConstraint('sugar >= 0 AND sugar <= 100.00', name='sugar_range_check'),
+                      UniqueConstraint('title', 'subtitle', name='uq_title_subtitle_unique'),)
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'drink'
@@ -30,7 +31,7 @@ class Drink(Base, BaseDescription, BaseAt):
     title_native: Mapped[str_null_true]
     subtitle_native: Mapped[str_null_true]
     # наименование на международном (англ) языке
-    title: Mapped[str_uniq]
+    title: Mapped[str_null_false]
     subtitle: Mapped[str_null_true]
     # описание на международном (англ) языке (остальные через BaseDescription)
     description: Mapped[descr]
