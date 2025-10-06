@@ -44,6 +44,7 @@ class ImageCreate(FileBase):
 
 class FileResponse(FileBase):
     id: str = Field(alias="_id")
+    filename: str
     created_at: datetime
     size: int
     content_type: str

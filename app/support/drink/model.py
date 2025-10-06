@@ -33,6 +33,8 @@ class Drink(Base, BaseDescription, BaseAt):
     # наименование на международном (англ) языке
     title: Mapped[str_null_false]
     subtitle: Mapped[str_null_true]
+    title_ru: Mapped[str_null_true]
+    subtitle_ru: Mapped[str_null_true]
     # описание на международном (англ) языке (остальные через BaseDescription)
     description: Mapped[descr]
     recommendation: Mapped[descr]

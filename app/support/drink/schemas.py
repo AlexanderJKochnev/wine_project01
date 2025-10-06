@@ -18,15 +18,25 @@ from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
 
 
-class CustomCreateRelation:
+class TitleMixin:
+    title: str
+    title_ru: Optional[str] = None
+    subtitle: Optional[str] = None
+    subtitle_ru: Optional[str] = None
+
+
+class TitleMixinExclude:
+    title: str = Field(exclude=True)
+    title_ru: Optional[str] = Field(exclude=True)
+    subtitle: Optional[str] = Field(exclude=True)
+    subtitle_ru: Optional[str] = Field(exclude=True)
+
+
+class CustomCreateRelation(TitleMixin):
     # image_path: Optional[str] = None
     subcategory: SubcategoryCreateRelation
     sweetness: Optional[SweetnessCreateRelation] = None
     subregion: SubregionCreateRelation
-    title: str
-    title_native: Optional[str] = None
-    subtitle_native: Optional[str] = None
-    subtitle: Optional[str] = None
     recommendation: Optional[str] = None
     recommendation_ru: Optional[str] = None
     recommendation_fr: Optional[str] = None
@@ -40,15 +50,11 @@ class CustomCreateRelation:
     varietals: Optional[List[DrinkVarietalRelation]] = None
 
 
-class CustomReadSchema:
+class CustomReadSchema(TitleMixin):
     subcategory: SubcategoryRead
     # color: Optional[ColorRead] = None
     sweetness: Optional[SweetnessRead] = None
     subregion: Optional[SubregionRead] = None
-    title: str
-    title_native: Optional[str] = None
-    subtitle_native: Optional[str] = None
-    subtitle: Optional[str] = None
     recommendation: Optional[str] = None
     recommendation_ru: Optional[str] = None
     recommendation_fr: Optional[str] = None
@@ -76,15 +82,12 @@ class CustomReadSchema:
         return f"{int(round(value))}%"
 
 
-class CustomUpdSchema:
+class CustomUpdSchema(TitleMixin):
     subcategory: Optional[int] = None
     # color: Optional[int] = None
     sweetness: Optional[str] = None
     subregion: Optional[str] = None
     title: Optional[str] = None
-    title_native: Optional[str] = None
-    subtitle_native: Optional[str] = None
-    subtitle: Optional[str] = None
     recommendation: Optional[str] = None
     recommendation_ru: Optional[str] = None
     recommendation_fr: Optional[str] = None
@@ -97,15 +100,11 @@ class CustomUpdSchema:
     # image_path: Optional[str]
 
 
-class CustomCreateSchema:
+class CustomCreateSchema(TitleMixin):
     subcategory_id: int
     # color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
     subregion_id: int
-    title: str
-    title_native: Optional[str] = None
-    subtitle_native: Optional[str] = None
-    subtitle: Optional[str] = None
     recommendation: Optional[str] = None
     recommendation_ru: Optional[str] = None
     recommendation_fr: Optional[str] = None
@@ -168,14 +167,10 @@ class DrinkVarietalLinkCreate(BaseModel):
     drink: DrinkRead
 
 
-class CustomReadApiSchema:
+class CustomReadApiSchema(TitleMixinExclude):
     subcategory: SubcategoryReadApiSchema = Field(exclude=True)
     sweetness: Optional[ReadApiSchema] = Field(exclude=True)
     subregion: Optional[SubregionReadApiSchema] = Field(exclude=True)
-    title: str = Field(exclude=True)
-    title_native: Optional[str] = Field(exclude=True)
-    subtitle_native: Optional[str] = Field(exclude=True)
-    subtitle: Optional[str] = Field(exclude=True)
     recommendation: Optional[str] = Field(exclude=True)
     recommendation_ru: Optional[str] = Field(exclude=True)
     recommendation_fr: Optional[str] = Field(exclude=True)
@@ -194,8 +189,10 @@ class CustomReadApiSchema:
     description_fr: Optional[str] = Field(exclude=True)
 
     def __get_field_value__(self, field_name: str, lang_suffix: str) -> Any:
-        """Получить значение поля с учетом языкового суффикса"""
-        # Пробуем поле с языковым суффиксом
+        """
+            Получить значение поля с учетом языкового суффикса
+            Если нет значения на языке - берется значение из поля по молчанию (english)
+        """
         lang_field = f"{field_name}{lang_suffix}"
         if hasattr(self, lang_field):
             value = getattr(self, lang_field)
@@ -205,7 +202,6 @@ class CustomReadApiSchema:
         # Если нет поля с суффиксом, пробуем базовое поле
         if hasattr(self, field_name):
             return getattr(self, field_name)
-
         return None
 
     def __get_nested_field__(self, obj, field_path: str, lang_suffix: str) -> Any:
@@ -260,6 +256,7 @@ class CustomReadApiSchema:
 
         # Категория и подкатегория
         if self.subcategory:
+            # ЗДЕСЬ РАЗОБРАТЬСЯ С WINE RED -> RED
             # result["category"] = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
             # result["subcategory"] = self.__get_nested_field__(self.subcategory, "name", lang_suffix)
             category_name = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
@@ -310,8 +307,8 @@ class CustomReadApiSchema:
         result["age"] = self.age
         result["sparkling"] = self.sparkling
         result["title"] = self.title
-        result["title_native"] = self.title_native
-        result["subtitle_native"] = self.subtitle_native
+        result["title_ru"] = self.title_native
+        result["subtitle_ru"] = self.subtitle_native
         result["subtitle"] = self.subtitle
 
         # Убираем None значения

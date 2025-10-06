@@ -17,6 +17,9 @@ pytestmark = pytest.mark.asyncio
 def test_get_path_to_root():
     from app.core.utils.common_utils import get_path_to_root, enum_to_camel
     from app.core.utils.io_utils import read_file_lines_stripped
+    """
+        тестирование функции get_path_to_root
+    """
     upload_dir = settings.UPLOAD_DIR
     file = 'country.json'
     dirname = get_path_to_root(f'{upload_dir}')
@@ -66,6 +69,25 @@ def test_get_filepath_from_dir_by_name():
     assert isinstance(result, Path), f'получен неожидаемый ответ  {type(result)}'
 
 
+def test_compaire_image_json():
+    """
+    сравниваем список рисунков и json
+    """
+    from app.core.utils.io_utils import get_filepath_from_dir, readJson
+    filepath = get_filepath_from_dir_by_name()
+    images_file_name: list = [file.stem for file in get_filepath_from_dir()]
+    json_images = list(readJson(filepath).get('items'))
+    images_ommited = [img for img in images_file_name if img not in json_images]
+    json_extra = [img for img in json_images if img not in images_file_name]
+    print('json_extra')
+    jprint(json_extra)
+    print('images ommited')
+    jprint(images_ommited)
+    # assert False, f'{len(json_images)=}::{len(images_file_name)}'
+    assert not images_ommited, images_ommited
+    assert not json_extra, json_extra
+
+
 def test_jsonconverter():
     """
     тестирует from app.core.utils.io_utils import loadJsonConverter
@@ -74,7 +96,7 @@ def test_jsonconverter():
     from app.core.utils.alchemy_utils import JsonConverter
     filepath = get_filepath_from_dir_by_name()
     JsonConv = JsonConverter(filepath)()
-    for key, item in JsonConv.items():
+    for n, (key, item) in enumerate(JsonConv.items()):
         try:
             pymodel = ItemCreateRelations(**item)
             back_item = pymodel.model_dump(exclude_unset=True)
@@ -90,6 +112,7 @@ def test_jsonconverter():
                 print(f"  Input: {error['input']}")
                 print()
             assert False, "Validation failed"
+    print(f'number of records is {n=}')
 
 
 def test_source_constraint_data():
@@ -136,6 +159,7 @@ async def test_items_direct_import_image(authenticated_client_with_db,
     # загрузка файлов из upload_dir
     response = await client.post(f'{prefix}/{directprefix}')
     assert response.status_code == 200, response.text
+    response = await client.get()
 
 
 async def test_items_direct_import_data(authenticated_client_with_db,
@@ -147,12 +171,16 @@ async def test_items_direct_import_data(authenticated_client_with_db,
         очень долгий тест
     """
     # from app.mongodb.router import directprefix, prefix
+    # from app.core.utils.io_utils import readJson
     from app.support.item.router import ItemRouter as Router
+    # filepath = get_filepath_from_dir_by_name()  # путь к data.json
+    # json_images = list(readJson(filepath).get('items'))  # изображения список
     client = authenticated_client_with_db
     router = Router()
     prefix = router.prefix
     response = await client.post(f'{prefix}/direct')
     if response.json().get('error_nmbr', 0) > 0:
+        # проверка (валидация) ошибок
         for item in response.json().get('error'):
             try:
                 model_dict = ItemCreateRelations(**item)
@@ -161,3 +189,6 @@ async def test_items_direct_import_data(authenticated_client_with_db,
             except Exception as e:
                 assert False, f'error validation error {e}'
     assert response.status_code in [200, 422], response.text
+    result = response.json()
+    assert result.get('error_nmbr') == 0, \
+        f"добавлено {result.get('count of added records')} из {result.get('total_input')}"

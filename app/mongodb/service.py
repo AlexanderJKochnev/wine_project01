@@ -1,5 +1,6 @@
 # app/mongodb/service.py
 from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
 from typing import List
 
 from fastapi import Depends, HTTPException, status, UploadFile
@@ -7,10 +8,12 @@ from fastapi import Depends, HTTPException, status, UploadFile
 # from app.core.config.project_config import settings
 from app.core.utils.io_utils import get_filepath_from_dir
 from app.mongodb.config import settings
-from app.mongodb.models import FileListResponse, FileResponse, JustListResponse
+from app.mongodb.models import FileListResponse, FileResponse
 from app.mongodb.repository import ImageRepository
 from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
                                remove_background)
+
+delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 
 
 class ImageService:
@@ -99,7 +102,7 @@ class ImageService:
 
     async def get_image(self,
                         image_id: str
-                        ):
+                        ) -> FileResponse:
         image = await self.image_repository.get_image(image_id)
         if not image:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
@@ -107,7 +110,7 @@ class ImageService:
         #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return image
 
-    async def get_image_by_filename(self, filename: str):
+    async def get_image_by_filename(self, filename: str) -> FileResponse:
         image = await self.image_repository.get_image_by_filename(filename)
         if not image:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Image "{filename}" not found')
@@ -171,21 +174,15 @@ class ImageService:
         return await self.image_repository.get_images_after_date(after_date)
 
     async def get_images_list_after_date(
-        self, after_date: datetime
-    ) -> JustListResponse:
+        self, after_date: datetime = delta
+    ) -> dict:
         """
-        Сервисный метод для получения простого списка изображений
-        Args:
-            after_date: Дата для фильтрации
-        Returns:
-            Лист со ссылками на изображения
+        возвращает словарь {file_name: image_id}
         """
         try:
-            # Валидация параметров
-            images = await self.image_repository.get_images_list(
+            images = await self.image_repository.get_images_after_date_nopage(
                 after_date
             )
             return images
-
         except Exception as e:
             raise Exception(f"Service error: {str(e)}")

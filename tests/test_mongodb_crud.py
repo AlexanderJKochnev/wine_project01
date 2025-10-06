@@ -47,8 +47,13 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
               ]
     for param, sts, nmb in params:
         response = await client.get(f"{prefix}/{subprefix}", params=param)
-        assert response.status_code == sts, f'{response.json()=}, {n=}'
+        assert response.status_code == sts, f'{param=}, response.text'
         assert isinstance(response.json(), dict), "response type is not dict"
+        param = {'after_date': param.get('after_date')} if param.get('after_date') else None
+        response = await client.get(f"{prefix}/{subprefix}list", params=param)
+        assert response.status_code == sts, f'{param=}'
+        if response.status_code != 400:
+            assert isinstance(response.json(), dict), f"response type is {response.json()}. {response.status_code}"
 
     # 3. Тестируем скачивание изображения (подвешивает тест разобраться)
     """

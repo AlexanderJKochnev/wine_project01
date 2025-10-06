@@ -4,7 +4,7 @@
 from pathlib import Path
 from datetime import datetime, timezone
 from fastapi import HTTPException
-from typing import Any, Dict, List, Optional, Set, TypeVar
+from typing import Any, Dict, List, Optional, Set, TypeVar, Union
 import json
 import re
 # from sqlalchemy.sql.sqltypes import String, Text, Boolean
@@ -601,3 +601,21 @@ def clean_string(s: str) -> str:
     s = re.sub(r'\s+', ' ', s).strip()
 
     return s
+
+
+def get_value(source: list, search: str) -> Union[list, str]:
+    """
+    как бы словарь - ищет второй элемент кортежа по имени первого. может вернуть список если
+    первых элементов несколько
+    :param source: [(key, val),(key, val),(key, val),...]
+    :type source:  List[Tuple[str, str]]
+    :param key: str
+    :type key:  str
+    :return:    val or tuple of val
+    :rtype:     str | tuple
+    """
+    try:
+        result = [val for key, val in source if key == search]
+        return result if len(result) > 1 else result[0]
+    except Exception:
+        return None

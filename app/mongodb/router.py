@@ -14,14 +14,13 @@ from app.mongodb.service import ImageService
 
 # from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
-# router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_current_active_user)])
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
 directprefix = f"{subprefix}/direct"
 
 
-now = datetime.now(timezone.utc).isoformat()
+# now = datetime.now(timezone.utc).isoformat()
 delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 
 
@@ -65,11 +64,8 @@ async def get_images_after_date(
         # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
         return await image_service.get_images_after_date(after_date, page, per_page)
-
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get(f'/{subprefix}/' + "{file_id}")  # , response_model=StreamingResponse)
@@ -116,3 +112,18 @@ async def delete_image(
     if success:
         return {"message": "Image deleted successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+
+
+@router.get(f'/{subprefix}list', response_model=dict)
+async def get_images_list_after_date(
+    after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
+        image_service: ImageService = Depends()) -> dict:
+    """
+    Получить список id изображений, созданные после указанной даты
+    """
+    try:
+        # Проверяем, что дата не в будущем
+        after_date = back_to_the_future(after_date)
+        return await image_service.get_images_list_after_date(after_date)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

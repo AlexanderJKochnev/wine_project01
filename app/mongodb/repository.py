@@ -1,11 +1,11 @@
 # app/mongodb/repository.py
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import Depends
 from typing import List
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.mongodb.config import get_database
-from app.mongodb.models import FileResponse, ZeroBase
+from app.mongodb.models import FileResponse
 
 
 class ImageRepository:
@@ -29,7 +29,7 @@ class ImageRepository:
             "filename": filename,
             "content": content,
             "description": description,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "size": len(content),
             "content_type": content_type
         }
@@ -45,6 +45,17 @@ class ImageRepository:
 
     async def get_image_by_filename(self, filename: str):
         return await self.collection.find_one({"filename": filename})
+
+    async def get_images_after_date_nopage(self,
+                                           after_date: datetime
+                                           ) -> List[str]:
+        await self.ensure_indexes()
+        query = {"created_at": {"$gt": after_date}}
+        cursor = self.collection.find(query).sort("created_at", -1)
+        images: dict = {}
+        async for image in cursor:
+            images[image['filename']] = str(image["_id"])
+        return images
 
     async def get_images_after_date(self,
                                     after_date: datetime,
@@ -73,14 +84,3 @@ class ImageRepository:
     async def delete_image(self, image_id: str):
         result = await self.collection.delete_one({"_id": ObjectId(image_id)})
         return result.deleted_count > 0
-
-    async def get_images_list(self, after_date: datetime,) -> List[ZeroBase]:
-        await self.ensure_indexes()
-        query = {"created_at": {"$gt": after_date}}
-        cursor = self.collection.find(query).sort("created_at", -1)
-        images = []
-        async for image in cursor:
-            image["_id"] = str(image["_id"])
-            # images.append(image)
-            images.append(ZeroBase(**image))
-        return images

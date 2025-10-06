@@ -2,11 +2,12 @@
 # from pathlib import Path
 from app.core.services.service import Service
 # from app.core.config.project_config import settings
-from app.core.utils.common_utils import jprint  # noqa: F401
+from app.core.utils.common_utils import jprint, get_value  # noqa: F401
 from app.core.utils.alchemy_utils import JsonConverter
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.support.item.router import Item, ItemCreate, ItemCreateRelations, ItemRepository, ItemRead, AsyncSession
 from app.support.drink.router import DrinkService, DrinkRepository, Drink
+from app.mongodb.service import ImageService
 
 
 class ItemService(Service):
@@ -25,6 +26,7 @@ class ItemService(Service):
             #     result = await WarehouseService.create_relation(data.warehouse, WarehouseRepository,
             #                                                     Warehouse, session)
             #     item_data['warehouse_id'] = result.id
+            session.commit()
             item = ItemCreate(**item_data)
             item_instance = await ItemService.get_or_create(item, ItemRepository, Item, session)
             return item_instance
@@ -32,7 +34,40 @@ class ItemService(Service):
             raise Exception(f'ItemService.create_relation. {e}')
 
     @classmethod
-    async def direct_upload(cls, session: AsyncSession) -> dict:
+    async def direct_upload(cls, session: AsyncSession, image_service: ImageService) -> dict:
+        try:
+            # получаем путь к файлу json:
+            error_list: list = []
+            filepath = get_filepath_from_dir_by_name()
+            # загружаем json файл, конвертируем в формат relation и собираем в список:
+            try:
+                image_list = await image_service.get_images_list_after_date()
+            except Exception as e:
+                print(f'image_list is not loaded, {e}')
+                image_list = None
+            dataconv: list = list(JsonConverter(filepath)().values())
+            # проходим по списку и загружаем в postgresql
+            for n, item in enumerate(dataconv):
+                try:
+                    data_model = ItemCreateRelations(**item)
+                    image_path = data_model.image_path
+                    image_id = get_value(image_list, image_path) if image_list else None
+                    data_model.image_id = image_id
+                    await cls.create_relation(data_model, ItemRepository, Item, session)
+                except Exception:
+                    print(f'"{item.get('image_path', 'no image_path')}",')
+                    error_list.append(item)
+                    await session.rollback()
+                    continue
+            return {'total_input': n,
+                    'count of added records': n - len(error_list),
+                    'error': error_list,
+                    'error_nmbr': len(error_list)}  # {'filepath': len(dataconv)}
+        except Exception as e:
+            raise Exception(f'drink.service.direct_upload.error: {e}')
+
+    @classmethod
+    async def direct_single_upload(cls, id, session: AsyncSession) -> dict:
         try:
             # получаем путь к файлу json:
             error_list: list = []
@@ -52,4 +87,4 @@ class ItemService(Service):
             return {'error': error_list,
                     'error_nmbr': len(error_list)}  # {'filepath': len(dataconv)}
         except Exception as e:
-            raise Exception(f'drink.service.direct_upload.error: {e}')
+            raise Exception(f'drink.service.direct_single_upload.error: {e}')

@@ -1,5 +1,6 @@
 # app/core/utils/io_utils.py
 from pathlib import Path
+import json
 from typing import List
 from app.core.utils.common_utils import get_path_to_root, enum_to_camel
 from app.core.config.project_config import settings
@@ -38,14 +39,12 @@ def read_enum_to_camel(filename: str = 'country.json') -> dict:
         return result
 
 
-def loadJsonConverter(filename: str, upload_dir: str):
-    dirpath: Path = get_path_to_root(upload_dir)
-    filepath = dirpath / filename
-    if not filepath.exists():
-        raise Exception(f'file {filename} is not exists in {upload_dir}')
-    # загружаем json файл, конвертируем в формат relation и собираем в список:
-    dataconv: list = list(JsonConverter(filepath)().values())
-    return dataconv
+def readJson(filename: Path):
+    if filename.exists():
+        with open(filename) as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
 
 
 def get_filepath_from_dir(dirname: str = None,

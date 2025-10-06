@@ -40,6 +40,10 @@ class ItemRouter(BaseRouter):
         self.router.add_api_route(
             "/direct", self.direct_import_data, status_code=status.HTTP_200_OK, methods=["POST"],
             response_model=dict)
+        self.router.add_api_route(
+            "/direct/{id}", self.direct_import_single_data, status_code=status.HTTP_200_OK, methods=["GET"],
+            response_model=dict
+        )
 
     async def create(self, data: ItemCreate,
                      session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
@@ -67,7 +71,7 @@ class ItemRouter(BaseRouter):
         операция длительная - наберитесь терпения
         """
         try:
-            result = await self.service.direct_upload(session)
+            result = await self.service.direct_upload(session, image_service)
             # if result.get('error_nmbr', 0) > 0:
             #     raise HTTPException(status_code=423, detail=result)
             return result
@@ -100,3 +104,23 @@ class ItemRouter(BaseRouter):
         # item_data.image_id = image_id
         result = await super().create_relation(item_data, session)
         return result
+
+    async def direct_import_single_data(self, id: str,
+                                        session: AsyncSession = Depends(get_db),
+                                        image_service: ImageService = Depends()) -> dict:
+        """
+        Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
+        на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с
+        изображениями.
+        - если в таблице есть зависимости они будут рекурсивно найдены в связанных таблицах (или добавлены при
+        отсутсвии), кроме того будет добавлено изображение по его имени (перед этим выполнить импорт изображений
+        /mongodb/images/direct.
+        операция длительная - наберитесь терпения
+        """
+        try:
+            result = await self.service.direct_single_upload(id, session)
+            # if result.get('error_nmbr', 0) > 0:
+            #     raise HTTPException(status_code=423, detail=result)
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=e)
