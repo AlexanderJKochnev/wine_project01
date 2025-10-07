@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.core.utils.alchemy_utils import get_models, parse_unique_violation, parse_unique_violation2
+from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
 
 
 class Service:
@@ -34,35 +34,45 @@ class Service:
     async def get_or_create(cls, data: ModelType, repository: Type[Repository],
                             model: ModelType, session: Session) -> ModelType:
         """ использовать вместо create """
-        
-        data_dict = data.model_dump(exclude_unset=True)
+        try:
+            data_dict = data.model_dump(exclude_unset=True)
+            # поиск существующей записи по полному совпадению объектов
+            instance = await repository.get_by_obj(data_dict, model, session)
 
-        # data_dict = data.get_required_structure()   # поиск только по обязательным полям
-        # поиск по полному совпадению объектов
-        result = await repository.get_by_obj(data_dict, model, session)
-        
-        if result:
-            return result
-        else:
+            if instance:
+                # заапись найдена - на выход
+                return instance
+            # запись не найдна
             obj = model(**data_dict)
-            try:
-                result = await repository.create(obj, model, session)
-                # тут можно добавить преобразования результата потом commit в роутере
-                return result
-            except IntegrityError as e:     # поиск по объекту не всегда дает верный результат
-                error_msg = str(e)
-                await session.rollback()
-                # parse_unique_violation2(error_msg)
-                filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
-                if filter:
-                    existing_instance = await repository.get_by_fields(filter, model, session)
-                    if existing_instance:
-                        return existing_instance
-                    else:
-                        raise HTTPException(status_code=409,
-                                            detail=f"Unique constraint violation for "
-                                                   f"{filter=}' "
-                                                   f"but existing record not found")
+            instance = await repository.create(obj, model, session)
+            await session.flush()
+            await session.refresh(instance)
+            if not instance.id:
+                # Если ID все еще None, принудительно коммитим и снова обновляем
+                await session.commit()
+                await session.refresh(instance)
+            return instance
+        except IntegrityError as e:  # поиск по объекту не всегда дает верный результат
+            error_msg = str(e)
+            await session.rollback()
+            filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
+            if filter:  # есть поля по ктороым нарушена интеграция
+                # еще раз ищем запаись
+                existing_instance = await repository.get_by_fields(filter, model, session)
+                if existing_instance:
+                    # запись найдена
+                    return existing_instance
+                else:
+                    # запись не найдена
+                    raise HTTPException(
+                        status_code=409, detail=f"Unique constraint violation for "
+                                                f"{filter=}' "
+                                                f"but existing record not found"
+                    )
+
+        except Exception as e:
+            print(f'get_or_create.error:: {e}')
+            raise HTTPException(status_code=410, detail=e)
 
     @classmethod
     async def update_or_create(cls,
@@ -113,7 +123,8 @@ class Service:
             raise
 
     @classmethod
-    async def get_all(cls, ater_date: datetime, page: int, page_size: int, repository: Type[Repository], model: ModelType,
+    async def get_all(cls, ater_date: datetime,
+                      page: int, page_size: int, repository: Type[Repository], model: ModelType,
                       session: AsyncSession, ) -> List[dict]:
         # Запрос с загрузкой связей и пагинацией
         skip = (page - 1) * page_size
@@ -127,8 +138,9 @@ class Service:
         return result
 
     @classmethod
-    async def get(cls, after_date: datetime, repository: Type[Repository], model: ModelType, session: AsyncSession,
-    ) -> List:
+    async def get(cls, after_date: datetime,
+                  repository: Type[Repository], model: ModelType,
+                  session: AsyncSession,) -> List:
         # Запрос с загрузкой связей
         result = await repository.get(after_date, model, session)
         return result

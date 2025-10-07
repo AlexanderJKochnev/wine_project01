@@ -4,6 +4,7 @@
 import pytest
 # from app.mongodb.config import mongodb
 from fastapi import status
+from pydantic import ValidationError
 
 from app.mongodb.router import prefix, subprefix
 
@@ -46,15 +47,20 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
               ({"page": 1, "per_page": 10, "after_date": futureutc}, 400, 0),
               ]
     for param, sts, nmb in params:
-        response = await client.get(f"{prefix}/{subprefix}", params=param)
-        assert response.status_code == sts, f'{param=}, response.text'
-        assert isinstance(response.json(), dict), "response type is not dict"
-        param = {'after_date': param.get('after_date')} if param.get('after_date') else None
-        response = await client.get(f"{prefix}/{subprefix}list", params=param)
-        assert response.status_code == sts, f'{param=}'
-        if response.status_code != 400:
-            assert isinstance(response.json(), dict), f"response type is {response.json()}. {response.status_code}"
-
+        try:
+            response = await client.get(f"{prefix}/{subprefix}", params=param)
+            assert response.status_code == sts, f'{param=}, response.text'
+            assert isinstance(response.json(), dict), "response type is not dict"
+            param = {'after_date': param.get('after_date')} if param.get('after_date') else None
+            if param:
+                response = await client.get(f"{prefix}/{subprefix}list", params=param)
+            else:
+                response = await client.get(f"{prefix}/{subprefix}list")
+            assert response.status_code == sts, f'{param=}'
+            if response.status_code != 400:
+                assert isinstance(response.json(), dict), f"response type is {response.json()}. {response.status_code}"
+        except Exception as e:
+            assert False, f'{param=},  {e}'
     # 3. Тестируем скачивание изображения (подвешивает тест разобраться)
     """
     response = await client.get(f"{prefix}{subprefix}/{file_id}")

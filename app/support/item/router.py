@@ -72,8 +72,12 @@ class ItemRouter(BaseRouter):
         """
         try:
             result = await self.service.direct_upload(session, image_service)
-            # if result.get('error_nmbr', 0) > 0:
-            #     raise HTTPException(status_code=423, detail=result)
+            """
+            {'total_input': n,
+             'count of added records': n - len(error_list),
+             'error': error_list,
+             'error_nmbr': len(error_list)}
+            """
             return result
         except Exception as e:
             raise HTTPException(status_code=422, detail=e)
@@ -118,6 +122,7 @@ class ItemRouter(BaseRouter):
         операция длительная - наберитесь терпения
         """
         try:
+            id = id.strop('.png')
             result = await self.service.direct_single_upload(id, session)
             # if result.get('error_nmbr', 0) > 0:
             #     raise HTTPException(status_code=423, detail=result)

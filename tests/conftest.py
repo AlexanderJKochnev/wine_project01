@@ -484,7 +484,7 @@ async def test_db_session(mock_engine):
         bind=mock_engine,
         class_=AsyncSession,
         expire_on_commit=False,
-        autoflush=True
+        autoflush=False
     )
     # async with mock_engine.connect() as session:
     async with AsyncSessionLocal() as session:

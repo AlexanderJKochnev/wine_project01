@@ -90,6 +90,6 @@ class DrinkService(Service):
             await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
             # 3. set up percentage
             for key, val in varietal_percentage.items():
-                pass
                 await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
+        await session.refresh(drink_instance)
         return drink_instance

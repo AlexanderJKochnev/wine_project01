@@ -619,3 +619,103 @@ def get_value(source: list, search: str) -> Union[list, str]:
         return result if len(result) > 1 else result[0]
     except Exception:
         return None
+
+
+def compare_dicts(dict1, dict2, path="", differences=None):
+    """
+    Сравнивает два вложенных словаря и возвращает различия
+
+    Args:
+        dict1: первый словарь
+        dict2: второй словарь
+        path: текущий путь в словаре (для вложенных структур)
+        differences: список для накопления различий
+
+    Returns:
+        list: список различий в формате (путь, описание_различия)
+    """
+    if differences is None:
+        differences = []
+
+    # Получаем все уникальные ключи из обоих словарей
+    all_keys = set(dict1.keys()) | set(dict2.keys())
+
+    for key in sorted(all_keys):
+        current_path = f"{path}.{key}" if path else key
+
+        # Проверка наличия ключа
+        if key not in dict1:
+            differences.append((current_path, "Ключ отсутствует в первом словаре"))
+            continue
+        elif key not in dict2:
+            differences.append((current_path, "Ключ отсутствует во втором словаре"))
+            continue
+
+        value1 = dict1[key]
+        value2 = dict2[key]
+
+        # Проверка типов
+        type1 = type(value1)
+        type2 = type(value2)
+
+        if type1 != type2:
+            differences.append((current_path, f"Несовпадение типов: {type1.__name__} - {type2.__name__}"))
+            continue
+
+        # Рекурсивное сравнение для вложенных словарей
+        if isinstance(value1, dict) and isinstance(value2, dict):
+            compare_dicts(value1, value2, current_path, differences)
+
+        # Обработка списков
+        elif isinstance(value1, list) and isinstance(value2, list):
+            compare_lists(value1, value2, current_path, differences)
+        # Для простых типов просто проверяем равенство  # (по заданию нужно только наличие ключей и типов)
+
+    return differences
+
+
+def compare_lists(list1, list2, path="", differences=None):
+    """
+    Сравнивает два списка (в контексте сравнения словарей)
+    """
+    if differences is None:
+        differences = []
+
+    # Проверяем длину списков
+    if len(list1) != len(list2):
+        differences.append((path, f"Разная длина списков: {len(list1)} - {len(list2)}"))
+
+    # Сравниваем элементы списков (если они словари)
+    for i, (item1, item2) in enumerate(zip(list1, list2)):
+        item_path = f"{path}[{i}]"
+
+        type1 = type(item1)
+        type2 = type(item2)
+
+        if type1 != type2:
+            differences.append((item_path, f"Несовпадение типов в списке: {type1.__name__} - {type2.__name__}"))
+        elif isinstance(item1, dict) and isinstance(item2, dict):
+            compare_dicts(item1, item2, item_path, differences)
+
+
+def print_comparison_results(dict1, dict2):
+    """
+    Сравнивает два словаря и выводит результаты в читаемом формате
+    """
+    print("=" * 60)
+    print("СРАВНЕНИЕ ДВУХ СЛОВАРЕЙ")
+    print("=" * 60)
+
+    differences = compare_dicts(dict1, dict2)
+
+    if not differences:
+        print("✓ Словари идентичны по структуре и типам данных")
+        return
+
+    print("Найдены различия:")
+    print("-" * 60)
+
+    for path, description in differences:
+        print(f"Путь: {path}")
+        print(f"Описание: {description}")
+        print("-" * 40)

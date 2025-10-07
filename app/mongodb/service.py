@@ -1,7 +1,7 @@
 # app/mongodb/service.py
 from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
-from typing import List
+from typing import List, Tuple
 
 from fastapi import Depends, HTTPException, status, UploadFile
 
@@ -13,7 +13,8 @@ from app.mongodb.repository import ImageRepository
 from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
                                remove_background)
 
-delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
+# delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
+delta = datetime.now(timezone.utc) - relativedelta(years=2)
 
 
 class ImageService:
@@ -39,21 +40,16 @@ class ImageService:
         _id = await self.image_repository.create_image(filename, content, content_type, description)
         return _id, filename
 
-    async def direct_upload_image(self, upload_dir: str):
+    async def direct_upload_image(self, limit: int = 3):
         """ прямая загрузка файлов
             из upload_dir
+            limit - ограничение на количество загружаемых файлов (в основном для целей тестирования)
         """
         try:
-            # image_dir = get_path_to_root(upload_dir)
-            # image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
-            # image_paths = []  # cписок файлов изображений с путями
+            # upload_dir = settings.UPLOAD_DIR
             lost_images = []  # список потерянных файлов
-            # for n, file_path in enumerate(image_dir.iterdir()):
-            #     if file_path.is_file() and file_path.suffix.lower() in image_extensions:
-            #        image_paths.append(file_path)
             image_paths = get_filepath_from_dir()
             n = len(image_paths)
-            print(f'==============={n}================')
             # запускаем
             for m, upload_file in enumerate(read_image_generator(image_paths)):
                 try:
@@ -67,7 +63,7 @@ class ImageService:
                 # удаляем фон 3 способа доработать
                 try:
                     # content = make_transparent_white_bg(content)
-                    content = remove_background(content)
+                    # content = remove_background(content)
                     # content = remove_background_with_mask(content)
                     content_type = 'image/png'
                     filename = f'{filename.rsplit('.', 1)[0]}.png'
@@ -175,9 +171,9 @@ class ImageService:
 
     async def get_images_list_after_date(
         self, after_date: datetime = delta
-    ) -> dict:
+    ) -> Tuple:
         """
-        возвращает словарь {file_name: image_id}
+            возвращает кортеж кортежей  (image_file_name, image_id)...
         """
         try:
             images = await self.image_repository.get_images_after_date_nopage(

@@ -13,6 +13,60 @@ from app.support.item.schemas import ItemCreateRelations, DrinkCreateRelations  
 
 pytestmark = pytest.mark.asyncio
 
+trob = ["-Lymvm4_ThSSpUZ-RzFJ.png",
+        "-Lyn3fPXJtUnleVAwC_V.png",
+        "-Lyn77KU1LO4tcXMcPSo.png",
+        "-LynA8QtpDfTRKK57ByK.png",
+        "-LynGOOQFp0REbzpfUDh.png",
+        "-M-B8gu3HCcEg1GsGS4w.png",
+        "-M-BCjRNX51_aXLnE5Tz.png",
+        "-M-BPmDfQ_6SFQt6DYDV.png",
+        "-M-H-6Vqv2xyFxi9thR6.png",
+        "-M-HClMqkS6-dyc4-RPb.png",
+        "-M-HHyXBoDGgP56aBact.png",
+        "-M-K2SvlvwyyB2iPesIP.png",
+        "-M-OWs4Zsnf8gwj-inrS.png",
+        "-M-OY6Esn6kDmU8-iKD1.png",
+        "-M-Vv-2y2zZpLrt8UFtm.png",
+        "-M-ZkvcdAWggCg5RhD_r.png",
+        "-M-Zkw1F4VLAELGpjVtp.png",
+        "-M-djwPhHZL0MM9ckn6t.png",
+        "-M-dpHCx7YXT02Rv4a6h.png",
+        "-M-dwB-70_y2cwj3zVKM.png",
+        "-M-dyzI_JfxJ746M4Pg0.png",
+        "-M-ff1Prk4uJ9HN5wSHi.png",
+        "-M-fi8G2Ji3N-A04WBNk.png",
+        "-M-nzeMiaO-_fko65t4K.png",
+        "-M-omf-mviBwV14qcBXG.png",
+        "-M-u2E-1hWVfklAU7LdD.png",
+        "-M0HzVjRTq879OetWmGG.png",
+        "-M0Sq_blYYRNNUEzKZXy.png",
+        "-M0SxgOBILvEUI7kgOIX.png",
+        "-M0T-dopt_b_58tXij_y.png",
+        "-M0anZ356ynkzYQB0dOA.png",
+        "-M0d1sj6sSGfnNQjAqY4.png",
+        "-M1-pwMtIYLNPk1jpa1S.png",
+        "-M1WJHPtFAOMYRr5P2ky.png",
+        "-MMntnF9o5tued3eFjKw.png",
+        "-MpkT2abSS0ppLuShtwB.png",
+        "-MsPkbFPgweM59aiSarL.png",
+        "-MsQkrd84HBBZ94nTRbR.png",
+        "-MwedlcQrcJtiq-rXD1_.png",
+        "-OIVS-p8nqtKnO0GzX4c.png",
+        "-OIVfSO8XXgmwDbIAeer.png",
+        "-OIXNXypGv_FHQWcQ3vn.png",
+        "-OIXY5GhDh3aHUZ_YwBQ.png",
+        "-OIXeamXbuc8d8em2Ksk.png",
+        "-OI_QLGPxQvHm3KPR68z.png",
+        "-OI_V8M-DD97v5QCVMuq.png",
+        "-OI_bSCFgtyPRN5xqIb5.png",
+        "-OIbMxlmffSsaKwddCu8.png",
+        "-OIbS7K9nu7iw-VcdHaO.png",
+        "-OIbYNctD-egrepFz4ER.png",
+        "-OIbfLSrTlhW28GIGDCJ.png",
+        "-OIbpopAiQkIQZ4gOnc5.png"
+        ]
+
 
 def test_get_path_to_root():
     from app.core.utils.common_utils import get_path_to_root, enum_to_camel
@@ -115,6 +169,26 @@ def test_jsonconverter():
     print(f'number of records is {n=}')
 
 
+def test_jsonconverter2():
+    """
+    тестируем 'битыеэ записи
+    тестирует исходные данные (если выбрасывает - см. diff)
+    """
+    from app.core.utils.alchemy_utils import JsonConverter
+    from app.core.utils.common_utils import compare_dicts
+    filepath = get_filepath_from_dir_by_name()
+    shit_list = [a.rstrip('.png') for a in trob]
+
+    JsonConv = JsonConverter(filepath)()
+    temp = next(iter(JsonConv.values()))
+    for n, (key, item) in enumerate(JsonConv.items()):
+        if key not in shit_list:
+            continue
+        print('-------------------')
+        diff = compare_dicts(temp, item)
+        assert not diff, key
+
+
 def test_source_constraint_data():
     """
         тестирование исходных данных на ограничение по уникальности
@@ -154,41 +228,29 @@ async def test_items_direct_import_image(authenticated_client_with_db,
         очень долгий тест
     """
     from app.mongodb.router import directprefix, prefix
-    # from app.support.item.router import ItemRouter as Router
     client = authenticated_client_with_db
     # загрузка файлов из upload_dir
     response = await client.post(f'{prefix}/{directprefix}')
     assert response.status_code == 200, response.text
-    response = await client.get()
 
 
 async def test_items_direct_import_data(authenticated_client_with_db,
                                         test_db_session
                                         ):
     """
-        Тестирует импорт изображений из директории
-        и последующий импорт data.json c relation & image_id
-        очень долгий тест
+        тестирует метод items.direct_import_data
     """
-    # from app.mongodb.router import directprefix, prefix
-    # from app.core.utils.io_utils import readJson
+    from app.mongodb.router import directprefix, prefix
     from app.support.item.router import ItemRouter as Router
-    # filepath = get_filepath_from_dir_by_name()  # путь к data.json
-    # json_images = list(readJson(filepath).get('items'))  # изображения список
     client = authenticated_client_with_db
+    # загрузка файлов из upload_dir
+    response = await client.post(f'{prefix}/{directprefix}')
+    assert response.status_code == 200, response.text
+    # загрузка из data.json
     router = Router()
     prefix = router.prefix
     response = await client.post(f'{prefix}/direct')
-    if response.json().get('error_nmbr', 0) > 0:
-        # проверка (валидация) ошибок
-        for item in response.json().get('error'):
-            try:
-                model_dict = ItemCreateRelations(**item)
-                back_reverse = model_dict.model_dump(exclude_unset=True)
-                assert item == back_reverse
-            except Exception as e:
-                assert False, f'error validation error {e}'
-    assert response.status_code in [200, 422], response.text
+    assert response.status_code == 200, response.text
     result = response.json()
-    assert result.get('error_nmbr') == 0, \
-        f"добавлено {result.get('count of added records')} из {result.get('total_input')}"
+    error_nmbr = result.get('error_nmbr')
+    assert error_nmbr == 0, result

@@ -21,7 +21,8 @@ directprefix = f"{subprefix}/direct"
 
 
 # now = datetime.now(timezone.utc).isoformat()
-delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
+delta = (datetime.now(timezone.utc) - relativedelta(years=2))
+# delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 
 
 @router.post(f'/{subprefix}', response_model=dict)
@@ -37,17 +38,17 @@ async def upload_image(
     return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
 
 
-@router.post(f'/{directprefix}', response_model=dict)
-async def direct_upload(image_service: ImageService = Depends()):
+@router.post(f'/{directprefix}')
+async def direct_upload(image_service: ImageService = Depends()) -> dict:
     """
         импортирование рисунков из директории UPLOAD_DIR (см. .env file
         загрузка происходит в обход api. Для того что бы выполнить импорт нужно
         на сервере поместить файлы с изображениями в директорию UPLOAD_DIR.
         операция длительная - наберитесь терпения.
     """
-    upload_dir = settings.UPLOAD_DIR
-    result = await image_service.direct_upload_image(upload_dir)
-    return result
+    images = await image_service.direct_upload_image()
+    # result = {b: a for a, b in images}
+    return images
 
 
 @router.get(f'/{subprefix}', response_model=FileListResponse)
@@ -124,6 +125,7 @@ async def get_images_list_after_date(
     try:
         # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
-        return await image_service.get_images_list_after_date(after_date)
+        result = await image_service.get_images_list_after_date(after_date)
+        return {a: b for b, a in result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

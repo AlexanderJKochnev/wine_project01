@@ -2,7 +2,7 @@
 from bson import ObjectId
 from datetime import datetime, timezone
 from fastapi import Depends
-from typing import List
+from typing import List, Tuple
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.mongodb.config import get_database
 from app.mongodb.models import FileResponse
@@ -48,13 +48,16 @@ class ImageRepository:
 
     async def get_images_after_date_nopage(self,
                                            after_date: datetime
-                                           ) -> List[str]:
+                                           ) -> List[Tuple]:
+        """
+            возвращает список кортежей [(image_path, image_id)...]
+        """
         await self.ensure_indexes()
         query = {"created_at": {"$gt": after_date}}
         cursor = self.collection.find(query).sort("created_at", -1)
-        images: dict = {}
+        images = []
         async for image in cursor:
-            images[image['filename']] = str(image["_id"])
+            images.append((image['filename'], str(image["_id"])))
         return images
 
     async def get_images_after_date(self,
