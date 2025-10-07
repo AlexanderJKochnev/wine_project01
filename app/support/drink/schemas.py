@@ -307,8 +307,8 @@ class CustomReadApiSchema(TitleMixinExclude):
         result["age"] = self.age
         result["sparkling"] = self.sparkling
         result["title"] = self.title
-        result["title_ru"] = self.title_native
-        result["subtitle_ru"] = self.subtitle_native
+        result["title_ru"] = self.title_ru
+        result["subtitle_ru"] = self.subtitle_ru
         result["subtitle"] = self.subtitle
 
         # Убираем None значения
