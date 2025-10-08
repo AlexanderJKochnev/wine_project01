@@ -15,12 +15,13 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
     """ валидация генерируемых данных и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
-    test_number = 1
+    test_number = 10
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
         schema = router.create_schema
-        adapter = TypeAdapter(schema)
+        model = router.model
+        # adapter = TypeAdapter(schema)
         prefix = router.prefix
         test_data = generate_test_data(
             schema, test_number,
@@ -32,11 +33,17 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
         )
         for m, data in enumerate(test_data):
             try:
-                json_data = json.dumps(data)
-                adapter.validate_json(json_data)
-                assert True
+                # валидируем по Pydantic схеме
+                py_model = schema(**data)
+                rev_dict = py_model.model_dump()
+                assert data == rev_dict, f'pydantic validation fault {prefix}'
+                # валидируем по Alchemy model
+                al_model = model(**data)
+                rev_dict = al_model.to_dict()
+                for key in ['updated_at', 'id', 'created_at']:
+                    rev_dict.pop(key, None)
+                assert data == rev_dict, f'alchemy validation fault {prefix} '
             except Exception:
-                # assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
                 assert False, f'validation false {data=}'
             try:
                 response = await client.post(f'{prefix}', json=data)
@@ -52,12 +59,13 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
     """ валидация генерируемых данных со связанными полями и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
     source = simple_router_list + complex_router_list
-    test_number = 1
+    test_number = 10
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
         schema = router.create_schema_relation
-        adapter = TypeAdapter(schema)
+        model = router.model
+        # adapter = TypeAdapter(schema)
         prefix = router.prefix
 
         test_data = generate_test_data(
@@ -71,9 +79,20 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
         for m, data in enumerate(test_data):
             try:
                 # _ = schema(**data)      # валидация данных
-                json_data = json.dumps(data)
-                adapter.validate_json(json_data)
-                assert True
+                # json_data = json.dumps(data)
+                # adapter.validate_json(json_data)
+                # assert True
+                # валидируем по Pydantic схеме
+                py_model = schema(**data)
+                rev_dict = py_model.model_dump()
+                assert data == rev_dict, f'pydantic validation fault {prefix}'
+                # валидируем по Alchemy model
+                # al_model = model(**data)
+                # rev_dict = al_model.to_dict()
+                # for key in ['updated_at', 'id', 'created_at']:
+                #     rev_dict.pop(key, None)
+                # assert data == rev_dict, f'alchemy validation fault {prefix} '
+
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
             try:

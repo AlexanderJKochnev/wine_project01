@@ -5,8 +5,6 @@ from pydantic import ConfigDict, field_serializer, Field, computed_field
 
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
-# from app.core.utils.common_utils import camel_to_enum
-from app.mongodb.models import ImageCreate
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
                                                      DrinkVarietalRelationApi)
 from app.support.drink.drink_food_schema import DrinkFoodRelationApi
@@ -17,30 +15,54 @@ from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
 from app.support.varietal.schemas import VarietalRead
 
 
-class TitleMixin:
-    title: str
+class LangMixin:
+    title: Optional[str] = None
     title_ru: Optional[str] = None
+    title_fr: Optional[str] = None
+
     subtitle: Optional[str] = None
     subtitle_ru: Optional[str] = None
+    subtitle_fr: Optional[str] = None
+
+    description: Optional[str] = None
+    description_ru: Optional[str] = None
+    description_fr: Optional[str] = None
+
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
+
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
+    madeof_fr: Optional[str] = None
 
 
-class TitleMixinExclude:
+class titleMixinExclude:
     title: str = Field(exclude=True)
     title_ru: Optional[str] = Field(exclude=True)
     subtitle: Optional[str] = Field(exclude=True)
     subtitle_ru: Optional[str] = Field(exclude=True)
 
 
-class CustomCreateRelation(TitleMixin):
-    # image_path: Optional[str] = None
+class CustomUpdSchema(LangMixin):
+    subcategory_id: int
+    sweetness_id: Optional[int] = None
+    subregion_id: int
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
+    age: Optional[str] = None
+    sparkling: Optional[bool] = False
+
+
+class CustomCreateSchema(CustomUpdSchema):
+    title: str
+
+
+class CustomCreateRelation(LangMixin):
+    title: str
     subcategory: SubcategoryCreateRelation
     sweetness: Optional[SweetnessCreateRelation] = None
     subregion: SubregionCreateRelation
-    recommendation: Optional[str] = None
-    recommendation_ru: Optional[str] = None
-    recommendation_fr: Optional[str] = None
-    madeof: Optional[str] = None
-    madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
@@ -49,16 +71,10 @@ class CustomCreateRelation(TitleMixin):
     varietals: Optional[List[DrinkVarietalRelation]] = None
 
 
-class CustomReadSchema(TitleMixin):
+class CustomReadSchema(LangMixin):
     subcategory: SubcategoryRead
-    # color: Optional[ColorRead] = None
     sweetness: Optional[SweetnessRead] = None
     subregion: Optional[SubregionRead] = None
-    recommendation: Optional[str] = None
-    recommendation_ru: Optional[str] = None
-    recommendation_fr: Optional[str] = None
-    madeof: Optional[str] = None
-    madeof_ru: Optional[str] = None
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
@@ -81,46 +97,12 @@ class CustomReadSchema(TitleMixin):
         return f"{int(round(value))}%"
 
 
-class CustomUpdSchema(TitleMixin):
-    subcategory: Optional[int] = None
-    # color: Optional[int] = None
-    sweetness: Optional[str] = None
-    subregion: Optional[str] = None
-    title: Optional[str] = None
-    recommendation: Optional[str] = None
-    recommendation_ru: Optional[str] = None
-    recommendation_fr: Optional[str] = None
-    madeof: Optional[str] = None
-    madeof_ru: Optional[str] = None
-    alc: Optional[float] = None
-    sugar: Optional[float] = None
-    age: Optional[str] = None
-    sparkling: Optional[bool] = False
-    # image_path: Optional[str]
-
-
-class CustomCreateSchema(TitleMixin):
-    subcategory_id: int
-    sweetness_id: Optional[int] = None
-    subregion_id: int
-    recommendation: Optional[str] = None
-    recommendation_ru: Optional[str] = None
-    recommendation_fr: Optional[str] = None
-    madeof: Optional[str] = None
-    madeof_ru: Optional[str] = None
-    alc: Optional[float] = None
-    sugar: Optional[float] = None
-    age: Optional[str] = None
-    sparkling: Optional[bool] = False
-
-
 class DrinkRead(ReadNoNameSchema, CustomReadSchema):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',
                               populate_by_name=True,
                               exclude_none=True)
-    pass
 
 
 class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
@@ -152,7 +134,7 @@ class DrinkVarietalLinkCreate(BaseModel):
     drink: DrinkRead
 
 
-class CustomReadApiSchema(TitleMixinExclude):
+class CustomReadApiSchema(titleMixinExclude):
     subcategory: SubcategoryReadApiSchema = Field(exclude=True)
     sweetness: Optional[ReadApiSchema] = Field(exclude=True)
     subregion: Optional[SubregionReadApiSchema] = Field(exclude=True)

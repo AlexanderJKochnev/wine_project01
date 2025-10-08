@@ -8,8 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DECIMAL
 
 from app.core.config.project_config import settings
-from app.core.models.base_model import (Base, BaseAt, BaseDescription, str_null_false,
-                                        boolnone, descr, str_null_true, str_uniq)
+from app.core.models.base_model import (Base, BaseAt, boolnone, descr, str_null_false, str_null_true)
 # from app.core.models.image_mixin import ImageMixin
 from app.core.utils.common_utils import plural
 
@@ -19,7 +18,30 @@ if TYPE_CHECKING:
     from app.support.subregion.model import Subregion
 
 
-class Drink(Base, BaseDescription, BaseAt):
+class Lang:
+    __abstract__ = True
+    title: Mapped[str_null_false]
+    title_ru: Mapped[str_null_true]
+    title_fr: Mapped[str_null_true]
+
+    subtitle: Mapped[str_null_true]
+    subtitle_ru: Mapped[str_null_true]
+    subtitle_fr: Mapped[str_null_true]
+
+    description: Mapped[descr]
+    description_ru: Mapped[descr]
+    description_fr: Mapped[descr]
+
+    recommendation: Mapped[descr]
+    recommendation_ru: Mapped[descr]
+    recommendation_fr: Mapped[descr]
+
+    madeof: Mapped[descr]
+    madeof_ru: Mapped[descr]
+    madeof_fr: Mapped[descr]
+
+
+class Drink(Base, BaseAt, Lang):
     __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
                       CheckConstraint('sugar >= 0 AND sugar <= 100.00', name='sugar_range_check'),
                       UniqueConstraint('title', 'subtitle', name='uq_title_subtitle_unique'),)
@@ -28,20 +50,6 @@ class Drink(Base, BaseDescription, BaseAt):
     single_name = 'drink'
     plural_name = plural(single_name)
     # наименование на языке производителя
-    title_native: Mapped[str_null_true]
-    subtitle_native: Mapped[str_null_true]
-    # наименование на международном (англ) языке
-    title: Mapped[str_null_false]
-    subtitle: Mapped[str_null_true]
-    title_ru: Mapped[str_null_true]
-    subtitle_ru: Mapped[str_null_true]
-    # описание на международном (англ) языке (остальные через BaseDescription)
-    description: Mapped[descr]
-    recommendation: Mapped[descr]
-    recommendation_ru: Mapped[descr]
-    recommendation_fr: Mapped[descr]
-    madeof: Mapped[descr]
-    madeof_ru: Mapped[descr]
     alc = mapped_column(DECIMAL(6, 2), nullable=True, default=0.0)
     # alc: Mapped[percent]
     sugar = mapped_column(DECIMAL(6, 2), nullable=True)  # , default = 0.0)
@@ -52,13 +60,11 @@ class Drink(Base, BaseDescription, BaseAt):
     # Foreign Keys on-to-many
     subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False)
     subregion_id: Mapped[int] = mapped_column(ForeignKey("subregions.id"), nullable=False)
-    # color_id: Mapped[int] = mapped_column(ForeignKey("colors.id"), nullable=True)
     sweetness_id: Mapped[int] = mapped_column(ForeignKey("sweetness.id"), nullable=True)
 
     # Relationships fields (
     subcategory: Mapped["Subcategory"] = relationship(back_populates="drinks")
     subregion: Mapped["Subregion"] = relationship(back_populates="drinks")
-    # color: Mapped["Color"] = relationship(back_populates="drinks")
     sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
     # type: Mapped["Type"] = relationship(back_populates="drinks")
 

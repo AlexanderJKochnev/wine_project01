@@ -108,9 +108,9 @@ class Repository:
             raise Exception(f'repo.get_by_field: {field_name=} {field_value=}, {model.__name__=}, {e}')
 
     @classmethod
-    async def get_by_fields(cls, filter:dict, model: ModelType, session:AsyncSession):
+    async def get_by_fields(cls, filter: dict, model: ModelType, session: AsyncSession):
         """
-            фильтр по нескольким поля
+            фильтр по нескольким полям
             filter = {<имя поля>: <искомое значение>, ...},
             AND
         """
@@ -122,14 +122,13 @@ class Repository:
                     conditions.append(column.is_(None))
                 else:
                     conditions.append(column == value)
-            stmt = select(model).where(and_(*conditions))
+            stmt = select(model).where(and_(*conditions)).limit(1)
             # stmt = select(model).filter_by(**filter)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:
             raise Exception(f'repo.get_by_fields: {filter=}, {model.__name__=}, {e}')
 
-    
     @classmethod
     async def get_count(cls, after_date: datetime, model: ModelType, session: AsyncSession) -> int:
         count_stmt = select(func.count()).select_from(model).where(model.updated_at > after_date)

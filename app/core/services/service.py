@@ -37,10 +37,9 @@ class Service:
         try:
             data_dict = data.model_dump(exclude_unset=True)
             # поиск существующей записи по полному совпадению объектов
-            instance = await repository.get_by_obj(data_dict, model, session)
-
+            # instance = await repository.get_by_obj(data_dict, model, session)
+            instance = await repository.get_by_fields(data_dict, model, session)
             if instance:
-                # заапись найдена - на выход
                 return instance
             # запись не найдна
             obj = model(**data_dict)
@@ -53,7 +52,9 @@ class Service:
                 await session.refresh(instance)
             return instance
         except IntegrityError as e:  # поиск по объекту не всегда дает верный результат
+            print('========================IntegrityError=====================')
             error_msg = str(e)
+            print(f'========{error_msg}==============')
             await session.rollback()
             filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
             if filter:  # есть поля по ктороым нарушена интеграция
