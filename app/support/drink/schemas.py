@@ -339,7 +339,4 @@ class DrinkReadApi(PkSchema, CustomReadApiSchema):
                               extra='allow', populate_by_name=True,
                               exclude_none=True
                               )
-
-    # Эти поля остаются на верхнем уровне
-    # updated_at: Optional[datetime] = None
     id: int

@@ -12,11 +12,9 @@ from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
 class CustomReadSchema:
     id: int
     drink: DrinkReadApi
-    # warehouse: Optional[WarehouseRead] = None
     vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
-    # image_id: Optional[str] = 0
 
 
 class CustomCreateSchema:
@@ -49,7 +47,7 @@ class CustomUpdSchema:
 
 
 class ItemRead(BaseModel, CustomReadSchema, ImageUrlMixin):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
 
 
 class ItemCreate(BaseModel, CustomCreateSchema):
