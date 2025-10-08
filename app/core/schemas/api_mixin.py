@@ -6,12 +6,12 @@ from app.core.schemas.base import BaseModel
 
 class LangMixin(BaseModel):
     """ языковая схема - добавлять 'name_<lang>' """
-    
+
     def __get_schmema__(self):
         schema = None
         field_name = None
         return schema, field_name
-    
+
     def __get_lang__(self, lang: str = '_ru', ) -> str:
         schema, field_name = self.__get_schmema__()
         if schema:
@@ -24,7 +24,6 @@ class LangMixin(BaseModel):
     def name_ru(self) -> str:
         return self.__get_lang__('_ru')
 
-
     @computed_field
     @property
     def name_fr(self) -> str:
@@ -32,5 +31,5 @@ class LangMixin(BaseModel):
 
     @computed_field
     @property
-    def name_en(self) -> str:
+    def name(self) -> str:
         return self.__get_lang__('')

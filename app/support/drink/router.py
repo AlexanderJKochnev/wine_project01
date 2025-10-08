@@ -25,7 +25,7 @@ class DrinkRouter(BaseRouter):
             model=Drink,
             repo=DrinkRepository,
             create_schema=DrinkCreate,
-            read_schema=DrinkReadApi,
+            read_schema=DrinkRead,
             create_schema_relation=DrinkCreateRelations,
             create_response_schema=DrinkCreateResponseSchema,
             path_schema=DrinkUpdate,
@@ -48,7 +48,7 @@ class DrinkRouter(BaseRouter):
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
         self.router.add_api_route("/{id}/flat", self.get_one_flat,
-                                  methods=['GET'], response_model=dict)
+                                  methods=['GET'], response_model=self.read_schema)
         self.router.add_api_route("/{id}/api", self.get_one_api, methods=['GET'],
                                   response_model=self.read_api_schema)
 
@@ -105,11 +105,12 @@ class DrinkRouter(BaseRouter):
         result = await super().create_relation(drink_data, session)
         return result
 
-    async def get_one_flat(self, id: int, session: AsyncSession = Depends(get_db)) -> dict:
+    async def get_one_flat(self, id: int, session: AsyncSession = Depends(get_db)) -> DrinkRead:
         """
             Получение одной записи по ID
         """
-        obj = await self.service.get_dict_by_id(id, self.repo, self.model, session)
+        obj = await self.service.get_by_id(id, self.repo, self.model, session)
+        # obj = await self.service.get_dict_by_id(id, self.repo, self.model, session)
         return obj  # self.read_schema.model_validate(obj)
 
     async def get_one_api(self, id: int, session: AsyncSession = Depends(get_db)) -> DrinkReadApi:

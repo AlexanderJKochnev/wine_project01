@@ -5,9 +5,8 @@ from pydantic import ConfigDict, field_serializer, Field, computed_field
 
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
-# from app.core.schemas.image_mixin import ImageUrlMixin
+# from app.core.utils.common_utils import camel_to_enum
 from app.mongodb.models import ImageCreate
-# from app.support.color.schemas import ColorCreateRelation, ColorRead
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
                                                      DrinkVarietalRelationApi)
 from app.support.drink.drink_food_schema import DrinkFoodRelationApi
@@ -102,7 +101,6 @@ class CustomUpdSchema(TitleMixin):
 
 class CustomCreateSchema(TitleMixin):
     subcategory_id: int
-    # color_id: Optional[int] = None
     sweetness_id: Optional[int] = None
     subregion_id: int
     recommendation: Optional[str] = None
@@ -114,10 +112,6 @@ class CustomCreateSchema(TitleMixin):
     sugar: Optional[float] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
-    # image_path: Optional[str]
-    # description: Optional[str] = None
-    # description_fr: Optional[str] = None
-    # description_ru: Optional[str] = None
 
 
 class DrinkRead(ReadNoNameSchema, CustomReadSchema):
@@ -135,15 +129,6 @@ class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
 
 class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-
-
-class DrinkCreateRelationsWithImage(DrinkCreateRelations):
-    """ удлить ?"""
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
-
-    @property
-    def image(self) -> Optional[ImageCreate]:
-        return Optional[ImageCreate]
 
 
 class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):
@@ -219,6 +204,7 @@ class CustomReadApiSchema(TitleMixinExclude):
                 return None
 
         # Для вложенных объектов рекурсивно ищем языковые версии
+        print(f'{current_obj=} {type(current_obj)} {lang_suffix=}, ', hasattr(current_obj, f"name{lang_suffix}"))
         if hasattr(current_obj, f"name{lang_suffix}"):
             return getattr(current_obj, f"name{lang_suffix}")
         elif hasattr(current_obj, "name"):
@@ -239,7 +225,6 @@ class CustomReadApiSchema(TitleMixinExclude):
                 name = assoc.name
             else:
                 continue
-
             if name:
                 names.append(name)
 
@@ -262,7 +247,8 @@ class CustomReadApiSchema(TitleMixinExclude):
             category_name = self.__get_nested_field__(self.subcategory, "category.name", lang_suffix)
             subcategory_name = self.__get_nested_field__(self.subcategory, "name", lang_suffix)
             if category_name and subcategory_name:
-                result['category'] = f"{category_name} {subcategory_name}"
+                # result['category'] = f"{category_name} {subcategory_name}"
+                result['category'] = f"{subcategory_name}"
             else:
                 result['category'] = f"{category_name}"
 
@@ -291,6 +277,12 @@ class CustomReadApiSchema(TitleMixinExclude):
         # Состав
         result["madeof"] = self.__get_field_value__("madeof", lang_suffix)
 
+        # Title
+        result["title"] = self.__get_field_value__("title", lang_suffix)
+
+        # Subitle
+        result["subtitle"] = self.__get_field_value__("subtitle", lang_suffix)
+
         # Пайринг (еда)
         result["pairing"] = self.__get_association_names__(self.food_associations, lang_suffix)
 
@@ -306,10 +298,6 @@ class CustomReadApiSchema(TitleMixinExclude):
 
         result["age"] = self.age
         result["sparkling"] = self.sparkling
-        result["title"] = self.title
-        result["title_ru"] = self.title_ru
-        result["subtitle_ru"] = self.subtitle_ru
-        result["subtitle"] = self.subtitle
 
         # Убираем None значения
         return {k: v for k, v in result.items() if v is not None}

@@ -1,9 +1,9 @@
 # app/support/item/schemas.py
 
 # from decimal import Decimal
-from typing import Optional
-
-from pydantic import ConfigDict
+from typing import Optional, Dict, Any
+from datetime import datetime
+from pydantic import ConfigDict, Field, model_validator
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
 from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
@@ -11,10 +11,29 @@ from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
 
 class CustomReadSchema:
     id: int
-    drink: DrinkReadApi
+    drink: DrinkReadApi = Field(exclude=True)
     vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
+
+    # Вычисляемые поля
+    updated_at: Optional[datetime] = None
+    en: Optional[Dict[str, Any]] = None
+    ru: Optional[Dict[str, Any]] = None
+    fr: Optional[Dict[str, Any]] = None
+    category: Optional[str] = None
+    country: Optional[str] = None
+
+    @model_validator(mode='after')
+    def extract_drink_data(self) -> 'CustomReadSchema':
+        if self.drink:
+            self.updated_at = self.drink.updated_at
+            self.en = self.drink.en
+            self.ru = self.drink.ru
+            self.fr = self.drink.fr
+            self.category = self.drink.en.get('category')
+            self.country = self.drink.en.get('country')
+        return self
 
 
 class CustomCreateSchema:
@@ -47,7 +66,7 @@ class CustomUpdSchema:
 
 
 class ItemRead(BaseModel, CustomReadSchema, ImageUrlMixin):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
 class ItemCreate(BaseModel, CustomCreateSchema):
