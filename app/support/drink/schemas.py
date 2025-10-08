@@ -2,7 +2,7 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pydantic import ConfigDict, field_serializer, Field, computed_field
-
+from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
@@ -37,11 +37,26 @@ class LangMixin:
     madeof_fr: Optional[str] = None
 
 
-class titleMixinExclude:
-    title: str = Field(exclude=True)
+class LangMixinExclude:
+    title: Optional[str] = Field(exclude=True)
     title_ru: Optional[str] = Field(exclude=True)
+    title_fr: Optional[str] = Field(exclude=True)
+
     subtitle: Optional[str] = Field(exclude=True)
     subtitle_ru: Optional[str] = Field(exclude=True)
+    subtitle_fr: Optional[str] = Field(exclude=True)
+
+    description: Optional[str] = Field(exclude=True)
+    description_ru: Optional[str] = Field(exclude=True)
+    description_fr: Optional[str] = Field(exclude=True)
+
+    recommendation: Optional[str] = Field(exclude=True)
+    recommendation_ru: Optional[str] = Field(exclude=True)
+    recommendation_fr: Optional[str] = Field(exclude=True)
+
+    madeof: Optional[str] = Field(exclude=True)
+    madeof_ru: Optional[str] = Field(exclude=True)
+    madeof_fr: Optional[str] = Field(exclude=True)
 
 
 class CustomUpdSchema(LangMixin):
@@ -134,15 +149,10 @@ class DrinkVarietalLinkCreate(BaseModel):
     drink: DrinkRead
 
 
-class CustomReadApiSchema(titleMixinExclude):
+class CustomReadApiSchema(LangMixinExclude):
     subcategory: SubcategoryReadApiSchema = Field(exclude=True)
     sweetness: Optional[ReadApiSchema] = Field(exclude=True)
     subregion: Optional[SubregionReadApiSchema] = Field(exclude=True)
-    recommendation: Optional[str] = Field(exclude=True)
-    recommendation_ru: Optional[str] = Field(exclude=True)
-    recommendation_fr: Optional[str] = Field(exclude=True)
-    madeof: Optional[str] = Field(exclude=True)
-    madeof_ru: Optional[str] = Field(exclude=True)
     alc: Optional[float] = Field(exclude=True)
     sugar: Optional[float] = Field(exclude=True)
     age: Optional[str] = Field(exclude=True)
@@ -151,9 +161,6 @@ class CustomReadApiSchema(titleMixinExclude):
     food_associations: Optional[List[DrinkFoodRelationApi]] = Field(exclude=True)
     varietal_associations: Optional[List[DrinkVarietalRelationApi]] = Field(exclude=True)
     updated_at: Optional[datetime] = None
-    description: Optional[str] = Field(exclude=True)
-    description_ru: Optional[str] = Field(exclude=True)
-    description_fr: Optional[str] = Field(exclude=True)
 
     def __get_field_value__(self, field_name: str, lang_suffix: str) -> Any:
         """
@@ -309,4 +316,104 @@ class DrinkReadApi(PkSchema, CustomReadApiSchema):
                               extra='allow', populate_by_name=True,
                               exclude_none=True
                               )
-    id: int
+
+
+class CustomReadFlatSchema(LangMixinExclude):
+    subcategory: SubcategoryReadApiSchema = Field(exclude=True)
+    sweetness: Optional[ReadApiSchema] = Field(exclude=True)
+    subregion: Optional[SubregionReadApiSchema] = Field(exclude=True)
+    alc: Optional[float] = Field(exclude=True)
+    sugar: Optional[float] = Field(exclude=True)
+    age: Optional[str] = Field(exclude=True)
+    sparkling: Optional[bool] = Field(exclude=True)
+    foods: Optional[List[FoodRead]] = Field(exclude=True)
+    food_associations: Optional[List[DrinkFoodRelationApi]] = None  # Field(exclude=True)
+    varietal_associations: Optional[List[DrinkVarietalRelationApi]] = None  # Field(exclude=True)
+    updated_at: Optional[datetime] = None
+
+    def _get_base_field_names(self) -> set[str]:
+        """
+        Автоматически определяет базовые языковые поля по наличию полей с суффиксом '_ru'.
+        Например: если есть 'title_ru' → базовое поле 'title'.
+        """
+        field_names = self.model_fields.keys()
+        base_fields = set()
+        for name in field_names:
+            if name.endswith('_ru'):
+                base_name = name[:-3]  # убираем '_ru'
+                base_fields.add(base_name)
+        return base_fields
+
+    def __get_field_value__(self, field_name: str, lang_suffix: str) -> Any:
+        """
+            Получить значение поля с учетом языкового суффикса
+            Если нет значения на языке - берется значение из поля по молчанию (english)
+        """
+        lang_field = f"{field_name}{lang_suffix}"
+        if hasattr(self, lang_field):
+            value = getattr(self, lang_field)
+            if value is not None:
+                return value
+
+        # Если нет поля с суффиксом, пробуем базовое поле
+        if hasattr(self, field_name):
+            return getattr(self, field_name)
+        return None
+
+    @computed_field
+    @property
+    def country(self) -> str:
+        if hasattr(self.subregion, 'region'):
+            if hasattr(self.subregion.region, 'country'):
+                if hasattr(self.subregion.region.country, 'name'):
+                    return camel_to_enum(self.subregion.region.country.name)
+        return None
+
+    @computed_field
+    @property
+    def category(self) -> str:
+        if hasattr(self.subcategory, 'category'):
+            if hasattr(self.subcategory.category, 'name'):
+                if self.subcategory.category.name == 'Wine':
+                    return camel_to_enum(self.subcategory.name)
+                else:
+                    return camel_to_enum(self.subcategory.category.name)
+        return None
+
+    def _lang_(self, lang_suffix: str = '') -> Dict[str, Any]:
+        result: dict = {}
+        # добавляем поля из языковой модели
+        for field in self._get_base_field_names():
+            fname = f'{field}{lang_suffix}'
+            res = getattr(self, fname, None) or getattr(self, field, None)
+            if res:
+                result[field] = res
+        if self.alc:
+            result['alc'] = f'{self.alc}%'
+        if self.sugar:
+            result['sugar'] = f'{self.sugar}%'
+        if self.age:
+            result['age'] = f'{self.age}%'
+        return result
+
+    @computed_field
+    @property
+    def en(self) -> Dict[str, Any]:
+        return self._lang_('')
+
+    @computed_field
+    @property
+    def ru(self) -> Dict[str, Any]:
+        return self._lang_('_ru')
+
+    @computed_field
+    @property
+    def fr(self) -> Dict[str, Any]:
+        return self._lang_('_fr')
+
+
+class DrinkReadFlat(BaseModel, CustomReadFlatSchema):
+    model_config = ConfigDict(
+        from_attributes=True, arbitrary_types_allowed=True, extra='allow', populate_by_name=True,
+        exclude_none=True
+    )

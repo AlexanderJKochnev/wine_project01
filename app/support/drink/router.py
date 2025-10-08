@@ -14,7 +14,8 @@ from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelations, DrinkCreateResponseSchema,
-                                       DrinkFoodLinkUpdate, DrinkRead, DrinkReadApi, DrinkUpdate)
+                                       DrinkFoodLinkUpdate, DrinkRead, DrinkReadApi, DrinkUpdate,
+                                       DrinkReadFlat)
 from app.support.drink.service import DrinkService
 
 
@@ -25,7 +26,7 @@ class DrinkRouter(BaseRouter):
             model=Drink,
             repo=DrinkRepository,
             create_schema=DrinkCreate,
-            read_schema=DrinkRead,
+            read_schema=DrinkReadFlat,
             create_schema_relation=DrinkCreateRelations,
             create_response_schema=DrinkCreateResponseSchema,
             path_schema=DrinkUpdate,
