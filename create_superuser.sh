@@ -94,11 +94,11 @@ create_fastapi_superuser() {
             echo "⚠️  Пользователь с email '$email' уже существует в FastAPI. Пропуск создания."
         else
             echo "✅ Создаём суперпользователя в FastAPI..."
-            docker compose exec -T app python -m app.admin.create_superuser "$username" "$email" "$password"
+            docker compose exec -T app python -m app.auth.create_superuser "$username" "$email" "$password"
         fi
     else
         echo "✅ Интерактивное создание в FastAPI..."
-        docker compose exec -it app python -m app.admin.create_superuser
+        docker compose exec -it app python -m app.auth.create_superuser
     fi
 }
 
