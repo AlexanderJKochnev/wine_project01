@@ -1,12 +1,66 @@
 # app/support/item/schemas.py
 
-# from decimal import Decimal
 from typing import Optional, Dict, Any
 from datetime import datetime
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator, computed_field
+from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
-from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi
+from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi, DrinkReadFlat
+
+
+class CustomReadFlatSchema:
+    id: int
+    drink: DrinkReadFlat = Field(exclude=True)
+    updated_at: datetime = Field(exclude=True)
+    vol: Optional[float] = None
+    # price: Optional[float] = None
+    # count: Optional[int] = 0
+
+    @computed_field
+    @property
+    def changed_at(self) -> datetime:
+        return getattr(self.drink, "updated_at") or self.updated_at
+
+    @computed_field
+    @property
+    def country(self) -> str:
+        if hasattr(self.drink, 'subregion'):
+            if hasattr(self.drink.subregion, 'region'):
+                if hasattr(self.drink.subregion.region, 'country'):
+                    if hasattr(self.drink.subregion.region.country, 'name'):
+                        return camel_to_enum(self.drink.subregion.region.country.name)
+        return None
+
+    @computed_field
+    @property
+    def category(self) -> str:
+        if hasattr(self.drink, 'subcategory'):
+            if hasattr(self.drink.subcategory, 'category'):
+                if hasattr(self.drink.subcategory.category, 'name'):
+                    if self.drink.subcategory.category.name == 'Wine':
+                        return camel_to_enum(self.drink.subcategory.name)
+                    else:
+                        return camel_to_enum(self.drink.subcategory.category.name)
+        return None
+
+    def _lang_(self, lang: str = 'en') -> Dict[str, Any]:
+        return getattr(self.drink, lang)
+
+    @computed_field
+    @property
+    def en(self) -> Dict[str, Any]:
+        return self._lang_('en')
+
+    @computed_field
+    @property
+    def ru(self) -> Dict[str, Any]:
+        return self._lang_('ru')
+
+    @computed_field
+    @property
+    def fr(self) -> Dict[str, Any]:
+        return self._lang_('fr')
 
 
 class CustomReadSchema:
@@ -65,7 +119,7 @@ class CustomUpdSchema:
     image_path: Optional[str] = None
 
 
-class ItemRead(BaseModel, CustomReadSchema, ImageUrlMixin):
+class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 

@@ -1,7 +1,7 @@
 # app/support/api/router.py
 from dataclasses import dataclass
 from datetime import datetime, timezone
-
+from typing import List
 from dateutil.relativedelta import relativedelta
 from fastapi import Depends, Query
 
@@ -9,7 +9,7 @@ from app.core.config.project_config import settings
 from app.mongodb import router as mongorouter
 from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
-from app.support.drink.router import DrinkRouter
+from app.support.item.router import ItemRouter
 
 
 @dataclass
@@ -28,7 +28,7 @@ data = Data(prefix=settings.API_PREFIX,
             )
 
 
-class ApiRouter(DrinkRouter):
+class ApiRouter(ItemRouter):
     def __init__(self):
         super().__init__(prefix='/api', tags=['api'])
         self.prefix = data.prefix
@@ -36,6 +36,10 @@ class ApiRouter(DrinkRouter):
 
     def setup_routes(self):
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
+        self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
+        self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
+        self.router.add_api_route("/search", self.search, methods=["GET"], response_model=self.paginated_response)
+
         self.router.add_api_route(f"/{data.mongo}", self.get_images_after_date, response_model=FileListResponse)
         self.router.add_api_route(f"/{data.mongo}" + "/{id}", self.download_image)
 

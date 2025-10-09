@@ -327,8 +327,8 @@ class CustomReadFlatSchema(LangMixinExclude):
     age: Optional[str] = Field(exclude=True)
     sparkling: Optional[bool] = Field(exclude=True)
     foods: Optional[List[FoodRead]] = Field(exclude=True)
-    food_associations: Optional[List[DrinkFoodRelationApi]] = None  # Field(exclude=True)
-    varietal_associations: Optional[List[DrinkVarietalRelationApi]] = None  # Field(exclude=True)
+    food_associations: Optional[List[DrinkFoodRelationApi]] = Field(exclude=True)
+    varietal_associations: Optional[List[DrinkVarietalRelationApi]] = Field(exclude=True)
     updated_at: Optional[datetime] = None
 
     def _get_base_field_names(self) -> set[str]:
@@ -394,6 +394,15 @@ class CustomReadFlatSchema(LangMixinExclude):
             result['sugar'] = f'{self.sugar}%'
         if self.age:
             result['age'] = f'{self.age}%'
+        many = ((self.food_associations, 'pairing'),
+                (self.varietal_associations, 'varietal'))
+        for key, v1 in many:
+            if key:
+                tmp = [getattr(v, f'name{lang_suffix}') or getattr(v, 'name') for v in key]
+                if tmp:
+                    # если нужна строка - use tmp_str instead of tmp
+                    # tmp_str = ', '.join(tmp)
+                    result[v1] = tmp
         return result
 
     @computed_field

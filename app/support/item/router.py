@@ -15,15 +15,15 @@ from app.mongodb.service import ImageService
 
 
 class ItemRouter(BaseRouter):
-    def __init__(self):
+    def __init__(self, prefix: str = '/items', tags=['items']):
         super().__init__(
             model=Item,
             repo=ItemRepository,
             create_schema=ItemCreate,
             read_schema=ItemRead,
             path_schema=ItemUpdate,
-            prefix="/items",
-            tags=["items"],
+            prefix=prefix,
+            tags=tags,
             create_response_schema=ItemCreateResponseSchema,
             create_schema_relation=ItemCreateRelations,
             service=ItemService

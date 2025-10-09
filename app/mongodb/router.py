@@ -14,15 +14,12 @@ from app.mongodb.service import ImageService
 
 # from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
-router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_current_active_user)])
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
 directprefix = f"{subprefix}/direct"
-
-
-# now = datetime.now(timezone.utc).isoformat()
 delta = (datetime.now(timezone.utc) - relativedelta(years=2))
-# delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
+
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_current_active_user)])
 
 
 @router.post(f'/{subprefix}', response_model=dict)
@@ -59,7 +56,8 @@ async def get_images_after_date(
     image_service: ImageService = Depends()
 ):
     """
-    Получить изображения, созданные после указанной даты
+    Получение постраничного списка id изображений, созданных после заданной даты.
+    по умолчанию за 2 года но сейчас
     """
     try:
         # Проверяем, что дата не в будущем

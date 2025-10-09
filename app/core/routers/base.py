@@ -326,7 +326,8 @@ class BaseRouter:
                   session: AsyncSession = Depends(get_db)
                   ) -> PaginatedResponse:
         """
-        Получение постранично всех записей после заданной даты
+        Получение постранично всех записей после заданной даты.
+        По умолчанию задана дата - 2 года от сейчас
         """
         try:
             after_date = back_to_the_future(after_date)
@@ -349,7 +350,8 @@ class BaseRouter:
         description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"
     ), session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
         """
-            получение все записей списком после указанной даты
+        Получение все записей одним списком после указанной даты.
+        По умолчанию задана дата - 2 года от сейчас
         """
         try:
             after_date = back_to_the_future(after_date)
