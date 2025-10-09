@@ -1,12 +1,14 @@
 # app/support/api/router.py
+from fastapi import HTTPException
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
 from dateutil.relativedelta import relativedelta
 from fastapi import Depends, Query
-
+from app.core.utils.common_utils import back_to_the_future
 from app.core.config.project_config import settings
 from app.mongodb import router as mongorouter
+
 from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
 from app.support.item.router import ItemRouter
@@ -40,8 +42,9 @@ class ApiRouter(ItemRouter):
         self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
         self.router.add_api_route("/search", self.search, methods=["GET"], response_model=self.paginated_response)
 
-        self.router.add_api_route(f"/{data.mongo}", self.get_images_after_date, response_model=FileListResponse)
-        self.router.add_api_route(f"/{data.mongo}" + "/{id}", self.download_image)
+        # self.router.add_api_route(f"/{data.mongo}", self.get_images_after_date,
+        #                           response_model=FileListResponse)
+        # self.router.add_api_route(f"/{data.mongo}" + "/{id}", self.download_image)
 
     async def get_images_after_date(self, after_date: datetime = Query(data.delta, description="Дата в формате ISO "
                                                                                                "8601 (например, "
@@ -52,9 +55,15 @@ class ApiRouter(ItemRouter):
                                     image_service: ImageService = Depends()
                                     ):
         """
-        Получение списка изображений, созданных после заданной даты (по умолчанию за два года до нстоящего времени)
+        Получение постраничного списка id изображений, созданных после заданной даты.
+        по умолчанию за 2 года но сейчас
         """
-        return await mongorouter.get_images_after_date(after_date, page, per_page, image_service)
+        try:
+            # Проверяем, что дата не в будущем
+            after_date = back_to_the_future(after_date)
+            return await image_service.get_images_after_date(after_date, page, per_page)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     async def download_image(self, file_id: str, image_service: ImageService = Depends()):
         """

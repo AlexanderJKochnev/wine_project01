@@ -19,33 +19,9 @@ fileprefix = f"{settings.FILES_PREFIX}"
 directprefix = f"{subprefix}/direct"
 delta = (datetime.now(timezone.utc) - relativedelta(years=2))
 
+
+# -----------------------
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_current_active_user)])
-
-
-@router.post(f'/{subprefix}', response_model=dict)
-async def upload_image(
-    file: UploadFile = File(...),
-    description: Optional[str] = Form(None),
-    image_service: ImageService = Depends()
-):
-    """
-    загрузка изображения в базу данных
-    """
-    file_id, filename = await image_service.upload_image(file, description)
-    return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
-
-
-@router.post(f'/{directprefix}')
-async def direct_upload(image_service: ImageService = Depends()) -> dict:
-    """
-        импортирование рисунков из директории UPLOAD_DIR (см. .env file
-        загрузка происходит в обход api. Для того что бы выполнить импорт нужно
-        на сервере поместить файлы с изображениями в директорию UPLOAD_DIR.
-        операция длительная - наберитесь терпения.
-    """
-    images = await image_service.direct_upload_image()
-    # result = {b: a for a, b in images}
-    return images
 
 
 @router.get(f'/{subprefix}', response_model=FileListResponse)
@@ -57,12 +33,29 @@ async def get_images_after_date(
 ):
     """
     Получение постраничного списка id изображений, созданных после заданной даты.
-    по умолчанию за 2 года но сейчас
+    по умолчанию за 2 года до сейчас
     """
     try:
         # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
         return await image_service.get_images_after_date(after_date, page, per_page)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get(f'/{subprefix}list', response_model=dict)
+async def get_images_list_after_date(
+    after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
+        image_service: ImageService = Depends()) -> dict:
+    """
+    список всех изображений в базе данных без страниц
+    :return: возвращает список кортежей (id файла, имя файла)
+    """
+    try:
+        # Проверяем, что дата не в будущем
+        after_date = back_to_the_future(after_date)
+        result = await image_service.get_images_list_after_date(after_date)
+        return {a: b for b, a in result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -101,29 +94,41 @@ async def download_file(
     )
 
 
+@router.post(f'/{subprefix}', response_model=dict)
+async def upload_image(
+    file: UploadFile = File(...),
+    description: Optional[str] = Form(None),
+    image_service: ImageService = Depends()
+):
+    """
+    загрузка одного изображения в базу данных
+    """
+    file_id, filename = await image_service.upload_image(file, description)
+    return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
+
+
+@router.post(f'/{directprefix}')
+async def direct_upload(image_service: ImageService = Depends()) -> dict:
+    """
+        импортирование рисунков из директории UPLOAD_DIR (см. .env file
+        загрузка происходит в обход api. Для того что бы выполнить импорт нужно
+        на сервере поместить файлы с изображениями в директорию UPLOAD_DIR.
+        операция длительная - наберитесь терпения.
+    """
+    images = await image_service.direct_upload_image()
+    # result = {b: a for a, b in images}
+    return images
+
+
 @router.delete(f'/{subprefix}/' + "{file_id}", response_model=dict)
 async def delete_image(
     file_id: str,
-    # current_user: User = Depends(get_current_user),
     image_service: ImageService = Depends()
 ):
+    """
+    удаление одного изображения по _id
+    """
     success = await image_service.delete_image(file_id)  # , current_user.id)
     if success:
         return {"message": "Image deleted successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-
-
-@router.get(f'/{subprefix}list', response_model=dict)
-async def get_images_list_after_date(
-    after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
-        image_service: ImageService = Depends()) -> dict:
-    """
-    Получить список id изображений, созданные после указанной даты
-    """
-    try:
-        # Проверяем, что дата не в будущем
-        after_date = back_to_the_future(after_date)
-        result = await image_service.get_images_list_after_date(after_date)
-        return {a: b for b, a in result}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))

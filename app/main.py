@@ -63,8 +63,8 @@ app.include_router(VarietalRouter().router)
 app.include_router(CustomerRouter().router)
 app.include_router(WarehouseRouter().router)
 """
-app.include_router(auth_router)
-app.include_router(user_router)
+# app.include_router(auth_router)
+# app.include_router(user_router)
 
 
 @app.exception_handler(NotFoundException)
