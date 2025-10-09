@@ -48,8 +48,8 @@ app.add_middleware(
 )
 
 app.include_router(ApiRouter().router)
-# app.include_router(ItemRouter().router)
 app.include_router(MongoRouter)
+app.include_router(ItemRouter().router)
 # app.include_router(DrinkRouter().router)
 """
 app.include_router(CategoryRouter().router)
