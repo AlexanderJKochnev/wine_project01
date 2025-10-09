@@ -17,11 +17,11 @@ fi
 # Проверяем, переданы ли аргументы
 if [ $# -eq 3 ]; then
     echo "Создание суперпользователя с параметрами..."
-    docker compose exec app python -m app.auth.create_superuser "$1" "$2" "$3"
+    docker compose exec app python -m app.admin.create_superuser "$1" "$2" "$3"
 elif [ "$1" = "--interactive" ]; then
     echo "Интерактивное создание суперпользователя..."
-    docker compose exec -it app python -m app.auth.create_superuser --interactive
+    docker compose exec -it app python -m app.admin.create_superuser --interactive
 else
     echo "Интерактивное создание суперпользователя..."
-    docker compose exec -it app python -m app.auth.create_superuser
+    docker compose exec -it app python -m app.admin.create_superuser
 fi
