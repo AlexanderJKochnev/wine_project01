@@ -1,5 +1,7 @@
 # app/support/api/router.py
+import io
 from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
@@ -47,6 +49,7 @@ class ApiRouter(ItemRouter):
                                   response_model=dict)
         self.router.add_api_route("/{id}", self.get_one, methods=["GET"], response_model=self.read_schema)
         self.router.add_api_route("/mongo/{id}", self.download_image)
+        self.router.add_api_route("/file/{file}", self.download_file)
 
     async def get_images_after_date(self, after_date: datetime = Query(data.delta, description="Дата в формате ISO "
                                                                                                "8601 (например, "
@@ -89,3 +92,14 @@ class ApiRouter(ItemRouter):
             Получение одного изображения по _id
         """
         return await mongorouter.download_image(file_id, image_service)
+
+    async def download_file(self, filename: str, image_service: ImageService = Depends()):
+        """
+            Получение одного изображения по имени файла
+        """
+        image_data = await image_service.get_image_by_filename(filename)
+
+        return StreamingResponse(
+            io.BytesIO(image_data["content"]), media_type=image_data['content_type'],
+            headers={"Content-Disposition": f"attachment; filename={image_data['filename']}"}
+        )
