@@ -50,8 +50,8 @@ app.add_middleware(
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
 app.include_router(ItemRouter().router)
-# app.include_router(DrinkRouter().router)
-"""
+app.include_router(DrinkRouter().router)
+
 app.include_router(CategoryRouter().router)
 app.include_router(SubcategoryRouter().router)
 app.include_router(CountryRouter().router)
@@ -62,9 +62,9 @@ app.include_router(FoodRouter().router)
 app.include_router(VarietalRouter().router)
 app.include_router(CustomerRouter().router)
 app.include_router(WarehouseRouter().router)
-"""
+
 app.include_router(auth_router)
-# app.include_router(user_router)
+app.include_router(user_router)
 
 
 @app.exception_handler(NotFoundException)
@@ -139,18 +139,3 @@ async def startup_event():
 async def shutdown_event():
     mongodb_instance = await get_mongodb()
     await mongodb_instance.disconnect()
-
-"""
-@app.on_event("startup")
-async def startup_event():
-    # await connect_to_mongo()
-    # mongodb_instance = await get_mongodb()
-    await get_mongodb()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    # await close_mongo_connection()
-    mongodb_instance = await get_mongodb()
-    await mongodb_instance.disconnect()
-"""

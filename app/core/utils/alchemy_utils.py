@@ -1,14 +1,27 @@
-import re
-from typing import List, Optional, Tuple, Dict, Union
-import json
-from pathlib import Path
 import copy
-from app.core.utils.common_utils import get_path_to_root, jprint, clean_string  # NOQA: F401
-from fastapi import Query
-from sqlalchemy.ext.asyncio import AsyncSession
+import json
+import re
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Type, Union, TypeVar
 
+from fastapi import Query
+from pydantic import BaseModel, create_model, Field
+from sqlalchemy import Column, func, String, Text, Unicode, UnicodeText
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import MapperProperty
+from sqlalchemy.orm.attributes import QueryableAttribute
+from sqlalchemy.orm import DeclarativeMeta
+from app.core.exceptions import ValidationException
 from app.core.models.base_model import Base
-from app.core.repositories.sqlalchemy_repository import ModelType
+from app.core.utils.common_utils import clean_string, get_path_to_root, jprint  # NOQA: F401
+
+ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
+
+
+class SearchType(str, Enum):
+    EXACT = "exact"
+    LIKE = "like"
 
 
 async def mass_delete(query: Query, batch: int, session: AsyncSession):
@@ -109,6 +122,82 @@ def parse_unique_violation2(error_msg: str) -> dict:
         val = [int(a) if a.isnumeric() else a for a in val]
         if all((key, val)):
             return dict(zip(key, val))
+
+
+def create_search_model(model_class: Type) -> Type[BaseModel]:
+    """
+        Динамически создает Pydantic модель поиска на основе SQLAlchemy модели
+    """
+    fields = {}
+
+    # Получаем текстовые поля из модели
+    for column in model_class.__table__.columns:
+        # print(f'{column}, {column.type}')
+        if isinstance(column.type, (String, Text, Unicode, UnicodeText)):
+            field_name = column.name
+            fields[field_name] = (Optional[str],
+                                  Field(None, description=f"Поиск по полю '{field_name}'"))
+    if not fields:
+        raise ValueError(f"Модель {model_class.__name__} не содержит текстовых полей")
+
+    # Создаем динамическую модель
+    model_name = f"{model_class.__name__}SearchRequest"
+    return create_model(model_name, **fields, __base__=BaseModel)
+
+# Пример использования:
+# UserSearchRequest = create_search_model(User)
+# ProductSearchRequest = create_search_model(Product)
+
+
+def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribute],
+                           search_value: str,
+                           **kwargs):
+    """
+    Построение условия поиска по текстовым полям
+    :param field: поле sqlalchemy модели
+    :type field:  Column, MapperProperty, QueryableAttribute
+    :param search_value: поисковая строка
+    :type search_value:  str
+    :param kwargs:       tba
+    :type kwargs:        tba
+    :return:             condition
+    :rtype:
+    """
+    search_type = kwargs.get('search_type', SearchType.LIKE)
+    case_sensitive = kwargs.get('case_sensitive', False)
+    if search_type == SearchType.EXACT:     # точный поиск
+        if case_sensitive:
+            return field == search_value
+        else:
+            return func.lower(field) == func.lower(search_value)
+    elif search_type == SearchType.LIKE:    # like поиск
+        if case_sensitive:
+            return field.ilike(f"%{search_value}%")
+        else:
+            return field.ilike(f"%{search_value}%")
+
+    raise ValidationException(
+        message=f"Неподдерживаемый тип поиска: {search_type}",
+        details={"supported_types": [t.value for t in SearchType]},
+        suggestion=f"Используйте один из поддерживаемых типов: {', '.join([t.value for t in SearchType])}"
+    )
+
+
+def create_search_conditions(model: Type, search_str, **kwargs):
+    """ генератор условия для поиска
+        ищет во всех текстовых полях модели
+        условия см **kwargs  для build_search_condition (по умолчанию LIKE non-casesensitive
+    """
+    try:
+        search_model = create_search_model(model)
+        conditions = []
+        for key in search_model.model_fields.keys():
+            field = getattr(model, key)
+            condition = build_search_condition(field, search_str)
+            conditions.append(condition)
+        return conditions
+    except Exception as e:
+        print(f'create_search_conditions: {e}')
 
 
 class JsonConverter():
@@ -557,13 +646,3 @@ def replace_commas_in_parentheses(match, rep: str = '@'):
     inner_replaced = inner.replace(',', '@')
     # Возвращаем скобки с изменённым содержимым
     return f"({inner_replaced})"
-
-"""
-from app.core.config.project_config import settings  # noqa: 527
-
-filename = 'data.json'
-upload_dir = settings.UPLOAD_DIR
-dirpath: Path = get_path_to_root(upload_dir)
-filepath = dirpath / filename
-dataconv: list = list(JsonConverter(filepath)().values())
-"""

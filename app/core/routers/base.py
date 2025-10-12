@@ -1,12 +1,12 @@
 # app/core/routers/base.py
 
 import logging
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import create_model
+# from pydantic import create_model
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,8 +19,8 @@ from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema
                                    CreateResponse, UpdateSchema, CreateSchema)
 from app.core.utils.pydantic_utils import PyUtils as py
 from app.core.services.service import Service
-# from app.core.repositories.sqlalchemy_repository import Repository
-# from app.core.models.base_model import Base
+from app.core.exceptions import (ValidationException, ConflictException, NotFoundException)
+
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
@@ -31,23 +31,6 @@ TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 dev = settings.DEV
 logger = logging.getLogger(__name__)
 delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
-
-# Кастомные исключения
-
-
-class NotFoundException(HTTPException):
-    def __init__(self, detail: str = "Resource not found"):
-        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
-
-
-class ValidationException(HTTPException):
-    def __init__(self, detail: str = "Validation error"):
-        super().__init__(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
-
-
-class ConflictException(HTTPException):
-    def __init__(self, detail: str = "Resource already exists"):
-        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
 
 class BaseRouter:
@@ -79,16 +62,14 @@ class BaseRouter:
         self.create_response_schema = create_response_schema
         self.prefix = prefix
         self.tags = tags
-        self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
-        self.paginated_response = create_model(f"Paginated{read_schema.__name__}",
-                                               __base__=PaginatedResponse[read_schema])
-        self.read_response = create_model(f'{read_schema.__name__}Response',
-                                          __base__=read_schema)
+
+        self.read_response = py.read_response(read_schema)
         self.paginated_response = py.paginated_response(read_schema)
-        self.read_response = read_schema
+        # self.non_paginated_response = py.non_paginated_response(read_schema)
         self.delete_response = DeleteResponse
         self.responses = {404: {"description": "Record not found",
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
+        self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
         self.setup_routes()
         self.service = service
         self.path_schema = path_schema
@@ -96,26 +77,26 @@ class BaseRouter:
     def setup_routes(self):
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
+
         self.router.add_api_route("/hierarchy",
                                   self.create_relation,
                                   status_code=status.HTTP_200_OK,
                                   methods=["POST"],
-                                  response_model=self.read_schema)
+                                  response_model=self.read_response)
+        # get all без паггинации
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
+        # search с пагинацией
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
-
-        self.router.add_api_route("/deepsearch", self.deep_search, methods=["GET"],
-                                  response_model=self.paginated_response)
+        # search без пагинации
         self.router.add_api_route(
-            "/advsearch", self.advanced_search, methods=["GET"], response_model=self.paginated_response
-        )
-
+            "/search_all", self.search_all, methods=["GET"], response_model=List[self.read_schema])
+        # get without pagination
         self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
+        # get one buy id
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
                                   response_model=self.read_schema,
-                                  # responses=self.responses
                                   )
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.create_response_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
@@ -319,10 +300,9 @@ class BaseRouter:
                   after_date: datetime = Query(delta,
                                                description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
                   page: int = Query(1, ge=1),
-                  page_size: int = Query(paging.get('def', 20), ge=paging.get('min', 1), le=paging.get('max', 1000)),
-                  # repository: Type[Repository],
-                  # model: Type[Base],
-                  # service: Type[Service],
+                  page_size: int = Query(paging.get('def', 20),
+                                         ge=paging.get('min', 1),
+                                         le=paging.get('max', 1000)),
                   session: AsyncSession = Depends(get_db)
                   ) -> PaginatedResponse:
         """
@@ -335,11 +315,6 @@ class BaseRouter:
             return response
             result = self.paginated_response(**response)
             return result
-        except SQLAlchemyError as e:
-            logger.error(f"Database error in get: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail="Internal server error")
-
         except Exception as e:
             logger.error(f"Unexpected error in get: {e} {self.model.__name__}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -356,50 +331,29 @@ class BaseRouter:
         try:
             after_date = back_to_the_future(after_date)
             return await self.service.get(after_date, self.repo, self.model, session)
-        except SQLAlchemyError as e:
-            logger.error(f"Database error in get: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail="Internal server error")
-
         except Exception as e:
             logger.error(f"Unexpected error in get: {e} {self.model.__name__}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail="Internal server error")
 
-    async def search(self, query: str = Query(...),
+    async def search(self,
+                     search: str,
                      page: int = Query(1, ge=1),
                      page_size: int = Query(paging.get('def', 20),
                                             ge=paging.get('min', 1),
                                             le=paging.get('max', 1000)),
-                     session: AsyncSession = Depends(get_db)) -> dict:
+                     session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
         """
             Поиск по всем текстовым полям основной таблицы
-            с постраничным выводлом результата
+            с постраничным выводом результата
         """
-        try:
-            items = await self.service.search_in_main_table(query, page, page_size, self.repo,
-                                                            self.model, session=session)
-            result = self.paginated_response(**items)
-            return result
-        except SQLAlchemyError as e:
-            logger.error(f"Database error in get_items: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail="Internal server error")
+        return await self.service.search(search, page, page_size, self.repo, self.model, session)
 
-        except Exception as e:
-            logger.error(f"Unexpected error in get_items: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail="Internal server error")
-
-    async def deep_search(self, query: Optional[str] = Query(None),
-                          session: AsyncSession = Depends(get_db)) -> dict:
-        """Поиск по текстовым полям основной таблицы и связанных таблиц"""
-        # return await service.deep_search_in_main_table(query)
-        pass
-
-    async def advanced_search(self, query: Optional[str] = Query(None),
-                              # service: Service = Depends(),
-                              session: AsyncSession = Depends(get_db)) -> dict:
-        """Расширенный поиск по произвольным текстовым полям"""
-        # return await service.advanced_search_in_main_table(query)
-        pass
+    async def search_all(self,
+                         search: str,
+                         session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
+        """
+            Поиск по всем текстовым полям основной таблицы
+            с постраничным выводом результата
+        """
+        return await self.service.search_all(search, self.repo, self.model, session)

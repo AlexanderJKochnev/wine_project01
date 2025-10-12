@@ -426,3 +426,4 @@ class DrinkReadFlat(BaseModel, CustomReadFlatSchema):
         from_attributes=True, arbitrary_types_allowed=True, extra='allow', populate_by_name=True,
         exclude_none=True
     )
+    id: int

@@ -141,7 +141,7 @@ class Service:
     @classmethod
     async def get(cls, after_date: datetime,
                   repository: Type[Repository], model: ModelType,
-                  session: AsyncSession,) -> List:
+                  session: AsyncSession,) -> Optional[List[ModelType]]:
         # Запрос с загрузкой связей
         result = await repository.get(after_date, model, session)
         return result
@@ -159,13 +159,30 @@ class Service:
         result = await repository.delete(obj, session)
         return result
 
-# -------------------
     @classmethod
-    async def search_in_main_table(cls,
-                                   query: str,
-                                   page: int,
-                                   page_size: int,
-                                   repository: Type[Repository], model: ModelType,
-                                   session: AsyncSession) -> List[Any]:
+    async def search(cls,
+                     filter: str,
+                     page: int,
+                     page_size: int,
+                     repository: Type[Repository],
+                     model: ModelType,
+                     session: AsyncSession) -> List[ModelType]:
         skip = (page - 1) * page_size
-        return await repository.search_in_main_table(query, page, page_size, skip, model, session)
+
+        items, total = await repository.search_in_main_table(filter, model, session, skip, page_size)
+        result = {"items": items,
+                  "total": total,
+                  "page": page,
+                  "page_size": page_size,
+                  "has_next": skip + len(items) < total,
+                  "has_prev": page > 1}
+        return result
+
+    @classmethod
+    async def search_all(cls,
+                         filter: str,
+                         repository: Type[Repository],
+                         model: ModelType,
+                         session: AsyncSession) -> List[ModelType]:
+        items, _ = await repository.search_in_main_table(filter, model, session)
+        return items

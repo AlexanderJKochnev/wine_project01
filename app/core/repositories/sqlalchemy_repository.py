@@ -1,16 +1,14 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type
 from datetime import datetime
 from sqlalchemy import func, or_, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeMeta
-
+from app.core.utils.alchemy_utils import create_search_conditions
+from app.core.utils.alchemy_utils import ModelType
 from app.core.services.logger import logger
-from app.core.utils.common_utils import get_text_model_fields
-
-ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
+# from app.core.utils.common_utils import get_text_model_fields
 
 
 class Repository:
@@ -78,7 +76,8 @@ class Repository:
         return item
 
     @classmethod
-    async def get_all(cls, after_date: datetime, skip, limit, model: ModelType, session: AsyncSession, ) -> tuple:
+    async def get_all(cls, after_date: datetime, skip: int,
+                      limit: int, model: ModelType, session: AsyncSession, ) -> tuple:
         # Запрос с загрузкой связей и пагинацией
         stmt = cls.get_query(model).where(model.updated_at > after_date).offset(skip).limit(limit)
         total = await cls.get_count(after_date, model, session)
@@ -138,100 +137,27 @@ class Repository:
 
     @classmethod
     async def search_in_main_table(cls,
-                                   search_query: str,
-                                   page: int,
-                                   page_size: int,
-                                   skip: int,
-                                   model: ModelType,
-                                   session: AsyncSession) -> List[Any]:
+                                   search_str: str,
+                                   model: Type[ModelType],
+                                   session: AsyncSession,
+                                   skip: int = None,
+                                   limit: int = None) -> Optional[List[ModelType]]:
         """Поиск по всем заданным текстовым полям основной таблицы"""
-        items = []
-        total = 0
         try:
-            query = cls.get_query(model)     # все записи
-            text_fields = get_text_model_fields(model)
-            conditions = []
-            for field in text_fields:
-                conditions.append(getattr(model, field).ilike(f"%{search_query}%"))
-            if conditions:
-                query = query.filter(or_(*conditions))
-            # total_query = select(func.count()).select_from(query)
-            total_tmp = await session.execute(select(func.count()).select_from(query))
-            total = total_tmp.scalar()
-
-            query = query.offset(skip).limit(page_size)
+            conditions = create_search_conditions(model, search_str)
+            query = cls.get_query(model).where(or_(*conditions))
+            # получаем общее количество записей удовлетворяющих условию
+            count = select(func.count()).select_from(model).where(or_(*conditions))
+            result = await session.execute(count)
+            total = result.scalar()
+            # Добавляем пагинацию если указано
+            if limit is not None:
+                query = query.limit(limit)
+            if skip is not None:
+                query = query.offset(skip)
             result = await session.execute(query)
-            items = result.scalars().all()
-            has_next = skip + len(items) < total
+            records = result.scalars().all()
+            return (records if records else [], total)
         except Exception as e:
             logger.error(f'ошибка search_in_main_table: {e}')
-        finally:
-            result = {"items": items,
-                      "total": total,
-                      "page": page,
-                      "page_size": page_size,
-                      "has_next": has_next,
-                      "has_prev": page > 1}
-            return result
-
-
-"""
-    @classmethod
-    async def search_with_relations(
-            cls, search_query: Optional[str], main_text_fields: Optional[List[str]] = None,
-            relation_fields: Optional[Dict[str, List[str]]] = None, page: int = 1, page_size: int = 20
-            ) -> Tuple[List[Item], int]:
-        # Поиск по текстовым полям основной таблицы и связанных таблиц с пагинацией
-        if not search_query:
-            stmt = select(Item)
-            count_stmt = select(func.count()).select_from(Item)
-        else:
-            main_text_fields = main_text_fields or ['name', 'description']
-            relation_fields = relation_fields or {}
-
-            conditions = []
-
-            # Поля основной таблицы
-            for field in main_text_fields:
-                if hasattr(Item, field):
-                    conditions.append(getattr(Item, field).ilike(f"%{search_query}%"))
-
-            # Поля связанных таблиц
-            for relation_name, fields in relation_fields.items():
-                if hasattr(Item, relation_name):
-                    relation_attr = getattr(Item, relation_name)
-                    rel_model = relation_attr.property.mapper.class_
-
-                    for field in fields:
-                        if hasattr(rel_model, field):
-                            # Создаем подзапрос для связанной таблицы
-                            subquery = select(Item.id).join(
-                                    rel_model, getattr(Item, f"{relation_name}_id") == rel_model.id
-                                    ).where(
-                                    getattr(rel_model, field).ilike(f"%{search_query}%")
-                                    )
-                            conditions.append(Item.id.in_(subquery))
-
-            if not conditions:
-                return [], 0
-
-            stmt = select(Item).where(or_(*conditions))
-            count_stmt = select(func.count()).select_from(Item).where(or_(*conditions))
-
-        # Загружаем связанные данные
-        stmt = stmt.options(
-                selectinload(Item.category), selectinload(Item.tags)
-                )
-
-        # Пагинация
-        offset = (page - 1) * page_size
-        stmt = stmt.offset(offset).limit(page_size)
-
-        result = await cls.session.execute(stmt)
-        items = result.scalars().all()
-
-        count_result = await cls.session.execute(count_stmt)
-        total_count = count_result.scalar()
-
-        return items, total_count
-"""
+            print(f'search_in_main_table.error: {e}')

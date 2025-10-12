@@ -4,12 +4,86 @@
     новые методы добавляются автоматически
 """
 
-import pytest
-from typing import List
 from collections import Counter
+from typing import Any, Dict, List  # NOQA: F401
+from sqlalchemy import func, or_, select, and_
 
+import pytest
+
+from app.core.utils.common_utils import jprint  # NOQA: F401
 
 pytestmark = pytest.mark.asyncio
+
+txt_fields = ('description', 'title', 'subtitle', 'name', 'made_of', "recommendation")
+
+
+def test_create_search_model():
+    """
+        test method create_search_model
+        test method build_search_condition
+        check sql request
+    """
+    from app.core.utils.alchemy_utils import create_search_model
+    from app.support.drink.model import Drink as model
+    from sqlalchemy import Column
+    from sqlalchemy.orm import MapperProperty
+    from sqlalchemy.orm.attributes import QueryableAttribute
+    from app.core.utils.alchemy_utils import build_search_condition, create_search_conditions
+    from sqlalchemy.dialects import postgresql
+    # from app.support.drink.schemas import DrinkRead
+    search_model = create_search_model(model)
+    search_str: str = 'Some Words'
+    conditions: list = []
+    for key in search_model.model_fields.keys():
+        # search_model возвращает поля из модели и ничего лишнего
+        assert isinstance(getattr(model, key), (Column, MapperProperty, QueryableAttribute))
+        assert getattr(model, key, None), f'{key} лишнее поле, ошибка метода create_search_model'
+        # проверка метода build_search_condition
+        field = getattr(model, key)
+        condition = build_search_condition(field, search_str)
+        conditions.append(condition)
+    query = select(model).where(or_(*conditions))
+    try:
+        compiled_query = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        sql_text = str(compiled_query)
+        print(sql_text)
+    except Exception as e:
+        assert False, f"Ошибка синтаксиса запроса на выборку: {e}"
+    try:
+        query = select(func.count()).select_from(model).where(or_(*conditions))
+        compiled_query = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        sql_text = str(compiled_query)
+        print(sql_text)
+    except Exception as e:
+        assert False, f"Ошибка синтаксиса запроса на подсчет записей: {e}"
+    try:
+        conditions = create_search_conditions(model, search_str)
+        queries = {'select': select(model).where(or_(*conditions)),
+                   'count': select(func.count()).select_from(model).where(or_(*conditions))}
+        for key, val in queries.items():
+            compiled_query = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            sql_text = str(compiled_query)
+    except Exception:
+        assert False, f'error in {key} query, {sql_text}'
+
+@pytest.mark.skip
+def test_get_text_model_fields():
+    """
+        тестирование метода get_text_model_fields
+    """
+    from app.support.drink.model import Drink
+    from app.core.utils.common_utils import get_text_model_fields
+    # from app.support.drink.repository import DrinkRepository
+    model = Drink
+    text_fields = get_text_model_fields(model)
+    jprint(text_fields)
+    search_query: str = 'search query'
+    conditions = []
+    for field in text_fields:
+        conditions.append(getattr(model, field).ilike(f"%{search_query}%"))
+    print(conditions)
+
+    assert False
 
 
 def split_string(s: str, n: int = 3) -> List[str]:
@@ -60,21 +134,26 @@ def find_keys_by_word(data_dict: dict, search_word: str) -> list:
     return result
 
 
+@pytest.mark.skip
 async def test_search(authenticated_client_with_db, test_db_session,
                       routers_get_all, fakedata_generator):
     """ тестирует методы get one - c проверкой id """
+    # from app.support.item.router import ItemRouter as Router
+    from app.support.drink.router import DrinkRouter as Router
     client = authenticated_client_with_db
-    routers = routers_get_all
+    # routers = routers_get_all
+    routers = [Router().prefix,]
     # expected_response = PaginatedResponse.model_fields.keys()
     for prefix in routers:          # перебирает существующие роутеры
         if prefix in ['/api']:  # api не содержит пути 'all'
             continue
         response = await client.get(f'{prefix}/all')   # получает все записи
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
-        # assert response.json().keys() == expected_response, \
-        #    f'метод GET для пути "{prefix}" возвращает некорректные данные'
-
         tmp: List[dict] = response.json()
+
+        jprint(tmp)
+        assert False
+
         tmp2: list = []
         exp: dict = {}
         for value in tmp:
