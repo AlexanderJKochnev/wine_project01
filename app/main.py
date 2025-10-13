@@ -139,3 +139,4 @@ async def startup_event():
 async def shutdown_event():
     mongodb_instance = await get_mongodb()
     await mongodb_instance.disconnect()
+    await engine.dispose()

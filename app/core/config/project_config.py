@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = 'gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt'
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 50
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     # IMAGES
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE: int = 10  # * 1024 * 1024  # 10MB

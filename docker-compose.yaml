@@ -134,10 +134,40 @@ services:
           cpus: '0.250'
           memory: 256M
   
+# React Frontend с Material-UI
+  frontend:
+    container_name: react_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    # restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    command: ["nginx", "-g", "daemon off;"]
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      # - REACT_APP_BASE_NAME=${REACT_APP_BASE_NAME}
+    # volumes:
+    #   - ./frontend/src:/app/src
+    #   - ./frontend/public:/app/public
+    #   - /app/node_modules
+    depends_on:
+      - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    # Для разработки с hot-reload
+    # command: npm start
+    # Для продакшена
+  
 volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
   mongodb_data:
   upload_volume:
-  # streamlit_data:
