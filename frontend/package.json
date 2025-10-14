@@ -1,7 +1,6 @@
 {
   "name": "wine-frontend",
   "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",

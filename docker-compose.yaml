@@ -140,17 +140,22 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # dockerfile: Dockerfile.dev
     # restart: unless-stopped
     ports:
       - "${FRONTEND_PORT}:3000"
-    command: ["nginx", "-g", "daemon off;"]
+    command: ["nginx", "-g", "daemon off;"]  # это для prod
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}:${API_PORT}
+      # - CHOKIDAR_USEPOLLING=true
       # - REACT_APP_BASE_NAME=${REACT_APP_BASE_NAME}
     # volumes:
     #   - ./frontend/src:/app/src
     #   - ./frontend/public:/app/public
+    #   - ./frontend/nginx.conf:/etc/nginx/nginx.conf
     #   - /app/node_modules
+    #   - ./frontend/start-dev.sh:/start-dev.sh:ro
+    #   - /app/build
     depends_on:
       - app
     deploy:
@@ -161,9 +166,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
-    # Для разработки с hot-reload
-    # command: npm start
-    # Для продакшена
   
 volumes:
   migration_volume: # alembic migrations
