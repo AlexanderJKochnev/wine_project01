@@ -1,4 +1,8 @@
-const API_BASE = 'http://localhost:8091';
+// Для разработки внутри Docker
+const API_BASE = 'http://app:8091/api';
+
+// Или для доступа с хоста
+// const API_BASE = 'http://localhost:8091/api';;
 
 // Базовые CRUD операции
 export const apiService = {

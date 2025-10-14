@@ -1,5 +1,5 @@
 # app/auth/dependencies.py
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +19,68 @@ credentials_exception = HTTPException(
 )
 
 user_repo = UserRepository()
+
+
+async def allow_internal_network(request: Request) -> bool:
+    """Быстрая проверка - запрос из внутренней сети Docker"""
+    client_host = request.client.host
+
+    # Разрешаем внутренние адреса Docker
+    internal_prefixes = [
+        "127.0.0.1",  # localhost
+        "172.",  # Docker bridge network
+        "192.168.",  # Docker internal
+        "10.",  # Docker internal
+        "frontend",  # имя сервиса фронтенда
+    ]
+
+    # Быстрая проверка по префиксам
+    for prefix in internal_prefixes:
+        if client_host.startswith(prefix):
+            return True
+
+    return False
+
+
+async def get_user_or_internal(
+    request: Request, token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)
+) -> User:
+    """
+    Умная dependency:
+    - Сначала проверяем внутреннюю сеть (быстро)
+    - Только внешние запросы требуют аутентификации
+    """
+    # 1. Быстрая проверка внутренней сети (~1ms)
+    if await allow_internal_network(request):
+        # Создаем "системного пользователя" для внутренних запросов
+        return User(id=0,
+                    username="internal_user",
+                    email="internal@localhost",
+                    is_active=True,
+                    is_superuser=False,
+                    hashed_password="")
+
+    # 2. Для внешних запросов - полная аутентификация
+    return await get_current_user(token, session)
+
+
+async def get_active_user_or_internal(
+    request: Request, token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)
+) -> User:
+    """
+    Умная dependency с проверкой активности пользователя
+    """
+    user = await get_user_or_internal(request, token, session)
+
+    # Для внутренних запросов пропускаем проверку активности
+    if user.username == "internal_user":
+        return user
+
+    # Для реальных пользователей проверяем активность
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    return user
 
 
 async def get_current_user(

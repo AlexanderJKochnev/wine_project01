@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
+from app.auth.dependencies import get_active_user_or_internal
 # from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging, settings
@@ -69,7 +70,8 @@ class BaseRouter:
         self.delete_response = DeleteResponse
         self.responses = {404: {"description": "Record not found",
                                 "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
-        self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
+        self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_active_user_or_internal)])
+        # self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
         self.setup_routes()
         self.service = service
         self.path_schema = path_schema
