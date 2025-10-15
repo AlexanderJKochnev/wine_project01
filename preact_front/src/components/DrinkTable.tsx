@@ -32,8 +32,8 @@ export const DrinkTable = () => {
         <tr>
           <th>ID</th>
           <th>Название</th>
-          <th>Подкатегория</th>
-          <th>Регион</th>
+          <th>Категория</th>
+          <th>Страна</th>
           <th>Крепость</th>
           <th>Игристое</th>
         </tr>
@@ -42,10 +42,10 @@ export const DrinkTable = () => {
         {drinks.map(drink => (
           <tr key={drink.id}>
             <td>{drink.id}</td>
-            <td>{drink.title}</td>
-            <td>{drink.subcategory?.name || '—'}</td>
-            <td>{drink.subregion?.region?.country?.name}, {drink.subregion?.name}</td>
-            <td>{drink.alc}%</td>
+            <td>{drink.en?.title || drink.title || '—'}</td>
+            <td>{drink.category || '—'}</td>
+            <td>{drink.country || '—'}</td>
+            <td>{drink.en?.alc || '—'}</td>
             <td>{drink.sparkling ? '✅' : '❌'}</td>
           </tr>
         ))}
