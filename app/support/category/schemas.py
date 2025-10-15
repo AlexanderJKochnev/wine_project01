@@ -2,7 +2,7 @@
 
 from pydantic import ConfigDict
 
-from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse, ReadApiSchema)
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, CreateResponse
 
 
 class CustomReadSchema:
