@@ -12,6 +12,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!preact_front/src/lib/
 lib64/
 parts/
 sdist/

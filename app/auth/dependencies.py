@@ -1,5 +1,6 @@
 # app/auth/dependencies.py
 from fastapi import Depends, HTTPException, status, Request
+from typing import Optional
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,9 @@ from app.auth.models import User
 from app.core.config.project_config import settings
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token",
+                                     auto_error=False       # это для неавторизованных внутрисетевых запросов
+                                     )
 
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -24,16 +27,14 @@ user_repo = UserRepository()
 async def allow_internal_network(request: Request) -> bool:
     """Быстрая проверка - запрос из внутренней сети Docker"""
     client_host = request.client.host
-
     # Разрешаем внутренние адреса Docker
     internal_prefixes = [
         "127.0.0.1",  # localhost
         "172.",  # Docker bridge network
-        "192.168.",  # Docker internal
+        # "192.168.",  # это домашняя сеть не открывать
         "10.",  # Docker internal
         "frontend",  # имя сервиса фронтенда
     ]
-
     # Быстрая проверка по префиксам
     for prefix in internal_prefixes:
         if client_host.startswith(prefix):
@@ -43,7 +44,7 @@ async def allow_internal_network(request: Request) -> bool:
 
 
 async def get_user_or_internal(
-    request: Request, token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)
+    request: Request, token: Optional[str] = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)
 ) -> User:
     """
     Умная dependency:
@@ -59,13 +60,15 @@ async def get_user_or_internal(
                     is_active=True,
                     is_superuser=False,
                     hashed_password="")
-
+    if token is None:
+        raise credentials_exception  # внешний запрос без токена → ошибка
     # 2. Для внешних запросов - полная аутентификация
+
     return await get_current_user(token, session)
 
 
 async def get_active_user_or_internal(
-    request: Request, token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)
+    request: Request, token: Optional[str] = Depends(oauth2_scheme), session: AsyncSession = Depends(get_db)
 ) -> User:
     """
     Умная dependency с проверкой активности пользователя

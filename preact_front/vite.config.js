@@ -1,4 +1,4 @@
-// vite.config.ts
+// vite.config.js
 import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 
@@ -8,6 +8,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     proxy: {
+      // Проксируем все запросы к /proxy-api → FastAPI внутри Docker
       '/proxy-api': {
         target: 'http://app:8091',
         changeOrigin: false,

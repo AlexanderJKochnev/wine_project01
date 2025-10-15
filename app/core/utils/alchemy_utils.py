@@ -185,7 +185,7 @@ def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribu
 
 def create_search_conditions(model: Type, search_str, **kwargs):
     """ генератор условия для поиска
-        ищет во всех текстовых полях модели
+        ищет во всех текстовых полях sqlalchemy модели
         условия см **kwargs  для build_search_condition (по умолчанию LIKE non-casesensitive
     """
     try:

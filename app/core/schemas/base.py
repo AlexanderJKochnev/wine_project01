@@ -16,6 +16,9 @@ from abc import ABC
 
 
 class BaseModel(BaseOrigin, ABC):
+    """
+         вводим метод для получения только обязательных полей
+    """
     def get_required_structure(self, deep: bool = False) -> dict:
         """ Рекурсивно получает структуру только с обязательными полями
             deep = true - поиск во вложенных моделях

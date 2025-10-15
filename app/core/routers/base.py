@@ -311,7 +311,7 @@ class BaseRouter:
         Получение постранично всех записей после заданной даты.
         По умолчанию задана дата - 2 года от сейчас
         """
-        print(f"📥 GET request for {self.model.__name__} from")
+        # print(f"📥 GET request for {self.model.__name__} from")
         try:
             after_date = back_to_the_future(after_date)
             response = await self.service.get_all(after_date, page, page_size, self.repo, self.model, session)
