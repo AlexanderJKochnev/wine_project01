@@ -1,11 +1,13 @@
 // src/App.tsx
-import { TestCategories } from './components/TestCategories';
+import { h } from 'preact';
+import { useEffect } from 'preact/hooks'; // если используете useEffect
+import { DrinkCreateForm } from './components/DrinkCreateForm';
 
 export function App() {
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ padding: '20px' }}>
       <h1>Dashboard</h1>
-      <TestCategories />
+      <DrinkCreateForm />
     </div>
   );
 }

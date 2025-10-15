@@ -1,5 +1,7 @@
 // src/components/TestCategories.tsx
 import { useApi } from '../hooks/useApi';
+import { h } from 'preact';
+import { useEffect } from 'preact/hooks'; // если используете useEffect
 import { CategoryRead } from '../types/category';
 
 export function TestCategories() {
@@ -14,7 +16,7 @@ export function TestCategories() {
       <ul>
         {data?.map((cat) => (
           <li key={cat.id}>
-            {cat.name} {cat.name_ru && `(${cat.name_ru})`}
+            {cat.name} {cat.name_ru && `(${cat.name_ru})`} {cat.name_fr && `(${cat.name_fr})`}
           </li>
         ))}
       </ul>
