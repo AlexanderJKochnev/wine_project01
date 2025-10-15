@@ -144,8 +144,13 @@ services:
     # restart: unless-stopped
     ports:
       - "${FRONTEND_PORT}:3000"
-    command: ["nginx", "-g", "daemon off;"]  # это для prod
+    volumes:
+      - .:/app # Монтирование папки с исходным кодом delete
+      - /app/node_modules # Игнорирование node_modules из контейнера delete
+    stdin_open: true
+    # command: ["nginx", "-g", "daemon off;"]  # это для prod
     environment:
+      - NODE_ENV=development  # delete
       - REACT_APP_API_URL=${REACT_APP_API_URL}:${API_PORT}
     depends_on:
       - app

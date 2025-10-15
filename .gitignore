@@ -28,6 +28,7 @@ mongodb_data/
 DOCS/
 DOCS/git.md
 tests/test_images/
+frontend/node_modules
 
 # Virtual environment
 .venv/

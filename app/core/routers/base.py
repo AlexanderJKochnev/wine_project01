@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_active_user
+# from app.auth.dependencies import get_current_active_user
 from app.auth.dependencies import get_active_user_or_internal
 # from pydantic import ValidationError
 from app.core.config.database.db_async import get_db
@@ -311,6 +311,7 @@ class BaseRouter:
         Получение постранично всех записей после заданной даты.
         По умолчанию задана дата - 2 года от сейчас
         """
+        print(f"📥 GET request for {self.model.__name__} from")
         try:
             after_date = back_to_the_future(after_date)
             response = await self.service.get_all(after_date, page, page_size, self.repo, self.model, session)

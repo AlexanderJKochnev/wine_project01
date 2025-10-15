@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # Копируем файлы зависимостей
-COPY package.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Устанавливаем зависимости
 RUN pnpm install
@@ -16,7 +16,8 @@ RUN pnpm install
 COPY . .
 
 # Собираем приложение
-RUN pnpm run build
+RUN BROWSERSLIST_DISABLE_CACHE=1 pnpm run build
+# RUN pnpm run build
 
 # Production stage
 FROM nginx:alpine
