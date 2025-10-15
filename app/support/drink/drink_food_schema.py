@@ -6,6 +6,7 @@ from app.core.schemas.base import BaseModel, ConfigDict
 from app.core.schemas.api_mixin import LangMixin
 from app.support.food.schemas import FoodRead
 
+
 class DrinkFoodRelationFlat(BaseModel):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
@@ -29,7 +30,7 @@ class DrinkFoodRelationApi(LangMixin):
             prefix = getattr(schema, f'{field_name}{lang}') or getattr(schema, f'{field_name}')
             return prefix
         return None
-# --------удалтить все что ниже после проверки------
+
 
 class DrinkFoodLinkCreate(BaseModel):
     drink_id: int
