@@ -1,6 +1,6 @@
 # Build stage
 FROM node:18-alpine as builder
-
+# React Frontend с Material-UI
 # Устанавливаем pnpm
 RUN npm install -g pnpm
 

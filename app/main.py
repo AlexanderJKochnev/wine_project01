@@ -42,6 +42,7 @@ app = FastAPI(title="Hybrid PostgreSQL-MongoDB API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    # allow_origins=["http://localhost:5173"],  # адрес Vite-дев-сервера, что еще?
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

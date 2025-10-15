@@ -29,6 +29,7 @@ DOCS/
 DOCS/git.md
 tests/test_images/
 frontend/node_modules
+preact_front/node_modules
 
 # Virtual environment
 .venv/

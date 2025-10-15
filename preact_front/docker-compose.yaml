@@ -1,0 +1,16 @@
+version: '3.8'
+# для проверки и соло запуска preact - удалить
+services:
+  preact-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5555:5173"   # хост:контейнер
+    volumes:
+      - .:/app        # монтируем текущую папку в контейнер
+      - /app/node_modules  # сохраняем node_modules из контейнера (чтобы не перезаписывать)
+    environment:
+      - NODE_ENV=development
+    stdin_open: true   # для поддержки некоторых dev-серверов
+    tty: true
