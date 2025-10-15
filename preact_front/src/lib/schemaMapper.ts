@@ -1,10 +1,29 @@
 // src/lib/schemaMapper.ts
-
 import { FieldConfig } from '../types/schema';
 import { useApi } from '../hooks/useApi';
 
-// Вспомогательная функция: получить опции для select из /all
-export const useSelectOptions = (endpoint: string) => {
+// Маппинг: имя поля → путь к /all эндпоинту
+const FIELD_TO_ENDPOINT: Record<string, string> = {
+  // Связи по ID
+  category_id: '/categories/all',
+  subcategory_id: '/subcategories/all',
+  country_id: '/countries/all',
+  region_id: '/regions/all',
+  subregion_id: '/subregions/all',
+  sweetness_id: '/sweetnesses/all',
+
+  // Many-to-many списки
+  foods: '/foods/all',
+  varietals: '/varietals/all',
+};
+
+export const useSelectOptions = (fieldName: string) => {
+  const endpoint = FIELD_TO_ENDPOINT[fieldName];
+  if (!endpoint) {
+    console.warn(`⚠️ No endpoint mapping for field: ${fieldName}`);
+    return { options: [], loading: false, error: 'No endpoint' };
+  }
+
   const { data, loading, error } = useApi<any[]>(endpoint);
   const options = data?.map(item => ({
     value: item.id,
@@ -13,7 +32,7 @@ export const useSelectOptions = (endpoint: string) => {
   return { options, loading, error };
 };
 
-// Схема для DrinkCreate (в Create-режиме)
+// Схема для DrinkCreate
 export const getDrinkCreateSchema = (): FieldConfig[] => [
   { name: 'title', label: 'Название', type: 'string', required: true },
   { name: 'subcategory_id', label: 'Подкатегория', type: 'select', required: true },

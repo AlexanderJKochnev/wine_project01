@@ -12,8 +12,8 @@ interface FieldRendererProps {
 
 export const FieldRenderer = ({ field, value, onChange }: FieldRendererProps) => {
   const { options, loading } = field.type === 'select' || field.type === 'multiselect'
-    ? useSelectOptions(`/${field.name.replace('_id', '')}s/all`)
-    : { options: [], loading: false };
+  ? useSelectOptions(field.name) // ← передаём имя поля
+  : { options: [], loading: false };
 
   if (loading) return <div>Загрузка {field.label}...</div>;
 
