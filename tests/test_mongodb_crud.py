@@ -4,7 +4,6 @@
 import pytest
 # from app.mongodb.config import mongodb
 from fastapi import status
-from pydantic import ValidationError
 
 from app.mongodb.router import prefix, subprefix
 
@@ -78,9 +77,9 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
     assert response.status_code == status.HTTP_404_NOT_FOUND, "Image should be deleted"
 
 
-# @pytest.mark.skip
 async def test_api_authentication_required(test_client_with_mongo):
     """Тестирует что аутентификация обязательна для MongoDB endpoints"""
+    # авторизация для внутрисетевых запросов не требуется, но и ошибки быть не должно
     client = test_client_with_mongo
 
     # Убираем аутентификацию

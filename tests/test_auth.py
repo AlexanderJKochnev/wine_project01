@@ -46,10 +46,11 @@ async def test_login_failure(client):
 
 async def test_get_current_user_unauthenticated(client):
     """Тест получения информации о пользователе без авторизации"""
+    #  для внутрисетевых запросов авторизация не требуется, но и запрос без токена в шапке должен проходить без ошибки
     response = await client.get("/users/me")
     print(f"Unauthenticated get user me response: {response.status_code} - {response.text}")
     # Должно быть 401 (unauthorized)
-    assert response.status_code == 401
+    assert response.status_code == 401, response.text
 
 """Тесты для endpoints пользователей"""
 

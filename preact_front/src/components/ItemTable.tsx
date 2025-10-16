@@ -1,17 +1,18 @@
-// src/components/DrinkTable.tsx
-import { h } from 'preact'; // ← h из 'preact'
-import { useEffect, useState } from 'preact/hooks'; // ← useState из 'preact/hooks'
-import { useApi } from '../hooks/useApi'; // ← ЭТО ОБЯЗАТЕЛЬНО!
-import { apiClient } from '../lib/apiClient';
-import { DrinkReadFlat } from '../types/drink';
+// src/components/ItemTable.tsx
+import { h } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
+import { useApi } from '../hooks/useApi';
+import { PaginatedResponse } from '../types/base';
+import { ItemRead } from '../types/item';
+import { ItemImage } from './ItemImage';
 import { LangExpandable } from './LangExpandable';
 
-export const DrinkTable = () => {
+export const ItemTable = () => {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { data, loading, error, refetch } = useApi<PaginatedResponse<DrinkReadFlat>>(
-    '/drinks',
+  const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
+    '/items',
     'GET',
     undefined,
     { page, page_size: pageSize }
@@ -21,7 +22,7 @@ export const DrinkTable = () => {
     refetch();
   }, [page]);
 
-  if (loading) return <p>Загрузка напитков...</p>;
+  if (loading) return <p>Загрузка позиций...</p>;
   if (error) return <p>Ошибка: {error}</p>;
 
   return (
@@ -29,31 +30,27 @@ export const DrinkTable = () => {
       <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Изображение</th>
             <th>Название</th>
-            <th>Категория</th>
+            <th>Объём</th>
             <th>Страна</th>
-            <th>Крепость</th>
-            <th>Игристое</th>
           </tr>
         </thead>
         <tbody>
-          {data?.items.map(drink => (
-            <tr key={drink.id}>
-              <td>{drink.id}</td>
+          {data?.items.map(item => (
+            <tr key={item.id}>
+              <td><ItemImage image_id={item.image_id} size="small" /></td>
               <td>
                 <LangExpandable
-                  en={drink.en}
-                  ru={drink.ru}
-                  fr={drink.fr}
+                  en={item.en}
+                  ru={item.ru}
+                  fr={item.fr}
                   field="title"
                   label="Название"
                 />
               </td>
-              <td>{drink.category || '—'}</td>
-              <td>{drink.country || '—'}</td>
-              <td>{drink.en?.alc || '—'}</td>
-              <td>{drink.sparkling ? '✅' : '❌'}</td>
+              <td>{item.vol} мл</td>
+              <td>{item.country || '—'}</td>
             </tr>
           ))}
         </tbody>

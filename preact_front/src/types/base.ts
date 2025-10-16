@@ -53,3 +53,12 @@ export interface UpdateSchema extends Partial<LangFields> {
  * Простой список (без пагинации) — это то, что возвращает /all
  */
 export type ListResponse<T> = T[];
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total?: number;
+  page?: number;
+  page_size?: number;
+  has_next?: number;
+  has_prev?: number;
+}

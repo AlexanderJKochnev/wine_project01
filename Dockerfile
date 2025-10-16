@@ -1,6 +1,7 @@
 # Dockerfile
 FROM python:3.12-slim
 # slim ?
+# inline cache metadata
 ARG APP_PORT
 ARG APP_HOST
 ENV APP_PORT=${WEB_PORT}

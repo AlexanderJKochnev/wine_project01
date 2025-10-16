@@ -6,7 +6,8 @@ from typing import Optional
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, status, UploadFile
 from fastapi.responses import StreamingResponse
-from app.auth.dependencies import get_current_active_user
+# from app.auth.dependencies import get_current_active_user
+from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
 from app.mongodb.models import FileListResponse
@@ -21,7 +22,7 @@ delta = (datetime.now(timezone.utc) - relativedelta(years=2))
 
 
 # -----------------------
-router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_active_user_or_internal)])
 
 
 @router.get(f'/{subprefix}', response_model=FileListResponse)

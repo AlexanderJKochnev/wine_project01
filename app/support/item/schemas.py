@@ -123,6 +123,10 @@ class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 
 
+class ItemReadPreact(ItemRead):
+    pass
+
+
 class ItemCreate(BaseModel, CustomCreateSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
 

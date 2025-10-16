@@ -1,5 +1,8 @@
 // src/lib/apiClient.ts
+// src/lib/apiClient.ts
 import { API_BASE_URL } from '../config/api';
+
+export const IMAGE_BASE_URL = `${API_BASE_URL}/uploads`;
 
 export const getAuthToken = () => localStorage.getItem('auth_token');
 export const setAuthToken = (token: string) => localStorage.setItem('auth_token', token);
