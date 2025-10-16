@@ -138,9 +138,6 @@ services:
     build:
       context: ./preact_front          # путь к папке с Preact
       dockerfile: Dockerfile.dev       # имя Dockerfile внутри ./preact_front
-
-      args:
-        - BUILDKIT_INLINE_CACHE=1
     ports:
       - "${PREACT_PORT}:5173"                    # хост:контейнер (порт Vite по умолчанию — 5173)
     volumes:

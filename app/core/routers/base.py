@@ -1,7 +1,7 @@
 # app/core/routers/base.py
 
 import logging
-from typing import Any, List, Type, TypeVar
+from typing import Any, List, Type, TypeVar, Optional
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
 
@@ -340,7 +340,7 @@ class BaseRouter:
                                 detail="Internal server error")
 
     async def search(self,
-                     search: str,
+                     search: Optional[str] = None,
                      page: int = Query(1, ge=1),
                      page_size: int = Query(paging.get('def', 20),
                                             ge=paging.get('min', 1),
@@ -350,10 +350,15 @@ class BaseRouter:
             Поиск по всем текстовым полям основной таблицы
             с постраничным выводом результата
         """
-        return await self.service.search(search, page, page_size, self.repo, self.model, session)
+        if search:
+            return await self.service.search(search, page, page_size, self.repo, self.model, session)
+        else:
+            return await self.get(after_date=datetime.now(timezone.utc) - relativedelta(years=2),
+                                  page=page, page_size=page_size,
+                                  session=session)
 
     async def search_all(self,
-                         search: str,
+                         search: str = Query(None),
                          session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
         """
             Поиск по всем текстовым полям основной таблицы

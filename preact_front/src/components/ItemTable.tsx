@@ -1,32 +1,35 @@
 // src/components/ItemTable.tsx
 import { h } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { useApi } from '../hooks/useApi';
 import { PaginatedResponse } from '../types/base';
 import { ItemRead } from '../types/item';
 import { ItemImage } from './ItemImage';
 import { LangExpandable } from './LangExpandable';
+import { SearchAndFilter } from './SearchAndFilter';
 
 export const ItemTable = () => {
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const pageSize = 20;
 
-  const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
-    '/items',
+  const endpoint = filters.search ? '/items/search' : '/items';
+  const params = { ...filters, page, page_size: pageSize };
+
+  const { data, loading, error } = useApi<PaginatedResponse<ItemRead>>(
+    endpoint,
     'GET',
     undefined,
-    { page, page_size: pageSize }
+    params
   );
-
-  useEffect(() => {
-    refetch();
-  }, [page]);
 
   if (loading) return <p>Загрузка позиций...</p>;
   if (error) return <p>Ошибка: {error}</p>;
 
   return (
     <div>
+      <SearchAndFilter onSearch={setFilters} />
+
       <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
@@ -56,7 +59,6 @@ export const ItemTable = () => {
         </tbody>
       </table>
 
-      {/* Пагинатор */}
       <div style={{ marginTop: '16px', textAlign: 'center' }}>
         <button
           onClick={() => setPage(p => Math.max(1, p - 1))}

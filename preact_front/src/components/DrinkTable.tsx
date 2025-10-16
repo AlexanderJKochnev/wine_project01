@@ -1,31 +1,34 @@
 // src/components/DrinkTable.tsx
-import { h } from 'preact'; // ← h из 'preact'
-import { useEffect, useState } from 'preact/hooks'; // ← useState из 'preact/hooks'
-import { useApi } from '../hooks/useApi'; // ← ЭТО ОБЯЗАТЕЛЬНО!
-import { apiClient } from '../lib/apiClient';
+import { h } from 'preact';
+import { useState } from 'preact/hooks';
+import { useApi } from '../hooks/useApi';
+import { PaginatedResponse } from '../types/base';
 import { DrinkReadFlat } from '../types/drink';
 import { LangExpandable } from './LangExpandable';
+import { SearchAndFilter } from './SearchAndFilter';
 
 export const DrinkTable = () => {
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const pageSize = 20;
 
-  const { data, loading, error, refetch } = useApi<PaginatedResponse<DrinkReadFlat>>(
-    '/drinks',
+  const endpoint = filters.search ? '/drinks/search' : '/drinks';
+  const params = { ...filters, page, page_size: pageSize };
+
+  const { data, loading, error } = useApi<PaginatedResponse<DrinkReadFlat>>(
+    endpoint,
     'GET',
     undefined,
-    { page, page_size: pageSize }
+    params
   );
-
-  useEffect(() => {
-    refetch();
-  }, [page]);
 
   if (loading) return <p>Загрузка напитков...</p>;
   if (error) return <p>Ошибка: {error}</p>;
 
   return (
     <div>
+      <SearchAndFilter onSearch={setFilters} />
+
       <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
@@ -59,7 +62,6 @@ export const DrinkTable = () => {
         </tbody>
       </table>
 
-      {/* Пагинатор */}
       <div style={{ marginTop: '16px', textAlign: 'center' }}>
         <button
           onClick={() => setPage(p => Math.max(1, p - 1))}
