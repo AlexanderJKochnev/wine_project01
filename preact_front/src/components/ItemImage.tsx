@@ -26,6 +26,7 @@ export const ItemImage = ({ image_id, alt = 'Item', size = 'medium' }: ItemImage
     <img
       src={imageUrl}
       alt={alt}
+      loading="lazy" // ← lazy loading
       style={{
         width: `${width}px`,
         height: `${height}px`,

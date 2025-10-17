@@ -42,3 +42,13 @@ export async function apiClient<T>(
 
   return response.json() as Promise<T>;
 }
+
+export async function deleteItem(endpoint: string): Promise<boolean> {
+  try {
+    await apiClient(endpoint, { method: 'DELETE' });
+    return true;
+  } catch (err) {
+    console.error('Delete error:', err);
+    return false;
+  }
+}

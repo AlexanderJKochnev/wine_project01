@@ -1,34 +1,31 @@
 // src/components/DrinkCreateForm.tsx
-import { h } from 'preact'; // ← h из 'preact'
-import { useState } from 'preact/hooks'; // ← useState из 'preact/hooks'
+import { h, useState } from 'preact/hooks';
 import { SmartForm } from './SmartForm';
 import { getDrinkCreateSchema } from '../lib/schemaMapper';
 import { apiClient } from '../lib/apiClient';
 
-export const DrinkCreateForm = () => {
+interface DrinkCreateFormProps {
+  onCreated?: () => void;
+}
+
+export const DrinkCreateForm = ({ onCreated }: DrinkCreateFormProps) => {
   const [submitStatus, setSubmitStatus] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (data: Record<string, any>) => {
-    setSubmitStatus('Отправка...');
+    setIsSubmitting(true);
+    setSubmitStatus(null);
     try {
-      // Преобразуем many-to-many поля в массив ID
-      const payload = {
-        ...data,
-        // foods: data.foods — уже массив ID (благодаря SmartForm)
-        // varietals: data.varietals — тоже массив ID
-      };
-
-      // Отправляем в FastAPI
-      const result = await apiClient('/drinks', {
+      await apiClient('/drinks', {
         method: 'POST',
-        body: payload,
+        body: data,
       });
-
-      console.log('Успешно создано:', result);
       setSubmitStatus('✅ Напиток создан!');
+      if (onCreated) onCreated();
     } catch (err: any) {
-      console.error('Ошибка создания:', err);
       setSubmitStatus(`❌ Ошибка: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -36,7 +33,11 @@ export const DrinkCreateForm = () => {
     <div>
       <h2>Добавить напиток</h2>
       {submitStatus && <p>{submitStatus}</p>}
-      <SmartForm schema={getDrinkCreateSchema()} onSubmit={handleSubmit} />
+      <SmartForm
+        schema={getDrinkCreateSchema()}
+        onSubmit={handleSubmit}
+        disabled={isSubmitting}
+      />
     </div>
   );
 };
