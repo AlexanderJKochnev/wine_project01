@@ -1,6 +1,6 @@
 // src/components/ItemImage.tsx
 import { h } from 'preact';
-import { API_BASE_URL } from '../config/api'; // ← базовый URL FastAPI
+import { IMAGE_BASE_URL } from '../config/api';
 
 interface ItemImageProps {
   image_id?: string | null;
@@ -9,7 +9,24 @@ interface ItemImageProps {
 }
 
 export const ItemImage = ({ image_id, alt = 'Item', size = 'medium' }: ItemImageProps) => {
-  if (!image_id) return null;
+  if (!image_id) {
+    return (
+      <div style={{
+        width: size === 'small' ? '60px' : size === 'medium' ? '120px' : '240px',
+        height: size === 'small' ? '60px' : size === 'medium' ? '120px' : '240px',
+        backgroundColor: '#f0f0f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#999',
+        fontSize: '12px',
+        borderRadius: '4px',
+        border: '1px solid #ddd',
+      }}>
+        Нет изображения
+      </div>
+    );
+  }
 
   const sizeClasses = {
     small: { width: 60, height: 60 },
@@ -18,25 +35,23 @@ export const ItemImage = ({ image_id, alt = 'Item', size = 'medium' }: ItemImage
   };
 
   const { width, height } = sizeClasses[size];
-
-  // Формируем URL: /mongodb/images/{image_id}
-  const imageUrl = `${API_BASE_URL}/mongodb/images/${image_id}`;
+  const imageUrl = `${IMAGE_BASE_URL}/mongodb/images/${image_id}`;
 
   return (
     <img
       src={imageUrl}
       alt={alt}
-      loading="lazy" // ← lazy loading
+      loading="lazy"
       style={{
         width: `${width}px`,
         height: `${height}px`,
-        objectFit: 'cover',
+        objectFit: 'contain',
         borderRadius: '4px',
         border: '1px solid #ddd',
       }}
       onError={(e) => {
-        console.error('Image load error:', imageUrl);
         (e.target as HTMLImageElement).style.display = 'none';
+        // Можно показать placeholder, но для простоты — скрываем
       }}
     />
   );
