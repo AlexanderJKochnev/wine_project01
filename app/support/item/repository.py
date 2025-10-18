@@ -67,8 +67,14 @@ class ItemRepository(Repository):
                                    limit: int = None) -> Optional[List[ModelType]]:
         """Поиск по всем заданным текстовым полям основной таблицы"""
         try:
-            # ищем в Drink
-            drinks, count = await DrinkRepository.search_in_main_table(search_str, Drink, session)
+            # ищем в Drink (диапазон расширяем в два раза что бы охватить все Items
+            dlimit = limit * 2 if limit else limit
+            if skip and limit:
+                dskip = skip if skip == 0 else skip - limit
+            else:
+                dskip = None
+            drinks, count = await DrinkRepository.search_in_main_table(search_str, Drink, session,
+                                                                       skip=dskip, limit=dlimit)
             if count == 0:
                 records = []
                 total = 0

@@ -14,9 +14,10 @@ from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm import DeclarativeMeta
 from app.core.exceptions import ValidationException
 from app.core.models.base_model import Base
-from app.core.utils.common_utils import clean_string, get_path_to_root, jprint  # NOQA: F401
+from app.core.utils.common_utils import clean_string, get_path_to_root, jprint, enum_to_camel
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
+function = {1: or_, 2: and_}
 
 
 class SearchType(str, Enum):
@@ -183,15 +184,13 @@ def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribu
     )
 
 
-def create_search_conditions(model: Type, search_str: str, func: int = 1, **kwargs) -> List:
+def create_search_conditions(model: ModelType, search_str: str, func: int = 1, **kwargs) -> List:
     """ генератор условия для поиска
         ищет во всех текстовых полях sqlalchemy модели
         условия см **kwargs  для build_search_condition (по умолчанию LIKE non-casesensitive
         func:  or_, and_
     """
     try:
-        function = {1: or_,
-                    2: and_}
         search_model = create_search_model(model)
         conditions = []
         for key in search_model.model_fields.keys():
@@ -203,12 +202,10 @@ def create_search_conditions(model: Type, search_str: str, func: int = 1, **kwar
         print(f'create_search_conditions: {e}')
 
 
-def create_search_conditions_from_dict(model: Type,
-                                       conditions: Union[str, dict],
-                                       func: Union[or_, and_],
-                                       **kwargs) -> List:
+def create_search_conditions2(model: ModelType, search: Union[str, dict],
+                              func: int = 1, **kwargs) -> List:
     """
-    принимает словарь или строку - возвращает условия поиска
+    принимает словарь {field_name: search_value} или строку - возвращает условия поиска
     :param model:   sqlalchemy model
     :type model:
     :param dict_conditions: {field_name: search_value, ...}
@@ -219,12 +216,51 @@ def create_search_conditions_from_dict(model: Type,
     :rtype:
     """
     try:
-        # получаем pydantic model is
-        # search_model = create_search_model(model)
-        pass
+        conditions = []
+        if isinstance(search, str):
+            search_model = create_search_model(model)
+            for key in search_model.model_fields.keys():
+                field = getattr(model, key)
+                condition = build_search_condition(field, search, **kwargs)
+                conditions.append(condition)
+        else:
+            for key, val in search.items():
+                field = getattr(model, key)
+                condition = build_search_condition(field, val, **kwargs)
+                conditions.append(condition)
+        return function.get(func)(*conditions)
     except Exception as e:
-        print(f'create_search_conditions_from_dict: {e}')
+        print(f'create_search_conditions: {e}')
 
+
+def create_enum_conditions(model: ModelType, search: str, field_name: str = None, **kwargs):
+    """
+    условие для фильтрации на входе строка в формате enum. ищет в полях field, title, name
+    до первого существующего поля
+    :param model:   sqlalchemy model
+    :type model:
+    :param search:  поисковая строка
+    :type search:   str
+    :param field:   поле в котором искать
+    :type field:    str
+    :param func:    1 or, 2 and
+    :type func:     int
+    :return:        search condition
+    :rtype:
+    """
+    fields = ['title', 'name']
+    if field_name:
+        fields.insert(0, field_name)
+    field = None
+    for fname in fields:
+        field = getattr(model, fname, None)
+        if field:
+            break
+    if not field:
+        return None
+    search = enum_to_camel(search)
+    condition = build_search_condition(field, search, **kwargs)
+    return condition
 
 class JsonConverter():
     def __init__(self, filename: Union[str, Path] = 'data.json'):

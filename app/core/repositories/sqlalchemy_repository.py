@@ -162,7 +162,7 @@ class Repository:
         :rtype:                 Optional[List[ModelType]]
         """
         try:
-            conditions = create_search_conditions(model, search_str)
+            conditions = create_search_conditions(model, search_str, 1)
             # query = cls.get_query(model).where(or_(*conditions))
             query = cls.get_query(model).where(conditions)
             # получаем общее количество записей удовлетворяющих условию

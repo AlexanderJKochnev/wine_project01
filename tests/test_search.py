@@ -119,6 +119,9 @@ def test_get_text_model_fields():
 
 
 def test_create_search_conditions():
+    """
+        тестирование метода create_search_conditions
+    """
     from app.core.utils.alchemy_utils import create_search_conditions
     from app.support.drink.model import Drink as Model
     result = create_search_conditions(Model, 'test Search')
@@ -127,7 +130,42 @@ def test_create_search_conditions():
     res, message = comprehensive_validation(condition, Model)
     assert res, message
 
-# ------------------
+
+def test_create_search_conditions2():
+    """
+        тестирование метода create_search_conditions
+    """
+    from app.core.utils.alchemy_utils import create_search_conditions2
+    from app.support.drink.model import Drink as Model
+    result = create_search_conditions2(Model, 'test Search')
+    condition = result
+    res, message = comprehensive_validation(condition, Model)
+    assert res, message
+    # удачный запрос
+    source = {'title': 'some wine'}
+    result = create_search_conditions2(Model, source)
+    condition = result
+    res, message = comprehensive_validation(condition, Model)
+    assert res, message
+    # неудачный запрос
+    source = {'name': 'some wine'}
+    result = create_search_conditions2(Model, source)
+    condition = result
+    res, message = comprehensive_validation(condition, Model)
+    assert not res, message
+
+
+def test_create_enum_conditions():
+    """
+        тестирование метода create_search_conditions
+    """
+    from app.core.utils.alchemy_utils import create_enum_conditions
+    from app.support.drink.model import Drink as Model
+
+    result = create_enum_conditions(Model, 'test Search')
+    condition = result
+    res, message = comprehensive_validation(condition, Model)
+    assert res, message
 
 
 def split_string(s: str, n: int = 3) -> List[str]:
