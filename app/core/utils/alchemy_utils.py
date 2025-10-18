@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple, Type, Union, TypeVar
 
 from fastapi import Query
 from pydantic import BaseModel, create_model, Field
-from sqlalchemy import Column, func, String, Text, Unicode, UnicodeText
+from sqlalchemy import Column, func, String, Text, Unicode, UnicodeText, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import MapperProperty
 from sqlalchemy.orm.attributes import QueryableAttribute
@@ -161,7 +161,7 @@ def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribu
     :param kwargs:       tba
     :type kwargs:        tba
     :return:             condition
-    :rtype:
+    :rtype:              условие поиска field == value
     """
     search_type = kwargs.get('search_type', SearchType.LIKE)
     case_sensitive = kwargs.get('case_sensitive', False)
@@ -183,21 +183,47 @@ def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribu
     )
 
 
-def create_search_conditions(model: Type, search_str, **kwargs):
+def create_search_conditions(model: Type, search_str: str, func: int = 1, **kwargs) -> List:
     """ генератор условия для поиска
         ищет во всех текстовых полях sqlalchemy модели
         условия см **kwargs  для build_search_condition (по умолчанию LIKE non-casesensitive
+        func:  or_, and_
     """
     try:
+        function = {1: or_,
+                    2: and_}
         search_model = create_search_model(model)
         conditions = []
         for key in search_model.model_fields.keys():
             field = getattr(model, key)
-            condition = build_search_condition(field, search_str)
+            condition = build_search_condition(field, search_str, **kwargs)
             conditions.append(condition)
-        return conditions
+        return function.get(func)(*conditions)
     except Exception as e:
         print(f'create_search_conditions: {e}')
+
+
+def create_search_conditions_from_dict(model: Type,
+                                       conditions: Union[str, dict],
+                                       func: Union[or_, and_],
+                                       **kwargs) -> List:
+    """
+    принимает словарь или строку - возвращает условия поиска
+    :param model:   sqlalchemy model
+    :type model:
+    :param dict_conditions: {field_name: search_value, ...}
+    :type dict_conditions:  dict
+    :param kwargs:
+    :type kwargs:
+    :return:
+    :rtype:
+    """
+    try:
+        # получаем pydantic model is
+        # search_model = create_search_model(model)
+        pass
+    except Exception as e:
+        print(f'create_search_conditions_from_dict: {e}')
 
 
 class JsonConverter():

@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, List, Optional, Type
 from datetime import datetime
-from sqlalchemy import func, or_, select, and_
+from sqlalchemy import func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.utils.alchemy_utils import create_search_conditions
 from app.core.utils.alchemy_utils import ModelType
@@ -141,13 +141,33 @@ class Repository:
                                    model: Type[ModelType],
                                    session: AsyncSession,
                                    skip: int = None,
-                                   limit: int = None) -> Optional[List[ModelType]]:
-        """Поиск по всем заданным текстовым полям основной таблицы"""
+                                   limit: int = None,
+                                   and_condition: dict = None) -> Optional[List[ModelType]]:
+        """
+        Поиск по всем заданным текстовым полям основной таблицы
+        если указана pagination - возвращвет pagination
+        :param search_str:  текстовое условие поиска
+        :type search_str:   str
+        :param model:       модель
+        :type model:        sqlalchemy model
+        :param session:     async session
+        :type session:      async session
+        :param skip:        сдвиг на кол-во записей (для пагинации)
+        :type skip:         int
+        :param limit:       кол-во записей
+        :type limit:        int
+        :param and_condition:   дополнительные условия _AND
+        :type and_condition:    dict
+        :return:                Optional[List[ModelType]]
+        :rtype:                 Optional[List[ModelType]]
+        """
         try:
             conditions = create_search_conditions(model, search_str)
-            query = cls.get_query(model).where(or_(*conditions))
+            # query = cls.get_query(model).where(or_(*conditions))
+            query = cls.get_query(model).where(conditions)
             # получаем общее количество записей удовлетворяющих условию
-            count = select(func.count()).select_from(model).where(or_(*conditions))
+            # count = select(func.count()).select_from(model).where(or_(*conditions))
+            count = select(func.count()).select_from(model).where(conditions)
             result = await session.execute(count)
             total = result.scalar()
             # Добавляем пагинацию если указано

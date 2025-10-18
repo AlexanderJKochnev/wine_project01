@@ -1,8 +1,7 @@
 // src/components/EditItemForm.tsx
 import { h, useState, useEffect } from 'preact/hooks';
 import { apiClient } from '../lib/apiClient';
-import { SmartForm } from './SmartForm';
-import { FieldConfig } from '../types/schema';
+import { MUIForm } from './MUIForm';
 
 interface EditItemFormProps {
   id: number;
@@ -20,7 +19,7 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
       try {
         const item = await apiClient<any>(`/items/${id}`);
         const data = {
-          drink_id: item.drink.id,
+          drink_id: item.drink_id, // ← исправлено: не item.drink.id
           vol: item.vol || undefined,
           price: item.price || undefined,
           count: item.count || 0,
@@ -33,7 +32,7 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
     fetchItem();
   }, [id]);
 
-  const handleSubmit = async (data: Record<string, any>) => {
+  const handleSubmit = async (data: Record<string, any>) => { // ← исправлено: добавлено имя "data"
     setLoading(true);
     try {
       await apiClient(`/items/${id}`, {
@@ -52,8 +51,7 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
   if (error) return <p>Ошибка загрузки: {error}</p>;
   if (!initialData) return <p>Загрузка...</p>;
 
-  // Схема формы для Item
-  const schema: FieldConfig[] = [
+  const schema = [
     { name: 'drink_id', label: 'Напиток (ID)', type: 'number', required: true },
     { name: 'vol', label: 'Объём (мл)', type: 'number' },
     { name: 'price', label: 'Цена', type: 'number' },
@@ -64,7 +62,7 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1500, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', maxWidth: '600px', width: '90%', maxHeight: '80vh', overflowY: 'auto' }}>
         <h2>Редактировать позицию</h2>
-        <SmartForm
+        <MUIForm
           schema={schema}
           onSubmit={handleSubmit}
           initialValues={initialData}

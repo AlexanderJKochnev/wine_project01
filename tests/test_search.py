@@ -6,8 +6,8 @@
 
 from collections import Counter
 from typing import Any, Dict, List  # NOQA: F401
-from sqlalchemy import func, or_, select, and_
-
+from sqlalchemy import func, or_, select, and_, sql  # NOQA: F401
+from sqlalchemy.sql import visitors
 import pytest
 
 from app.core.utils.common_utils import jprint  # NOQA: F401
@@ -15,6 +15,37 @@ from app.core.utils.common_utils import jprint  # NOQA: F401
 pytestmark = pytest.mark.asyncio
 
 txt_fields = ('description', 'title', 'subtitle', 'name', 'made_of', "recommendation")
+
+
+def comprehensive_validation(filter_condition, model):
+    """Комплексная проверка условия фильтрации"""
+
+    # 1. Проверка типа
+    if not isinstance(filter_condition, sql.ClauseElement):
+        return False, "❌ Не является SQL выражением SQLAlchemy"
+
+    # 2. Проверка ссылок на таблицы
+    tables_referenced = set()
+
+    def collect_tables(element):
+        if hasattr(element, 'table'):
+            tables_referenced.add(element.table)
+
+    visitors.traverse(filter_condition, {}, {'column': collect_tables})
+
+    model_table = model.__table__
+    for table in tables_referenced:
+        if table != model_table:
+            return False, f"❌ Ссылка на чужую таблицу: {table}"
+
+    # 3. Проверка синтаксиса через компиляцию
+    try:
+        test_stmt = sql.select(model).where(filter_condition).limit(1)
+        _ = str(test_stmt.compile(compile_kwargs={"literal_binds": True}))
+        print("✅ SQL компилируется без ошибок")
+        return True, "✅ Условие корректно"
+    except Exception as e:
+        return False, f"❌ Ошибка компиляции: {e}"
 
 
 def test_create_search_model():
@@ -66,6 +97,7 @@ def test_create_search_model():
     except Exception:
         assert False, f'error in {key} query, {sql_text}'
 
+
 @pytest.mark.skip
 def test_get_text_model_fields():
     """
@@ -84,6 +116,18 @@ def test_get_text_model_fields():
     print(conditions)
 
     assert False
+
+
+def test_create_search_conditions():
+    from app.core.utils.alchemy_utils import create_search_conditions
+    from app.support.drink.model import Drink as Model
+    result = create_search_conditions(Model, 'test Search')
+    # assert isinstance(result, list)
+    condition = result  # (or_(*result))
+    res, message = comprehensive_validation(condition, Model)
+    assert res, message
+
+# ------------------
 
 
 def split_string(s: str, n: int = 3) -> List[str]:

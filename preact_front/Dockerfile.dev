@@ -8,6 +8,7 @@ COPY package*.json ./
 
 # Устанавливаем зависимости
 RUN npm ci --silent
+RUN npm install @mui/material @emotion/react @emotion/styled
 
 # Копируем исходный код (в dev-режиме лучше монтировать через volume, но копируем на всякий случай)
 COPY . .
