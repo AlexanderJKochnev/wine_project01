@@ -5,14 +5,15 @@ from typing import Any, Dict, List, Optional, Type, Tuple, Union
 from datetime import datetime
 from sqlalchemy import func, select, and_, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.alchemy_utils import create_search_conditions, create_enum_conditions
+from app.core.utils.alchemy_utils import (create_search_conditions, create_enum_conditions,
+                                          create_search_conditions2)
 from app.core.utils.alchemy_utils import ModelType
 from app.core.services.logger import logger
 # from app.core.utils.common_utils import get_text_model_fields
 
 
 class Repository:
-    # model: ModelType
+    model: ModelType
 
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
@@ -195,7 +196,7 @@ class Repository:
         return result.scalar_one_or_none()
 
     @classmethod
-    def apply_search_filter(cls, query: Union[Select[Tuple], ModelType], **kwargs):
+    def apply_search_filter(cls, model: Union[Select[Tuple], ModelType], **kwargs):
         """
             переопределяемый метод.
             в kwargs - условия поиска
@@ -203,10 +204,15 @@ class Repository:
             1. если на входе model - выборку с selectinload
             2. на входе Select - просто select (count, ...)
         """
-        if isinstance(query, Select):   # подсчет количества
-            return query
-        else:                           # выборка
-            return cls.get_query(query)
+        if not isinstance(model, Select):   # подсчет количества
+            query = cls.get_query(model)
+        else:
+            query = model
+        search_str: str = kwargs.get('search_str')
+        if search_str:
+            search_cond = create_search_conditions2(cls.model, search_str)
+            query = query.where(search_cond)
+        return query
 
     @classmethod
     async def search(cls,

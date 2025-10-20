@@ -9,6 +9,7 @@ import { LangExpandable } from './LangExpandable';
 import { ConfirmDialog } from './ConfirmDialog';
 import { EditDrinkForm } from './EditDrinkForm';
 import { DrinkCard } from './DrinkCard'; // ← новый компонент
+import { SearchAndFilter } from './SearchAndFilter';
 
 interface DrinkViewProps {
   references: any;
