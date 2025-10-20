@@ -1,17 +1,19 @@
 # app/support/Item/repository.py
 
 from sqlalchemy.orm import selectinload
-from typing import Optional, List, Type
-from sqlalchemy import func, select
+from typing import Optional, List, Type, Tuple, Union
+from sqlalchemy import func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.drink.router import DrinkRepository
 from app.support.item.model import Item
+from app.support.country.model import Country
 from app.support.region.model import Region
 from app.support.subregion.model import Subregion
 from app.support.subcategory.model import Subcategory
-from app.core.utils.alchemy_utils import ModelType
+from app.support.category.model import Category
+from app.core.utils.alchemy_utils import ModelType, create_enum_conditions, create_search_conditions2
 from app.core.services.logger import logger
 
 # from app.core.config.database.db_noclass import get_db
@@ -64,17 +66,22 @@ class ItemRepository(Repository):
                                    model: Type[Item],
                                    session: AsyncSession,
                                    skip: int = None,
-                                   limit: int = None) -> Optional[List[ModelType]]:
+                                   limit: int = None,
+                                   category_enum: str = None,
+                                   country_enum: str = None) -> Optional[List[ModelType]]:
         """Поиск по всем заданным текстовым полям основной таблицы"""
         try:
             # ищем в Drink (диапазон расширяем в два раза что бы охватить все Items
+            # ищем category_id:
             dlimit = limit * 2 if limit else limit
             if skip and limit:
                 dskip = skip if skip == 0 else skip - limit
             else:
                 dskip = None
             drinks, count = await DrinkRepository.search_in_main_table(search_str, Drink, session,
-                                                                       skip=dskip, limit=dlimit)
+                                                                       skip=dskip, limit=dlimit,
+                                                                       category_enum=category_enum,
+                                                                       country_enum=country_enum)
             if count == 0:
                 records = []
                 total = 0
@@ -96,3 +103,36 @@ class ItemRepository(Repository):
         except Exception as e:
             logger.error(f'ошибка search_in_main_table: {e}')
             print(f'search_in_main_table.error: {e}')
+
+    @classmethod
+    def apply_search_filter(cls, model: Union[Select[Tuple], ModelType], **kwargs):
+        """
+            переопределяемый метод, стоит условия поиска и пагинации при необходимости
+            категория wine имеет подкатегории которые как-бы категории поэтому костыль
+        """
+        wine = ['red', 'white', 'rose', 'sparkling', 'port']
+        if not isinstance(model, Select):   # подсчет количества
+            query = cls.get_query(Item).join(Item.drink)
+        else:
+            query = model.join(Item.drink)
+        search_str: str = kwargs.get('search_str')
+        category_enum: str = kwargs.get('category_enum')
+        country_enum: str = kwargs.get('country_enum')
+        if category_enum:
+            if category_enum in wine:
+                subcategory_cond = create_enum_conditions(Subcategory, category_enum)
+                query = (query.join(Drink.subcategory).where(subcategory_cond))
+            else:
+                category_cond = create_enum_conditions(Category, category_enum)
+                query = (query
+                         .join(Drink.subcategory)
+                         .join(Subcategory.category).where(category_cond))
+        if country_enum:
+            country_cond = create_enum_conditions(Country, country_enum)
+            query = (query.join(Drink.subregion)
+                     .join(Subregion.region)
+                     .join(Region.country).where(country_cond))
+        if search_str:
+            search_cond = create_search_conditions2(Drink, search_str)
+            query = query.where(search_cond)
+        return query

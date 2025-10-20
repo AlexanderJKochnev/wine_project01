@@ -161,21 +161,30 @@ class Service:
 
     @classmethod
     async def search(cls,
-                     filter: str,
-                     page: int,
-                     page_size: int,
                      repository: Type[Repository],
                      model: ModelType,
-                     session: AsyncSession) -> List[ModelType]:
-        skip = (page - 1) * page_size
-
-        items, total = await repository.search_in_main_table(filter, model, session, skip, page_size)
-        result = {"items": items,
-                  "total": total,
-                  "page": page,
-                  "page_size": page_size,
-                  "has_next": skip + len(items) < total,
-                  "has_prev": page > 1}
+                     session: AsyncSession,
+                     **kwargs) -> List[ModelType]:
+        paging = False
+        if not kwargs:
+            kwargs: dict = {}
+        else:
+            if kwargs.get('page') and kwargs.get('page_size'):
+                limit = kwargs.pop('page_size')
+                skip = (kwargs.pop('page') - 1) * limit
+                kwargs['limit'], kwargs['skip'] = limit, skip
+                paging = True
+        items, total = await repository.search(model, session, **kwargs)
+        # items, total = await repository.search_in_main_table(filter, model, session, skip, page_size)
+        if paging:
+            result = {"items": items,
+                      "total": total,
+                      "page": skip,
+                      "page_size": limit,
+                      "has_next": skip + len(items) < total,
+                      "has_prev": skip > 1}
+        else:
+            result = items
         return result
 
     @classmethod
@@ -183,6 +192,7 @@ class Service:
                          filter: str,
                          repository: Type[Repository],
                          model: ModelType,
-                         session: AsyncSession) -> List[ModelType]:
-        items, _ = await repository.search_in_main_table(filter, model, session)
+                         session: AsyncSession,
+                         **kwargs) -> List[ModelType]:
+        items, _ = await repository.search(model, session, **kwargs)
         return items

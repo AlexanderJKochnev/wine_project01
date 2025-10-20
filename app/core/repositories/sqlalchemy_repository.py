@@ -1,11 +1,11 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Tuple, Union
 from datetime import datetime
-from sqlalchemy import func, select, and_
+from sqlalchemy import func, select, and_, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.alchemy_utils import create_search_conditions
+from app.core.utils.alchemy_utils import create_search_conditions, create_enum_conditions
 from app.core.utils.alchemy_utils import ModelType
 from app.core.services.logger import logger
 # from app.core.utils.common_utils import get_text_model_fields
@@ -141,8 +141,7 @@ class Repository:
                                    model: Type[ModelType],
                                    session: AsyncSession,
                                    skip: int = None,
-                                   limit: int = None,
-                                   and_condition: dict = None) -> Optional[List[ModelType]]:
+                                   limit: int = None) -> Optional[List[ModelType]]:
         """
         Поиск по всем заданным текстовым полям основной таблицы
         если указана pagination - возвращвет pagination
@@ -181,3 +180,73 @@ class Repository:
         except Exception as e:
             logger.error(f'ошибка search_in_main_table: {e}')
             print(f'search_in_main_table.error: {e}')
+
+    @classmethod
+    async def search_by_enum(cls, enum: str,
+                             model: Type[ModelType],
+                             session: AsyncSession,
+                             field_name: str = None) -> Optional[ModelType]:
+        """
+        поиск по ключевому полю. на входе enum. на выходе 1 запись
+        """
+        conditions = create_enum_conditions(model, enum, field_name)
+        stmt = select(model).where(conditions).limit(1)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    @classmethod
+    def apply_search_filter(cls, query: Union[Select[Tuple], ModelType], **kwargs):
+        """
+            переопределяемый метод.
+            в kwargs - условия поиска
+            применяет фильтры и возвращает
+            1. если на входе model - выборку с selectinload
+            2. на входе Select - просто select (count, ...)
+        """
+        if isinstance(query, Select):   # подсчет количества
+            return query
+        else:                           # выборка
+            return cls.get_query(query)
+
+    @classmethod
+    async def search(cls,
+                     model: Type[ModelType],
+                     session: AsyncSession,
+                     **kwargs) -> Optional[List[ModelType]]:
+        """
+        Поиск по всем заданным текстовым полям основной таблицы
+        если указана pagination - возвращвет pagination
+        :param search_str:  текстовое условие поиска
+        :type search_str:   str
+        :param model:       модель
+        :type model:        sqlalchemy model
+        :param session:     async session
+        :type session:      async session
+        :param skip:        сдвиг на кол-во записей (для пагинации)
+        :type skip:         int
+        :param limit:       кол-во записей
+        :type limit:        int
+        :param and_condition:   дополнительные условия _AND
+        :type and_condition:    dict
+        :return:                Optional[List[ModelType]]
+        :rtype:                 Optional[List[ModelType]]
+        """
+        try:
+            query = cls.apply_search_filter(cls.get_query(model), **kwargs)
+            total = 0
+            # Добавляем пагинацию если указано и общее кол-во записей
+            limit, skip = kwargs.get('limit'), kwargs.get('skip')
+            if limit is not None:
+                # общее кол-во записей удовлетворяющих условию
+                count_stmt = cls.apply_search_filter(select(func.count()).select_from(cls.get_query(model)),
+                                                     **kwargs)
+                result = await session.execute(count_stmt)
+                total = result.scalar()
+                query = query.limit(limit)
+            if skip is not None:
+                query = query.offset(skip)
+            result = await session.execute(query)
+            records = result.scalars().all()
+            return (records if records else [], total)
+        except Exception as e:
+            logger.error(f'ошибка search: {e}')

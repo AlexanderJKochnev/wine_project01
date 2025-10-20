@@ -4,10 +4,11 @@
     новые методы добавляются автоматически
 """
 
-from collections import Counter
+# from collections import Counter
 from typing import Any, Dict, List  # NOQA: F401
 from sqlalchemy import func, or_, select, and_, sql  # NOQA: F401
 from sqlalchemy.sql import visitors
+from sqlalchemy.dialects.postgresql import dialect
 import pytest
 
 from app.core.utils.common_utils import jprint  # NOQA: F401
@@ -15,6 +16,15 @@ from app.core.utils.common_utils import jprint  # NOQA: F401
 pytestmark = pytest.mark.asyncio
 
 txt_fields = ('description', 'title', 'subtitle', 'name', 'made_of', "recommendation")
+
+
+def validate_query(stmt):
+    try:
+        compiled = stmt.compile(dialect=dialect(), compile_kwargs={"literal_binds": True})
+        print("✅ SQL:", compiled)
+        return True, "✅ Запрос корректен"
+    except Exception as e:
+        return False, f"❌ Ошибка: {e}"
 
 
 def comprehensive_validation(filter_condition, model):
@@ -168,92 +178,95 @@ def test_create_enum_conditions():
     assert res, message
 
 
+def test_apply_search_filter_item():
+    """
+        тестирование метода apply_search_filter items
+    """
+    from app.support.item.repository import Item, ItemRepository
+    kwarg = [{'search_str': 'test', 'country_enum': 'country', 'category_enum': 'category'},
+             {'country_enum': 'country', 'category_enum': 'category'},
+             {'search_str': 'test', 'category_enum': 'category'},
+             {'search_str': 'test', 'country_enum': 'country', },
+             {'search_str': 'test'},
+             {'country_enum': 'country'},
+             {'category_enum': 'category'},
+             {'search_str': None, 'country_enum': None, 'category_enum': 'category'}, {}
+             ]
+    for kwa in kwarg:
+        result1 = ItemRepository.apply_search_filter(Item, **kwa)
+        print(result1)
+        res, message = validate_query(result1)
+        assert res, message
+        result = ItemRepository.apply_search_filter(select(func.count()).select_from(Item), count=True, **kwa)
+        res, message = validate_query(result)
+        assert res, message
+    print(result1)
+    print(result)
+    assert False
+
+
+def test_typing():
+    from app.core.utils.alchemy_utils import ModelType
+    from app.support.item.model import Item
+    from sqlalchemy import Select, select
+    a = Item
+    b = select(Item)
+    c = select(func.count()).select_from(Item)
+    print(f'{type(a)=}, {type(b)=}, {type(c)=}, {ModelType=}')
+    print(f'{isinstance(b, Select)=}, {isinstance(c, Select)}, {isinstance(a, Select)}')
+    assert True
+
+
 def split_string(s: str, n: int = 3) -> List[str]:
     #  разбивает строку на список слов
     # return [s[i:i + n] for i in range(0, len(s), n)]
     return s.split(' ')
 
 
-def count_and_sort_elements(input_list):
-    """
-    Преобразует список с повторяющимися элементами в список списков [элемент, количество],
-    отсортированный по количеству повторов по убыванию.
-
-    Args:
-        input_list: список с повторяющимися элементами
-
-    Returns:
-        list: список списков формата [элемент, количество], отсортированный по количеству
-    """
-    # Считаем количество каждого элемента
-    counter = Counter(input_list)
-
-    # Сортируем элементы по количеству повторов (по убыванию)
-    sorted_items = sorted(counter.items(), key=lambda x: x[1], reverse=True)
-
-    # Преобразуем кортежи в списки
-    result = [[item, count] for item, count in sorted_items]
-    return result
-
-
-def find_keys_by_word(data_dict: dict, search_word: str) -> list:
-    """
-    Находит ключи, значения которых содержат указанное слово.
-
-    Args:
-        data_dict: Словарь {key: value} где value - строки или None
-        search_word: Слово для поиска
-
-    Returns:
-        List: Список ключей, содержащих слово в значениях
-    """
-    result = []
-    search_word_lower = search_word.lower()
-    for key, value in data_dict.items():
-        if value is not None and search_word_lower in value.lower():
-            result.append(key)
-
-    return result
-
-
-@pytest.mark.skip
 async def test_search(authenticated_client_with_db, test_db_session,
                       routers_get_all, fakedata_generator):
-    """ тестирует методы get one - c проверкой id """
-    # from app.support.item.router import ItemRouter as Router
-    from app.support.drink.router import DrinkRouter as Router
+    from app.core.schemas.base import PaginatedResponse
+    # from app.support.item.router import ItemRouter
+    from random import randint
     client = authenticated_client_with_db
-    # routers = routers_get_all
-    routers = [Router().prefix,]
-    # expected_response = PaginatedResponse.model_fields.keys()
-    for prefix in routers:          # перебирает существующие роутеры
-        if prefix in ['/api']:  # api не содержит пути 'all'
-            continue
-        response = await client.get(f'{prefix}/all')   # получает все записи
+    routers = routers_get_all
+    routers = ['/items']
+
+    expected_response = PaginatedResponse.model_fields.keys()
+    for prefix in routers:
+        # получение записей из базы,
+        response = await client.get(f'{prefix}')
         assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
-        tmp: List[dict] = response.json()
-
-        jprint(tmp)
-        assert False
-
-        tmp2: list = []
-        exp: dict = {}
-        for value in tmp:
-            """ список всех слов """
-            id = value['id']
-            data: list = ' '.join((val for key, val in value.items()
-                                   if isinstance(val, str) and key not in ['created_at', 'updated_at'])
-                                  ).split(' ')
-            exp[id] = ' '.join(data)
-            tmp2.extend(data)
-        tmp2 = count_and_sort_elements(tmp2)
-        query, expected_nmbr = tmp2[0]
-        expected_answer = find_keys_by_word(exp, query)
-        params = {'query': query}
-
-        response = await client.get(f'{prefix}/search', params=params)
-        assert response.status_code == 200
+        assert response.json().keys() == expected_response, \
+            f'метод GET для пути "{prefix}" возвращает некорректные данные'
         result = response.json()
-        items = result.get('items')
-        ids = [val['id'] for val in items]
-        assert sorted(ids) == sorted(expected_answer), f'{ids=} {expected_answer=} {query=} {prefix=}'
+        total = result.get('total')
+        x = randint(1, total)
+        response = await client.get(f'{prefix}/{x}')
+        assert response.status_code == 200, f'{x}, {total=}'
+        result = response.json()
+        id = result.get('id')
+        category = result.get('category')
+        country = result.get('country')
+        tmp = result['en'].get('description', result['en'].get('title'))
+        search = tmp.split(' ')[-1]
+        # http://localhost:8091/api/search?search=barol&country_enum=italy&category_enum=wine&page=1&page_size=20
+        # http://localhost:8091/api/search_all?search=barol&country_enum=italy&category_enum=wine
+        # поиск без paging
+        response = await client.get(f'{prefix}/search_all?category={category}')
+        assert response.status_code == 200, response.text
+        result = response.json()
+        jprint(result)
+        ids = [item.get('id') for item in result]
+        assert id in ids, f'{id=} not in {ids}'
+        # поиск с paging
+        response = await client.get(f'{prefix}/search?category={category}&page=1&page_size=20')
+        assert response.status_code == 200, response.text
+        # поиск без аргументов (должен вернуть все записи - сравниваем количество)
+        response = await client.get(f'{prefix}/search_all')
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert total == len(result)
+        """
+        доделать все виды поиска вставить
+        """

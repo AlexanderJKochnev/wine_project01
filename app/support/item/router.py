@@ -1,18 +1,22 @@
 # app/support/item/router.py
-
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 import json
 from pydantic import ValidationError
-from fastapi import Depends, status, HTTPException, UploadFile, Form, File
+from fastapi import Query, Depends, status, HTTPException, UploadFile, Form, File
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
-
+from app.core.schemas.base import PaginatedResponse
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate, ItemCreateRelations,
                                       ItemCreateResponseSchema)
 from app.support.item.service import ItemService
 from app.mongodb.service import ImageService
+from app.core.config.project_config import get_paging
+
+
+paging = get_paging
 
 
 class ItemRouter(BaseRouter):
@@ -130,3 +134,45 @@ class ItemRouter(BaseRouter):
             return result
         except Exception as e:
             raise HTTPException(status_code=422, detail=e)
+
+    async def search(self,
+                     search: Optional[str] = None,
+                     country_enum: Optional[str] = None,
+                     category_enum: Optional[str] = None,
+                     page: int = Query(1, ge=1),
+                     page_size: int = Query(paging.get('def', 20),
+                                            ge=paging.get('min', 1),
+                                            le=paging.get('max', 1000)),
+                     session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+        """
+            Поиск по всем текстовым полям основной таблицы
+            с постраничным выводом результата
+        """
+        kwargs: str = {'page': page, 'page_size': page_size}
+        if search:
+            kwargs['search_str'] = search
+        if country_enum:
+            kwargs['country_enum'] = country_enum
+        if category_enum:
+            kwargs['category_enum'] = category_enum
+        return await self.service.search(self.repo, self.model, session,
+                                         **kwargs)
+
+    async def search_all(self,
+                         search: Optional[str] = None,
+                         country_enum: Optional[str] = None,
+                         category_enum: Optional[str] = None,
+                         session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+        """
+            Поиск по всем текстовым полям основной таблицы
+            с постраничным выводом результата
+        """
+        kwargs: str = {}
+        if search:
+            kwargs['search_str'] = search
+        if country_enum:
+            kwargs['country_enum'] = country_enum
+        if category_enum:
+            kwargs['category_enum'] = category_enum
+        return await self.service.search(self.repo, self.model, session,
+                                         **kwargs)

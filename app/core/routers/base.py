@@ -345,17 +345,21 @@ class BaseRouter:
                      page_size: int = Query(paging.get('def', 20),
                                             ge=paging.get('min', 1),
                                             le=paging.get('max', 1000)),
-                     session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+                     session: AsyncSession = Depends(get_db),
+                     ) -> PaginatedResponse:
         """
             Поиск по всем текстовым полям основной таблицы
             с постраничным выводом результата
+            все аргументы кроме paging убрать в kwargs
         """
+        kwargs: str = {'page': page, 'page_size': page_size}
         if search:
-            return await self.service.search(search, page, page_size, self.repo, self.model, session)
-        else:
-            return await self.get(after_date=datetime.now(timezone.utc) - relativedelta(years=2),
-                                  page=page, page_size=page_size,
-                                  session=session)
+            kwargs['search_str'] = search
+        return await self.service.search(self.repo, self.model, session, **kwargs)
+        # else:
+        #     return await self.get(after_date=datetime.now(timezone.utc) - relativedelta(years=2),
+        #                           page=page, page_size=page_size,
+        #                           session=session)
 
     async def search_all(self,
                          search: str = Query(None),
@@ -364,4 +368,7 @@ class BaseRouter:
             Поиск по всем текстовым полям основной таблицы
             с постраничным выводом результата
         """
-        return await self.service.search_all(search, self.repo, self.model, session)
+        kwargs: dict = {}
+        if search:
+            kwargs['search_str'] = search
+        return await self.service.search(self.repo, self.model, session, **kwargs)
