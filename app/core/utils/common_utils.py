@@ -381,6 +381,7 @@ def json_flattern(self, data: dict, parent: str = '') -> dict:
 
 def plural(single: str) -> str:
     """
+    возвращает множественное число прописными буквами по правилам англ языка
     :param single:  single name
     :type name:     str
     :return:        plural name

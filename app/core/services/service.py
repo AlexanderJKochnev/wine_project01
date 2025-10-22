@@ -235,3 +235,71 @@ class Service:
                                              session=session)
         result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
         return dict_sorter(result)
+
+    @classmethod
+    async def get_triple_name(cls, session: AsyncSession,
+                              model: TypeVar,
+                              supermodel: TypeVar,
+                              superiormodel: TypeVar,
+                              lang: str,
+                              field_name: str = 'name'):
+        name = f'{field_name}{lang}'
+        repo = Repository
+        if lang == '':      # english language
+            rows = await repo.fetch_name_triples(
+                model, supermodel, superiormodel, first=getattr(superiormodel, name),
+                second=getattr(supermodel, name), third=getattr(model, name), session=session
+            )
+        else:               # all other languages
+            rows = await repo.fetch_name_triples(
+                model, supermodel, superiormodel,
+                first=func.coalesce(getattr(superiormodel, name), getattr(superiormodel, field_name)),
+                second=func.coalesce(getattr(supermodel, name), getattr(supermodel, field_name)),
+                third=func.coalesce(getattr(model, name), getattr(model, field_name)),
+                session=session
+            )
+        result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
+        return dict_sorter(result)
+
+    @classmethod
+    async def get_pair_name(cls, session: AsyncSession,
+                            model: TypeVar,
+                            supermodel: TypeVar,
+                            lang: str,
+                            field_name: str = 'name'):
+        name = f'{field_name}{lang}'
+        repo = Repository
+        if lang == '':      # english language
+            rows = await repo.fetch_name_pairs(
+                model, supermodel, first=getattr(supermodel, name),
+                second=getattr(model, name), session=session
+            )
+        else:               # all other languages
+            rows = await repo.fetch_name_pairs(
+                model, supermodel,
+                first=func.coalesce(getattr(supermodel, name), getattr(supermodel, field_name)),
+                second=func.coalesce(getattr(model, name), getattr(model, field_name)),
+                session=session
+            )
+        result = {row[0]: joiner(joint, row[1], row[2]) for row in rows}
+        return dict_sorter(result)
+
+    @classmethod
+    async def get_single_name(cls, session: AsyncSession,
+                              model: TypeVar,
+                              lang: str,
+                              field_name: str = 'name'):
+        name = f'{field_name}{lang}'
+        repo = Repository
+        if lang == '':      # english language
+            rows = await repo.fetch_name_single(
+                model, first=getattr(model, name), session=session
+            )
+        else:               # all other languages
+            rows = await repo.fetch_name_single(
+                model,
+                first=func.coalesce(getattr(model, name), getattr(model, field_name)),
+                session=session
+            )
+        result = {row[0]: joiner(joint, row[1]) for row in rows}
+        return dict_sorter(result)

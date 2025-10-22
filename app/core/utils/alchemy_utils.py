@@ -711,9 +711,23 @@ def replace_commas_in_parentheses(match, rep: str = '@'):
 
 
 def field_naming(model: TypeVar, suffix: str = '_id') -> str:
+    """
+    по модели строим имя поля foreign key для эьтой модели Drink -> drink_id
+    :param model:
+    :param suffix:
+    :return:
+    """
     name = model.__name__
     return f'{name.lower()}{suffix}'
 
 
 def get_id_field(model: TypeVar, supermodel: TypeVar, suffix: str = '_id'):
+    """
+    получаем значение foreign_id поля модели
+    :param model:       model
+    :param supermodel:  parent model
+    :param suffix:
+    :return:
+    :rtype:
+    """
     return getattr(model, field_naming(supermodel))

@@ -14,7 +14,6 @@ from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
 from app.mongodb.router import router as MongoRouter
-from app.support.preact.router import router as PreactRoute
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
@@ -31,6 +30,7 @@ from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
 from app.support.warehouse.router import WarehouseRouter
 from app.support.api.router import ApiRouter
+from app.support.handbook.router import HandbookRouter
 
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
@@ -52,7 +52,7 @@ app.add_middleware(
 
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
-app.include_router(PreactRoute)
+app.include_router(HandbookRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 

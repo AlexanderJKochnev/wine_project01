@@ -59,16 +59,39 @@ def test_model_naming():
     assert result == exp_res, f'get_id_field работает некорректно {result} вместо {exp_res}'
 
 
-async def test_preact_routers(authenticated_client_with_db, test_db_session,
-                              fakedata_generator):
-    from app.support.preact.router import prefix
-    subprefixes = ['subregion', 'category']
-    suffix = ['en', 'ru', 'fr']
-    # генерируем роуты и сверяем их количество
-    test_set = [f'/{prefix}/{a}/{b}' for a in subprefixes for b in suffix]
-    expected_count = len(subprefixes) * len(suffix)
-    assert len(test_set) == expected_count
+def test_handbook_router():
+    from app.support.handbook.router import HandbookRouter
+    router = HandbookRouter()
+    # тест __source_generator__
+    print(router.languages)
+    for prefix, tag, function in router.__source_generator__(router.source, router.languages):
+        print(f'{prefix=}, {tag=}, {function=}')
+        assert isinstance(prefix, str), 'тест __source_generator__ не прошел. 1'
+        assert isinstance(tag, list), f'тест __source_generator__ не прошел - 2 элемент не лист, а {type(tag)}'
+    # assert False
+    # test __path_decoder__
+    sources = {'/some/path/en': ('path', 'en'),
+               '/path/en': ('path', 'en')
+               }
+    for source, expectation in sources.items():
+        result = router.__path_decoder__(source)
+        print(result)
+        assert result == expectation, f'(__path_decoder__ test fault, {result}'
+    # assert False
+
+
+async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
+                                 fakedata_generator):
+    from app.support.handbook.router import HandbookRouter
     client = authenticated_client_with_db
-    for pref in test_set:
-        response = await client.get(pref)
-        assert response.status_code == 200, f'роут "{pref}" работает некооректно. {response.text}'
+    router = HandbookRouter()
+    prefix = router.prefix
+    subprefix = list(router.source.keys())
+    language = router.languages
+    test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
+    for prefix in test_set:
+        response = await client.get(prefix)
+        assert response.status_code == 200
+        print(prefix)
+        jprint(response.json())
+    assert False

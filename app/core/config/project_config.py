@@ -45,10 +45,17 @@ class Settings(BaseSettings):
     JSON_FILENAME: str = 'data.json'
     # PREACT
     PREACT_PREFIX: str = 'preact'
+    HANDBOOKS_PREFIX: str = 'handbooks'
+    LANGS: str = 'en, ru, fr'
+    DEFAULT_LANG: str = 'en'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
+
+    @property
+    def LANGUAGES(self):
+        return strtolist(self.LANGS)
 
     @property
     def max_file_size(self) -> int:
