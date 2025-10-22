@@ -708,3 +708,12 @@ def replace_commas_in_parentheses(match, rep: str = '@'):
     inner_replaced = inner.replace(',', '@')
     # Возвращаем скобки с изменённым содержимым
     return f"({inner_replaced})"
+
+
+def field_naming(model: TypeVar, suffix: str = '_id') -> str:
+    name = model.__name__
+    return f'{name.lower()}{suffix}'
+
+
+def get_id_field(model: TypeVar, supermodel: TypeVar, suffix: str = '_id'):
+    return getattr(model, field_naming(supermodel))

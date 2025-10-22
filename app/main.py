@@ -14,12 +14,14 @@ from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
 from app.mongodb.router import router as MongoRouter
+from app.support.preact.router import router as PreactRoute
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
 from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
+from app.support.superfood.router import SuperfoodRouter
 from app.support.item.router import ItemRouter
 from app.support.region.router import RegionRouter
 from app.support.subcategory.router import SubcategoryRouter
@@ -50,6 +52,7 @@ app.add_middleware(
 
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
+app.include_router(PreactRoute)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 
@@ -60,6 +63,7 @@ app.include_router(RegionRouter().router)
 app.include_router(SubregionRouter().router)
 app.include_router(SweetnessRouter().router)
 app.include_router(FoodRouter().router)
+app.include_router(SuperfoodRouter().router)
 app.include_router(VarietalRouter().router)
 app.include_router(CustomerRouter().router)
 app.include_router(WarehouseRouter().router)

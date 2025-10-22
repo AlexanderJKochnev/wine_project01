@@ -19,6 +19,7 @@ from app.support.category.model import Category  # noqa: F401, E402
 from app.support.customer.model import Customer   # noqa: F401, E402
 from app.support.warehouse.model import Warehouse   # noqa: F401, E402
 from app.support.food.model import Food   # noqa: F401, E402
+from app.support.superfood.model import Superfood   # noqa: F401, E402
 from app.support.item.model import Item   # noqa: F401, E402
 from app.support.region.model import Region   # noqa: F401, E402
 from app.support.sweetness.model import Sweetness   # noqa: F401, E402

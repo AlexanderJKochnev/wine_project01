@@ -1,15 +1,16 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
 
-from typing import Any, Dict, List, Optional, Type, Tuple, Union
 from datetime import datetime
-from sqlalchemy import func, select, and_, Select
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
+
+from sqlalchemy import and_, func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.alchemy_utils import (create_search_conditions, create_enum_conditions,
-                                          create_search_conditions2)
-from app.core.utils.alchemy_utils import ModelType
+from sqlalchemy.sql.elements import ColumnElement
+
 from app.core.services.logger import logger
-# from app.core.utils.common_utils import get_text_model_fields
+from app.core.utils.alchemy_utils import create_enum_conditions, create_search_conditions, create_search_conditions2, \
+    get_id_field, ModelType
 
 
 class Repository:
@@ -256,3 +257,48 @@ class Repository:
             return (records if records else [], total)
         except Exception as e:
             logger.error(f'ошибка search: {e}')
+
+    @classmethod
+    async def fetch_name_triples(cls, model, supermodel, superiormodel,
+                                 first: ColumnElement,
+                                 second: ColumnElement,
+                                 third: ColumnElement,
+                                 session: AsyncSession) -> List[Tuple[int, str, str, str]]:
+        """
+        Возвращает [(subregion_id, country_name, region_name, subregion_name), ...]
+        """
+        stmt = (select(model.id,
+                       first.label("first_name"),
+                       second.label("second_name"),
+                       third.label("third_name"), )
+                .join(supermodel, get_id_field(model, supermodel) == supermodel.id)
+                .join(superiormodel, get_id_field(supermodel, superiormodel) == superiormodel.id))
+        result = await session.execute(stmt)
+        return result.all()  # list of tuples
+
+    @classmethod
+    async def fetch_name_pairs(cls, model, supermodel,
+                               first: ColumnElement,
+                               second: ColumnElement,
+                               session: AsyncSession) -> List[Tuple[int, str, str]]:
+        """
+        Возвращает [(subregion_id, region_name, subregion_name), ...]
+        """
+        stmt = (select(model.id,
+                       first.label("first_name"),
+                       second.label("second_name"), )
+                .join(supermodel, get_id_field(model, supermodel) == supermodel.id))
+        result = await session.execute(stmt)
+        return result.all()  # list of tuples
+
+    @classmethod
+    async def fetch_name_single(cls, model,
+                                first: ColumnElement,
+                                session: AsyncSession) -> List[Tuple[int, str]]:
+        """
+        Возвращает [(subregion_id, region_name, subregion_name), ...]
+        """
+        stmt = (select(model.id,
+                       first.label("first_name"),))
+        result = await session.execute(stmt)
+        return result.all()  # list of tuples

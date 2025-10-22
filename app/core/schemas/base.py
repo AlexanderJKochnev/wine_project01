@@ -10,7 +10,7 @@ PaginatedResponse - см ниже на базе ReadSchema
 ListResponse - тоже что и Pagianted только без Pagianted
 """
 from typing import NewType, Generic, TypeVar, List, Optional, Any
-from pydantic import BaseModel as BaseOrigin, ConfigDict, model_validator
+from pydantic import BaseModel as BaseOrigin, ConfigDict, model_validator, Field
 from datetime import datetime
 from abc import ABC
 
@@ -71,6 +71,13 @@ class NameSchema(BaseModel):
     name: Optional[str] = None
     name_ru: Optional[str] = None
     name_fr: Optional[str] = None
+
+
+class NameExcludeSchema(BaseModel):
+    """ добавлять поля на других языках """
+    name: Optional[str] = Field(exclude=True)
+    name_ru: Optional[str] = Field(exclude=True)
+    name_fr: Optional[str] = Field(exclude=True)
 
 
 class LangSchema(NameSchema, DescriptionSchema):

@@ -1,18 +1,19 @@
 # app.support.subregion.service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.services.service import Service
 from app.support.country.router import Country, CountryRepository, CountryService
 from app.support.region.router import (Region, RegionCreate, RegionCreateRelation, RegionRead, RegionRepository,
                                        RegionService)
-from app.support.subregion.router import (Subregion, SubregionCreate, SubregionRepository)
+from app.support.subregion.model import Subregion
+from app.support.subregion.schemas import SubregionCreate
+from app.support.subregion.repository import SubregionRepository
 
 
 class SubregionService(Service):
 
     @classmethod
-    async def create_relation(cls, data: RegionCreateRelation, repository: RegionRepository,
-                              model: Region, session: AsyncSession) -> RegionRead:
+    async def create_relation(cls, data: RegionCreateRelation, repository: type(SubregionRepository),
+                              model: type(Subregion), session: AsyncSession) -> RegionRead:
         # pydantic model -> dict
         # subregion_data: dict = data.model_dump(exclude={'country'}, exclude_unset=True)
         if data.region:

@@ -1,15 +1,18 @@
 # app.core.service/service.py
 
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, TypeVar
 from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
-# import json
+from sqlalchemy import func
+from app.core.utils.common_utils import joiner, dict_sorter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
+
+joint = '. '
 
 
 class Service:
@@ -196,3 +199,39 @@ class Service:
                          **kwargs) -> List[ModelType]:
         items, _ = await repository.search(model, session, **kwargs)
         return items
+
+    @classmethod
+    async def get_english_names(cls, model: TypeVar,
+                                supermodel: TypeVar,
+                                superiormodel: TypeVar,
+                                repo, session: AsyncSession,
+                                lang: str = '', field_name: str = 'name',
+                                ) -> Dict[int, str]:
+        name = f'{field_name}{lang}'
+        rows = await repo.fetch_name_triples(model, supermodel, superiormodel,
+                                             first=getattr(superiormodel, name),
+                                             second=getattr(supermodel, name),
+                                             third=getattr(model, name),
+                                             session=session)
+        result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
+        return dict_sorter(result)
+
+    @classmethod
+    async def get_fallback_names(cls, model: TypeVar,
+                                 supermodel: TypeVar,
+                                 superiormodel: TypeVar,
+                                 repo, session: AsyncSession,
+                                 lang: str = '',
+                                 field_name: str = 'name',
+                                 ) -> Dict[int, str]:
+        name = f'{field_name}{lang}'
+        rows = await repo.fetch_name_triples(model, supermodel, superiormodel,
+                                             first=func.coalesce(getattr(superiormodel, name),
+                                                                 getattr(superiormodel, field_name)),
+                                             second=func.coalesce(getattr(supermodel, name),
+                                                                  getattr(supermodel, field_name)),
+                                             third=func.coalesce(getattr(model, name),
+                                                                 getattr(model, field_name)),
+                                             session=session)
+        result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
+        return dict_sorter(result)

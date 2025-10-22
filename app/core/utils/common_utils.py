@@ -719,3 +719,18 @@ def print_comparison_results(dict1, dict2):
         print(f"Путь: {path}")
         print(f"Описание: {description}")
         print("-" * 40)
+
+
+def joiner(joint: str = '. ', *args) -> str:
+    """
+    объединяет элементы в строку убирая пустые (None) через разделитель
+    :param args: List[Any]
+    :type args:  list
+    :return:     joined string
+    :rtype:      str
+    """
+    return joint.join((val for val in args if val))
+
+
+def dict_sorter(source: dict) -> dict:
+    return dict(sorted(source.items(), key=lambda item: item[1]))
