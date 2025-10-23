@@ -69,7 +69,9 @@ class ItemRepository(Repository):
                                    limit: int = None,
                                    category_enum: str = None,
                                    country_enum: str = None) -> Optional[List[ModelType]]:
-        """Поиск по всем заданным текстовым полям основной таблицы"""
+        """Поиск по всем заданным текстовым полям основной таблицы
+            НЕ ИСПОЛЬЗУЕТСЯ УДАЛИТЬ
+        """
         try:
             # ищем в Drink (диапазон расширяем в два раза что бы охватить все Items
             # ищем category_id:

@@ -16,7 +16,9 @@ joint = '. '
 
 
 class Service:
-
+    """
+    проверить ВОТ ВСЕХ МЕТОДАХ можно использщовать базовый репо.
+    """
     @classmethod
     def get_model_by_name(cls, name: str) -> ModelType:
         for mode in get_models():
@@ -37,7 +39,6 @@ class Service:
     async def get_or_create(cls, data: ModelType, repository: Type[Repository],
                             model: ModelType, session: Session) -> ModelType:
         """ использовать вместо create """
-        # repository = Repository
         try:
             data_dict = data.model_dump(exclude_unset=True)
             # поиск существующей записи по полному совпадению объектов

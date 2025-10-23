@@ -145,6 +145,7 @@ class Repository:
                                    skip: int = None,
                                    limit: int = None) -> Optional[List[ModelType]]:
         """
+        НЕ ИСПОЛЬЗУЕТСЯ ПОСЛЕ ПРОВЕРКИ УДАЛИТЬ
         Поиск по всем заданным текстовым полям основной таблицы
         если указана pagination - возвращвет pagination
         :param search_str:  текстовое условие поиска

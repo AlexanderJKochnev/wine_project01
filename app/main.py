@@ -31,6 +31,7 @@ from app.support.varietal.router import VarietalRouter
 from app.support.warehouse.router import WarehouseRouter
 from app.support.api.router import ApiRouter
 from app.preact.handbook import HandbookRouter
+from app.preact.create import CreateRouter
 
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
@@ -53,6 +54,7 @@ app.add_middleware(
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
 app.include_router(HandbookRouter().router)
+app.include_router(CreateRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 

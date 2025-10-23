@@ -180,7 +180,7 @@ def test_create_enum_conditions():
 
 def test_apply_search_filter_item():
     """
-        тестирование метода apply_search_filter items
+        тестирование метода apply_search_filter items (sql validation)
     """
     from app.support.item.repository import Item, ItemRepository
     kwarg = [{'search_str': 'test', 'country_enum': 'country', 'category_enum': 'category'},
@@ -200,9 +200,9 @@ def test_apply_search_filter_item():
         result = ItemRepository.apply_search_filter(select(func.count()).select_from(Item), count=True, **kwa)
         res, message = validate_query(result)
         assert res, message
-    print(result1)
-    print(result)
-    assert False
+    # print(result1)
+    # print(result)
+    # assert False
 
 
 def test_typing():
