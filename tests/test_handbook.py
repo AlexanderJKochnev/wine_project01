@@ -60,7 +60,7 @@ def test_model_naming():
 
 
 def test_handbook_router():
-    from app.support.handbook.router import HandbookRouter
+    from app.preact.handbook import HandbookRouter
     router = HandbookRouter()
     # тест __source_generator__
     print(router.languages)
@@ -82,7 +82,7 @@ def test_handbook_router():
 
 async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
                                  fakedata_generator):
-    from app.support.handbook.router import HandbookRouter
+    from app.preact.handbook.router import HandbookRouter
     client = authenticated_client_with_db
     router = HandbookRouter()
     prefix = router.prefix

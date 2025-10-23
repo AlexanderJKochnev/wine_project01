@@ -30,7 +30,7 @@ from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
 from app.support.warehouse.router import WarehouseRouter
 from app.support.api.router import ApiRouter
-from app.support.handbook.router import HandbookRouter
+from app.preact.handbook import HandbookRouter
 
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user

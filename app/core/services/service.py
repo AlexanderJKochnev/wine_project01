@@ -37,10 +37,10 @@ class Service:
     async def get_or_create(cls, data: ModelType, repository: Type[Repository],
                             model: ModelType, session: Session) -> ModelType:
         """ использовать вместо create """
+        # repository = Repository
         try:
             data_dict = data.model_dump(exclude_unset=True)
             # поиск существующей записи по полному совпадению объектов
-            # instance = await repository.get_by_obj(data_dict, model, session)
             instance = await repository.get_by_fields(data_dict, model, session)
             if instance:
                 return instance
@@ -100,7 +100,9 @@ class Service:
     @classmethod
     async def create_relation(cls, data: ModelType,
                               repository: Type[Repository], model: ModelType, session: Session) -> ModelType:
-        """ использовать вместо create """
+        """
+        создание записей из json - со связями
+        """
 
         data_dict = data.model_dump(exclude_unset=True)
         result = await repository.get_by_obj(data_dict, model, session)

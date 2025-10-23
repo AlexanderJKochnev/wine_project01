@@ -1,7 +1,88 @@
 # app/core/utils/pydantic_utils.py
-from pydantic import create_model, BaseModel
-from typing import Type, List
+# from pydantic import create_model, BaseModel
 from app.core.schemas.base import PaginatedResponse
+from typing import Type, Optional, get_type_hints, List
+from sqlalchemy import inspect, String, Text, Integer, Float, Numeric, ForeignKey
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.sql.type_api import TypeEngine
+from pydantic import BaseModel, create_model
+from decimal import Decimal
+
+
+def sqlalchemy_to_pydantic_post(
+        model: Type[DeclarativeBase], *, exclude_fields: Optional[set] = None,
+        optional_fields: Optional[set] = None, ) -> Type[BaseModel]:
+    """
+    Генерирует Pydantic модель для POST-запроса из SQLAlchemy 2+ модели.
+    использование CategoryCreate = sqlalchemy_to_pydantic_post(Category)
+    :param model: SQLAlchemy модель
+    :param exclude_fields: Поля, которые нужно исключить (например, {'id', 'created_at'})
+    :param optional_fields: Поля, которые должны быть Optional (даже если nullable=False)
+    :return: Pydantic BaseModel класс
+    """
+    if exclude_fields is None:
+        # Исключаем типичные служебные поля по умолчанию
+        exclude_fields = {"id", "created_at", "updated_at"}
+
+    if optional_fields is None:
+        optional_fields = set()
+
+    mapper = inspect(model)
+    fields = {}
+
+    for column in mapper.columns:
+        if column.key in exclude_fields:
+            continue
+
+        # Определяем тип Python из типа SQLAlchemy
+        python_type = _get_python_type(column.type)
+
+        # Определяем, является ли поле обязательным
+        is_required = not column.nullable and column.key not in optional_fields
+
+        # Для Foreign Key - всегда int (ID связанной сущности)
+        if hasattr(column, 'foreign_keys') and column.foreign_keys:
+            python_type = int
+            # Foreign Key обычно nullable=False, но может быть и nullable=True
+            is_required = not column.nullable and column.key not in optional_fields
+
+        # Если поле не обязательное - делаем его Optional
+        if not is_required:
+            from typing import Optional as TypingOptional
+            python_type = TypingOptional[python_type]
+
+        # Устанавливаем значение по умолчанию для необязательных полей
+        default = ... if is_required else None
+
+        fields[column.key] = (python_type, default)
+
+    # Создаём Pydantic модель
+    model_name = f"{model.__name__}Create"
+    pydantic_model = create_model(model_name, **fields)
+
+    return pydantic_model
+
+
+def _get_python_type(sql_type: TypeEngine) -> type:
+    """Преобразует SQLAlchemy тип в Python тип для Pydantic"""
+    # Строковые типы
+    if isinstance(sql_type, (String, Text)):
+        return str
+
+    # Целые числа
+    if isinstance(sql_type, Integer):
+        return int
+
+    # Вещественные числа
+    if isinstance(sql_type, Float):
+        return float
+
+    # Decimal (деньги, проценты и т.д.)
+    if isinstance(sql_type, Numeric):
+        return Decimal
+
+    # По умолчанию - str (на случай неизвестных типов)
+    return str
 
 
 class PyUtils:

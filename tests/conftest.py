@@ -188,8 +188,8 @@ def simple_router_list():
     from app.support.customer.router import CustomerRouter
     from app.support.sweetness.router import SweetnessRouter
     from app.support.varietal.router import VarietalRouter
-    from app.support.superfood.router import SuperfoodRouter
-
+    from app.support.superfood.router import SuperfoodRouter   # noqa: F401
+    from app.support.food.router import FoodRouter
     # generator = TestDataGenerator()
     # template = remove_id(json_reader())
     # return generator.generate(template, count=7)
@@ -200,6 +200,7 @@ def simple_router_list():
               SuperfoodRouter,
               SweetnessRouter,
               VarietalRouter,
+              FoodRouter
               )
     return source
 
@@ -207,15 +208,14 @@ def simple_router_list():
 @pytest.fixture(scope=scope)
 def complex_router_list():
     """ генератор тестовых данных 2"""
-    from app.support.food.router import FoodRouter
+    from app.support.food.router import FoodRouter  # NOQA: F401
     from app.support.subcategory.router import SubcategoryRouter
     from app.support.region.router import RegionRouter
     from app.support.subregion.router import SubregionRouter
     from app.support.warehouse.router import WarehouseRouter
     from app.support.drink.router import DrinkRouter
     from app.support.item.router import ItemRouter
-    return (FoodRouter,
-            SubcategoryRouter,
+    return (SubcategoryRouter,
             RegionRouter,
             SubregionRouter,
             WarehouseRouter,

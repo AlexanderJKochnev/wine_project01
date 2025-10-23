@@ -1,23 +1,25 @@
 # app/support/food/schemas.py
 
 from pydantic import ConfigDict
+from typing import Optional
 from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
+from app.support.superfood.schemas import SuperfoodRead, SuperfoodCreateRelation
 
 
 class CustomReadSchema:
-    pass
+    superfood: SuperfoodRead
 
 
 class CustomCreateSchema:
-    pass
+    superfood_id: int
 
 
 class CustomCreateRelation:
-    pass
+    superfood: SuperfoodCreateRelation
 
 
 class CustomUpdSchema:
-    pass
+    superfood: Optional[SuperfoodCreateRelation]
 
 
 class FoodRead(ReadSchema, CustomReadSchema):

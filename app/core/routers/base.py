@@ -105,7 +105,7 @@ class BaseRouter:
 
     async def create(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """
-        Создание одной записи без зависимостей - удалить в production
+        Создание одной записи без зависимостей
         """
         try:
             # obj = await self.service.create(data, self.repo, self.model, session)

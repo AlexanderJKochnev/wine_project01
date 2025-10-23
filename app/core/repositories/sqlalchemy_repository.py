@@ -19,7 +19,7 @@ class Repository:
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         session.add(obj)
-        await session.commit()  # в сложных запросах когда нужно получить id и добавиить его в связанную таблицу
+        await session.commit()
         await session.refresh(obj)
         return obj
 

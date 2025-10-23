@@ -44,7 +44,6 @@ class HandbookRouter:
 
     def _setup_routes_(self):
         for prefix, tag, function in self.__source_generator__(self.source, self.languages):
-            print(f'{prefix=}', self.languages)
             self.router.add_api_route(prefix,
                                       endpoint=function, methods=["GET"],
                                       response_model=self.response_model)
@@ -65,10 +64,8 @@ class HandbookRouter:
     def __path_decoder__(self, path: str, tier: int = 2):
         """ декодирует url.path справа"""
         result = path.rsplit('/', tier)
-        print(f'path_decoder_result {result}')
         lang = result[-1]
         mod = result[-2]
-        print(f'path_decoder_result {result}, {lang=}, {mod=}')
         return mod, lang
 
     async def single_method(self, request: Request, session: AsyncSession = Depends(get_db)):
