@@ -14,7 +14,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_delete(authenticated_client_with_db, test_db_session,
                       routers_get_all, fakedata_generator):
-    """ тестирует методы DELETE (update) - c проверкой id """
+    """ тестирует методы DELETE c проверкой id """
     client = authenticated_client_with_db
     routers = routers_get_all
     x = PaginatedResponse.model_fields.keys()
@@ -32,10 +32,9 @@ async def test_delete(authenticated_client_with_db, test_db_session,
             assert check.status_code in [404, 500], check.text
 
 
-@pytest.mark.skip
 async def test_fault_delete(authenticated_client_with_db, test_db_session,
                             routers_get_all, fakedata_generator):
-    """ тестирует методы DELETE (update) - c проверкой id """
+    """ тестирует методы DELETE  c проверкой id fault"""
     client = authenticated_client_with_db
     routers = routers_get_all
     for prefix in reversed(routers):
@@ -44,7 +43,6 @@ async def test_fault_delete(authenticated_client_with_db, test_db_session,
         assert resp.status_code == 404, resp.text
 
 
-@pytest.mark.skip
 async def test_delete_one_exact(authenticated_client_with_db, test_db_session,
                                 simple_router_list, complex_router_list,
                                 fakedata_generator):

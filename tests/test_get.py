@@ -45,45 +45,18 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
     client = authenticated_client_with_db
     routers = routers_get_all
 
-    # x = PaginatedResponse.model_fields.keys()
     for prefix in routers:
         response = await client.get(f'{prefix}/1')
-        assert response.status_code in [200, 404], response.text
-        """
-        response = await client.get(f'{prefix}')
-        assert response.status_code == 200, f'метод GET не работает для пути "{prefix}"'
-        assert response.json().keys() == x, f'метод GET для пути "{prefix}" возвращает некорректные данные'
-        tmp = response.json()
-        total = len(tmp['items'])
-        if total > 0:
-            instance = tmp['items'][-1]  # берем последнюю запись
-            id = instance.get('id')
-            resp = await client.get(f'{prefix}/{id}')
-            assert resp.status_code == 200, f'получение записи {prefix} c {id} неудачно'
-            result = resp.json()
-            # проверка содержимого
-            for key, val in instance.items():
-                if not isinstance(val, float):   # особенности хранения и возврата float в Postgresql+SQLAlchemy
-                    assert result.get(key) == val, (f'полученные данные {result.get(key)} '
-                                                    f'не соответствуют ожидаемым {val}')
-        else:   # записей в тестируемой таблице нет, просот тестируем доступ
-            resp = await client.get(f'{prefix}/1')
-            assert resp.status_code in [200, 404]
-        """
+        assert response.status_code in [200], response.text
 
 
-@pytest.mark.skip
 async def test_fault_get_one(authenticated_client_with_db, test_db_session,
                              routers_get_all, fakedata_generator):
     """ тестирует методы get one - несуществующий id """
     client = authenticated_client_with_db
     routers = routers_get_all
     for prefix in routers:
-        print(f'==================={prefix=}')
-        if prefix == '/items':
-            id = 1
-        else:
-            id = 1000
+        id = 1000
         response = await client.get(f'{prefix}/{id}')
         assert response.status_code == 404
         error_data = response.json()

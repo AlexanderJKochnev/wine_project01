@@ -1,5 +1,6 @@
 # app.support.drink.service.py
-from typing import Optional, Type, List
+from typing import Optional, Type
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.repositories.sqlalchemy_repository import Repository
@@ -9,7 +10,7 @@ from app.core.utils.common_utils import flatten_dict
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 from app.support.drink.router import Drink, DrinkCreate, DrinkCreateRelations, DrinkRead, DrinkRepository
-from app.support.food.router import (Food, FoodRepository, FoodService)
+from app.support.food.router import (FoodRepository, FoodService)
 from app.support.subcategory.router import (Subcategory, SubcategoryRepository, SubcategoryService)
 from app.support.subregion.router import (Subregion, SubregionRepository, SubregionService)
 from app.support.sweetness.router import (Sweetness, SweetnessRepository, SweetnessService)
@@ -69,7 +70,7 @@ class DrinkService(Service):
             food_ids = []
             # 1. get_or_create foods in Food
             for item in data.foods:
-                result = await FoodService.get_or_create(item, FoodRepository, Food, session)
+                result = await FoodService.create_relation(item, FoodRepository, FoodService, session)
                 food_ids.append(result.id)
             # 2. set drink_food
             await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)

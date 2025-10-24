@@ -240,7 +240,9 @@ class BaseRouter:
         """
         try:
             existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
+            print(f'===================={existing_item}')
             if not existing_item:
+                print(f'=======================')
                 raise NotFoundException(detail=f"Item with id {id} not found")
             result = await self.service.delete(existing_item, self.repo, session)
             if not result:

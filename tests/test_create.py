@@ -79,25 +79,16 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
         )
         for m, data in enumerate(test_data):
             try:
-                # _ = schema(**data)      # валидация данных
-                # json_data = json.dumps(data)
-                # adapter.validate_json(json_data)
-                # assert True
-                # валидируем по Pydantic схеме
                 py_model = schema(**data)
                 rev_dict = py_model.model_dump()
                 assert data == rev_dict, f'pydantic validation fault {prefix}'
-                # валидируем по Alchemy model
-                # al_model = model(**data)
-                # rev_dict = al_model.to_dict()
-                # for key in ['updated_at', 'id', 'created_at']:
-                #     rev_dict.pop(key, None)
-                # assert data == rev_dict, f'alchemy validation fault {prefix} '
-
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
             try:
                 response = await client.post(f'{prefix}/hierarchy', json=data)
+                if response.status_code not in [200, 201]:
+                    jprint(data)
+                    print('-------------------------------')
                 assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
                 jprint(data)

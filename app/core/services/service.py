@@ -56,9 +56,7 @@ class Service:
                 await session.refresh(instance)
             return instance
         except IntegrityError as e:  # поиск по объекту не всегда дает верный результат
-            print('========================IntegrityError=====================')
             error_msg = str(e)
-            print(f'========{error_msg}==============')
             await session.rollback()
             filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
             if filter:  # есть поля по ктороым нарушена интеграция
@@ -77,7 +75,7 @@ class Service:
 
         except Exception as e:
             print(f'get_or_create.error:: {e}')
-            raise HTTPException(status_code=410, detail=e)
+            raise HTTPException(status_code=410, detail=f'{e}, {model.__name__}')
 
     @classmethod
     async def update_or_create(cls,
