@@ -149,28 +149,21 @@ class BaseRouter:
         """
             Удаление одной записи по id
         """
+        existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
+        if not existing_item:
+            raise HTTPException(status_code=404, detail=f'удаляемая запись {id} не существует')
         try:
-            existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
-            if not existing_item:
-                raise Exception(f'NOT_FOUND: Удаляемый файл {id} не найден на сервере')
             result = await self.service.delete(existing_item, self.repo, session)
-            if not result:
-                raise Exception(f'DATABASE ERROR: не удалось удалить файл id {id}')
-            resu = {'success': result, 'deleted_count': 1 if result else 0,
-                    'message': f'{self.model.__name__} with id {id} has been deleted'}
-            return DeleteResponse(**resu)
-        except SQLAlchemyError as e:
-            logger.error(f"Database error in delete_item: {e}")
-            # Проверяем, является ли ошибка связанной с внешними ключами
-            if "foreign key constraint" in str(e).lower():
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail="Cannot delete item due to existing references"
-                )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
-            )
         except Exception as e:
-            raise exception_to_http(e)
+            raise HTTPException(status_code=401, detail=e)
+        # проверка удаления
+        # checking = await self.service.get_by_id(id, self.repo, self.model, session)
+        # if checking == existing_item:
+        #     raise HTTPException(status_code=500, detail=f'Ошибка удаления записи {id}: {checking}')
+        res = {'success': result,
+               'deleted_count': 1 if result else 0,
+               'message': f'Удалена запись {id}'}
+        return res
 
     async def get_one(self,
                       id: int,

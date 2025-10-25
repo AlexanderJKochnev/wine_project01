@@ -18,9 +18,11 @@ async def test_fault_delete(authenticated_client_with_db, test_db_session,
     client = authenticated_client_with_db
     routers = routers_get_all
     for prefix in reversed(routers):
+        if 'api' in prefix:     # в api нет метода delete - когдя пояявится - убрать
+            continue
         id = 10000
         resp = await client.delete(f'{prefix}/{id}')
-        assert resp.status_code == 404, resp.text
+        assert resp.status_code == 404, f'{prefix} {resp.text}'
 
 
 async def test_delete_one_exact(authenticated_client_with_db, test_db_session,
@@ -31,7 +33,7 @@ async def test_delete_one_exact(authenticated_client_with_db, test_db_session,
     """
     router_list = simple_router_list + complex_router_list
     # router_list = [ItemRouter, DrinkRouter]
-    for item in router_list:
+    for item in reversed(router_list):
         router = item()
         prefix = router.prefix
         client = authenticated_client_with_db

@@ -24,3 +24,12 @@ class Item(Base, BaseAt, ImageMixin):
 
     # warehouse: Mapped["Warehouse"] = relationship(back_populates="items")
     drink: Mapped["Drink"] = relationship(back_populates="items")
+
+    def __str__(self):
+        # переоопределять в особенных формах
+        return f'{self.drink.__str__()}, {self.vol / 100:.2%} %'
+        # f"{number/100:.2%} " (54.34% = 0.5434)
+
+    def __repr__(self):
+        # return f"<Category(name={self.name})>"
+        return str(self)
