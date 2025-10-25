@@ -40,7 +40,7 @@ async def test_fault_delete(authenticated_client_with_db, test_db_session,
     for prefix in reversed(routers):
         id = 10000
         resp = await client.delete(f'{prefix}/{id}')
-        assert resp.status_code == 404, resp.text
+        assert resp.status_code == 601, resp.text
 
 
 async def test_delete_one_exact(authenticated_client_with_db, test_db_session,

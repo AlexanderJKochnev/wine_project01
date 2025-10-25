@@ -27,7 +27,7 @@ class DeleteRouter:
                        # 'customers': Customer,
                        'superfoods': Superfood,
                        'foods': Food,
-                       'varietal': Varietal}
+                       'varietals': Varietal}
         self.router = APIRouter(prefix=self.prefix, tags=self.tags,
                                 dependencies=[Depends(get_active_user_or_internal)])
         self.setup_routes()

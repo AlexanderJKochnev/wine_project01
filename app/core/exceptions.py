@@ -30,7 +30,6 @@ class NotFoundException(AppException):
     def __init__(self, detail: Optional[Dict[str, Any]] = None):
         message = "Запись не найдена"
         print(f'{message=}=================')
-        self.status_code = 404
         super().__init__(message, detail)
 
 

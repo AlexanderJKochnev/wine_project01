@@ -2,7 +2,7 @@
 # from sqlalchemy.exc import SQLAlchemyError
 import logging
 
-from fastapi import FastAPI, Request, status, Depends
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 # from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware
@@ -79,7 +79,7 @@ app.include_router(user_router)
 @app.exception_handler(NotFoundException)
 async def not_found_exception_handler(request: Request, exc: NotFoundException):
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=601,
         content={"detail": exc.detail},
     )
 
@@ -87,7 +87,7 @@ async def not_found_exception_handler(request: Request, exc: NotFoundException):
 @app.exception_handler(ValidationException)
 async def validation_exception_handler(request: Request, exc: ValidationException):
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=602,
         content={"detail": exc.detail},
     )
 
@@ -95,7 +95,7 @@ async def validation_exception_handler(request: Request, exc: ValidationExceptio
 @app.exception_handler(ConflictException)
 async def conflict_exception_handler(request: Request, exc: ConflictException):
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=603,
         content={"detail": exc.detail},
     )
 
@@ -104,8 +104,8 @@ async def conflict_exception_handler(request: Request, exc: ConflictException):
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Database error occurred"},
+        status_code=604,
+        content={"detail": exc.detail},
     )
 
 
@@ -113,8 +113,8 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error"},
+        status_code=605,
+        content={"detail": exc.detail or "Internal server error"},
     )
 
 

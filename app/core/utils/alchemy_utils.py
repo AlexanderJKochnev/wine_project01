@@ -12,9 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import MapperProperty
 from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm import DeclarativeMeta
-from app.core.exceptions import ValidationException
 from app.core.models.base_model import Base
-from app.core.utils.common_utils import clean_string, get_path_to_root, jprint, enum_to_camel
+from app.core.utils.common_utils import clean_string, get_path_to_root, enum_to_camel
+from app.core.exceptions import ValidationException
+
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 function = {1: or_, 2: and_}
@@ -179,7 +180,7 @@ def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribu
 
     raise ValidationException(
         message=f"Неподдерживаемый тип поиска: {search_type}",
-        details={"supported_types": [t.value for t in SearchType]},
+        detail={"supported_types": [t.value for t in SearchType]},
         suggestion=f"Используйте один из поддерживаемых типов: {', '.join([t.value for t in SearchType])}"
     )
 
@@ -261,6 +262,7 @@ def create_enum_conditions(model: ModelType, search: str, field_name: str = None
     search = enum_to_camel(search)
     condition = build_search_condition(field, search, **kwargs)
     return condition
+
 
 class JsonConverter():
     def __init__(self, filename: Union[str, Path] = 'data.json'):

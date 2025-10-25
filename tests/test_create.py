@@ -4,8 +4,6 @@
 """
 
 import pytest
-from pydantic import TypeAdapter
-import json
 from app.core.utils.common_utils import jprint
 pytestmark = pytest.mark.asyncio
 
@@ -65,7 +63,7 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
     for n, item in enumerate(source):
         router = item()
         schema = router.create_schema_relation
-        model = router.model
+        # model = router.model
         # adapter = TypeAdapter(schema)
         prefix = router.prefix
 

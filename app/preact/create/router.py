@@ -27,10 +27,9 @@ class CreateRouter:
                        'countries': Country,
                        'regions': Region,
                        'subregions': Subregion,
-                       # 'customers': (Customer,),
                        'superfoods': Superfood,
                        'foods': Food,
-                       'varietal': Varietal}
+                       'varietals': Varietal}
         self.schemas_generator(self.source)
         self.router = APIRouter(prefix=self.prefix, tags=self.tags,
                                 dependencies=[Depends(get_active_user_or_internal)])
@@ -48,8 +47,8 @@ class CreateRouter:
 
     def routes_generator(self, source: dict):
         """
-        возвращает список
-        [prefix, response_model]
+            возвращает список
+            [prefix, response_model]
         """
         return ((f'/{key}', self.__get_schemas__(val)) for key, val in source.items())
 

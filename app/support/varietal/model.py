@@ -4,15 +4,19 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, relationship
-
+from app.core.utils.common_utils import plural
+from app.core.config.project_config import settings
 from app.core.models.base_model import BaseFull
 
 if TYPE_CHECKING:
-    from app.support.drink.model import DrinkVarietal, Drink
+    from app.support.drink.model import DrinkVarietal
 
 
 class Varietal(BaseFull):
-
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'varietal'
+    plural_name = plural(single_name)
     # Связь с промежуточной таблицей
     drink_associations: Mapped[List["DrinkVarietal"]] = relationship("DrinkVarietal",
                                                                      back_populates="varietal",

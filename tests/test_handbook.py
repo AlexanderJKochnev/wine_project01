@@ -92,6 +92,5 @@ async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
     for prefix in test_set:
         response = await client.get(prefix)
         assert response.status_code == 200
-        print(prefix)
-        jprint(response.json())
-    assert False
+        result = response.json()
+        assert isinstance(result, dict)
