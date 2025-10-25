@@ -91,6 +91,7 @@ async def get_current_user(
         session: AsyncSession = Depends(get_db)):
     """Получение текущего пользователя по JWT токену"""
     try:
+        token = token or ''
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:

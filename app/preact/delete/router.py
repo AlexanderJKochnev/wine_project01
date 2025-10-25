@@ -1,11 +1,10 @@
 # app/preact/delete/router.py
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
-from app.core.exceptions import NotFoundException
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import DeleteResponse
 from app.core.services.service import Service
@@ -55,8 +54,9 @@ class DeleteRouter:
         model = self.source.get(tmp)
         existing_item = await self.service.get_by_id(id, self.repo, model, session)
         if not existing_item:
-            raise NotFoundException(details=f"Item with id {id} not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="Запись отсутствует на сервере и не может быть удалена")
         result = await self.service.delete(existing_item, self.repo, session)
         resu = {'success': result, 'deleted_count': 1 if result else 0,
-                'message': f'{self.model.__name__} with id {id} has been deleted'}
+                'message': f'{model.__name__} with id {id} has been deleted'}
         return DeleteResponse(**resu)

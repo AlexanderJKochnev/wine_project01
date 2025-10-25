@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Optional, Type, TypeVar
 from datetime import datetime
-from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from app.core.utils.common_utils import joiner, dict_sorter
@@ -55,27 +54,22 @@ class Service:
                 await session.commit()
                 await session.refresh(instance)
             return instance
-        except IntegrityError as e:  # поиск по объекту не всегда дает верный результат
+        except IntegrityError as e:
+            # поиск по объекту не всегда дает верный результат
+            # - могут быть отклонения в необязательных полях ("Превосходный" != "превосходный")
+            # -при полном совпадении обязательных, что выбросит ошибку "нарушение уникальности"
             error_msg = str(e)
             await session.rollback()
             filter = parse_unique_violation2(error_msg)  # ищем какие ключи дали нарушение уникальности
-            if filter:  # есть поля по ктороым нарушена интеграция
-                # еще раз ищем запаись
+            if filter:  # есть поля по которым нарушена интеграция
+                # еще раз ищем запись
                 existing_instance = await repository.get_by_fields(filter, model, session)
-                if existing_instance:
-                    # запись найдена
+                if existing_instance:   # запись найдена
                     return existing_instance
-                else:
-                    # запись не найдена
-                    raise HTTPException(
-                        status_code=409, detail=f"Unique constraint violation for "
-                                                f"{filter=}' "
-                                                f"but existing record not found"
-                    )
-
+                else:   # запись не найден и не может быть добавлена
+                    raise Exception("запись не может быть добавлена по неивестной причине")
         except Exception as e:
-            print(f'get_or_create.error:: {e}')
-            raise HTTPException(status_code=410, detail=f'{e}, {model.__name__}')
+            raise Exception(f"UNKNOWN_ERROR: {str(e)}") from e
 
     @classmethod
     async def update_or_create(cls,
@@ -120,12 +114,8 @@ class Service:
         """
         get one record by id
         """
-        try:
-            result = await repository.get_by_id(id, model, session)
-            return result
-        except Exception:
-            # logger.error(f"Error in get_by_id: {e}")
-            raise
+        result = await repository.get_by_id(id, model, session)
+        return result
 
     @classmethod
     async def get_all(cls, ater_date: datetime,
@@ -146,7 +136,7 @@ class Service:
     async def get(cls, after_date: datetime,
                   repository: Type[Repository], model: ModelType,
                   session: AsyncSession,) -> Optional[List[ModelType]]:
-        # Запрос с загрузкой связей
+        # Запрос с загрузкой связей -  возвращает список
         result = await repository.get(after_date, model, session)
         return result
 

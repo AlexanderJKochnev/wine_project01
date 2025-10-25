@@ -3,12 +3,11 @@
 from typing import Any, Dict
 
 from fastapi import APIRouter, Body, Depends, Request
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+# from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
-from app.core.exceptions import (ConflictException, ValidationException)
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.routers.base import HTTPException, logger
 from app.core.services.service import Service

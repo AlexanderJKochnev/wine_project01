@@ -2,37 +2,36 @@
 # from sqlalchemy.exc import SQLAlchemyError
 import logging
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# from sqladmin import Admin
-# from app.middleware.auth_middleware import AuthMiddleware
-# from app.admin import sqladm
-from fastapi.responses import JSONResponse
 
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
-from app.core.routers.base import ConflictException, NotFoundException, SQLAlchemyError, ValidationException
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
 from app.mongodb.router import router as MongoRouter
+from app.preact.create import CreateRouter
+from app.preact.delete import DeleteRouter
+from app.preact.handbook import HandbookRouter
+from app.support.api.router import ApiRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
 from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
-from app.support.superfood.router import SuperfoodRouter
 from app.support.item.router import ItemRouter
 from app.support.region.router import RegionRouter
 from app.support.subcategory.router import SubcategoryRouter
 from app.support.subregion.router import SubregionRouter
+from app.support.superfood.router import SuperfoodRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
 from app.support.warehouse.router import WarehouseRouter
-from app.support.api.router import ApiRouter
-from app.preact.handbook import HandbookRouter
-from app.preact.create import CreateRouter
-from app.preact.delete import DeleteRouter
+
+# from sqladmin import Admin
+# from app.middleware.auth_middleware import AuthMiddleware
+# from app.admin import sqladm
 
 # from app.core.routers.image_router import router as image_router
 # from app.core.security import get_current_active_user
@@ -74,48 +73,6 @@ app.include_router(WarehouseRouter().router)
 
 app.include_router(auth_router)
 app.include_router(user_router)
-
-
-@app.exception_handler(NotFoundException)
-async def not_found_exception_handler(request: Request, exc: NotFoundException):
-    return JSONResponse(
-        status_code=601,
-        content={"detail": exc.detail},
-    )
-
-
-@app.exception_handler(ValidationException)
-async def validation_exception_handler(request: Request, exc: ValidationException):
-    return JSONResponse(
-        status_code=602,
-        content={"detail": exc.detail},
-    )
-
-
-@app.exception_handler(ConflictException)
-async def conflict_exception_handler(request: Request, exc: ConflictException):
-    return JSONResponse(
-        status_code=603,
-        content={"detail": exc.detail},
-    )
-
-
-# Обработчик для SQLAlchemy ошибок
-@app.exception_handler(SQLAlchemyError)
-async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
-    return JSONResponse(
-        status_code=604,
-        content={"detail": exc.detail},
-    )
-
-
-# Общий обработчик для всех исключений
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=605,
-        content={"detail": exc.detail or "Internal server error"},
-    )
 
 
 @app.get("/")

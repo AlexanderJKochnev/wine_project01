@@ -7,7 +7,7 @@ from app.support.superfood.schemas import SuperfoodRead, SuperfoodCreateRelation
 
 
 class CustomReadSchema:
-    superfood: SuperfoodRead
+    superfood: Optional[SuperfoodRead] = None
 
 
 class CustomCreateSchema:
@@ -19,7 +19,7 @@ class CustomCreateRelation:
 
 
 class CustomUpdSchema:
-    superfood: Optional[SuperfoodCreateRelation]
+    superfood: Optional[SuperfoodCreateRelation] = None
 
 
 class FoodRead(ReadSchema, CustomReadSchema):

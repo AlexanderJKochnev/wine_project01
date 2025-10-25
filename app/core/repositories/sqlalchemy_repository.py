@@ -36,13 +36,9 @@ class Repository:
 
     @classmethod
     async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
-        try:
-            await session.delete(obj)
-            await session.commit()
-            return True
-        except Exception as e:
-            logger.error(f'ошибка удаления записи: {e}')
-            return False
+        await session.delete(obj)
+        await session.commit()
+        return True
 
     @classmethod
     def get_query(cls, model: ModelType):
@@ -58,13 +54,10 @@ class Repository:
         """
         get one record by id
         """
-        try:
-            stmt = cls.get_query(model).where(model.id == id)
-            result = await session.execute(stmt)
-            obj = result.scalar_one_or_none()
-            return obj
-        except Exception:
-            return None
+        stmt = cls.get_query(model).where(model.id == id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
+        return obj
 
     @classmethod
     async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:

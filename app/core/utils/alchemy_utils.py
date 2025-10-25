@@ -14,7 +14,6 @@ from sqlalchemy.orm.attributes import QueryableAttribute
 from sqlalchemy.orm import DeclarativeMeta
 from app.core.models.base_model import Base
 from app.core.utils.common_utils import clean_string, get_path_to_root, enum_to_camel
-from app.core.exceptions import ValidationException
 
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
@@ -178,11 +177,8 @@ def build_search_condition(field: Union[Column, MapperProperty, QueryableAttribu
         else:
             return field.ilike(f"%{search_value}%")
 
-    raise ValidationException(
-        message=f"Неподдерживаемый тип поиска: {search_type}",
-        detail={"supported_types": [t.value for t in SearchType]},
-        suggestion=f"Используйте один из поддерживаемых типов: {', '.join([t.value for t in SearchType])}"
-    )
+    raise TypeError(f"Неподдерживаемый тип поиска: {search_type}. "
+                    f"\nИспользуйте один из поддерживаемых типов: {', '.join([t.value for t in SearchType])}")
 
 
 def create_search_conditions(model: ModelType, search_str: str, func: int = 1, **kwargs) -> List:

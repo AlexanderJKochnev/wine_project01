@@ -9,6 +9,8 @@ import pytest
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
 from pydantic import TypeAdapter
+from tests.utility.assertion import assertions
+from app.core.utils.common_utils import jprint
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -26,6 +28,7 @@ from tests.data_factory.fake_generator import generate_test_data
 from tests.data_factory.reader_json import JsonConverter
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
+# from tests.data_factory.fake_generator import generate_test_data
 
 scope = 'session'
 scope2 = 'session'
@@ -338,61 +341,39 @@ def get_fields_type() -> Dict[str, Any]:
 @pytest.fixture(scope=scope)
 async def fakedata_generator(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list):
-    # from tests.data_factory.fake_generator import generate_test_data
+    failed_cases = []
     source = simple_router_list + complex_router_list
     test_number = 10
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
-        schema = router.create_schema
-        adapter = TypeAdapter(schema)
+        schema = router.create_schema_relation
         prefix = router.prefix
         test_data = generate_test_data(
-            schema, test_number,
-            {'int_range': (1, test_number),
-             'decimal_range': (0.5, 1),
-             'float_range': (0.1, 1.0),
-             # 'field_overrides': {'name': 'Special Product'},
-             'faker_seed': 42})
+            schema, test_number, {'int_range': (1, test_number), 'decimal_range': (0.5, 1), 'float_range': (0.1, 1.0),
+                                  'faker_seed': 42}
+        )
         for m, data in enumerate(test_data):
             try:
-                # _ = schema(**data)      # валидация данных
-                json_data = json.dumps(data)
-                adapter.validate_json(json_data)
-                assert True
+                _ = schema(**data)
             except Exception as e:
-                assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
+                if assertions(False, failed_cases, item, prefix, f'ошибка валидации: {e}'):
+                    continue  # Продолжаем со следующим роутером
             try:
-                response = await client.post(f'{prefix}', json=data)
-                assert response.status_code == 200, f'||{prefix}, {response.text}'
+                response = await client.post(f'{prefix}/hierarchy', json=data)
+                # if response.status_code not in [200, 201]:
+                if assertions(response.status_code not in [200, 201],
+                              failed_cases, item,
+                              prefix, f'status_code {response.status_code}'):
+                    jprint(data)
+                    print('-------------------------------')
+                    # assert response.status_code in [200, 201],
+                    # f'{prefix}, {response.text}'
             except Exception as e:
-                assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
-
-
-@pytest.fixture(scope=scope)
-async def fakedata_generator1(authenticated_client_with_db, test_db_session, get_fields_type):
-    """
-    проходит по списку роутеров и заполняет таблицы данными
-    :return:
-    :rtype:
-    """
-    client = authenticated_client_with_db
-    counts = example_count
-    for key, val in get_fields_type.items():
-        for n in range(counts):
-            try:
-                route = key
-                if n % 2 == 0:
-                    data = {k2: v2() for k2, v2 in val['required_only'].items()}
-                else:
-                    try:
-                        data = {k2: v2() for n, (k2, v2) in enumerate(val['all_fields'].items())}
-                    except Exception as e:
-                        print(f'ошибка {e}  {val['all_fields']}')
-                response = await client.post(f'{route}', json=data)
-                assert response.status_code == 200, f'{route=} {data=} {key=}'
-            except Exception as e:
-                assert False, f'fakedata_generator {e} {route} {response.text}'
+                jprint(data)
+                assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
+    if failed_cases:
+        pytest.fail("Failed routers:\n" + "\n".join(failed_cases))
 
 
 @pytest.fixture(scope=scope)

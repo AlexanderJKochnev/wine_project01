@@ -57,7 +57,6 @@ class ItemRepository(Repository):
                 selectinload(Drink.food_associations).joinedload(DrinkFood.food), selectinload(Drink.varietals),
                 selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
             ),
-            # selectinload(Item.warehouse)
         )
 
     @classmethod
