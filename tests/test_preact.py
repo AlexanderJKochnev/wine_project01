@@ -47,8 +47,10 @@ async def test_delete_routers(authenticated_client_with_db, test_db_session):
     router = DeleteRouter()
     prefix = router.prefix
     id = 1   # удаляем первую запись
-    for pref, model in router.source.items():
+    for pref, model in reversed(router.source.items()):
         # schema = router.__get_schemas__(model)
         full_prefix = f'{prefix}/{pref}'
         response = await client.delete(f'{full_prefix}/{id}')
         assert response.status_code == 200, f'{full_prefix}/{id}'
+        result = response.json()
+        assert result.get('success'), f'{full_prefix}/{id} :: {result}'
