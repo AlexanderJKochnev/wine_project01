@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from sqlalchemy import and_, func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
-
 from app.core.services.logger import logger
 from app.core.utils.alchemy_utils import create_enum_conditions, create_search_conditions, create_search_conditions2, \
     get_id_field, ModelType
@@ -257,7 +256,8 @@ class Repository:
                                  first: ColumnElement,
                                  second: ColumnElement,
                                  third: ColumnElement,
-                                 session: AsyncSession) -> List[Tuple[int, str, str, str]]:
+                                 session: AsyncSession,
+                                 id: int = None) -> List[Tuple[int, str, str, str]]:
         """
         Возвращает [(subregion_id, country_name, region_name, subregion_name), ...]
         """
@@ -267,14 +267,21 @@ class Repository:
                        third.label("third_name"), )
                 .join(supermodel, get_id_field(model, supermodel) == supermodel.id)
                 .join(superiormodel, get_id_field(supermodel, superiormodel) == superiormodel.id))
-        result = await session.execute(stmt)
-        return result.all()  # list of tuples
+        if id:
+            stmt = stmt.where(model.id == id)
+            result = await session.execute(stmt)
+            obj = result.scalar_one_or_none()
+        else:
+            result = await session.execute(stmt)
+            obj = result.all()  # list of tuples
+        return obj
 
     @classmethod
     async def fetch_name_pairs(cls, model, supermodel,
                                first: ColumnElement,
                                second: ColumnElement,
-                               session: AsyncSession) -> List[Tuple[int, str, str]]:
+                               session: AsyncSession,
+                               id: int = None) -> List[Tuple[int, str, str]]:
         """
         Возвращает [(subregion_id, region_name, subregion_name), ...]
         """
@@ -282,17 +289,81 @@ class Repository:
                        first.label("first_name"),
                        second.label("second_name"), )
                 .join(supermodel, get_id_field(model, supermodel) == supermodel.id))
-        result = await session.execute(stmt)
-        return result.all()  # list of tuples
+        if id:
+            stmt = stmt.where(model.id == id)
+            result = await session.execute(stmt)
+            obj = result.scalar_one_or_none()
+        else:
+            result = await session.execute(stmt)
+            obj = result.all()  # list of tuples
+        return obj
 
     @classmethod
     async def fetch_name_single(cls, model,
                                 first: ColumnElement,
-                                session: AsyncSession) -> List[Tuple[int, str]]:
+                                session: AsyncSession,
+                                id: int = None) -> Optional[List[Tuple[int, str]]]:
         """
-        Возвращает [(subregion_id, region_name, subregion_name), ...]
+        Возвращает [(subregion_id, subregion_name), ...]
         """
         stmt = (select(model.id,
                        first.label("first_name"),))
-        result = await session.execute(stmt)
-        return result.all()  # list of tuples
+        if id:
+            stmt = stmt.where(model.id == id)
+            result = await session.execute(stmt)
+            obj = result.one_or_none()
+        else:
+            result = await session.execute(stmt)
+            obj = result.all()  # list of tuples
+        return obj
+
+    @classmethod
+    async def fetch_name_single_one(cls,
+                                    model,
+                                    columns: List[ColumnElement],
+                                    session: AsyncSession,
+                                    id: int = None) -> Optional[List[Tuple[int, str]]]:
+        """
+        Возвращает [(subregion_id, subregion_name), ...]
+        """
+        stmt = (select(*columns))
+        if id:
+            stmt = stmt.where(model.id == id)
+            result = await session.execute(stmt)
+            obj = result.one_or_none()
+        else:
+            result = await session.execute(stmt)
+            obj = result.all()  # list of tuples
+        return obj
+
+    @classmethod
+    async def get_non_orm(cls, session,
+                          models: List[ModelType],
+                          columns: List[ColumnElement],
+                          id: int = None) -> Union[List[Tuple], Tuple, None]:
+        """
+            возращает либо:
+            все записи (id is None) List[Tuple]
+            одну запись (id is not None) [Tuple]
+            без ORM,
+            без имен полей (имена есть в ColumnElement - можно подставить в service layer)
+        """
+        stmt = (select(*columns))
+        # генерируем joins
+        for n, model in enumerate(models):
+            if n == 0:  # первая модель основна ее джойнить не надо
+                m1 = model
+                continue
+            subs = model
+            # clause = get_id_field(m1, subs)
+            stmt = stmt.join(subs, get_id_field(m1, subs) == subs.id)
+            m1 = subs
+        # если есть id - добавляем условие
+        if id:
+            stmt = stmt.where(models[0].id == id)
+            result = await session.execute(stmt)
+            obj = result.one_or_none()
+        else:
+            result = await session.execute(stmt)
+            obj = result.all()  # list of tuples
+        return obj

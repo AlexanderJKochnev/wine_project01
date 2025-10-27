@@ -74,41 +74,10 @@ class CreateRouter:
             model_data = schema(**data)
             obj = await self.service.get_or_create(model_data, self.repo, model, session)
             return obj
-        except ValidationException as e:
-            await session.rollback()
-            logger.warning(f"Validation error in create_item: {e}")
-            raise HTTPException(
-                status_code=501,  # status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"ValidationException. Validation error in create_item: {e}")
-
-        except ConflictException as e:
-            await session.rollback()
-            logger.warning(f"Conflict in create_item: {e}")
-            raise HTTPException(
-                status_code=502,  # status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"ConflictException. Conflict in create_item: {e}"
-            )
-
-        except IntegrityError as e:
-            await session.rollback()
-            logger.error(f"Integrity error in create_item: {e}")
-            raise HTTPException(
-                status_code=503,  # status.HTTP_400_BAD_REQUEST, detail="Data integrity error"
-                detail=f'IntgrityError. {e}'
-            )
-
-        except SQLAlchemyError as e:
-            await session.rollback()
-            logger.error(f"Database error in create_item: {e}")
-            raise HTTPException(
-                status_code=504,  # status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"SQLAlchemyError. Database error in create_item: {e}"
-            )
-
         except Exception as e:
             await session.rollback()
             logger.error(f"Unexpected error in create_item: {e}")
             raise HTTPException(
-                status_code=505,  # status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error"
-                detail=f'UnexpectedError, {e}'
+                status_code=505,
+                detail=f'Create Fault, {e}'
             )

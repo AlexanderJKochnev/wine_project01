@@ -11,6 +11,7 @@ from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, c
 from app.mongodb.router import router as MongoRouter
 from app.preact.create import CreateRouter
 from app.preact.delete import DeleteRouter
+from app.preact.get import GetRouter
 from app.preact.handbook import HandbookRouter
 from app.support.api.router import ApiRouter
 # -------ИМПОРТ РОУТЕРОВ----------
@@ -55,6 +56,7 @@ app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
 app.include_router(HandbookRouter().router)
 app.include_router(CreateRouter().router)
+app.include_router(GetRouter().router)
 app.include_router(DeleteRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)

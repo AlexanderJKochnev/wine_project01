@@ -294,3 +294,34 @@ class Service:
             )
         result = {row[0]: joiner(joint, row[1]) for row in rows}
         return dict_sorter(result)
+
+    @classmethod
+    async def get_non_orm(cls, session: AsyncSession,
+                          models: List[ModelType],
+                          fields_name: List[str],
+                          lang: str,
+                          id: str = None):
+        """
+            получение non - orm ответа на запрос get с подтягиванием данных из свзанных таблиц
+        """
+        main_model = models[0]   # основная модель
+        repo = Repository
+        # список полей для выборки. начинается c id основной модели
+        fields_spec = [getattr(main_model, 'id')]
+        for n, field in enumerate(fields_name):
+            for model in models:
+                if all((n > 0, model != main_model)):   # для связанных таблиц берем только 1 поле
+                    continue
+                if lang == '':  # english language
+                    fields_spec.append(getattr(model, field))
+                else:  # all other languages
+                    column = func.coalesce(getattr(model, f'{field}{lang}'), getattr(model, field)).label(field)
+                    fields_spec.append(column)
+        # вызываем метод
+        rows = await repo.get_non_orm(session, models, fields_spec, id)
+        if rows:
+            names = [field.name for field in fields_spec]
+            result = dict(zip(names, rows))
+            return result
+        else:
+            return None

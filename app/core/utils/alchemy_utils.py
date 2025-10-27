@@ -25,6 +25,16 @@ class SearchType(str, Enum):
     LIKE = "like"
 
 
+def get_lang_prefix(lang: str) -> str:
+    """
+    конвертирует 2-х буквенный признак языка в prefix
+    ru -> '_ru'
+    en -> ''    # это язык по умолчанию
+    использовать для унификации
+    """
+    return f'_{lang}' if lang != 'en' else ''
+
+
 async def mass_delete(query: Query, batch: int, session: AsyncSession):
     """
     Удаляет любое большое количество записей с применением ORM-логики
@@ -47,6 +57,9 @@ async def mass_delete(query: Query, batch: int, session: AsyncSession):
 
 
 def model_to_dict(obj, seen=None):
+    """
+    преобразует sqlalchemy instance в словарь
+    """
     if seen is None:
         seen = set()
     if obj is None:
@@ -72,6 +85,9 @@ def model_to_dict(obj, seen=None):
 
 
 def get_models() -> List[ModelType]:
+    """
+        возвращеет список зарегистрированных sqlalchemy моделей
+    """
     return (cls for cls in Base.registry._class_registry.values() if
             isinstance(cls, type) and hasattr(cls, '__table__'))
 
@@ -110,6 +126,16 @@ def parse_unique_violation(error_msg: str) -> Optional[Tuple[str, str]]:
 
 
 def parse_unique_violation2(error_msg: str) -> dict:
+    """
+    Парсит сообщение об ошибке уникальности и извлекает:
+    - название поля (constraint)
+    - значение, которое вызвало конфликт
+
+    Пример:
+    Input: 'duplicate key value violates unique constraint "ix_foods_name"
+            DETAIL: Key (name)=(Game (venison)) already exists.'
+    Output: ('name', 'Game (venison)')
+    """
     tmp = error_msg.split('DETAIL:  Key ', 1)
     tmp = tmp[1].split('already exists')
     result = tmp[0]
