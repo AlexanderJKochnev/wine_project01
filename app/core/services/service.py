@@ -315,9 +315,12 @@ class Service:
                 if lang == '':  # english language
                     fields_spec.append(getattr(model, field))
                 else:  # all other languages
-                    column = func.coalesce(getattr(model, f'{field}{lang}'), getattr(model, field)).label(field)
+                    column = (func.coalesce(getattr(model, f'{field}{lang}'),
+                                            getattr(model, field)).label(model.__name__))
                     fields_spec.append(column)
         # вызываем метод
+        for z in fields_spec:
+            print('---', z.name)
         rows = await repo.get_non_orm(session, models, fields_spec, id)
         if rows:
             names = [field.name for field in fields_spec]
