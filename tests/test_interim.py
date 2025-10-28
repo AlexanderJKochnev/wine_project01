@@ -254,3 +254,25 @@ async def test_items_direct_import_data(authenticated_client_with_db,
     result = response.json()
     error_nmbr = result.get('error_nmbr')
     assert error_nmbr == 0, result
+
+
+def test_get_sqlalchemy_fields():
+    """ тест процедуры получения полей sqlalchemy модели"""
+    from sqlalchemy import ColumnElement
+    from app.core.utils.alchemy_utils import get_sqlalchemy_fields
+    from app.support.subregion.model import Subregion
+    result = get_sqlalchemy_fields(Subregion, ['description*', '*ru', '*ion*'])
+    assert isinstance(result, dict)
+    for key, val in result.items():
+        assert isinstance(val, ColumnElement), 'type is not ColumnElement'
+        assert key == val.name
+
+
+
+def test_pydantic_models_register():
+    # from app.core.schemas.base import PYDANTIC_MODELS
+    from app.core.utils.pydantic_utils import get_pyschema, pyschema_helper
+    from app.support import Category, Subcategory, Country, Region, Subregion
+    result = pyschema_helper(Category, 'list', 'en')
+    expected_result = 'ListView'
+    assert result.__name__ == expected_result, result.__name__

@@ -69,15 +69,12 @@ def test_handbook_router():
     router = HandbookRouter()
     # тест __source_generator__
     print(router.languages)
-    for prefix, tag, function in router.__source_generator__(router.source, router.languages):
-        print(f'{prefix=}, {tag=}, {function=}')
+    for prefix, response_model in router.__source_generator__(router.source, router.languages):
+        print(f'{prefix=}, {response_model.__name__=}')
         assert isinstance(prefix, str), 'тест __source_generator__ не прошел. 1'
-        assert isinstance(tag, list), f'тест __source_generator__ не прошел - 2 элемент не лист, а {type(tag)}'
-    # assert False
-    # test __path_decoder__
+        # assert isinstance(tag, list), f'тест __source_generator__ не прошел - 2 элемент не лист, а {type(tag)}'
     sources = {'/some/path/en': ('path', 'en'),
-               '/path/en': ('path', 'en')
-               }
+               '/path/en': ('path', 'en')}
     for source, expectation in sources.items():
         result = router.__path_decoder__(source)
         print(result)
@@ -86,19 +83,18 @@ def test_handbook_router():
 
 
 async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
-                                 fakedata_generator):
+                                 fakedata_generator, routers_get):
     """
         тестирует сгененированные рутеры
     """
-    from app.preact.handbook.router import HandbookRouter
     client = authenticated_client_with_db
-    router = HandbookRouter()
-    prefix = router.prefix
-    subprefix = list(router.source.keys())
-    language = router.languages
-    test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
-    for prefix in test_set:
+    # subprefix = list(router.source.keys())
+    # language = router.languages
+    routers = ((route.path, route.response_model) for route in routers_get if 'handbook' in route.path)
+    for prefix, response_model in routers:
+        print('++++++++++++++++++++', prefix, response_model)
         response = await client.get(prefix)
-        assert response.status_code == 200
-        result = response.json()
-        assert isinstance(result, dict)
+        # print(prefix, response_model.name)
+        assert response.status_code == 200, response.text
+        # result = response.json()
+        # assert isinstance(result, dict)

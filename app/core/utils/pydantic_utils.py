@@ -1,13 +1,42 @@
 # app/core/utils/pydantic_utils.py
 # from pydantic import create_model, BaseModel
-from app.core.schemas.base import PaginatedResponse
-from typing import Type, Optional, get_type_hints, List
-from sqlalchemy import inspect, String, Text, Integer, Float, Numeric, ForeignKey
+from decimal import Decimal
+from typing import List, Optional, Type
+
+from pydantic import BaseModel, create_model
+from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
-from pydantic import BaseModel, create_model
-from decimal import Decimal
+from app.core.models.base_model import DeclarativeBase
+from app.core.schemas.base import PaginatedResponse, PYDANTIC_MODELS, PyModel
 
+
+def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
+    """
+        получение pydantic schema по ее имени:
+        name: имя схемы
+        default: дефолтное имя (не у всех схем есть кастомизированные схемы, в этом случае берем базовую
+    """
+    def_schema = None
+    for schema in PYDANTIC_MODELS:
+        if schema.__name__.lower() == name.lower():
+            return schema
+        if schema.__name__.lower() == default.lower():
+            def_schema = schema
+    return def_schema
+
+
+def pyschema_helper(model: Type[DeclarativeBase], schema_type: str = 'list', lang: str = 'en') -> PyModel:
+    """
+    по лучение py схемы для alchemy model по назначению (schema_type)
+    :param model:
+    :param schema_type:
+    """
+    name: str = model.__name__
+    schema_types: dict = {'list': 'ListView'}
+    default: str = schema_types.get(schema_type)
+    pyname: str = f'{name}{default}{lang}'
+    return get_pyschema(pyname, default)
 
 def sqlalchemy_to_pydantic_post(
         model: Type[DeclarativeBase], *, exclude_fields: Optional[set] = None,

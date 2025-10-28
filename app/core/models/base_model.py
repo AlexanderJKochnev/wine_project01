@@ -3,9 +3,9 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated
-from sqlalchemy import DateTime
+
 # from sqlalchemy.dialects.postgresql import MONEY
-from sqlalchemy import DECIMAL, func, Integer, text, Text, CheckConstraint
+from sqlalchemy import DateTime, DECIMAL, func, Integer, text, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import class_mapper, DeclarativeBase, declared_attr, Mapped, mapped_column
 
@@ -86,7 +86,8 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     def __str__(self):
         # переоопределять в особенных формах
-        return self.name
+        # or "" на всякий случай если обязательное поле вдруг окажется необязательным и пустым
+        return self.name or ""
 
     def __repr__(self):
         # return f"<Category(name={self.name})>"
@@ -153,4 +154,7 @@ class BaseFull(Base, BaseInt, BaseAt, BaseLang):
 class BaseFullFree(Base, BaseIntFree, BaseAt, BaseLang):
     """ модель без обязательных полей под составной индекс"""
     __abstract__ = True
-    pass
+
+    def __str__(self):
+        # переоопределять в особенных формах
+        return self.name or self.name_fr or self.name_ru or ""

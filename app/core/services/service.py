@@ -1,10 +1,9 @@
 # app.core.service/service.py
 
-from typing import Any, Dict, List, Optional, Type, TypeVar
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Type
+
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func
-from app.core.utils.common_utils import joiner, dict_sorter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -192,139 +191,22 @@ class Service:
         return items
 
     @classmethod
-    async def get_english_names(cls, model: TypeVar,
-                                supermodel: TypeVar,
-                                superiormodel: TypeVar,
-                                repo, session: AsyncSession,
-                                lang: str = '', field_name: str = 'name',
-                                ) -> Dict[int, str]:
-        name = f'{field_name}{lang}'
-        rows = await repo.fetch_name_triples(model, supermodel, superiormodel,
-                                             first=getattr(superiormodel, name),
-                                             second=getattr(supermodel, name),
-                                             third=getattr(model, name),
-                                             session=session)
-        result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
-        return dict_sorter(result)
+    async def get_list_view_page(cls, page: int, page_size: int,
+                                 repository: Type[Repository], model: ModelType, session: AsyncSession, ) -> List[dict]:
+        # Запрос с загрузкой связей и пагинацией
+        skip = (page - 1) * page_size
+        rows, total = await repository.get_list_view_page(skip, page_size, model, session)
+        result = {"rows": rows,
+                  "total": total,
+                  "page": page,
+                  "page_size": page_size,
+                  "has_next": skip + len(rows) < total,
+                  "has_prev": page > 1}
+        return result
 
     @classmethod
-    async def get_fallback_names(cls, model: TypeVar,
-                                 supermodel: TypeVar,
-                                 superiormodel: TypeVar,
-                                 repo, session: AsyncSession,
-                                 lang: str = '',
-                                 field_name: str = 'name',
-                                 ) -> Dict[int, str]:
-        name = f'{field_name}{lang}'
-        rows = await repo.fetch_name_triples(model, supermodel, superiormodel,
-                                             first=func.coalesce(getattr(superiormodel, name),
-                                                                 getattr(superiormodel, field_name)),
-                                             second=func.coalesce(getattr(supermodel, name),
-                                                                  getattr(supermodel, field_name)),
-                                             third=func.coalesce(getattr(model, name),
-                                                                 getattr(model, field_name)),
-                                             session=session)
-        result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
-        return dict_sorter(result)
-
-    @classmethod
-    async def get_triple_name(cls, session: AsyncSession,
-                              model: TypeVar,
-                              supermodel: TypeVar,
-                              superiormodel: TypeVar,
-                              lang: str,
-                              field_name: str = 'name'):
-        name = f'{field_name}{lang}'
-        repo = Repository
-        if lang == '':      # english language
-            rows = await repo.fetch_name_triples(
-                model, supermodel, superiormodel, first=getattr(superiormodel, name),
-                second=getattr(supermodel, name), third=getattr(model, name), session=session
-            )
-        else:               # all other languages
-            rows = await repo.fetch_name_triples(
-                model, supermodel, superiormodel,
-                first=func.coalesce(getattr(superiormodel, name), getattr(superiormodel, field_name)),
-                second=func.coalesce(getattr(supermodel, name), getattr(supermodel, field_name)),
-                third=func.coalesce(getattr(model, name), getattr(model, field_name)),
-                session=session
-            )
-        result = {row[0]: joiner(joint, row[1], row[2], row[3]) for row in rows}
-        return dict_sorter(result)
-
-    @classmethod
-    async def get_pair_name(cls, session: AsyncSession,
-                            model: TypeVar,
-                            supermodel: TypeVar,
-                            lang: str,
-                            field_name: str = 'name'):
-        name = f'{field_name}{lang}'
-        repo = Repository
-        if lang == '':      # english language
-            rows = await repo.fetch_name_pairs(
-                model, supermodel, first=getattr(supermodel, name),
-                second=getattr(model, name), session=session
-            )
-        else:               # all other languages
-            rows = await repo.fetch_name_pairs(
-                model, supermodel,
-                first=func.coalesce(getattr(supermodel, name), getattr(supermodel, field_name)),
-                second=func.coalesce(getattr(model, name), getattr(model, field_name)),
-                session=session
-            )
-        result = {row[0]: joiner(joint, row[1], row[2]) for row in rows}
-        return dict_sorter(result)
-
-    @classmethod
-    async def get_single_name(cls, session: AsyncSession,
-                              model: TypeVar,
-                              lang: str,
-                              field_name: str = 'name'):
-        name = f'{field_name}{lang}'
-        repo = Repository
-        if lang == '':      # english language
-            rows = await repo.fetch_name_single(
-                model, first=getattr(model, name), session=session
-            )
-        else:               # all other languages
-            rows = await repo.fetch_name_single(
-                model,
-                first=func.coalesce(getattr(model, name), getattr(model, field_name)),
-                session=session
-            )
-        result = {row[0]: joiner(joint, row[1]) for row in rows}
-        return dict_sorter(result)
-
-    @classmethod
-    async def get_non_orm(cls, session: AsyncSession,
-                          models: List[ModelType],
-                          fields_name: List[str],
-                          lang: str,
-                          id: str = None):
-        """
-            получение non - orm ответа на запрос get с подтягиванием данных из свзанных таблиц
-        """
-        main_model = models[0]   # основная модель
-        repo = Repository
-        # список полей для выборки. начинается c id основной модели
-        fields_spec = [getattr(main_model, 'id')]
-        for n, field in enumerate(fields_name):
-            for model in models:
-                if all((n > 0, model != main_model)):   # для связанных таблиц берем только 1 поле
-                    continue
-                if lang == '':  # english language
-                    fields_spec.append(getattr(model, field))
-                else:  # all other languages
-                    column = (func.coalesce(getattr(model, f'{field}{lang}'),
-                                            getattr(model, field)).label(model.__name__))
-                    fields_spec.append(column)
-        # вызываем метод
-        for z in fields_spec:
-            print('---', z.name)
-        rows = await repo.get_non_orm(session, models, fields_spec, id)
-        if rows:
-            names = [field.name for field in fields_spec]
-            result = dict(zip(names, rows))
-            return result
-        else:
-            return None
+    async def get_list_view(cls, repository: Type[Repository],
+                            model: ModelType, session: AsyncSession, ) -> List[tuple]:
+        # Запрос с загрузкой связей и пагинацией
+        rows = await repository.get_list_view(model, session)
+        return rows

@@ -89,9 +89,5 @@ async def test_get_one_items(authenticated_client_with_db, test_db_session,
         prefix = router.prefix
         client = authenticated_client_with_db
         id = 2
-        print(prefix)
         response = await client.get(f'{prefix}/{id}')
         assert response.status_code == 200, f'{prefix}, {response.text}'
-        # result = response.json()
-        # jprint(result)
-        # assert False

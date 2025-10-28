@@ -55,9 +55,9 @@ app.add_middleware(
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
 app.include_router(HandbookRouter().router)
-app.include_router(CreateRouter().router)
-app.include_router(GetRouter().router)
-app.include_router(DeleteRouter().router)
+# app.include_router(CreateRouter().router)
+# app.include_router(GetRouter().router)
+# app.include_router(DeleteRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 

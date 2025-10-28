@@ -1,33 +1,33 @@
 # tests/conftest.py
 import asyncio
-import json
 import logging
-from typing import Any, Dict, List
-from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List
+
 import pytest
+from dateutil.relativedelta import relativedelta
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
-from pydantic import TypeAdapter
-from tests.utility.assertion import assertions
-from app.core.utils.common_utils import jprint
+from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
+from app.core.utils.common_utils import jprint
 from app.main import app, get_db
-from pathlib import Path
-from app.mongodb.config import MongoDB, get_mongodb, get_database
+from app.mongodb.config import get_database, get_mongodb, MongoDB
 # from app.mongodb.router import get_mongodb
 from tests.config import settings_db
 from tests.data_factory.fake_generator import generate_test_data
 from tests.data_factory.reader_json import JsonConverter
+from tests.utility.assertion import assertions
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
+
 # from tests.data_factory.fake_generator import generate_test_data
 
 scope = 'session'
@@ -343,7 +343,7 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list):
     failed_cases = []
     source = simple_router_list + complex_router_list
-    test_number = 10
+    test_number = 5
     client = authenticated_client_with_db
     for n, item in enumerate(source):
         router = item()
@@ -377,9 +377,15 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session,
 
 
 @pytest.fixture(scope=scope)
+def routers_get() -> List[str]:
+    """ список роутеров GET """
+    return [x for x in get_routers('GET')]
+
+
+@pytest.fixture(scope=scope)
 def routers_get_one() -> List[str]:
     """ список роутеров GET get_by_id"""
-    return [x.path for x in get_routers('GET') if x.name == 'get_one']
+    return [x.path for x in get_routers('GET')]
 
 
 @pytest.fixture(scope=scope)

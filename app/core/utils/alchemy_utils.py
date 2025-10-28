@@ -3,21 +3,60 @@ import json
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Type, Union, TypeVar
+from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 from fastapi import Query
 from pydantic import BaseModel, create_model, Field
-from sqlalchemy import Column, func, String, Text, Unicode, UnicodeText, or_, and_
+from sqlalchemy import and_, Column, ColumnElement, func, inspect, or_, String, Text, Unicode, UnicodeText
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import MapperProperty
+from sqlalchemy.orm import DeclarativeBase, DeclarativeMeta, MapperProperty
 from sqlalchemy.orm.attributes import QueryableAttribute
-from sqlalchemy.orm import DeclarativeMeta
-from app.core.models.base_model import Base
-from app.core.utils.common_utils import clean_string, get_path_to_root, enum_to_camel
 
+from app.core.models.base_model import Base
+from app.core.utils.common_utils import clean_string, enum_to_camel, get_path_to_root
 
 ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 function = {1: or_, 2: and_}
+
+
+def get_sqlalchemy_fields(model: Type[DeclarativeBase],
+                          exclude_list: List[str] = None,
+                          default_exclude: Union[List[str], None] = None) -> Dict[str, ColumnElement]:
+    """
+    получение списка полей модели sqlalchemy
+    :param model:   model
+    :param exclude_list: список полей для исключения
+    :param default_exclude: список полей для исключеня по умолчанию.
+    варианты названий полей:
+    name - полное совпадение
+    *name - endswith
+    name* - startswith
+    *name* - in
+    """
+    if default_exclude is None:
+        default_exclude = ['updated_at', 'created_at']
+    if exclude_list:
+        default_exclude.extend(exclude_list)
+        default_exclude = tuple(set(default_exclude))
+    ex_equal = tuple(name for name in default_exclude if '*' not in name)
+    ex_in = tuple(name[1:-1] for name in default_exclude if name.endswith('*') and name.startswith('*'))
+    ex_start = tuple(name[:-1] for name in default_exclude if name.endswith('*') and not name.startswith('*'))
+    ex_end = tuple(name[1:] for name in default_exclude if name.startswith('*') and not name.endswith('*'))
+
+    mapper = inspect(model).columns
+    if ex_equal:
+        mapper = {col for col in mapper if col.name not in ex_equal}
+        # print(ex_equal, [col.name for col in mapper])
+    if ex_start:
+        mapper = {col for col in mapper for start in ex_start if not col.name.startswith(start)}
+        # print(ex_start, [col.name for col in mapper])
+    if ex_end:
+        mapper = {col for col in mapper for ends in ex_end if not col.name.endswith(ends)}
+        # print(ex_end, [col.name for col in mapper])
+    if ex_in:
+        mapper = {col for col in mapper for mids in ex_in if mids not in col.name}
+        # print(ex_in, [col.name for col in mapper])
+    return {col.name: col for col in mapper}
 
 
 class SearchType(str, Enum):

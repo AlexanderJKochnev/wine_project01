@@ -9,16 +9,29 @@ FullSchema - все поля
 PaginatedResponse - см ниже на базе ReadSchema
 ListResponse - тоже что и Pagianted только без Pagianted
 """
-from typing import NewType, Generic, TypeVar, List, Optional, Any
+from typing import NewType, Generic, TypeVar, List, Optional, Any, Set, Type
 from pydantic import BaseModel as BaseOrigin, ConfigDict, model_validator, Field
 from datetime import datetime
 from abc import ABC
 
+# Глобальный реестр pydantic схем
+PYDANTIC_MODELS: Set[Type[BaseOrigin]] = set()
 
-class BaseModel(BaseOrigin, ABC):
+
+class ModelRegistryMeta(type(BaseOrigin)):
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        if name not in ("BaseModel", "BaseOrigin"):  # избегаем добавления самого BaseModel
+            PYDANTIC_MODELS.add(cls)
+        return cls
+
+
+class BaseModel(BaseOrigin, metaclass=ModelRegistryMeta):
     """
          вводим метод для получения только обязательных полей
     """
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
     def get_required_structure(self, deep: bool = False) -> dict:
         """ Рекурсивно получает структуру только с обязательными полями
             deep = true - поиск во вложенных моделях
@@ -46,7 +59,6 @@ T = TypeVar("T")
 class PkSchema(BaseModel):
     """ только счетчик """
     id: int
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 class DateSchema(BaseModel):
@@ -205,10 +217,27 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page_size: Optional[int] = None
     has_next: Optional[int] = None
     has_prev: Optional[int] = None
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 class DeleteResponse(BaseModel):
     success: bool
     deleted_count: int = 1
     message: str
+
+# ---------------------NEW VIEWS--------------------------
+
+
+class ListView(PkSchema, NameExcludeSchema):
+    """
+        только минимум полей
+        name - невидимые - будут переделаны в языковые поля
+        id, name
+    """
+
+
+class DetailView(PkSchema, NameExcludeSchema, DescriptionSchema):
+    """
+        поля по максимуму
+        id, видимое
+        name, description невидимое
+    """

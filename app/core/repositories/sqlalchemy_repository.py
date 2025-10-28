@@ -6,10 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from sqlalchemy import and_, func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.elements import ColumnElement
+# from sqlalchemy.sql.elements import ColumnElement
 from app.core.services.logger import logger
-from app.core.utils.alchemy_utils import create_enum_conditions, create_search_conditions, create_search_conditions2, \
-    get_id_field, ModelType
+from app.core.utils.alchemy_utils import (create_enum_conditions, create_search_conditions,
+                                          create_search_conditions2, ModelType)
+from app.core.utils.alchemy_utils import get_sqlalchemy_fields
 
 
 class Repository:
@@ -17,6 +18,7 @@ class Repository:
 
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
+        """ создание записи """
         session.add(obj)
         await session.commit()
         await session.refresh(obj)
@@ -25,7 +27,11 @@ class Repository:
     @classmethod
     async def patch(cls, obj: ModelType, data: Dict[str, Any],
                     session: AsyncSession) -> Optional[ModelType]:
-        # obj = await cls.get_by_id(id, model, session)
+        """
+            редактирование записи
+            :param obj: редактируемая запись
+            :param data: изменения в редактируемую запись
+        """
         for k, v in data.items():
             if hasattr(obj, k):
                 setattr(obj, k, v)
@@ -35,6 +41,10 @@ class Repository:
 
     @classmethod
     async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
+        """
+            удаление записи
+            :param obj: instance
+        """
         await session.delete(obj)
         await session.commit()
         return True
@@ -42,16 +52,16 @@ class Repository:
     @classmethod
     def get_query(cls, model: ModelType):
         """
-        Переопределяемый метод.
-        Возвращает select() с нужными selectinload.
-        По умолчанию — без связей.
+            Переопределяемый метод.
+            Возвращает select() с нужными selectinload.
+            По умолчанию — без связей.
         """
         return select(model)
 
     @classmethod
     async def get_by_id(cls, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """
-        get one record by id
+            get one record by id
         """
         stmt = cls.get_query(model).where(model.id == id)
         result = await session.execute(stmt)
@@ -60,6 +70,17 @@ class Repository:
 
     @classmethod
     async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
+        """
+        получение instance ло совпадению данных данным
+        :param data:
+        :type data:
+        :param model:
+        :type model:
+        :param session:
+        :type session:
+        :return:
+        :rtype:
+        """
         valid_fields = {key: value for key, value in data.items()
                         if hasattr(model, key)}
         if not valid_fields:
@@ -252,118 +273,27 @@ class Repository:
             logger.error(f'ошибка search: {e}')
 
     @classmethod
-    async def fetch_name_triples(cls, model, supermodel, superiormodel,
-                                 first: ColumnElement,
-                                 second: ColumnElement,
-                                 third: ColumnElement,
-                                 session: AsyncSession,
-                                 id: int = None) -> List[Tuple[int, str, str, str]]:
-        """
-        Возвращает [(subregion_id, country_name, region_name, subregion_name), ...]
-        """
-        stmt = (select(model.id,
-                       first.label("first_name"),
-                       second.label("second_name"),
-                       third.label("third_name"), )
-                .join(supermodel, get_id_field(model, supermodel) == supermodel.id)
-                .join(superiormodel, get_id_field(supermodel, superiormodel) == superiormodel.id))
-        if id:
-            stmt = stmt.where(model.id == id)
-            result = await session.execute(stmt)
-            obj = result.scalar_one_or_none()
-        else:
-            result = await session.execute(stmt)
-            obj = result.all()  # list of tuples
-        return obj
+    async def get_list_view_page(cls, skip: int, limit: int,
+                                 model: ModelType, session: AsyncSession, ) -> Tuple[List[tuple], int]:
+        # Запрос с загрузкой связей и пагинацией
+        stmt = cls.get_query(model).offset(skip).limit(limit)
+        fields = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
+        stmt = select(*fields)
+        total = await cls.get_count(model, session)
+        result = await session.execute(stmt)
+        rows = result.all()
+        print(f'======{model.__name__=}')
+        for row in rows:
+            print('==', type(row), row)
+        return rows, total
 
     @classmethod
-    async def fetch_name_pairs(cls, model, supermodel,
-                               first: ColumnElement,
-                               second: ColumnElement,
-                               session: AsyncSession,
-                               id: int = None) -> List[Tuple[int, str, str]]:
-        """
-        Возвращает [(subregion_id, region_name, subregion_name), ...]
-        """
-        stmt = (select(model.id,
-                       first.label("first_name"),
-                       second.label("second_name"), )
-                .join(supermodel, get_id_field(model, supermodel) == supermodel.id))
-        if id:
-            stmt = stmt.where(model.id == id)
-            result = await session.execute(stmt)
-            obj = result.scalar_one_or_none()
-        else:
-            result = await session.execute(stmt)
-            obj = result.all()  # list of tuples
-        return obj
-
-    @classmethod
-    async def fetch_name_single(cls, model,
-                                first: ColumnElement,
-                                session: AsyncSession,
-                                id: int = None) -> Optional[List[Tuple[int, str]]]:
-        """
-        Возвращает [(subregion_id, subregion_name), ...]
-        """
-        stmt = (select(model.id,
-                       first.label("first_name"),))
-        if id:
-            stmt = stmt.where(model.id == id)
-            result = await session.execute(stmt)
-            obj = result.one_or_none()
-        else:
-            result = await session.execute(stmt)
-            obj = result.all()  # list of tuples
-        return obj
-
-    @classmethod
-    async def fetch_name_single_one(cls,
-                                    model,
-                                    columns: List[ColumnElement],
-                                    session: AsyncSession,
-                                    id: int = None) -> Optional[List[Tuple[int, str]]]:
-        """
-        Возвращает [(subregion_id, subregion_name), ...]
-        """
-        stmt = (select(*columns))
-        if id:
-            stmt = stmt.where(model.id == id)
-            result = await session.execute(stmt)
-            obj = result.one_or_none()
-        else:
-            result = await session.execute(stmt)
-            obj = result.all()  # list of tuples
-        return obj
-
-    @classmethod
-    async def get_non_orm(cls, session,
-                          models: List[ModelType],
-                          columns: List[ColumnElement],
-                          id: int = None) -> Union[List[Tuple], Tuple, None]:
-        """
-            возращает либо:
-            все записи (id is None) List[Tuple]
-            одну запись (id is not None) [Tuple]
-            без ORM,
-            без имен полей (имена есть в ColumnElement - можно подставить в service layer)
-        """
-        stmt = (select(*columns))
-        # генерируем joins
-        for n, model in enumerate(models):
-            if n == 0:  # первая модель основна ее джойнить не надо
-                m1 = model
-                continue
-            subs = model
-            # clause = get_id_field(m1, subs)
-            stmt = stmt.join(subs, get_id_field(m1, subs) == subs.id)
-            m1 = subs
-        # если есть id - добавляем условие
-        if id:
-            stmt = stmt.where(models[0].id == id)
-            result = await session.execute(stmt)
-            obj = result.one_or_none()
-        else:
-            result = await session.execute(stmt)
-            obj = result.all()  # list of tuples
-        return obj
+    async def get_list_view(cls, model: ModelType, session: AsyncSession, ) -> List[Tuple]:
+        # Запрос с загрузкой связей без пагинации (для справочников)
+        stmt = cls.get_query(model)
+        fields: dict = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
+        stmt = select(*fields.values())
+        result = await session.execute(stmt)
+        rows = result.all()
+        result = [row._mapping for row in rows]
+        return result
