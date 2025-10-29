@@ -273,6 +273,9 @@ def test_pydantic_models_register():
     # from app.core.schemas.base import PYDANTIC_MODELS
     from app.core.utils.pydantic_utils import get_pyschema, pyschema_helper
     from app.support import Category, Subcategory, Country, Region, Subregion
+    result = pyschema_helper(Subcategory, 'list', 'en')
+    expected_result = 'SubcategoryListViewEn'
+    assert result.__name__ == expected_result, result.__name__
     result = pyschema_helper(Category, 'list', 'en')
-    expected_result = 'ListView'
+    expected_result = 'ListViewEn'
     assert result.__name__ == expected_result, result.__name__

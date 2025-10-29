@@ -17,7 +17,6 @@ from app.core.config.database.db_async import get_db
 from app.core.config.project_config import settings
 from app.core.services.service import Service
 from app.core.repositories.sqlalchemy_repository import Repository
-# from app.core.schemas.lang_schemas import ListViewEn, ListViewRu, ListViewFr
 from app.support import (Category, Country, Food, Region, Subcategory, Subregion, Superfood, Varietal)
 
 
@@ -31,7 +30,7 @@ class HandbookRouter:
         # source {prefix: (Model, Name of PydanticModel without lang prefix
         # example {'subcategories': (Subcategory, 'SubcategoryView')}
         self.source = {'categories': Category,
-                       # 'subcategories': (Subcategory, Category),
+                       'subcategories': Subcategory,
                        'countries': Country,
                        # 'regions': (Region, Country),
                        # 'subregions': (Subregion, Region, Country),

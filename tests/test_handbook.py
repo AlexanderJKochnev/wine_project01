@@ -92,7 +92,7 @@ async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
     # language = router.languages
     routers = ((route.path, route.response_model) for route in routers_get if 'handbook' in route.path)
     for prefix, response_model in routers:
-        print('++++++++++++++++++++', prefix, response_model)
+        # print('++++++++++++++++++++', prefix, response_model)
         response = await client.get(prefix)
         # print(prefix, response_model.name)
         assert response.status_code == 200, response.text

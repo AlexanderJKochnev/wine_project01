@@ -7,7 +7,6 @@ from pydantic import BaseModel, create_model
 from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
-from app.core.models.base_model import DeclarativeBase
 from app.core.schemas.base import PaginatedResponse, PYDANTIC_MODELS, PyModel
 
 
@@ -34,9 +33,10 @@ def pyschema_helper(model: Type[DeclarativeBase], schema_type: str = 'list', lan
     """
     name: str = model.__name__
     schema_types: dict = {'list': 'ListView'}
-    default: str = schema_types.get(schema_type)
-    pyname: str = f'{name}{default}{lang}'
+    default: str = f'{schema_types.get(schema_type)}{lang.capitalize()}'
+    pyname: str = f'{name}{default}'
     return get_pyschema(pyname, default)
+
 
 def sqlalchemy_to_pydantic_post(
         model: Type[DeclarativeBase], *, exclude_fields: Optional[set] = None,

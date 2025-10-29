@@ -85,11 +85,7 @@ class NameSchema(BaseModel):
     name_fr: Optional[str] = None
 
 
-class NameExcludeSchema(BaseModel):
-    """ добавлять поля на других языках """
-    name: Optional[str] = Field(exclude=True)
-    name_ru: Optional[str] = Field(exclude=True)
-    name_fr: Optional[str] = Field(exclude=True)
+
 
 
 class LangSchema(NameSchema, DescriptionSchema):
