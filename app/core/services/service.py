@@ -210,3 +210,10 @@ class Service:
         # Запрос с загрузкой связей и пагинацией
         rows = await repository.get_list_view(model, session)
         return rows
+
+    @classmethod
+    async def get_nodate(cls, repository: Type[Repository],
+                         model: ModelType, session: AsyncSession, ) -> Optional[List[ModelType]]:
+        # Запрос с загрузкой связей -  возвращает список
+        result = await repository.get_nodate(model, session)
+        return result

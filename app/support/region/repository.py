@@ -1,9 +1,10 @@
 # app/support/region/repository.py
 
-from app.support.region.model import Region
-from app.core.repositories.sqlalchemy_repository import Repository, ModelType
-from sqlalchemy.orm import selectinload
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from app.core.repositories.sqlalchemy_repository import ModelType, Repository
+from app.support.region.model import Region
 
 
 class RegionRepository(Repository):

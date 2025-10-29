@@ -1,9 +1,9 @@
 # app/core/repositories/sqlalchemy_repository.py
 """ не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
-
+from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
-
+from sqlalchemy.dialects import postgresql
 from sqlalchemy import and_, func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 # from sqlalchemy.sql.elements import ColumnElement
@@ -13,7 +13,20 @@ from app.core.utils.alchemy_utils import (create_enum_conditions, create_search_
 from app.core.utils.alchemy_utils import get_sqlalchemy_fields
 
 
-class Repository:
+class RepositoryMeta(ABCMeta):
+    _registry = {}
+
+    def __new__(cls, name, bases, attrs):
+        new_class = super().__new__(cls, name, bases, attrs)
+        # Регистрируем сам класс, а не его экземпляр
+        if not attrs.get('__abstract__', False):
+            key = name.lower().replace('repository', '')
+            cls._registry[key] = new_class  # ← Сохраняем класс!
+        return new_class
+
+
+class Repository(metaclass=RepositoryMeta):
+    __abstract__ = True
     model: ModelType
 
     @classmethod
@@ -291,9 +304,25 @@ class Repository:
     async def get_list_view(cls, model: ModelType, session: AsyncSession, ) -> List[Tuple]:
         # Запрос с загрузкой связей без пагинации (для справочников)
         stmt = cls.get_query(model)
+        compiled_pg = stmt.compile(dialect=postgresql.dialect())
+        print(str(compiled_pg))
+        print('===============================')
         fields: dict = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
-        stmt = select(*fields.values())
+        # print(f'{fields=}')
+        # stmt = select(*fields.values())
+        compiled_pg = stmt.compile(dialect=postgresql.dialect())
+        print(str(compiled_pg))
+        print('-------------------------------')
         result = await session.execute(stmt)
-        rows = result.all()
+        rows = result.scalar().all()
         result = [row._mapping for row in rows]
+        # print(result)
         return result
+
+    @classmethod
+    async def get_nodate(cls, model: ModelType, session: AsyncSession, ) -> list:
+        # Запрос с загрузкой связей NO PAGINATION
+        stmt = cls.get_query(model)
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+        return items

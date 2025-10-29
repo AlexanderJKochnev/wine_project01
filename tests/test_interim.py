@@ -268,14 +268,34 @@ def test_get_sqlalchemy_fields():
         assert key == val.name
 
 
-
 def test_pydantic_models_register():
     # from app.core.schemas.base import PYDANTIC_MODELS
-    from app.core.utils.pydantic_utils import get_pyschema, pyschema_helper
-    from app.support import Category, Subcategory, Country, Region, Subregion
+    from app.core.utils.pydantic_utils import get_pyschema, pyschema_helper   # NOQA: F401
+    from app.support import Category, Subcategory, Country, Region, Subregion  # NOQA: F401
     result = pyschema_helper(Subcategory, 'list', 'en')
     expected_result = 'SubcategoryListViewEn'
     assert result.__name__ == expected_result, result.__name__
     result = pyschema_helper(Category, 'list', 'en')
     expected_result = 'ListViewEn'
     assert result.__name__ == expected_result, result.__name__
+
+
+def test_repository_register():
+    """
+    проверяем как действует регистр репозиториев
+    :return:
+    :rtype:
+    """
+    from app.core.utils.pydantic_utils import get_repo
+    from app.support import Item, Subregion, Subcategory, Country
+    for m, val in enumerate([Country, Item, Subregion, Subcategory]):
+        name = val.__name__
+        repo = get_repo(val)
+        repo2 = get_repo(name)
+        # for n, (key, val) in enumerate(RepositoryMeta._registry.items()):
+        #     print(n, key, val)
+        print(m, name, '===========')
+        assert repo, f'не найден репозиторий для {name}'
+        assert repo2, f'не найден репозиторий для {name} по имени'
+        assert repo.__name__ == f'{val.__name__}Repository'
+        assert repo == repo2, ''

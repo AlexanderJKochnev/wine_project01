@@ -2,10 +2,52 @@
 
 from typing import Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, computed_field
 
 from app.core.schemas.base import (CreateSchemaSub, FullSchema, ReadSchema, UpdateSchema, CreateResponse, ReadApiSchema)
 from app.support.region.schemas import RegionCreateRelation, RegionRead, RegionReadApiSchema
+from app.core.schemas.lang_schemas import (ListViewEn, ListViewFr, ListViewRu, ListView,
+                                           DetailViewEn, DetailViewFr, DetailViewRu)
+
+
+class SubregionListViewEn(ListView):
+    region_id: Optional[int] = Field(exclude=True)
+    region: ListViewEn = Field(exclude=True)
+
+    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
+                    title='Отображаемое имя'  # Это для swagger (machine readable)
+                    )
+    @property
+    def display_name(self) -> str:
+        """Возвращает первое непустое значение из name, name_ru, name_fr"""
+        return (f'{self.region.display_name}.'
+                f' {self.name or self.name_ru or self.name_fr or ""}')
+
+
+class SubregionListViewRu(ListViewRu):
+    region: ListViewEn = Field(exclude=True)
+
+    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
+                    title='Отображаемое имя'  # Это для swagger (machine readable)
+                    )
+    @property
+    def display_name(self) -> str:
+        """Возвращает первое непустое значение из name, name_ru, name_fr"""
+        self.region.display_name
+        return f'{self.region.display_name}. {self.name_ru or self.name or self.name_fr or ""}'
+
+
+class SubregionListViewFr(ListViewFr):
+    region: ListViewEn = Field(exclude=True)
+
+    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
+                    title='Отображаемое имя'  # Это для swagger (machine readable)
+                    )
+    @property
+    def display_name(self) -> str:
+        """Возвращает первое непустое значение из name, name_ru, name_fr"""
+        self.region.display_name
+        return f'{self.region.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
 
 
 class SubregionReadApiSchema(ReadApiSchema):

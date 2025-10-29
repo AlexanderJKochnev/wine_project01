@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Type, List
 from app.core.models.base_model import DeclarativeBase
+from app.core.utils.pydantic_utils import get_repo
 from app.core.utils.pydantic_utils import pyschema_helper
 from app.core.utils.alchemy_utils import get_lang_prefix
 from app.auth.dependencies import get_active_user_or_internal
@@ -25,18 +26,17 @@ class HandbookRouter:
         prefix = settings.HANDBOOKS_PREFIX
         self.tags, self.prefix = [f'{prefix}'], f'/{prefix}'
         self.service = Service
-        self.repo = Repository
         self.languages = settings.LANGUAGES  # ['en', 'ru', 'fr', ...]
         # source {prefix: (Model, Name of PydanticModel without lang prefix
         # example {'subcategories': (Subcategory, 'SubcategoryView')}
         self.source = {'categories': Category,
                        'subcategories': Subcategory,
                        'countries': Country,
-                       # 'regions': (Region, Country),
-                       # 'subregions': (Subregion, Region, Country),
+                       'regions': Region,
+                       'subregions': Subregion,
                        # 'customers': (Customer,),
                        'superfoods': Superfood,
-                       # 'foods': (Food, Superfood),
+                       'foods': Food,
                        'varietals': Varietal,
                        }
         self.router = APIRouter(prefix=self.prefix,
@@ -77,10 +77,12 @@ class HandbookRouter:
     async def get_list_view(self, request: Request, session: AsyncSession = Depends(get_db)):
         current_path = request.url.path
         route = request.scope["route"]
-        print(f'{route.response_model=}')
         # response_model = route.response_model
         pref, lang = self.__path_decoder__(current_path)
         model = self.source.get(pref)
         lang = get_lang_prefix(lang)  # convert lang to lang pref 'en' -> '', 'ru' -> '_ru' ...
-        rows = await self.service.get_list_view(self.repo, model, session)
+        repo = get_repo(model)
+        print(f'{route.response_model=}, {repo=}')
+        # rows = await self.service.get_list_view(repo, model, session)
+        rows = await self.service.get_nodate(repo, model, session)
         return rows

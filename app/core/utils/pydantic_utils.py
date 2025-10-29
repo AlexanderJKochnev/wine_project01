@@ -1,14 +1,26 @@
 # app/core/utils/pydantic_utils.py
 # from pydantic import create_model, BaseModel
 from decimal import Decimal
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel, create_model
 from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
 from app.core.schemas.base import PaginatedResponse, PYDANTIC_MODELS, PyModel
+from app.core.repositories.sqlalchemy_repository import RepositoryMeta
 
+
+def get_repo(model: Union[Type[DeclarativeBase], str]):
+    """
+    получение репозитория по имени
+    :param model: модель / имя модели
+    """
+    if not isinstance(model, str):
+        model = model.__name__
+    return RepositoryMeta._registry.get(f'{model}'.lower(), None)
+    # print(result, result.__name__, model)
+    # return result
 
 def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
     """
