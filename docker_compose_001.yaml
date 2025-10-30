@@ -13,7 +13,6 @@ services:
     volumes:
       - ./pg_data:/var/lib/postgresql/data
       - ./pg_dump:/tmp
-
     healthcheck:
       test: |
         sh -c 'pg_isready -h localhost -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}'
@@ -58,10 +57,7 @@ services:
     restart: unless-stopped
     command: uvicorn app.main:app --host ${API_HOST} --port ${API_PORT}
     depends_on:
-      wine_host:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
+      - wine_host
     ports:
       - ${API_PORT}:${API_PORT}
     environment:
@@ -105,15 +101,7 @@ services:
       --bind_ip_all
       --wiredTigerCacheSizeGB 0.25
       --storageEngine wiredTiger
-      --journalCommitInterval 500
-      --syncdelay 300
-      --nojournal
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo localhost:${MONGO_INN_PORT}/admin --quiet --username admin --password admin
-      interval: 10s
-      timeout: 10s
-      retries: 30
-      start_period: 40s
+      
     deploy:
       resources:
         limits:
@@ -136,16 +124,7 @@ services:
     ports:
       - "${ME_OUT_PORT}:${ME_INN_PORT}"
     depends_on:
-      wine_host:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8081" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - mongo
     deploy:
       resources:
         limits:
@@ -173,11 +152,6 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
-    depends_on:
-      wine_host:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
   
 volumes:
   migration_volume: # alembic migrations

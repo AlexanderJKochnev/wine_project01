@@ -4,7 +4,6 @@ import logging
 from typing import Any, List, Type, TypeVar, Optional
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
-from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -149,21 +148,21 @@ class BaseRouter:
         """
             Удаление одной записи по id
         """
-        existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
-        if not existing_item:
-            raise HTTPException(status_code=404, detail=f'удаляемая запись {id} не существует')
-        try:
-            result = await self.service.delete(existing_item, self.repo, session)
-        except Exception as e:
-            raise HTTPException(status_code=401, detail=e)
-        # проверка удаления
-        # checking = await self.service.get_by_id(id, self.repo, self.model, session)
-        # if checking == existing_item:
-        #     raise HTTPException(status_code=500, detail=f'Ошибка удаления записи {id}: {checking}')
-        res = {'success': result,
-               'deleted_count': 1 if result else 0,
-               'message': f'Удалена запись {id}'}
-        return res
+        result = await self.service.delete(id, self.model, self.repo, session)
+        if not result.get('success'):
+            error_message = result.get('message', 'Unknown error')
+            # Для Foreign Key violation возвращаем 400 Bad Request
+            if 'невозможно удалить запись: на неё ссылаются другие объекты' in error_message:
+                raise HTTPException(status_code=400, detail=error_message)
+            # Для других ошибок базы данных возвращаем 500
+            elif 'ошибка базы данных' in error_message.lower():
+                raise HTTPException(status_code=500, detail=error_message)
+            # Для "не найдена" возвращаем 404
+            elif 'не найдена' in error_message:
+                raise HTTPException(status_code=404, detail=error_message)
+            else:
+                raise HTTPException(status_code=500, detail=error_message)
+        return DeleteResponse(**result)
 
     async def get_one(self,
                       id: int,

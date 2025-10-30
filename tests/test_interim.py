@@ -299,3 +299,25 @@ def test_repository_register():
         assert repo2, f'не найден репозиторий для {name} по имени'
         assert repo.__name__ == f'{val.__name__}Repository'
         assert repo == repo2, ''
+
+
+def test_service_register():
+    """
+    проверяем как действует регистр репозиториев
+    :return:
+    :rtype:
+    """
+    from app.core.utils.pydantic_utils import get_service
+    from app.core.services.service import ServiceMeta
+    from app.support import Item, Subregion, Subcategory, Country
+    for m, val in enumerate([Country, Item, Subregion, Subcategory]):
+        name = val.__name__
+        service = get_service(val)
+        service2 = get_service(name)
+        for n, (key, val1) in enumerate(ServiceMeta._registry.items()):
+            print(n, key, val1)
+        print(m, name, '===========')
+        assert service, f'не найден service для {name}'
+        assert service2, f'не найден service для {name} по имени'
+        assert service.__name__ == f'{val.__name__}Service'
+        assert service == service2, ''

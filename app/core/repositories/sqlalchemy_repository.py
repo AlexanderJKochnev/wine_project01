@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from sqlalchemy.dialects import postgresql
 from sqlalchemy import and_, func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.sql.elements import ColumnElement
 from app.core.services.logger import logger
 from app.core.utils.alchemy_utils import (create_enum_conditions, create_search_conditions,
@@ -55,12 +56,23 @@ class Repository(metaclass=RepositoryMeta):
     @classmethod
     async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
         """
-            удаление записи
-            :param obj: instance
+        удаление записи
+        :param obj: instance
         """
-        await session.delete(obj)
-        await session.commit()
-        return True
+        try:
+            await session.delete(obj)
+            await session.commit()
+            return True
+        except IntegrityError as e:
+            await session.rollback()
+            # Проверяем, является ли ошибка Foreign Key violation
+            error_str = str(e.orig)
+            if "foreign key constraint" in error_str.lower() or "violates foreign key constraint" in error_str.lower():
+                return "foreign_key_violation"
+            return f"integrity_error: {error_str}"
+        except Exception as e:
+            await session.rollback()
+            return f"database_error: {str(e)}"
 
     @classmethod
     def get_query(cls, model: ModelType):
@@ -307,7 +319,7 @@ class Repository(metaclass=RepositoryMeta):
         compiled_pg = stmt.compile(dialect=postgresql.dialect())
         print(str(compiled_pg))
         print('===============================')
-        fields: dict = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
+        # fields: dict = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
         # print(f'{fields=}')
         # stmt = select(*fields.values())
         compiled_pg = stmt.compile(dialect=postgresql.dialect())

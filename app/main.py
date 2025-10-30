@@ -9,10 +9,10 @@ from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
 from app.mongodb.router import router as MongoRouter
-from app.preact.create import CreateRouter
-from app.preact.delete import DeleteRouter
-from app.preact.get import GetRouter
-from app.preact.handbook import HandbookRouter
+from app.preact.create.router import CreateRouter
+from app.preact.get.router import GetRouter
+from app.preact.delete.router import DeleteRouter
+from app.preact.handbook.router import HandbookRouter
 from app.support.api.router import ApiRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
@@ -55,9 +55,9 @@ app.add_middleware(
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
 app.include_router(HandbookRouter().router)
-# app.include_router(CreateRouter().router)
-# app.include_router(GetRouter().router)
-# app.include_router(DeleteRouter().router)
+app.include_router(CreateRouter().router)
+app.include_router(GetRouter().router)
+app.include_router(DeleteRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 

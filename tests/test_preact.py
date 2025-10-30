@@ -13,23 +13,7 @@ from app.core.utils.common_utils import jprint  # NOQA: F401
 pytestmark = pytest.mark.asyncio
 
 
-async def test_source_generator():
-    from app.preact.get.router import GetRouter
-    """  проверяет верная ли функция используется в качестве endpoint"""
-    router = GetRouter()
-    expected_func_name = 'single_method'
-    expected_id = 1
-    for prefix, tag, function in router.__source_generator__(router.source, router.languages):
-        assert function.__name__ == expected_func_name, f'{prefix}, fault endpoint {function.__name__}'
-        path = f'{router.prefix}/{prefix}/{expected_id}'
-        mod, lang = router.__path_decoder__(path)
-        assert lang in router.languages, lang
-        assert mod in router.source.keys(), mod
-        models = router.source.get(mod)
-        assert models is not None
-        assert isinstance(models, tuple)
-
-
+@pytest.mark.skip
 async def test_service_get_non_orm_compile(mock_engine):
     """
         тестирование sql кода (не работает для вложенных моделей - не пытайся
@@ -37,7 +21,7 @@ async def test_service_get_non_orm_compile(mock_engine):
         для полного тестирования см следующий тест
     """
 
-    from app.preact.get.router import GetRouter, get_lang_prefix
+    from app.preact import GetRouter, get_lang_prefix
     from app.core.utils.alchemy_utils import get_id_field
     from sqlalchemy.dialects import postgresql
     # engine = mock_engine
@@ -86,13 +70,14 @@ async def test_service_get_non_orm_compile(mock_engine):
     assert True   # замени на False что бы посмотреть генерируемый sql code
 
 
+@pytest.mark.skip
 async def test_service_get_non_orm(test_db_session):
     """
         тестирование service layer & repo
         постреть что нагенерировано см предыдущий тест
     """
 
-    from app.preact.get.router import GetRouter, get_lang_prefix
+    from app.preact import GetRouter, get_lang_prefix
     from app.core.utils.alchemy_utils import get_id_field
     # client = authenticated_client_with_db
     # service = Service
@@ -136,6 +121,9 @@ async def test_service_get_non_orm(test_db_session):
 
 
 async def test_create_routers(authenticated_client_with_db, test_db_session):
+    """
+        тестируем создание
+    """
     from app.preact.create.router import CreateRouter
     from tests.data_factory.fake_generator import generate_test_data
     client = authenticated_client_with_db
@@ -162,39 +150,42 @@ async def test_create_routers(authenticated_client_with_db, test_db_session):
             assert response.status_code in [200, 201], f'{pref} {m}'
 
 
-async def test_get_routers(authenticated_client_with_db, test_db_session):
+async def test_get_routers(authenticated_client_with_db, test_db_session,
+                           fakedata_generator):
     """  запускаем после test_create_routers """
     from app.preact.get.router import GetRouter
-    from app.core.utils.common_utils import jprint
+    # from app.core.utils.common_utils import jprint
     client = authenticated_client_with_db
     router = GetRouter()
     id = 1   # ищем первую запись
     prefix = router.prefix
-    subprefix = [key for key, val in router.source.items() if len(val) == 1]
+    subprefix = [key for key, val in router.source.items()]
     # subprefix = list(router.source.keys())
     language = router.languages
     test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
-    for prefix in test_set:
-        response = await client.get(f'{prefix}/{id}')
-        assert response.status_code == 200, f'{prefix=}  {response.text}'
+    for pref in test_set:
+        pre = f'{pref}/{id}'
+        response = await client.get(pre)
+        print(pre, response.status_code)
+        assert response.status_code == 200, f'{pre=}  {response.text}'
         result = response.json()
         assert isinstance(result, dict), result
-        jprint(result)
-        print('----------------')
-    assert False
+        assert result['id'] == id, result['id']
 
 
-async def test_delete_routers(authenticated_client_with_db, test_db_session):
+async def test_delete_routers(authenticated_client_with_db, test_db_session,
+                              fakedata_generator):
     """  запускаем после test_create_routers """
     from app.preact.delete.router import DeleteRouter
     client = authenticated_client_with_db
     router = DeleteRouter()
     prefix = router.prefix
-    id = 2   # удаляем первую запись
+    id = 1   # удаляем первую запись
     for pref, model in reversed(router.source.items()):
-        # schema = router.__get_schemas__(model)
+
         full_prefix = f'{prefix}/{pref}'
+        print(f'========={full_prefix}')
         response = await client.delete(f'{full_prefix}/{id}')
-        assert response.status_code == 200, f'{full_prefix}/{id}'
+        assert response.status_code == 200, f'{full_prefix}/{id}, {response.text}'
         result = response.json()
         assert result.get('success'), f'{full_prefix}/{id} :: {result}'

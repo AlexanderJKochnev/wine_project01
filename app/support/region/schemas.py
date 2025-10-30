@@ -5,13 +5,56 @@ from typing import Optional
 from pydantic import computed_field, ConfigDict, Field
 
 from app.core.schemas.base import (CreateResponse, CreateSchemaSub, ReadApiSchema, ReadSchema, UpdateSchema)
+from app.core.schemas.lang_schemas import (DetailViewEn, DetailViewFr, DetailViewRu, ListViewEn, ListViewFr, ListViewRu)
 from app.support.country.schemas import CountryCreateRelation, CountryRead
-from app.core.schemas.lang_schemas import (ListViewEn, ListViewFr, ListViewRu, ListView,
-                                           DetailViewEn, DetailViewFr, DetailViewRu)
 
 
-class RegionListViewEn(ListView):
-    country_id: Optional[int] = Field(exclude=True)
+# -----------------DETAIL VIEW START
+
+class RegionDetailViewEn(DetailViewEn):
+    # country_id: Optional[int] = Field(exclude=True)
+    country: ListViewEn = Field(exclude=True)
+
+    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
+                    title='Отображаемое имя'  # Это для swagger (machine readable)
+                    )
+    @property
+    def display_name(self) -> str:
+        """Возвращает первое непустое значение из name, name_ru, name_fr"""
+        return (f'{self.country.display_name}.'
+                f' {self.name or self.name_ru or self.name_fr or ""}')
+
+
+class RegionDetailViewRu(DetailViewRu):
+    country: ListViewRu = Field(exclude=True)
+
+    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
+                    title='Отображаемое имя'  # Это для swagger (machine readable)
+                    )
+    @property
+    def display_name(self) -> str:
+        """Возвращает первое непустое значение из name, name_ru, name_fr"""
+        self.country.display_name
+        return f'{self.country.display_name}. {self.name_ru or self.name or self.name_fr or ""}'
+
+
+class RegionDetailViewFr(DetailViewFr):
+    country: ListViewFr = Field(exclude=True)
+
+    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
+                    title='Отображаемое имя'  # Это для swagger (machine readable)
+                    )
+    @property
+    def display_name(self) -> str:
+        """Возвращает первое непустое значение из name, name_ru, name_fr"""
+        self.country.display_name
+        return f'{self.country.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
+
+# -------DETAIL VIEW END----------LIST VIEW START--------
+
+
+class RegionListViewEn(ListViewEn):
+    # country_id: Optional[int] = Field(exclude=True)
     country: ListViewEn = Field(exclude=True)
 
     @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
@@ -25,7 +68,7 @@ class RegionListViewEn(ListView):
 
 
 class RegionListViewRu(ListViewRu):
-    country: ListViewEn = Field(exclude=True)
+    country: ListViewRu = Field(exclude=True)
 
     @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
                     title='Отображаемое имя'  # Это для swagger (machine readable)
@@ -38,7 +81,7 @@ class RegionListViewRu(ListViewRu):
 
 
 class RegionListViewFr(ListViewFr):
-    country: ListViewEn = Field(exclude=True)
+    country: ListViewFr = Field(exclude=True)
 
     @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
                     title='Отображаемое имя'  # Это для swagger (machine readable)
@@ -48,6 +91,8 @@ class RegionListViewFr(ListViewFr):
         """Возвращает первое непустое значение из name, name_ru, name_fr"""
         self.country.display_name
         return f'{self.country.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
+
+# -------LIST VIEW END-----------
 
 
 class RegionReadApiSchema(ReadApiSchema):

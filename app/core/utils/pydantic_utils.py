@@ -9,6 +9,17 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
 from app.core.schemas.base import PaginatedResponse, PYDANTIC_MODELS, PyModel
 from app.core.repositories.sqlalchemy_repository import RepositoryMeta
+from app.core.services.service import ServiceMeta
+
+
+def get_service(model: Union[Type[DeclarativeBase], str]):
+    """
+    получение service layer по имени
+    :param model: модель / имя модели
+    """
+    if not isinstance(model, str):
+        model = model.__name__
+    return ServiceMeta._registry.get(f'{model}'.lower(), None)
 
 
 def get_repo(model: Union[Type[DeclarativeBase], str]):
@@ -37,14 +48,14 @@ def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
     return def_schema
 
 
-def pyschema_helper(model: Type[DeclarativeBase], schema_type: str = 'list', lang: str = 'en') -> PyModel:
+def pyschema_helper(model: Type[DeclarativeBase], schema_type: str, lang: str = 'en') -> PyModel:
     """
     по лучение py схемы для alchemy model по назначению (schema_type)
     :param model:
     :param schema_type:
     """
     name: str = model.__name__
-    schema_types: dict = {'list': 'ListView'}
+    schema_types: dict = {'list': 'ListView', 'single': 'DetailView'}
     default: str = f'{schema_types.get(schema_type)}{lang.capitalize()}'
     pyname: str = f'{name}{default}'
     return get_pyschema(pyname, default)

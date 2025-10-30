@@ -78,6 +78,13 @@ class DescriptionSchema(BaseModel):
     description_fr: Optional[str] = None
 
 
+class DescriptionExcludeSchema(BaseModel):
+    """ добавлять поля описаний на других языках """
+    description: Optional[str] = Field(exclude=True)
+    description_ru: Optional[str] = Field(exclude=True)
+    description_fr: Optional[str] = Field(exclude=True)
+
+
 class NameSchema(BaseModel):
     """ добавлять поля на других языках """
     name: Optional[str] = None
@@ -235,7 +242,7 @@ class ListView(PkSchema, NameExcludeSchema):
     """
 
 
-class DetailView(PkSchema, NameExcludeSchema, DescriptionSchema):
+class DetailView(PkSchema, NameExcludeSchema, DescriptionExcludeSchema):
     """
         поля по максимуму
         id, видимое

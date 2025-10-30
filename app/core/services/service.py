@@ -1,5 +1,5 @@
 # app.core.service/service.py
-
+from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Type
 
@@ -13,10 +13,24 @@ from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
 joint = '. '
 
 
-class Service:
+class ServiceMeta(ABCMeta):
+    _registry = {}
+
+    def __new__(cls, name, bases, attrs):
+        new_class = super().__new__(cls, name, bases, attrs)
+        # Регистрируем сам класс, а не его экземпляр
+        if not attrs.get('__abstract__', False):
+            key = name.lower().replace('service', '')
+            cls._registry[key] = new_class  # ← Сохраняем класс!
+        return new_class
+
+
+class Service(metaclass=ServiceMeta):
     """
-    проверить ВОТ ВСЕХ МЕТОДАХ можно использщовать базовый репо.
+        Base Service Layer
     """
+    __abstract__ = True
+
     @classmethod
     def get_model_by_name(cls, name: str) -> ModelType:
         for mode in get_models():
@@ -147,10 +161,25 @@ class Service:
         return obj
 
     @classmethod
-    async def delete(cls, obj: ModelType, repository: Type[Repository],
+    async def delete(cls, id: int, model: ModelType, repository: Type[Repository],
                      session: AsyncSession) -> bool:
-        result = await repository.delete(obj, session)
-        return result
+        instance = await repository.get_by_id(id, model, session)
+        print('=========================', instance)
+        if instance:
+            result = await repository.delete(instance, session)
+
+            if result == "foreign_key_violation":
+                return {'success': False, 'deleted_count': 0,
+                        'message': 'Невозможно удалить запись: на неё ссылаются другие объекты'}
+            elif isinstance(result, str) and result.startswith(('integrity_error:', 'database_error:')):
+                return {'success': False, 'deleted_count': 0,
+                        'message': f'Ошибка базы данных при удалении: {result.split(":", 1)[1]}'}
+            elif result is True:
+                return {'success': True, 'deleted_count': 1, 'message': f'Запись {id} удалена'}
+            else:
+                return {'success': False, 'deleted_count': 0, 'message': f'Запись {id} обнаружена, но не удалена.'}
+        else:
+            return {'success': False, 'deleted_count': 0, 'message': f'Запись {id} не найдена'}
 
     @classmethod
     async def search(cls,

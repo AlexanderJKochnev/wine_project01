@@ -65,7 +65,7 @@ def test_handbook_router():
     :return:
     :rtype:
     """
-    from app.preact.handbook import HandbookRouter
+    from app.preact.handbook.router import HandbookRouter
     router = HandbookRouter()
     # тест __source_generator__
     print(router.languages)
@@ -92,9 +92,7 @@ async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
     # language = router.languages
     routers = ((route.path, route.response_model) for route in routers_get if 'handbook' in route.path)
     for prefix, response_model in routers:
-        # print('++++++++++++++++++++', prefix, response_model)
         response = await client.get(prefix)
-        # print(prefix, response_model.name)
         assert response.status_code == 200, response.text
-        # result = response.json()
-        # assert isinstance(result, dict)
+        result = response.json()
+        assert isinstance(result, List), f'тип результата "{type(result)}" не соотвествует ожидаемому "List"'
