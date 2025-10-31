@@ -1,5 +1,4 @@
 # app/support/varietal/schemas.py
-from pydantic import ConfigDict
 from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
 
 
@@ -20,19 +19,19 @@ class CustomUpdSchema:
 
 
 class VarietalRead(ReadSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class VarietalCreateRelation(CreateSchema, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class VarietalCreate(CreateSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class VarietalUpdate(UpdateSchema, CustomUpdSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class VarietalCreateResponseSchema(VarietalCreate, CreateResponse):

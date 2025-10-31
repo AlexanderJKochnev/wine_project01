@@ -124,24 +124,31 @@ class BaseRouter:
             logger.error(f"Unexpected error in create_item: {e}")
             raise exception_to_http(e)
 
-    async def patch(self, id: int, data: TUpdateSchema,
-                    session: AsyncSession = Depends(get_db)) -> TReadSchema:
+    async def patch(self, id: int,
+                    data: TUpdateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """
-            Изменение одной записи по id
+        Изменение одной записи по id
         """
-        try:
-            existing_item = await self.service.get_by_id(id, self.repo, self.model, session)
-            if not existing_item:
-                raise Exception(f'NOT_FOUND: Реадктируемая запись {id} не найдена на сервере')
-            obj = await self.service.patch(existing_item, data, self.repo, session)
-            if not obj:
-                await session.rollback()
-                raise Exception(f'NOT_FOUND: Отредактированная запись {id} не найдена на сервере. изменения отменены')
-            return obj
-        except Exception as e:
-            # добавить обработку SQLALCHEMY
-            await session.rollback()
-            raise exception_to_http(e)
+        result = await self.service.patch(id, data, self.repo, self.model, session)
+
+        if not result.get('success'):
+            error_type = result.get('error_type')
+            error_message = result.get('message', 'Неизвестная ошибка')
+
+            if error_type == 'not_found':
+                raise HTTPException(status_code=404, detail=error_message)
+            elif error_type == 'unique_constraint_violation':
+                raise HTTPException(status_code=400, detail=error_message)
+            elif error_type == 'foreign_key_violation':
+                raise HTTPException(status_code=400, detail=error_message)
+            elif error_type == 'no_data':
+                raise HTTPException(status_code=400, detail=error_message)
+            elif error_type == 'database_error':
+                raise HTTPException(status_code=500, detail=error_message)
+            else:
+                raise HTTPException(status_code=500, detail=error_message)
+
+        return result['data']
 
     async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:

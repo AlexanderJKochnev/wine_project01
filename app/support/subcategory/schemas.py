@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import computed_field, ConfigDict, Field
+from pydantic import computed_field, Field
 
 from app.core.schemas.base import (CreateResponse, CreateSchemaSub, ReadApiSchema, ReadSchema, UpdateSchema)
 from app.core.schemas.lang_schemas import (DetailViewEn, DetailViewFr, DetailViewRu,
@@ -135,19 +135,19 @@ class CustomUpdSchema:
 
 
 class SubcategoryRead(ReadSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    pass
 
 
 class SubcategoryCreateRelation(CreateSchemaSub, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SubcategoryCreate(CreateSchemaSub, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SubcategoryUpdate(UpdateSchema, CustomUpdSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SubcategoryCreateResponseSchema(SubcategoryCreate, CreateResponse):

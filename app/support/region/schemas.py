@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import computed_field, ConfigDict, Field
+from pydantic import computed_field, Field
 
 from app.core.schemas.base import (CreateResponse, CreateSchemaSub, ReadApiSchema, ReadSchema, UpdateSchema)
 from app.core.schemas.lang_schemas import (DetailViewEn, DetailViewFr, DetailViewRu, ListViewEn, ListViewFr, ListViewRu)
@@ -138,19 +138,19 @@ class CustomUpdSchema:
 
 
 class RegionRead(ReadSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class RegionCreate(CreateSchemaSub, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class RegionCreateRelation(CreateSchemaSub, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class RegionUpdate(UpdateSchema, CustomUpdSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class RegionCreateResponseSchema(RegionCreate, CreateResponse):

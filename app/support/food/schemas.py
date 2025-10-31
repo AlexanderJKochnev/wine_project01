@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import computed_field, ConfigDict, Field
+from pydantic import computed_field, Field
 
 from app.core.schemas.base import (CreateResponse, CreateSchema, ReadSchema, UpdateSchema)
 from app.core.schemas.lang_schemas import (DetailViewEn, DetailViewFr, DetailViewRu, ListViewEn, ListViewFr, ListViewRu)
@@ -117,19 +117,19 @@ class CustomUpdSchema:
 
 
 class FoodRead(ReadSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class FoodCreateRelation(CreateSchema, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class FoodCreate(CreateSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class FoodUpdate(UpdateSchema, CustomUpdSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class FoodCreateResponseSchema(FoodCreate, CreateResponse):

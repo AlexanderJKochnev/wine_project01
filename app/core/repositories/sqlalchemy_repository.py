@@ -39,19 +39,33 @@ class Repository(metaclass=RepositoryMeta):
         return obj
 
     @classmethod
-    async def patch(cls, obj: ModelType, data: Dict[str, Any],
-                    session: AsyncSession) -> Optional[ModelType]:
+    async def patch(cls, obj: ModelType,
+                    data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
         """
-            редактирование записи
-            :param obj: редактируемая запись
-            :param data: изменения в редактируемую запись
+        редактирование записи
+        :param obj: редактируемая запись
+        :param data: изменения в редактируемую запись
         """
-        for k, v in data.items():
-            if hasattr(obj, k):
-                setattr(obj, k, v)
-        await session.commit()
-        await session.refresh()
-        return obj
+        try:
+            # print('===before==', obj.to_dict())
+            for k, v in data.items():
+                if hasattr(obj, k):
+                    setattr(obj, k, v)
+            await session.commit()
+            await session.refresh(obj)
+            # print('===after==', obj.to_dict())
+            return obj
+        except IntegrityError as e:
+            await session.rollback()
+            error_str = str(e.orig).lower()
+            if 'unique constraint' in error_str or 'duplicate key' in error_str:
+                return "unique_constraint_violation"
+            elif 'foreign key constraint' in error_str:
+                return "foreign_key_violation"
+            return f"integrity_error: {error_str}"
+        except Exception as e:
+            await session.rollback()
+            return f"database_error: {str(e)}"
 
     @classmethod
     async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:

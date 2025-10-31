@@ -1,7 +1,7 @@
 # app/support/drink/schemas.py
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-from pydantic import ConfigDict, field_serializer, Field, computed_field
+from pydantic import field_serializer, Field, computed_field
 from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
@@ -113,23 +113,26 @@ class CustomReadSchema(LangMixin):
 
 
 class DrinkRead(ReadNoNameSchema, CustomReadSchema):
+    """
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
                               extra='allow',
                               populate_by_name=True,
                               exclude_none=True)
+    """
+    pass
 
 
 class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    pass
 
 
 class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, exclude_none=True)
+    pass
 
 
 class DrinkUpdate(CustomUpdSchema, UpdateNoNameSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class DrinkCreateResponseSchema(DrinkCreate, CreateResponse):
@@ -311,11 +314,7 @@ class CustomReadApiSchema(LangMixinExclude):
 
 
 class DrinkReadApi(PkSchema, CustomReadApiSchema):
-    model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True,
-                              extra='allow', populate_by_name=True,
-                              exclude_none=True
-                              )
+    pass
 
 
 class CustomReadFlatSchema(LangMixinExclude):
@@ -422,8 +421,4 @@ class CustomReadFlatSchema(LangMixinExclude):
 
 
 class DrinkReadFlat(BaseModel, CustomReadFlatSchema):
-    model_config = ConfigDict(
-        from_attributes=True, arbitrary_types_allowed=True, extra='allow', populate_by_name=True,
-        exclude_none=True
-    )
     id: int

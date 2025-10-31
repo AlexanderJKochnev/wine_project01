@@ -122,15 +122,6 @@ class Service(metaclass=ServiceMeta):
             return result
 
     @classmethod
-    async def get_by_id(cls, id: int, repository: Type[Repository], model: ModelType,
-                        session: AsyncSession) -> Optional[ModelType]:
-        """
-        get one record by id
-        """
-        result = await repository.get_by_id(id, model, session)
-        return result
-
-    @classmethod
     async def get_all(cls, ater_date: datetime,
                       page: int, page_size: int, repository: Type[Repository], model: ModelType,
                       session: AsyncSession, ) -> List[dict]:
@@ -154,11 +145,50 @@ class Service(metaclass=ServiceMeta):
         return result
 
     @classmethod
-    async def patch(cls, obj: ModelType, data: ModelType, repository: Type[Repository], session: AsyncSession) -> (
-            Optional)[ModelType]:
+    async def get_by_id(
+            cls, id: int, repository: Type[Repository],
+            model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        """Получение записи по ID"""
+        return await repository.get_by_id(id, model, session)
+
+    @classmethod
+    async def patch(cls, id: int, data: ModelType,
+                    repository: Type[Repository],
+                    model: ModelType, session: AsyncSession) -> dict:
+        """
+        Редактирование записи по ID
+        Возвращает dict с результатом операции
+        """
+        # Получаем существующую запись
+        print(f'{model.__name__=}======{id=}======')
+        existing_item = await repository.get_by_id(id, model, session)
+        print(f'+++{existing_item.to_dict()=}')
+        if not existing_item:
+            return {'success': False, 'message': f'Редактируемая запись {id} не найдена на сервере',
+                    'error_type': 'not_found'}
+
         data_dict = data.model_dump(exclude_unset=True)
-        obj = await repository.patch(obj, data_dict, session)
-        return obj
+        if not data_dict:
+            return {'success': False, 'message': 'Нет данных для обновления', 'error_type': 'no_data'}
+
+        # Выполняем обновление
+        result = await repository.patch(existing_item, data_dict, session)
+        # Обрабатываем результат
+        if result == "unique_constraint_violation":
+            return {'success': False, 'message': 'Нарушение уникальности: запись с такими данными уже существует',
+                    'error_type': 'unique_constraint_violation'}
+        elif result == "foreign_key_violation":
+            return {'success': False,
+                    'message': 'Нарушение ссылочной целостности: указаны несуществующие связанные объекты',
+                    'error_type': 'foreign_key_violation'}
+        elif isinstance(result, str) and result.startswith(('integrity_error:', 'database_error:')):
+            return {'success': False, 'message': f'Ошибка базы данных при обновлении: {result.split(":", 1)[1]}',
+                    'error_type': 'database_error'}
+        elif isinstance(result, model):
+            return {'success': True, 'data': result, 'message': f'Запись {id} успешно обновлена'}
+        else:
+            return {'success': False, 'message': f'Неизвестная ошибка при обновлении записи {id}',
+                    'error_type': 'unknown_error'}
 
     @classmethod
     async def delete(cls, id: int, model: ModelType, repository: Type[Repository],

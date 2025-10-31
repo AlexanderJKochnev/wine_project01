@@ -2,7 +2,7 @@
 
 from typing import Optional, Dict, Any
 from datetime import datetime
-from pydantic import ConfigDict, Field, model_validator, computed_field
+from pydantic import Field, model_validator, computed_field
 from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
@@ -120,7 +120,7 @@ class CustomUpdSchema:
 
 
 class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class ItemReadPreact(ItemRead):
@@ -128,7 +128,7 @@ class ItemReadPreact(ItemRead):
 
 
 class ItemCreate(BaseModel, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class ItemUpdate(BaseModel, CustomUpdSchema):
@@ -140,4 +140,4 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
 
 
 class ItemCreateRelations(BaseModel, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass

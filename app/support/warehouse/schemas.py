@@ -1,8 +1,6 @@
 # app/support/warehouse/schemas.py
 from typing import Optional
 
-from pydantic import ConfigDict
-
 from app.core.schemas.base import (CreateSchema, FullSchema, ReadSchema,
                                    UpdateSchema, CreateResponse)
 from app.support.customer.schemas import CustomerCreate
@@ -29,23 +27,23 @@ class CustomUpdSchema:
 
 
 class WarehouseRead(ReadSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class WarehouseCreate(CreateSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class WarehouseCreateRelation(CreateSchema, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class WarehouseUpdate(UpdateSchema, CustomUpdSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class WarehouseFull(FullSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class WarehouseCreateResponseSchema(WarehouseCreate, CreateResponse):

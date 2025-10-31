@@ -53,6 +53,7 @@ async def test_get_nopage(authenticated_client_with_db, test_db_session, routers
 async def test_get_one(authenticated_client_with_db, test_db_session,
                        routers_get_all, fakedata_generator):
     """ тестирует методы get one - c проверкой id """
+    from app.core.utils.common_utils import jprint
     client = authenticated_client_with_db
     routers = routers_get_all
 
@@ -61,7 +62,11 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
             continue
         response = await client.get(f'{prefix}/1')
         assert response.status_code in [200], response.text
-
+        if 'subcategories' in prefix:
+            result = response.json()
+            jprint(result)
+            assert False
+        
 
 async def test_fault_get_one(authenticated_client_with_db, test_db_session,
                              routers_get_all, fakedata_generator):

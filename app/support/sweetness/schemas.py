@@ -1,7 +1,5 @@
 # app/support/sweetness/schemas.py
 
-from pydantic import ConfigDict
-
 from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
 
 
@@ -22,19 +20,19 @@ class CustomUpdSchema:
 
 
 class SweetnessRead(ReadSchema, CustomReadSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SweetnessCreateRelation(CreateSchema, CustomCreateRelation):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SweetnessCreate(CreateSchema, CustomCreateSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SweetnessUpdate(UpdateSchema, CustomUpdSchema):
-    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)  # , exclude_none=True)
+    pass
 
 
 class SweetnessCreateResponseSchema(SweetnessCreate, CreateResponse):

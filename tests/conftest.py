@@ -397,7 +397,7 @@ def routers_get_all() -> List[str]:
 @pytest.fixture(scope=scope)
 def real_routers_get_all() -> List[APIRoute]:
     """ список роутеров GET get_all"""
-    return [x for x in get_routers('GET') if x.name == 'get']
+    return [x for x in ('GET') if x.name == 'get']
 
 
 @pytest.fixture(scope=scope)
