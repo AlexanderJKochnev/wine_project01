@@ -1,7 +1,6 @@
 from typing import List, Any
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
-from pydantic_settings import BaseSettings, SettingsConfigDict
 import json
 
 
@@ -24,7 +23,6 @@ def ListField(delimiter: str = ',') -> Any:
                             pass
                     return [item.strip() for item in value.split(delimiter) if item.strip()]
                 # raise ValueError(f"Cannot parse {value} as list")
-            
+
             return core_schema.list_schema()
-    
     return DelimitedList

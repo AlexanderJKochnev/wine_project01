@@ -4,7 +4,7 @@ import json
 from typing import List
 from app.core.utils.common_utils import get_path_to_root, enum_to_camel
 from app.core.config.project_config import settings
-from app.core.utils.alchemy_utils import JsonConverter
+# from app.core.utils.alchemy_utils import JsonConverter
 
 
 def read_file_lines_stripped(filename: Path):
@@ -83,5 +83,5 @@ def get_filepath_from_dir_by_name(filename: str = None, upload_dir: str = None) 
         dirpath: Path = get_path_to_root(upload_dir)
         filepath = dirpath / filename
         return filepath
-    except Exception as e:
+    except Exception:
         raise Exception(f'file {filename} is not exists in {upload_dir}')

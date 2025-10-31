@@ -14,8 +14,9 @@ from app.core.utils.common_utils import back_to_the_future
 from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
                                    CreateResponse, UpdateSchema, CreateSchema)
 from app.core.utils.pydantic_utils import PyUtils as py
-from app.core.services.service import Service
 from app.core.exceptions import exception_to_http
+from app.core.utils.pydantic_utils import get_repo, get_service
+from app.core.utils.pydantic_utils import pyschema_helper
 
 
 paging = get_paging
@@ -34,69 +35,72 @@ class BaseRouter:
     Базовый роутер с общими CRUD-методами.
     Наследуйте и переопределяйте get_query() для добавления selectinload.
     """
-
     def __init__(
         self,
         model: Type[Any],
-        repo: Type[Any],
         prefix: str,
-        tags: List[str],
-        create_schema: Type[ReadSchema],
-        path_schema: Type[UpdateSchema],
-        read_schema: Type[ReadSchema],
-        create_response_schema: Type[CreateResponse],
-        create_schema_relation: Type[CreateResponse],
-        service: Service,
-        # session: AsyncSession = Depends(get_db)
+        **kwargs
     ):
         self.model = model
-        self.repo = repo
-        self.service = service
-        self.create_schema = create_schema
-        self.read_schema = read_schema
-        self.create_schema_relation = create_schema_relation
-        self.create_response_schema = create_response_schema
-        self.prefix = prefix
-        self.tags = tags
+        self.repo = get_repo(model)
+        self.service = get_service(model)
+        # input py schema for simple create without relation
+        self.create_schema = pyschema_helper(model, 'create')
+        # input py schema for create with relation
+        self.create_schema_relation = pyschema_helper(model, 'create_relation')
+        # input update schema
+        self.update_schema = pyschema_helper(model, 'update')
 
-        self.read_response = py.read_response(read_schema)
-        self.paginated_response = py.paginated_response(read_schema)
-        # self.non_paginated_response = py.non_paginated_response(read_schema)
+        # response schemas:
+        self.read_schema = pyschema_helper(model, 'read')
+        self.read_schema_relation = pyschema_helper(model, 'read_relation') or self.read_schema
+        self.paginated_response = py.paginated_response(self.read_schema_relation)
+        self.nonpaginated_response = List[self.read_schema_relation]
         self.delete_response = DeleteResponse
-        self.responses = {404: {"description": "Record not found",
-                                "content": {"application/json": {"example": {"detail": "Record with id 1 not found"}}}}}
-        self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_active_user_or_internal)])
-        # self.router = APIRouter(prefix=prefix, tags=tags, dependencies=[Depends(get_current_active_user)])
+
+        self.prefix = prefix
+        self.tags = [prefix.replace('/', '')]
+        self.router = APIRouter(prefix=prefix, tags=self.tags, dependencies=[Depends(get_active_user_or_internal)])
         self.setup_routes()
-        self.service = service
-        self.path_schema = path_schema
+
+        # self.read_response = py.read_response(read_schema)
+        # self.path_schema = path_schema
 
     def setup_routes(self):
         """Настраивает маршруты"""
-        self.router.add_api_route("", self.create, methods=["POST"], response_model=self.create_response_schema)
+        self.router.add_api_route("", self.create, methods=["POST"],
+                                  response_model=self.create_schema)
 
         self.router.add_api_route("/hierarchy",
                                   self.create_relation,
                                   status_code=status.HTTP_200_OK,
                                   methods=["POST"],
-                                  response_model=self.read_response)
+                                  response_model=self.read_schema_relation)
         # get all без паггинации
-        self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
+        self.router.add_api_route("", self.get, methods=["GET"],
+                                  response_model=self.paginated_response)
         # search с пагинацией
         self.router.add_api_route("/search", self.search, methods=["GET"],
                                   response_model=self.paginated_response)
         # search без пагинации
-        self.router.add_api_route(
-            "/search_all", self.search_all, methods=["GET"], response_model=List[self.read_schema])
+        self.router.add_api_route("/search_all",
+                                  self.search_all, methods=["GET"],
+                                  response_model=self.nonpaginated_response)  # List[self.read_schema])
         # get without pagination
-        self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
+        self.router.add_api_route("/all",
+                                  self.get_all, methods=["GET"],
+                                  response_model=self.nonpaginated_response)  # List[self.read_response])
         # get one buy id
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
                                   response_model=self.read_schema,
                                   )
-        self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.create_response_schema)
-        self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
+        self.router.add_api_route("/{id}",
+                                  self.patch, methods=["PATCH"],
+                                  response_model=self.read_schema)
+        self.router.add_api_route("/{id}",
+                                  self.delete, methods=["DELETE"],
+                                  response_model=self.delete_response)
 
     async def create(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """

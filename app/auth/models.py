@@ -1,7 +1,7 @@
 # app/auth/models.py
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
-from app.core.models.base_model import Base, BaseAt
+from app.core.models.base_model import Base
 from typing import Optional
 
 

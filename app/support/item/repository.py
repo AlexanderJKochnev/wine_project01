@@ -6,7 +6,7 @@ from sqlalchemy import func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
-from app.support.drink.router import DrinkRepository
+from app.support.drink.repository import DrinkRepository
 from app.support.item.model import Item
 from app.support.country.model import Country
 from app.support.region.model import Region

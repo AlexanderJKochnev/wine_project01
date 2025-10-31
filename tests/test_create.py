@@ -42,14 +42,15 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                 for key in ['updated_at', 'id', 'created_at']:
                     rev_dict.pop(key, None)
                 assert data == rev_dict, f'alchemy validation fault {prefix} '
-            except Exception:
+            except Exception as e:
+                print(f'validation fault: {e}')
                 jprint(data)
                 assert False, f'validation false {prefix=}'
             try:
                 response = await client.post(f'{prefix}', json=data)
                 assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
-                print(prefix)
+                print(prefix, f'last error: {e}')
                 jprint(data)
                 assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
 

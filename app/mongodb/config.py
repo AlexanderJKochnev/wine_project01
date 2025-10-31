@@ -35,8 +35,7 @@ class Settings(BaseSettings):
     PAGE_DEFAULT: int
     PAGE_MIN: int
     PAGE_MAX: int
-    
-    
+
     @property
     def mongo_url(self) -> str:
         return (f"mongodb://{self.MONGO_INITDB_ROOT_USERNAME}:"
@@ -64,6 +63,7 @@ class MongoDB:
             self.client.close()
             self.client = None
             self.database = None
+
 
 mongodb = MongoDB()
 

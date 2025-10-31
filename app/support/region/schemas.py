@@ -141,6 +141,10 @@ class RegionRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class RegionReadRelation(RegionRead):
+    pass
+
+
 class RegionCreate(CreateSchemaSub, CustomCreateSchema):
     pass
 

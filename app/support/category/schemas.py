@@ -23,6 +23,10 @@ class CategoryRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class CategoryReadRelation(ReadSchema, CustomReadSchema):
+    pass
+
+
 class CategoryCreateRelation(CreateSchema, CustomCreateRelation):
     pass
 

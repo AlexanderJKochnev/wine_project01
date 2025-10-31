@@ -60,6 +60,17 @@ class LangMixinExclude:
 
 
 class CustomUpdSchema(LangMixin):
+    subcategory_id: Optional[int] = None
+    sweetness_id: Optional[int] = None
+    subregion_id: Optional[int] = None
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
+    age: Optional[str] = None
+    sparkling: Optional[bool] = False
+
+
+class CustomCreateSchema(LangMixin):
+    title: str
     subcategory_id: int
     sweetness_id: Optional[int] = None
     subregion_id: int
@@ -67,10 +78,6 @@ class CustomUpdSchema(LangMixin):
     sugar: Optional[float] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
-
-
-class CustomCreateSchema(CustomUpdSchema):
-    title: str
 
 
 class CustomCreateRelation(LangMixin):
@@ -123,11 +130,15 @@ class DrinkRead(ReadNoNameSchema, CustomReadSchema):
     pass
 
 
+class DrinkReadRelation(DrinkRead):
+    pass
+
+
 class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
     pass
 
 
-class DrinkCreateRelations(CreateNoNameSchema, CustomCreateRelation):
+class DrinkCreateRelation(CreateNoNameSchema, CustomCreateRelation):
     pass
 
 

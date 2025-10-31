@@ -22,6 +22,10 @@ class VarietalRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class VarietalReadRelation(VarietalRead):
+    pass
+
+
 class VarietalCreateRelation(CreateSchema, CustomCreateRelation):
     pass
 

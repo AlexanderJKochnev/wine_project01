@@ -65,8 +65,7 @@ async def test_get_one(authenticated_client_with_db, test_db_session,
         if 'subcategories' in prefix:
             result = response.json()
             jprint(result)
-            assert False
-        
+
 
 async def test_fault_get_one(authenticated_client_with_db, test_db_session,
                              routers_get_all, fakedata_generator):

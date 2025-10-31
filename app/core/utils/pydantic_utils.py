@@ -33,6 +33,7 @@ def get_repo(model: Union[Type[DeclarativeBase], str]):
     # print(result, result.__name__, model)
     # return result
 
+
 def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
     """
         получение pydantic schema по ее имени:
@@ -45,18 +46,28 @@ def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
             return schema
         if schema.__name__.lower() == default.lower():
             def_schema = schema
+            print('========', name)
     return def_schema
 
 
-def pyschema_helper(model: Type[DeclarativeBase], schema_type: str, lang: str = 'en') -> PyModel:
+def pyschema_helper(model: Type[DeclarativeBase], schema_type: str, lang: str = None) -> PyModel:
     """
     по лучение py схемы для alchemy model по назначению (schema_type)
     :param model:
     :param schema_type:
     """
     name: str = model.__name__
-    schema_types: dict = {'list': 'ListView', 'single': 'DetailView'}
-    default: str = f'{schema_types.get(schema_type)}{lang.capitalize()}'
+    schema_types: dict = {'list': 'ListView',
+                          'single': 'DetailView',
+                          'read': 'Read',
+                          'create': 'Create',
+                          'update': 'Update',
+                          'create_relation': 'CreateRelation',
+                          'read_relation': 'ReadRelation'
+                          }
+    default: str = f'{schema_types.get(schema_type)}'
+    if lang:
+        default: str = f'{default}{lang.capitalize()}'
     pyname: str = f'{name}{default}'
     return get_pyschema(pyname, default)
 

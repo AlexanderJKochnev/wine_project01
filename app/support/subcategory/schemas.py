@@ -131,10 +131,15 @@ class CustomCreateRelation:
 
 
 class CustomUpdSchema:
-    category: Optional[CategoryCreateRelation]
+    # category: Optional[CategoryCreateRelation]
+    pass
 
 
 class SubcategoryRead(ReadSchema, CustomReadSchema):
+    pass
+
+
+class SubcategoryReadRelation(SubcategoryRead):
     pass
 
 

@@ -9,7 +9,8 @@ from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import flatten_dict
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
-from app.support.drink.router import Drink, DrinkCreate, DrinkCreateRelations, DrinkRead, DrinkRepository
+from app.support.drink.router import Drink, DrinkCreate, DrinkCreateRelation, DrinkRead
+from app.support.drink.repository import DrinkRepository
 from app.support.food.router import (FoodRepository, FoodService)
 from app.support.subcategory.router import (Subcategory, SubcategoryRepository, SubcategoryService)
 from app.support.subregion.router import (Subregion, SubregionRepository, SubregionService)
@@ -40,7 +41,7 @@ class DrinkService(Service):
             print(f'drink.service..get_by_id error {e}')
 
     @classmethod
-    async def create_relation(cls, data: DrinkCreateRelations,
+    async def create_relation(cls, data: DrinkCreateRelation,
                               repository: DrinkRepository, model: Drink,
                               session: AsyncSession) -> DrinkRead:
         # pydantic model -> dict

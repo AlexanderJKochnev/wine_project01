@@ -39,7 +39,7 @@ class ApiRouter(ItemRouter):
 
     def setup_routes(self):
         self.router.add_api_route("", self.get, methods=["GET"], response_model=self.paginated_response)
-        self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_response])
+        self.router.add_api_route("/all", self.get_all, methods=["GET"], response_model=List[self.read_schema])
         self.router.add_api_route("/search", self.search, methods=["GET"], response_model=self.paginated_response)
         self.router.add_api_route("/search_all", self.search_all, methods=["GET"],
                                   response_model=List[self.read_schema])

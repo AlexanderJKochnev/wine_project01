@@ -1,20 +1,20 @@
 # app.support.item.service.py
-from typing import List, Type
 from app.core.services.service import Service
-# from app.core.config.project_config import settings
-from app.core.utils.common_utils import jprint, get_value  # noqa: F401
+
 from app.core.utils.alchemy_utils import JsonConverter
+from app.core.utils.common_utils import get_value, jprint  # noqa: F401
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
-from app.support.item.router import Item, ItemCreate, ItemCreateRelations, ItemRepository, ItemRead, AsyncSession
-from app.support.drink.router import DrinkService, DrinkRepository, Drink, DrinkReadFlat
 from app.mongodb.service import ImageService
-from app.core.repositories.sqlalchemy_repository import ModelType, Repository
+from app.support.drink.router import Drink
+from app.support.drink.repository import DrinkRepository
+from app.support.drink.service import DrinkService
+from app.support.item.router import AsyncSession, Item, ItemCreate, ItemCreateRelation, ItemRead, ItemRepository
 
 
 class ItemService(Service):
 
     @classmethod
-    async def create_relation(cls, data: ItemCreateRelations,
+    async def create_relation(cls, data: ItemCreateRelation,
                               repository: ItemRepository, model: Item,
                               session: AsyncSession) -> ItemRead:
         try:
@@ -52,7 +52,7 @@ class ItemService(Service):
             # проходим по списку и загружаем в postgresql
             for n, item in enumerate(dataconv):
                 try:
-                    data_model = ItemCreateRelations(**item)
+                    data_model = ItemCreateRelation(**item)
                     image_path = data_model.image_path
                     image_id = get_value(image_list, image_path) if image_list else None
                     data_model.image_id = image_id

@@ -18,11 +18,11 @@ async def test_patch_success(authenticated_client_with_db, test_db_session,
     test_data: dict = {'name': 'updated_name', 'description': 'updated description',
                        'name_ru': 'обновленные данные', 'description_ru': 'обновленные данные'
                        }
-    drink_data: dict = {'description': 'updated description', 'title': 'updated_name',
+    drink_data: dict = {'description': 'updated description', 'title': 'updated_title',
                         'description_ru': 'обновленные данные',
-                        'title_ru': 'обновленные данные'}
+                        'title_ru': 'обновленные данные title'}
     item_data: dict = {'vol': 1.0,
-                       'price': 0.99}
+                       'price': 1.0}
     customer_data: dict = {'login': 'test_data',
                            'firstname': 'test_data'}
     item_id = 1
@@ -31,9 +31,9 @@ async def test_patch_success(authenticated_client_with_db, test_db_session,
         prefix = router.prefix
         if prefix == '/drinks':
             source = drink_data
-        if prefix == '/items':
+        elif prefix == '/items':
             source = item_data
-        if prefix == '/customers':
+        elif prefix == '/customers':
             source = customer_data
         else:
             source = test_data
@@ -46,4 +46,6 @@ async def test_patch_success(authenticated_client_with_db, test_db_session,
         response_data = response.json()
         assert response_data["id"] == item_id
         for key, val in source.items():
-            assert response_data[key] == val, f'{response_data[key]} != {val}'
+            if response_data.get(key) != val:
+                jprint(response_data)
+            assert response_data.get(key) == val, f'{prefix=}, {key=}, {val=} {response_data.get(key)=}'

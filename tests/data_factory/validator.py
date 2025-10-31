@@ -1,6 +1,6 @@
 from app.support.warehouse.schemas import WarehouseRead
 from app.support.customer.schemas import CustomerCreate 
-from app.support.item.schemas import ItemCreateRelations as schema
+from app.support.item.schemas import ItemCreateRelation as schema
 
 data = {
   "drink": {

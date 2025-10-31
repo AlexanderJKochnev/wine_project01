@@ -6,7 +6,6 @@ from app.core.config.project_config import settings
 import os
 
 
-
 prefix = settings.IMAGES_PREFIX
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"])
 

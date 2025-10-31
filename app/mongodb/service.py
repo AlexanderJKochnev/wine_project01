@@ -11,7 +11,7 @@ from app.mongodb.config import settings
 from app.mongodb.models import FileListResponse, FileResponse
 from app.mongodb.repository import ImageRepository
 from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
-                               remove_background)
+                               )
 
 # delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 delta = datetime.now(timezone.utc) - relativedelta(years=2)

@@ -23,6 +23,10 @@ class CountryRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class CountryReadRelation(ReadSchema, CustomReadSchema):
+    pass
+
+
 class CountryCreateRelation(CreateSchema, CustomCreateRelation):
     pass
 

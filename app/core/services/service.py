@@ -160,9 +160,7 @@ class Service(metaclass=ServiceMeta):
         Возвращает dict с результатом операции
         """
         # Получаем существующую запись
-        print(f'{model.__name__=}======{id=}======')
         existing_item = await repository.get_by_id(id, model, session)
-        print(f'+++{existing_item.to_dict()=}')
         if not existing_item:
             return {'success': False, 'message': f'Редактируемая запись {id} не найдена на сервере',
                     'error_type': 'not_found'}

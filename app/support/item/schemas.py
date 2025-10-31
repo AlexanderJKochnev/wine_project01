@@ -6,7 +6,7 @@ from pydantic import Field, model_validator, computed_field
 from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
-from app.support.drink.schemas import DrinkCreateRelations, DrinkReadApi, DrinkReadFlat
+from app.support.drink.schemas import DrinkCreateRelation, DrinkReadApi, DrinkReadFlat
 
 
 class CustomReadFlatSchema:
@@ -101,7 +101,7 @@ class CustomCreateSchema:
 
 
 class CustomCreateRelation:
-    drink: DrinkCreateRelations
+    drink: DrinkCreateRelation
     # warehouse: Optional[WarehouseCreateRelation] = None
     vol: Optional[float] = None
     price: Optional[float] = None
@@ -123,6 +123,10 @@ class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
     pass
 
 
+class ItemReadRelation(ItemRead):
+    pass
+
+
 class ItemReadPreact(ItemRead):
     pass
 
@@ -139,5 +143,5 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
     pass
 
 
-class ItemCreateRelations(BaseModel, CustomCreateRelation):
+class ItemCreateRelation(BaseModel, CustomCreateRelation):
     pass

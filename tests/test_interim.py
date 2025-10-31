@@ -9,7 +9,7 @@ from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint  # NOQA: F401
 from pydantic import ValidationError
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
-from app.support.item.schemas import ItemCreateRelations, DrinkCreateRelations  # noqa: F401
+from app.support.item.schemas import ItemCreateRelation, DrinkCreateRelation  # noqa: F401
 
 pytestmark = pytest.mark.asyncio
 
@@ -152,7 +152,7 @@ def test_jsonconverter():
     JsonConv = JsonConverter(filepath)()
     for n, (key, item) in enumerate(JsonConv.items()):
         try:
-            pymodel = ItemCreateRelations(**item)
+            pymodel = ItemCreateRelation(**item)
             back_item = pymodel.model_dump(exclude_unset=True)
             assert item == back_item, (f"валидация исходных данных не прошла. см. diff в лога. "
                                        f"скорее всего проблема в именах ключей или формате значений (int vs str)"
@@ -201,7 +201,7 @@ def test_source_constraint_data():
         try:
             if n == 1:
                 jprint(item.get('drink'))
-            drink = DrinkCreateRelations(**item.get('drink'))
+            drink = DrinkCreateRelation(**item.get('drink'))
         except ValidationError as e:
             print("Validation errors:")
             for error in e.errors():
@@ -278,6 +278,33 @@ def test_pydantic_models_register():
     result = pyschema_helper(Category, 'list', 'en')
     expected_result = 'ListViewEn'
     assert result.__name__ == expected_result, result.__name__
+
+
+def test_pyschema_list():
+    from app.core.schemas.base import PYDANTIC_MODELS
+    mandatory_sets = ['Read',
+                      'Create',
+                      'Update',
+                      'CreateRelation',
+                      'ReadRelation']
+    model_list = ['Category',
+                  'Country',
+                  'Drink',
+                  'Food',
+                  'Item',
+                  'Region',
+                  'Subcategory',
+                  'Subregion',
+                  'Sweetness',
+                  'Varietal']
+    mandatory_schema = [f'{model}{schema}' for model in model_list for schema in mandatory_sets]
+    current_schemas = [key.__name__ for key in PYDANTIC_MODELS]
+    missed_schemas = [schema for schema in mandatory_schema if schema not in current_schemas]
+    if missed_schemas:
+        for key in missed_schemas:
+            print(f'{key}')
+        assert False
+    assert True
 
 
 def test_repository_register():

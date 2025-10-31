@@ -1,7 +1,6 @@
 # app/core/schemas/preact_mixin.py
-from pydantic import computed_field, Field
-from typing import Optional
-from app.core.schemas.base import BaseModel, NameExcludeSchema
+from pydantic import computed_field
+from app.core.schemas.base import NameExcludeSchema
 
 
 class PreactLangMixin(NameExcludeSchema):

@@ -1,12 +1,10 @@
-#   app/core/config/database/db_mongo.py
 # app/core/config/database/db_amongo.py
-# database.py
+# не используется проверить и удалтить
+
 from typing import AsyncGenerator
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from fastapi import Depends, HTTPException
-from app.core.config.database.mongo_config import settings  # твой файл с настройками
-
-
+from fastapi import HTTPException
+from app.core.config.database.mongo_config import settings
 # --- Глобальные переменные ---
 _client: AsyncIOMotorClient | None = None
 

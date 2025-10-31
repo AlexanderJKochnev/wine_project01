@@ -9,7 +9,7 @@ from app.core.routers.base import BaseRouter
 from app.core.schemas.base import PaginatedResponse
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate, ItemCreateRelations,
+from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation,
                                       ItemCreateResponseSchema)
 from app.support.item.service import ItemService
 from app.mongodb.service import ImageService
@@ -30,7 +30,7 @@ class ItemRouter(BaseRouter):
             prefix=prefix,
             tags=tags,
             create_response_schema=ItemCreateResponseSchema,
-            create_schema_relation=ItemCreateRelations,
+            create_schema_relation=ItemCreateRelation,
             service=ItemService
         )
         self.image_service: ImageService = Depends()
@@ -58,7 +58,7 @@ class ItemRouter(BaseRouter):
                     session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         return await super().patch(id, data, session)
 
-    async def create_relation(self, data: ItemCreateRelations,
+    async def create_relation(self, data: ItemCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         result = await super().create_relation(data, session)
         return result
@@ -88,7 +88,7 @@ class ItemRouter(BaseRouter):
             raise HTTPException(status_code=422, detail=e)
 
     async def create_relation_image(self,
-                                    data: str = Form(..., description="JSON string of DrinkCreateRelations"),
+                                    data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
                                     image_service: ImageService = Depends()
@@ -102,7 +102,7 @@ class ItemRouter(BaseRouter):
         """
         try:
             data_dict = json.loads(data)
-            item_data = ItemCreateRelations(**data_dict)
+            item_data = ItemCreateRelation(**data_dict)
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
         except ValidationError as e:

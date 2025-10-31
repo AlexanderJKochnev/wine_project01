@@ -120,6 +120,10 @@ class FoodRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class FoodReadRelation(FoodRead):
+    pass
+
+
 class FoodCreateRelation(CreateSchema, CustomCreateRelation):
     pass
 

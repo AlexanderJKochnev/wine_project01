@@ -43,7 +43,7 @@ class UserRepository(Repository):
     async def get_superuser_by_username(cls, username: str, session: AsyncSession):
         from sqlalchemy import select
         stmt = select(User).where(User.username == username,
-                                  User.is_superuser == True,
-                                  User.is_active == True)
+                                  User.is_superuser == True,  # NOQA: E712
+                                  User.is_active == True)    # NOQA: E712
         result = await session.execute(stmt)
         return result.scalar_one_or_none()

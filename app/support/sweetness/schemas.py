@@ -23,6 +23,10 @@ class SweetnessRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class SweetnessReadRelation(SweetnessRead):
+    pass
+
+
 class SweetnessCreateRelation(CreateSchema, CustomCreateRelation):
     pass
 

@@ -12,29 +12,18 @@ from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
-from app.support.drink.repository import DrinkRepository
-from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelations, DrinkCreateResponseSchema,
+from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelation, DrinkCreateResponseSchema,
                                        DrinkFoodLinkUpdate, DrinkRead, DrinkReadApi, DrinkUpdate,
-                                       DrinkReadFlat)
-from app.support.drink.service import DrinkService
+                                       )
 
 
 class DrinkRouter(BaseRouter):
-    def __init__(self, prefix: str = '/drinks', tags=['drinks']):
+    def __init__(self, prefix: str = '/drinks'):
         self.read_api_schema = DrinkReadApi
         super().__init__(
             model=Drink,
-            repo=DrinkRepository,
-            create_schema=DrinkCreate,
-            read_schema=DrinkReadFlat,
-            create_schema_relation=DrinkCreateRelations,
-            create_response_schema=DrinkCreateResponseSchema,
-            path_schema=DrinkUpdate,
-            prefix=prefix,
-            tags=tags,
-            service=DrinkService
-        )
-        self.image_service: ImageService = Depends()
+            prefix=prefix)
+        # self.image_service: ImageService = Depends()
 
     def setup_routes(self):
         super().setup_routes()
@@ -73,7 +62,7 @@ class DrinkRouter(BaseRouter):
         result = await super().create(data, session)
         return result
 
-    async def create_relation(self, data: DrinkCreateRelations,
+    async def create_relation(self, data: DrinkCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> DrinkRead:
         result = await super().create_relation(data, session)
         return result
@@ -83,7 +72,7 @@ class DrinkRouter(BaseRouter):
         return await super().patch(id, data, session)
 
     async def create_relation_image(self,
-                                    data: str = Form(..., description="JSON string of DrinkCreateRelations"),
+                                    data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
                                     image_service: ImageService = Depends()
@@ -95,7 +84,7 @@ class DrinkRouter(BaseRouter):
         """
         try:
             data_dict = json.loads(data)
-            drink_data = DrinkCreateRelations(**data_dict)
+            drink_data = DrinkCreateRelation(**data_dict)
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
         except ValidationError as e:
