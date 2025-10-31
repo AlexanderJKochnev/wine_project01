@@ -9,9 +9,8 @@ from app.core.routers.base import BaseRouter
 from app.core.schemas.base import PaginatedResponse
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation,
+from app.support.item.schemas import (ItemCreate, ItemUpdate, ItemCreateRelation,
                                       ItemCreateResponseSchema)
-from app.support.item.service import ItemService
 from app.mongodb.service import ImageService
 from app.core.config.project_config import get_paging
 
@@ -20,18 +19,11 @@ paging = get_paging
 
 
 class ItemRouter(BaseRouter):
-    def __init__(self, prefix: str = '/items', tags=['items']):
+    def __init__(self, prefix: str = '/items', **kwargs):
         super().__init__(
             model=Item,
-            repo=ItemRepository,
-            create_schema=ItemCreate,
-            read_schema=ItemRead,
-            path_schema=ItemUpdate,
             prefix=prefix,
-            tags=tags,
-            create_response_schema=ItemCreateResponseSchema,
-            create_schema_relation=ItemCreateRelation,
-            service=ItemService
+            repo=ItemRepository
         )
         self.image_service: ImageService = Depends()
 

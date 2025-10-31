@@ -183,6 +183,11 @@ class DeleteResponse(BaseModel):
     deleted_count: int = 1
     message: str
 
+
+class UpdateResponse(BaseModel):
+    success: bool
+    updated_id: int
+    message: str
 # ---------------------NEW VIEWS--------------------------
 
 

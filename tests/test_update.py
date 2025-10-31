@@ -22,7 +22,8 @@ async def test_patch_success(authenticated_client_with_db, test_db_session,
                         'description_ru': 'обновленные данные',
                         'title_ru': 'обновленные данные title'}
     item_data: dict = {'vol': 1.0,
-                       'price': 1.0}
+                       'price': 1.0,
+                       'image_path': 'image_pathe updated'}
     customer_data: dict = {'login': 'test_data',
                            'firstname': 'test_data'}
     item_id = 1

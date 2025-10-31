@@ -2,11 +2,10 @@
 from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Type
-
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-
+from app.core.schemas.base import BaseModel
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
 

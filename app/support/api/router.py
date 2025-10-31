@@ -33,7 +33,7 @@ data = Data(prefix=settings.API_PREFIX,
 
 class ApiRouter(ItemRouter):
     def __init__(self):
-        super().__init__(prefix='/api', tags=['api'])
+        super().__init__(prefix='/api')
         # self.prefix = data.prefix
         # self.tags = data.prefix
 

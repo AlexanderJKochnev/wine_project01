@@ -47,13 +47,11 @@ class Repository(metaclass=RepositoryMeta):
         :param data: изменения в редактируемую запись
         """
         try:
-            # print('===before==', obj.to_dict())
             for k, v in data.items():
                 if hasattr(obj, k):
                     setattr(obj, k, v)
             await session.commit()
             await session.refresh(obj)
-            # print('===after==', obj.to_dict())
             return obj
         except IntegrityError as e:
             await session.rollback()
