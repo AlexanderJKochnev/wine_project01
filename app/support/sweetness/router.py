@@ -5,25 +5,15 @@ from fastapi import Depends
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.sweetness.model import Sweetness
-from app.support.sweetness.repository import SweetnessRepository
 from app.support.sweetness.schemas import (SweetnessRead, SweetnessCreate,
                                            SweetnessUpdate, SweetnessCreateRelation, SweetnessCreateResponseSchema)
-from app.support.sweetness.service import SweetnessService
 
 
 class SweetnessRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Sweetness,
-            repo=SweetnessRepository,
-            create_schema=SweetnessCreate,
-            read_schema=SweetnessRead,
-            path_schema=SweetnessUpdate,
             prefix="/sweetnesses",
-            tags=["sweetnesses"],
-            service=SweetnessService,
-            create_schema_relation=SweetnessCreateRelation,
-            create_response_schema=SweetnessCreateResponseSchema
         )
 
     async def create(self, data: SweetnessCreate,
