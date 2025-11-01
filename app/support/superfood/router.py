@@ -5,24 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.superfood.model import Superfood
-from app.support.superfood.repository import SuperfoodRepository
-from app.support.superfood.schemas import (SuperfoodCreate, SuperfoodRead, SuperfoodCreateRelation,
+from app.support.superfood.schemas import (SuperfoodCreate, SuperfoodRead,
                                            SuperfoodUpdate, SuperfoodCreateResponseSchema)
-from app.support.superfood.service import SuperfoodService
 
 
 class SuperfoodRouter(BaseRouter):  # [SuperfoodCreate, SuperfoodUpdate, SuperfoodRead]):
     def __init__(self):
         super().__init__(
             model=Superfood,
-            repo=SuperfoodRepository,
-            create_schema=SuperfoodCreate,
-            read_schema=SuperfoodRead,
-            path_schema=SuperfoodUpdate,
-            create_schema_relation=SuperfoodCreateRelation,
-            create_response_schema=SuperfoodCreateResponseSchema, prefix="/superfoods",
-            tags=["superfoods"],
-            service=SuperfoodService
+            prefix="/superfoods",
         )
 
     async def create(self, data: SuperfoodCreate,

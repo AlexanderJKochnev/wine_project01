@@ -2,7 +2,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Type
 from app.core.services.service import Service
-from app.support.superfood.router import (Superfood, SuperfoodRepository, SuperfoodService)
+from app.support.superfood.model import Superfood
+from app.support.superfood.repository import SuperfoodRepository
+from app.support.superfood.service import SuperfoodService
 from app.support.food.model import Food
 from app.support.food.repository import FoodRepository
 from app.support.food.schemas import FoodCreate, FoodCreateRelation, FoodRead
