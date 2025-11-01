@@ -4,8 +4,10 @@ from app.core.services.service import Service
 from app.support.country.model import Country
 from app.support.country.repository import CountryRepository
 from app.support.country.service import CountryService
-from app.support.region.router import (Region, RegionCreate, RegionCreateRelation, RegionRead, RegionRepository,
-                                       RegionService)
+from app.support.region.model import Region
+from app.support.region.schemas import RegionCreate, RegionCreateRelation, RegionRead
+from app.support.region.repository import RegionRepository
+from app.support.region.service import RegionService
 from app.support.subregion.model import Subregion
 from app.support.subregion.schemas import SubregionCreate
 from app.support.subregion.repository import SubregionRepository

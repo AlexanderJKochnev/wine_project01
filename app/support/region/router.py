@@ -6,25 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.region.model import Region
-from app.support.region.repository import RegionRepository
 from app.support.region.schemas import (RegionCreate, RegionRead, RegionUpdate, RegionCreateRelation,
                                         RegionCreateResponseSchema)
-from app.support.region.service import RegionService
 
 
 class RegionRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Region,
-            repo=RegionRepository,
-            create_schema=RegionCreate,
-            read_schema=RegionRead,
-            path_schema=RegionUpdate,
             prefix="/regions",
-            tags=["regions"],
-            service=RegionService,
-            create_schema_relation=RegionCreateRelation,
-            create_response_schema=RegionCreateResponseSchema
         )
         self.create_response_schema = RegionRead
 
