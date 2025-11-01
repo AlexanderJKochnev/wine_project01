@@ -7,16 +7,32 @@ from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import ModelType, Service
 from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import flatten_dict
+
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 from app.support.drink.model import Drink
 from app.support.drink.schemas import DrinkCreate, DrinkCreateRelation, DrinkRead
 from app.support.drink.repository import DrinkRepository
-from app.support.food.router import (FoodRepository, FoodService)
-from app.support.subcategory.router import (Subcategory, SubcategoryRepository, SubcategoryService)
-from app.support.subregion.router import (Subregion, SubregionRepository, SubregionService)
-from app.support.sweetness.router import (Sweetness, SweetnessRepository, SweetnessService)
-from app.support.varietal.router import (Varietal, VarietalRepository, VarietalService)
+
+from app.support.food.service import FoodService
+from app.support.food.repository import FoodRepository
+
+from app.support.subcategory.model import Subcategory
+from app.support.subcategory.repository import SubcategoryRepository
+from app.support.subcategory.service import SubcategoryService
+
+from app.support.subregion.model import Subregion
+from app.support.subregion.repository import SubregionRepository
+from app.support.subregion.service import SubregionService
+
+from app.support.sweetness.model import Sweetness
+from app.support.sweetness.repository import SweetnessRepository
+from app.support.sweetness.service import SweetnessService
+
+
+from app.support.varietal.model import Varietal
+from app.support.varietal.repository import VarietalRepository
+from app.support.varietal.service import VarietalService
 
 
 class DrinkService(Service):

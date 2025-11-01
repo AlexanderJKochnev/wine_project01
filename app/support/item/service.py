@@ -7,10 +7,11 @@ from app.core.utils.common_utils import get_value, jprint  # noqa: F401
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.mongodb.service import ImageService
 from app.support.drink.repository import DrinkRepository
-from app.support import Drink
+from app.support.drink.model import Drink
 from app.support.drink.service import DrinkService
-from app.support.item.router import Item, ItemCreate, ItemCreateRelation, ItemRepository
-from app.support.item.schemas import ItemRead
+from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead
+from app.support.item.repository import ItemRepository
+from app.support.item.model import Item
 
 
 class ItemService(Service):
