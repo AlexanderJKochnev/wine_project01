@@ -348,3 +348,24 @@ def test_service_register():
         assert service2, f'не найден service для {name} по имени'
         assert service.__name__ == f'{val.__name__}Service'
         assert service == service2, ''
+
+
+def test_list():
+    from app.core.services.service import ServiceMeta, SERVICES_REGISTER
+    regs = ServiceMeta._registry
+    service_reg = SERVICES_REGISTER
+    for n, (key, val) in enumerate(service_reg.items()):
+        print(1, n, key, val)
+
+    for n, (key, val) in enumerate(regs.items()):
+        print(2, n, key, val)
+    assert False
+
+
+
+def test_list2(authenticated_client_with_db, test_db_session):
+    from app.core.repositories.sqlalchemy_repository import RepositoryMeta
+    regs = RepositoryMeta._registry
+    for key, val in regs.items():
+        print(key, val)
+    assert False

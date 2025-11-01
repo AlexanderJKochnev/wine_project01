@@ -9,7 +9,8 @@ from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import flatten_dict
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
-from app.support.drink.router import Drink, DrinkCreate, DrinkCreateRelation, DrinkRead
+from app.support.drink.model import Drink
+from app.support.drink.schemas import DrinkCreate, DrinkCreateRelation, DrinkRead
 from app.support.drink.repository import DrinkRepository
 from app.support.food.router import (FoodRepository, FoodService)
 from app.support.subcategory.router import (Subcategory, SubcategoryRepository, SubcategoryService)
@@ -20,6 +21,7 @@ from app.support.varietal.router import (Varietal, VarietalRepository, VarietalS
 
 class DrinkService(Service):
     """ переписываем методы для обрабоки manytomany relationships """
+    __abstract__ = False
 
     @classmethod
     async def get_dict_by_id(cls, id: int, repository: Type[Repository],
@@ -63,7 +65,7 @@ class DrinkService(Service):
             drink_data['sweetness_id'] = result.id
         try:
             drink = DrinkCreate(**drink_data)
-            drink_instance = await DrinkService.get_or_create(drink, DrinkRepository, Drink, session)
+            drink_instance = await cls.get_or_create(drink, DrinkRepository, Drink, session)
             drink_id = drink_instance.id
         except Exception as e:
             print(f'drink/service/create_relation:70 {e}==========================')

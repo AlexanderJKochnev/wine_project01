@@ -8,7 +8,8 @@ from app.mongodb.service import ImageService
 from app.support.drink.router import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.service import DrinkService
-from app.support.item.router import AsyncSession, Item, ItemCreate, ItemCreateRelation, ItemRead, ItemRepository
+from app.support.item.router import AsyncSession, Item, ItemCreate, ItemCreateRelation, ItemRepository
+from app.support.item.schemas import ItemRead
 
 
 class ItemService(Service):
@@ -33,10 +34,10 @@ class ItemService(Service):
             #                                                     Warehouse, session)
             #     item_data['warehouse_id'] = result.id
             item = ItemCreate(**item_data)
-            item_instance = await ItemService.get_or_create(item, ItemRepository, Item, session)
+            item_instance = await cls.get_or_create(item, ItemRepository, Item, session)
             return item_instance
         except Exception as e:
-            raise Exception(f'ItemService.create_relation. {e}')
+            raise Exception(f'itemservice.create_relation. {e}')
 
     @classmethod
     async def direct_upload(cls, session: AsyncSession, image_service: ImageService) -> dict:
@@ -59,8 +60,8 @@ class ItemService(Service):
                     await cls.create_relation(data_model, ItemRepository, Item, session)
                     # await asyncio.sleep(0.01)
                 except Exception:
-                    # print(f'"{item.get('image_path', 'no image_path')}",')
-                    print(f'{item.get("image_path")}')
+                    print(f'"{item.get('image_path', 'no image_path')}",')
+                    # print(f'{item.get("image_path")}')
                     error_list.append(item)
                     await session.rollback()
                     continue
@@ -70,3 +71,5 @@ class ItemService(Service):
                     'error_nmbr': len(error_list)}  # {'filepath': len(dataconv)}
         except Exception as e:
             raise Exception(f'drink.service.direct_upload.error: {e}')
+
+

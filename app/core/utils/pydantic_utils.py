@@ -20,7 +20,7 @@ def get_service(model: Union[Type[DeclarativeBase], str]):
     if not isinstance(model, str):
         model = model.__name__
     return ServiceMeta._registry.get(f'{model}'.lower(), None)
-
+    # return ServiceRegistry.get(f'{model}'.lower())
 
 def get_repo(model: Union[Type[DeclarativeBase], str]):
     """

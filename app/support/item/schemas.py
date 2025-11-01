@@ -92,7 +92,6 @@ class CustomReadSchema:
 
 class CustomCreateSchema:
     drink_id: int
-    # warehouse_id: Optional[int]
     vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
@@ -112,7 +111,6 @@ class CustomCreateRelation:
 
 class CustomUpdSchema:
     drink_id: Optional[int] = None
-    # warehouse_id: Optional[int] = None
     vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
@@ -123,7 +121,7 @@ class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
     pass
 
 
-class ItemReadRelation(ItemRead):
+class ItemReadRelation(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
     pass
 
 
