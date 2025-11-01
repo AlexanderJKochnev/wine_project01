@@ -2,7 +2,9 @@
 from app.core.services.service import Service
 from app.support.warehouse.router import (Warehouse, AsyncSession, WarehouseRead,
                                           WarehouseCreate, WarehouseCreateRelation, WarehouseRepository)
-from app.support.customer.router import Customer, CustomerRepository, CustomerService
+from app.support.customer.model import Customer
+from app.support.customer.repository import CustomerRepository
+from app.support.customer.service import CustomerService
 
 
 class WarehouseService(Service):
