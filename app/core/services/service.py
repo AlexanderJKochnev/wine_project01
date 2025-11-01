@@ -194,7 +194,6 @@ class Service(metaclass=ServiceMeta):
     async def delete(cls, id: int, model: ModelType, repository: Type[Repository],
                      session: AsyncSession) -> bool:
         instance = await repository.get_by_id(id, model, session)
-        print('=========================', instance)
         if instance:
             result = await repository.delete(instance, session)
 

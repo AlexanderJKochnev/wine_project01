@@ -3,7 +3,7 @@
 from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
-from sqlalchemy.dialects import postgresql
+# from sqlalchemy.dialects import postgresql
 from sqlalchemy import and_, func, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -328,19 +328,10 @@ class Repository(metaclass=RepositoryMeta):
     async def get_list_view(cls, model: ModelType, session: AsyncSession, ) -> List[Tuple]:
         # Запрос с загрузкой связей без пагинации (для справочников)
         stmt = cls.get_query(model)
-        compiled_pg = stmt.compile(dialect=postgresql.dialect())
-        print(str(compiled_pg))
-        print('===============================')
-        # fields: dict = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
-        # print(f'{fields=}')
-        # stmt = select(*fields.values())
-        compiled_pg = stmt.compile(dialect=postgresql.dialect())
-        print(str(compiled_pg))
-        print('-------------------------------')
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect())
         result = await session.execute(stmt)
         rows = result.scalar().all()
         result = [row._mapping for row in rows]
-        # print(result)
         return result
 
     @classmethod

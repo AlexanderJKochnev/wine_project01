@@ -15,15 +15,7 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
     def __init__(self):
         super().__init__(
             model=Category,
-            repo=CategoryRepository,
-            create_schema=CategoryCreate,
-            read_schema=CategoryRead,
-            path_schema=CategoryUpdate,
-            create_schema_relation=CategoryCreateRelation,
-            create_response_schema=CategoryCreateResponseSchema,
             prefix="/categories",
-            tags=["categories"],
-            service=CategoryService
         )
 
     async def create(self, data: CategoryCreate,
