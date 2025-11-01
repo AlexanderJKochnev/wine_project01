@@ -288,7 +288,7 @@ def test_pyschema_list():
                       'Update',
                       'CreateRelation',
                       'ReadRelation,'
-                      # 'CreateResponse'
+                      'CreateResponse'
                       ]
     model_list = ['Category',
                   'Country',

@@ -20,7 +20,8 @@ from app.support.customer.model import Customer  # NOQA F401
 from app.support.varietal.schemas import VarietalRead  # NOQA F401
 from app.support.item.schemas import ItemRead  # NOQA F401
 from app.support.drink.schemas import DrinkRead  # NOQA F401
-from app.support.category.schemas import CategoryRead  # NOQA F401
+from app.support.category.schemas import (CategoryRead, CategoryReadRelation,
+                                          CategoryCreate, CategoryUpdate, CategoryCreateResponse)
 from app.support.subcategory.schemas import SubcategoryRead  # NOQA F401
 from app.support.food.schemas import FoodRead  # NOQA F401
 from app.support.superfood.schemas import SuperfoodRead  # NOQA F401
@@ -44,3 +45,6 @@ from app.support.superfood.service import SuperfoodService  # NOQA F401
 from app.support.sweetness.service import SweetnessService  # NOQA F401
 from app.support.varietal.service import VarietalService  # NOQA F401
 # from app.support.warehouse.service import WarehouseService  # NOQA F401
+
+__all__ = [CategoryRead, CategoryReadRelation, CategoryCreate, CategoryUpdate, CategoryCreateResponse
+           ]

@@ -39,5 +39,5 @@ class CategoryUpdate(UpdateSchema, CustomUpdSchema):
     pass
 
 
-class CategoryCreateResponseSchema(CategoryCreate, CreateResponse):
+class CategoryCreateResponse(CategoryCreate, CreateResponse):
     pass

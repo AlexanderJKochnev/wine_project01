@@ -9,7 +9,7 @@ from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
 
 joint = '. '
-SERVICES_REGISTER: dict = {}
+
 
 class ServiceMeta(ABCMeta):
     _registry = {}
@@ -23,7 +23,6 @@ class ServiceMeta(ABCMeta):
         if not attrs.get('__abstract__', False):
             key = name.lower().replace('service', '')
             cls._registry[key] = new_class  # ← Сохраняем класс!
-            SERVICES_REGISTER[key] = new_class
             print(f"✅ Зарегистрирован сервис: {name} -> ключ: '{key}'")
         return new_class
 
