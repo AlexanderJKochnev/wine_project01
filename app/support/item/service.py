@@ -1,14 +1,15 @@
 # app.support.item.service.py
-from app.core.services.service import Service
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.services.service import Service
 from app.core.utils.alchemy_utils import JsonConverter
 from app.core.utils.common_utils import get_value, jprint  # noqa: F401
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.mongodb.service import ImageService
-from app.support.drink.router import Drink
 from app.support.drink.repository import DrinkRepository
+from app.support import Drink
 from app.support.drink.service import DrinkService
-from app.support.item.router import AsyncSession, Item, ItemCreate, ItemCreateRelation, ItemRepository
+from app.support.item.router import Item, ItemCreate, ItemCreateRelation, ItemRepository
 from app.support.item.schemas import ItemRead
 
 
@@ -71,5 +72,3 @@ class ItemService(Service):
                     'error_nmbr': len(error_list)}  # {'filepath': len(dataconv)}
         except Exception as e:
             raise Exception(f'drink.service.direct_upload.error: {e}')
-
-

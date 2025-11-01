@@ -336,8 +336,10 @@ def test_service_register():
     """
     from app.core.utils.pydantic_utils import get_service
     from app.core.services.service import ServiceMeta
-    from app.support import Item, Subregion, Subcategory, Country
-    for m, val in enumerate([Country, Item, Subregion, Subcategory]):
+    from app.support import (Item, Subregion, Subcategory, Country,
+                             Category, Drink, Food, Region, Sweetness, Superfood, Varietal, Warehouse)
+    for m, val in enumerate([Item, Subregion, Subcategory, Country,
+                             Category, Drink, Food, Region, Sweetness, Superfood, Varietal, Warehouse]):
         name = val.__name__
         service = get_service(val)
         service2 = get_service(name)
@@ -360,7 +362,6 @@ def test_list():
     for n, (key, val) in enumerate(regs.items()):
         print(2, n, key, val)
     assert False
-
 
 
 def test_list2(authenticated_client_with_db, test_db_session):

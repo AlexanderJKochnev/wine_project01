@@ -30,3 +30,17 @@ from app.support.country.schemas import CountryRead  # NOQA F401
 from app.support.sweetness.schemas import SweetnessRead  # NOQA F401
 from app.support.warehouse.schemas import WarehouseRead  # NOQA F401
 from app.support.customer.schemas import CustomerRead  # NOQA F401
+
+from app.support.category.service import CategoryService  # NOQA F401
+from app.support.country.service import CountryService  # NOQA F401
+from app.support.item.service import ItemService  # NOQA F401
+from app.support.customer.service import CustomerService  # NOQA F401
+from app.support.drink.service import DrinkService  # NOQA F401
+from app.support.food.service import FoodService  # NOQA F401
+from app.support.region.service import RegionService  # NOQA F401
+from app.support.subcategory.service import SubcategoryService  # NOQA F401
+from app.support.subregion.service import SubregionService  # NOQA F401
+from app.support.superfood.service import SuperfoodService  # NOQA F401
+from app.support.sweetness.service import SweetnessService  # NOQA F401
+from app.support.varietal.service import VarietalService  # NOQA F401
+# from app.support.warehouse.service import WarehouseService  # NOQA F401
