@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.category.model import Category
-from app.support.category.repository import CategoryRepository
-from app.support.category.schemas import (CategoryCreate, CategoryRead, CategoryCreateRelation,
+# from app.support.category.repository import CategoryRepository
+from app.support.category.schemas import (CategoryCreate, CategoryRead,  # CategoryCreateRelation,
                                           CategoryUpdate, CategoryCreateResponseSchema)
-from app.support.category.service import CategoryService
+# from app.support.category.service import CategoryService
 
 
 class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRead]):
