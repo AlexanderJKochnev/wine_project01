@@ -30,6 +30,10 @@ class WarehouseRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class WarehouseReadRelation(ReadSchema, CustomReadSchema):
+    pass
+
+
 class WarehouseCreate(CreateSchema, CustomCreateSchema):
     pass
 

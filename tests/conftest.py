@@ -458,6 +458,7 @@ async def mock_engine(mock_db_url):
     )
     # Создает все таблицы в базе данных
     async with engine.begin() as conn:
+        # сбрасывает базу данных перед тестированием
         # await conn.run_sync(Base.metadata.drop_all, checkfirst=False, cascade=True)
         await conn.execute(text("DROP SCHEMA public CASCADE;"))
         await conn.execute(text("CREATE SCHEMA public;"))

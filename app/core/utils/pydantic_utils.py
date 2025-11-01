@@ -7,7 +7,7 @@ from pydantic import BaseModel, create_model
 from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
-from app.core.schemas.base import PaginatedResponse, PYDANTIC_MODELS, PyModel
+from app.core.schemas.base import PaginatedResponse, SchemaMeta, PyModel
 from app.core.repositories.sqlalchemy_repository import RepositoryMeta
 from app.core.services.service import ServiceMeta
 
@@ -22,6 +22,7 @@ def get_service(model: Union[Type[DeclarativeBase], str]):
     return ServiceMeta._registry.get(f'{model}'.lower(), None)
     # return ServiceRegistry.get(f'{model}'.lower())
 
+
 def get_repo(model: Union[Type[DeclarativeBase], str]):
     """
     получение репозитория по имени
@@ -34,6 +35,16 @@ def get_repo(model: Union[Type[DeclarativeBase], str]):
     # return result
 
 
+def get_pyschema2(model: Union[Type[DeclarativeBase], str], schema: str, lang: str = None) -> PyModel:
+    """
+        получение Pydantic schemas по модели/имени модели  и типу схемы
+    """
+    if not isinstance(model, str):
+        model = model.__name__
+    schema_name = f'{model}{schema}{lang}'.lower() if lang else f'{model}{schema}'.lower()
+    return ServiceMeta._registry.get(schema_name, None)
+
+
 def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
     """
         получение pydantic schema по ее имени:
@@ -41,18 +52,17 @@ def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
         default: дефолтное имя (не у всех схем есть кастомизированные схемы, в этом случае берем базовую
     """
     def_schema = None
-    for schema in PYDANTIC_MODELS:
-        if schema.__name__.lower() == name.lower():
+    for scname, schema in SchemaMeta._registry.items():
+        if scname == name.lower():
             return schema
-        if schema.__name__.lower() == default.lower():
+        if scname == default.lower():
             def_schema = schema
-            print('========', name)
     return def_schema
 
 
 def pyschema_helper(model: Type[DeclarativeBase], schema_type: str, lang: str = None) -> PyModel:
     """
-    по лучение py схемы для alchemy model по назначению (schema_type)
+    получение py схемы для alchemy model по назначению (schema_type)
     :param model:
     :param schema_type:
     """

@@ -7,7 +7,7 @@ from app.core.routers.base import BaseRouter
 from app.support.category.model import Category
 from app.support.category.repository import CategoryRepository
 from app.support.category.schemas import (CategoryCreate, CategoryRead, CategoryCreateRelation,
-                                          CategoryUpdate, CategoryCreateResponse)
+                                          CategoryUpdate, CategoryCreateResponseSchema)
 from app.support.category.service import CategoryService
 
 
@@ -20,18 +20,18 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
             read_schema=CategoryRead,
             path_schema=CategoryUpdate,
             create_schema_relation=CategoryCreateRelation,
-            create_response_schema=CategoryCreateResponse,
+            create_response_schema=CategoryCreateResponseSchema,
             prefix="/categories",
             tags=["categories"],
             service=CategoryService
         )
 
     async def create(self, data: CategoryCreate,
-                     session: AsyncSession = Depends(get_db)) -> CategoryCreateResponse:
+                     session: AsyncSession = Depends(get_db)) -> CategoryCreateResponseSchema:
         return await super().create(data, session)
 
     async def patch(self, id: int, data: CategoryUpdate,
-                    session: AsyncSession = Depends(get_db)) -> CategoryCreateResponse:
+                    session: AsyncSession = Depends(get_db)) -> CategoryCreateResponseSchema:
         return await super().patch(id, data, session)
 
     async def create_relation(self, data: CategoryCreate,

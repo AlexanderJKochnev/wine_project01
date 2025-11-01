@@ -22,7 +22,7 @@ async def test_get_all(authenticated_client_with_db, test_db_session,
     routers = simple_router_list + complex_router_list
     expected_response = PaginatedResponse.model_fields.keys()
     client = authenticated_client_with_db
-    for router_class in routers:
+    for router_class in reversed(routers):
         router = router_class()
         prefix = router.prefix
         response = await client.get(f'{prefix}')

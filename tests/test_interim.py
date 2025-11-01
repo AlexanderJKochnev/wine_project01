@@ -355,21 +355,38 @@ def test_service_register():
         assert service == service2, ''
 
 
-def test_list():
-    from app.core.services.service import ServiceMeta, SERVICES_REGISTER
-    regs = ServiceMeta._registry
-    service_reg = SERVICES_REGISTER
-    for n, (key, val) in enumerate(service_reg.items()):
-        print(1, n, key, val)
-
-    for n, (key, val) in enumerate(regs.items()):
-        print(2, n, key, val)
-    assert False
-
-
-def test_list2(authenticated_client_with_db, test_db_session):
-    from app.core.repositories.sqlalchemy_repository import RepositoryMeta
-    regs = RepositoryMeta._registry
-    for key, val in regs.items():
-        print(key, val)
-    assert False
+def test_pyschema_register():
+    """
+    проверяем как действует регистр services
+    :return:
+    :rtype:
+    """
+    from app.core.utils.pydantic_utils import get_pyschema2
+    from app.core.schemas.base import SchemaMeta
+    from app.support import (Item, Subregion, Subcategory, Country,
+                             Category, Drink, Food, Region, Sweetness, Superfood, Varietal, Warehouse)
+    schemas = ['Read',
+               'Create',
+               'Update',
+               'CreateRelation',
+               'ReadRelation',
+               'CreateResponseSchema',
+               # 'ListViewRu',
+               # 'ListViewFr',
+               # 'ListViewEn',
+               # 'DetailViewRu',
+               # 'DetailViewFr',
+               # 'DetailViewEn'
+               ]
+    models = [Subregion, Subcategory, Country, Category, Drink, Food, Region, Sweetness, Superfood, Varietal,
+              Warehouse, Item]
+    register = list(SchemaMeta._registry.keys())
+    # direct from register
+    schemas_name = [f'{model.__name__}{schema}' for model in models for schema in schemas]
+    result = [name for name in schemas_name if name.lower() not in register]
+    if result:
+        print(len(result))
+        jprint(sorted(result))
+        print('--------------------')
+        # jprint(sorted(register))
+        assert False

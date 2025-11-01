@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from fastapi import Body, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.pydantic_utils import sqlalchemy_to_pydantic_post
+from app.core.utils.pydantic_utils import sqlalchemy_to_pydantic_post, pyschema_helper
 from app.core.config.database.db_async import get_db
 from app.preact.core.router import PreactRouter
 
@@ -14,7 +14,8 @@ class CreateRouter(PreactRouter):
 
     def __set_schema__(self, model):
         """ создает Create схему для response_model """
-        setattr(self, f'{model.__name__}Create', sqlalchemy_to_pydantic_post(model))
+        setattr(self, f'{model.__name__}Create', pyschema_helper(model, 'create'))
+        # setattr(self, f'{model.__name__}Create', sqlalchemy_to_pydantic_post(model))
 
     def __get_schemas__(self, model):
         """ получает ранее созданную Create схему """

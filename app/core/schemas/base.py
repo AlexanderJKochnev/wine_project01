@@ -20,15 +20,23 @@ from pydantic import BaseModel as BaseOrigin, ConfigDict, Field
 PYDANTIC_MODELS: Set[Type[BaseOrigin]] = set()
 
 
-class ModelRegistryMeta(type(BaseOrigin)):
-    def __new__(mcs, name, bases, namespace, **kwargs):
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        if name not in ("BaseModel", "BaseOrigin"):  # избегаем добавления самого BaseModel
-            PYDANTIC_MODELS.add(cls)
-        return cls
+class SchemaMeta(type(BaseOrigin)):
+    _registry = {}
+
+    def __new__(cls, name, bases, attrs, **kwargs):
+        if not hasattr(cls, '_registry'):
+            cls._registry = {}
+
+        new_class = super().__new__(cls, name, bases, attrs)
+        # Регистрируем сам класс, а не его экземпляр
+        if not attrs.get('__abstract__', False):
+            key = name.lower()
+            cls._registry[key] = new_class  # ← Сохраняем класс!
+            print(f"✅ Зарегистрирована схема: {name} -> ключ: '{key}'")
+        return new_class
 
 
-class BaseModel(BaseOrigin, metaclass=ModelRegistryMeta):
+class BaseModel(BaseOrigin, metaclass=SchemaMeta):
     """
          вводим метод для получения только обязательных полей
     """
@@ -166,7 +174,7 @@ class CreateResponse(PkSchema, DateSchema):
     pass
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse(BaseOrigin, Generic[T]):
     """
     использовать в endpoints - вместо Generic[T] подствлять <model>Read
     """

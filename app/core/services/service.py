@@ -23,7 +23,7 @@ class ServiceMeta(ABCMeta):
         if not attrs.get('__abstract__', False):
             key = name.lower().replace('service', '')
             cls._registry[key] = new_class  # ← Сохраняем класс!
-            print(f"✅ Зарегистрирован сервис: {name} -> ключ: '{key}'")
+            # print(f"✅ Зарегистрирован сервис: {name} -> ключ: '{key}'")
         return new_class
 
 

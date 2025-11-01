@@ -23,6 +23,10 @@ class SuperfoodRead(ReadSchema, CustomReadSchema):
     pass
 
 
+class SuperfoodReadRelation(ReadSchema, CustomCreateRelation):
+    pass
+
+
 class SuperfoodCreateRelation(CreateSchema, CustomCreateRelation):
     pass
 
