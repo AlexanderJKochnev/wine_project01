@@ -281,12 +281,15 @@ def test_pydantic_models_register():
 
 
 def test_pyschema_list():
+    """ сверяет каких pydantic схем нехватает """
     from app.core.schemas.base import PYDANTIC_MODELS
     mandatory_sets = ['Read',
                       'Create',
                       'Update',
                       'CreateRelation',
-                      'ReadRelation']
+                      'ReadRelation,'
+                      # 'CreateResponse'
+                      ]
     model_list = ['Category',
                   'Country',
                   'Drink',
@@ -330,7 +333,7 @@ def test_repository_register():
 
 def test_service_register():
     """
-    проверяем как действует регистр репозиториев
+    проверяем как действует регистр services
     :return:
     :rtype:
     """
