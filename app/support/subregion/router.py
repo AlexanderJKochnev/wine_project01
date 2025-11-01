@@ -6,25 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.subregion.model import Subregion
-from app.support.subregion.repository import SubregionRepository
-from app.support.subregion.schemas import (SubregionCreate, SubregionRead, SubregionUpdate,
+from app.support.subregion.schemas import (SubregionCreate, SubregionUpdate,
                                            SubregionCreateRelation, SubregionCreateResponseSchema)
-from app.support.subregion.service import SubregionService
 
 
 class SubregionRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Subregion,
-            repo=SubregionRepository,
-            create_schema=SubregionCreate,
-            read_schema=SubregionRead,
-            path_schema=SubregionUpdate,
             prefix="/subregions",
-            tags=["subregions"],
-            service=SubregionService,
-            create_schema_relation=SubregionCreateRelation,
-            create_response_schema=SubregionCreateResponseSchema
         )
         """self.create_response_schema = SubregionRead
         try:
