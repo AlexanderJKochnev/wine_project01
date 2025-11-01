@@ -115,6 +115,7 @@ class CustomUpdSchema:
     price: Optional[float] = None
     count: Optional[int] = 0
     image_path: Optional[str] = None
+    image_id: Optional[str] = None
 
 
 class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):

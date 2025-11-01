@@ -22,14 +22,15 @@ async def test_patch_success(authenticated_client_with_db, test_db_session,
                         'description_ru': 'обновленные данные',
                         'title_ru': 'обновленные данные title'}
     item_data: dict = {'vol': 1.0,
-                       'price': 1.0,
-                       'image_path': 'image_pathe updated'}
+                       # 'price': 1.0,   # this field is muted in read_relation schema
+                       'image_id': 'image_pathe updated'}
     customer_data: dict = {'login': 'test_data',
                            'firstname': 'test_data'}
     item_id = 1
     for router_class in routers:
         router = router_class()
         prefix = router.prefix
+        # read_schema_relations = router.read_schema_relation
         if prefix == '/drinks':
             source = drink_data
         elif prefix == '/items':
