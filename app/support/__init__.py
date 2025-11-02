@@ -47,7 +47,9 @@ from app.support.superfood.service import SuperfoodService  # NOQA F401
 from app.support.sweetness.service import SweetnessService  # NOQA F401
 from app.support.varietal.service import VarietalService  # NOQA F401
 # from app.support.warehouse.service import WarehouseService  # NOQA F401
+from app.support.warehouse.repository import WarehouseRepository
+
 
 __all__ = [CategoryRead, CategoryReadRelation, CategoryCreate, CategoryUpdate, CategoryCreateResponseSchema,
-           ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation, ItemReadRelation
+           ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation, ItemReadRelation, WarehouseRepository
            ]

@@ -173,6 +173,39 @@ async def test_get_routers(authenticated_client_with_db, test_db_session,
         assert result['id'] == id, result['id']
 
 
+async def test_path_routers(authenticated_client_with_db, test_db_session,
+                            fakedata_generator):
+    """ тестирование route path """
+    from app.preact.get.router import GetRouter
+    from app.preact.patch.router import PatchRouter
+    # from app.core.utils.common_utils import jprint
+    client = authenticated_client_with_db
+    router = GetRouter()
+    router2 = PatchRouter()
+    id = 1   # ищем первую запись
+    prefix = router.prefix
+    prefix2 = router2.prefix
+    subprefix = [key for key, val in router2.source.items()]
+    test_set = [f'/{a}' for a in subprefix]
+    for pref in test_set:
+        # get_by_id
+        response = await client.get(f'{prefix}{pref}/en/{id}')
+        assert response.status_code == 200, f'{prefix}{pref}/en/{id} | {response.text}'
+        result = response.json()
+        print('-----', result)
+        result.pop('id')
+        expected_data = 'updated_data'
+        data = {key: expected_data for key, val in result.items() if isinstance(val, str)}
+        prefi = f'{prefix2}{pref}/{id}'
+        response = await client.patch(prefi, json=data)
+        assert response.status_code == 200, f'{prefi} |  | {response.text}'
+        result = response.json()
+        result_dict = {key: val for key, val in result.items() if isinstance(val, str) and val != expected_data}
+        if result_dict:
+            jprint(result_dict)
+            assert False, f'ошибка обновления {prefix2}{pref}/{id}'
+
+
 async def test_delete_routers(authenticated_client_with_db, test_db_session,
                               fakedata_generator):
     """  запускаем после test_create_routers """

@@ -1,7 +1,9 @@
 # app.support.warehouse.service.py
 from app.core.services.service import Service
-from app.support.warehouse.router import (Warehouse, AsyncSession, WarehouseRead,
-                                          WarehouseCreate, WarehouseCreateRelation, WarehouseRepository)
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.support.warehouse.model import Warehouse
+from app.support.warehouse.schemas import WarehouseCreate, WarehouseCreateRelation, WarehouseRead
+from app.support.warehouse.repository import WarehouseRepository
 from app.support.customer.model import Customer
 from app.support.customer.repository import CustomerRepository
 from app.support.customer.service import CustomerService

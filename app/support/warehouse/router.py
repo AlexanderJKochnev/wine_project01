@@ -4,7 +4,7 @@ from fastapi import Depends
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.warehouse.model import Warehouse
-from app.support.warehouse.repository import WarehouseRepository
+# from app.support.warehouse.repository import WarehouseRepository
 from app.support.warehouse.schemas import (WarehouseRead, WarehouseCreate, WarehouseUpdate,
                                            WarehouseCreateRelation, WarehouseCreateResponseSchema)
 from app.support.warehouse.service import WarehouseService
@@ -14,15 +14,11 @@ class WarehouseRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Warehouse,
-            repo=WarehouseRepository,
-            create_schema=WarehouseCreate,
-            read_schema=WarehouseRead,
-            path_schema=WarehouseUpdate,
             prefix="/warehouses",
-            tags=["warehouses"],
-            service=WarehouseService,
-            create_schema_relation=WarehouseCreateRelation,
-            create_response_schema=WarehouseCreateResponseSchema
+            # tags=["warehouses"],
+            # service=WarehouseService,
+            # create_schema_relation=WarehouseCreateRelation,
+            # create_response_schema=WarehouseCreateResponseSchema
         )
 
     async def create(self, data: WarehouseCreate,

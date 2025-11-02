@@ -12,7 +12,7 @@ class DeleteRouter(PreactRouter):
     def __init__(self):
         super().__init__(prefix='delete', method='DELETE', tier=2)
 
-    def __get_prepaire__(self, key: str, model: Type[DeclarativeBase], lang: str) -> tuple:
+    def __get_prepaire__(self, key: str, model: Type[DeclarativeBase]) -> tuple:
         """
         get the prefix & responsible pydantic model
         :param key:     self.source.key
@@ -23,6 +23,12 @@ class DeleteRouter(PreactRouter):
         prefix = f'/{key}' + '/{id}'
         response_model = DeleteResponse
         return (prefix, response_model)
+
+    def __source_generator__(self, source: dict, langs: list):
+        """
+        генератор для создания роутов
+        """
+        return (self.__get_prepaire__(key, val) for key, val in source.items())
 
     async def endpoint(self, request: Request, id: int,
                        session: AsyncSession = Depends(get_db)) -> DeleteResponse:

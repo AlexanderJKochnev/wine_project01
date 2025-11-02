@@ -1,25 +1,25 @@
-# app/preact/create/router.py
-from typing import Any, Dict
-
-from fastapi import Body, Depends, HTTPException, Request
+# app/preact/path/router.py
+from fastapi import Request, Depends, Body, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.pydantic_utils import pyschema_helper
-from app.core.config.database.db_async import get_db
 from app.preact.core.router import PreactRouter
+from app.core.config.database.db_async import get_db
+from typing import Dict, Any
+from app.core.utils.pydantic_utils import pyschema_helper
+# from app.core.models.base_model import DeclarativeBase
 
 
-class CreateRouter(PreactRouter):
+class PatchRouter(PreactRouter):
     def __init__(self):
-        super().__init__(prefix='create', method='POST', tier=2)
+        super().__init__(prefix='path', method='PATH', tier=3)
 
     def __set_schema__(self, model):
-        """ создает Create схему для response_model """
-        setattr(self, f'{model.__name__}Create', pyschema_helper(model, 'create'))
-        # setattr(self, f'{model.__name__}Create', sqlalchemy_to_pydantic_post(model))
+        """  находит  Update схему для response_model """
+        setattr(self, f'{model.__name__}Update', pyschema_helper(model, 'update'))
+        # setattr(self, f'{model.__name__}Update', sqlalchemy_to_pydantic_post(model))
 
     def __get_schemas__(self, model):
         """ получает ранее созданную Create схему """
-        return getattr(self, f'{model.__name__}Create')
+        return getattr(self, f'{model.__name__}Update')
 
     def schemas_generator(self, source: dict):
         """ генератор pydantic схем """
@@ -43,11 +43,13 @@ class CreateRouter(PreactRouter):
             repo = self.get_repo(model)
             service = self.get_service(model)
             model_data = schema(**data)
-            obj = await service.get_or_create(model_data, repo, model, session)
-            return obj
+            # obj = await service.patch(id, model_data, repo, model, session)
+            result = await service.patch(id, data, repo, model, session)
+            print(result, '===============================')
+            return result
         except Exception as e:
             await session.rollback()
             raise HTTPException(
                 status_code=505,
-                detail=f'Create Fault, {e}'
+                detail=f'Update fault, {e}'
             )

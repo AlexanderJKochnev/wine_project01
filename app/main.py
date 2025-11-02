@@ -13,6 +13,7 @@ from app.preact.create.router import CreateRouter
 from app.preact.get.router import GetRouter
 from app.preact.delete.router import DeleteRouter
 from app.preact.handbook.router import HandbookRouter
+from app.preact.patch.router import PatchRouter
 from app.support.api.router import ApiRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
@@ -58,6 +59,7 @@ app.include_router(HandbookRouter().router)
 app.include_router(CreateRouter().router)
 app.include_router(GetRouter().router)
 app.include_router(DeleteRouter().router)
+app.include_router(PatchRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 
