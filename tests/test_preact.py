@@ -13,116 +13,9 @@ from app.core.utils.common_utils import jprint  # NOQA: F401
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.skip
-async def test_service_get_non_orm_compile(mock_engine):
-    """
-        тестирование sql кода (не работает для вложенных моделей - не пытайся
-        просто проверить правильно ли генерируются имена полей
-        для полного тестирования см следующий тест
-    """
-
-    from app.preact import GetRouter, get_lang_prefix
-    from app.core.utils.alchemy_utils import get_id_field
-    from sqlalchemy.dialects import postgresql
-    # engine = mock_engine
-    # service = Service
-    router = GetRouter()
-    expected_id = 1
-    for prefix, tag, function in router.__source_generator__(router.source, router.languages):
-        path = f'{router.prefix}/{prefix}/{expected_id}'
-        mod, lang = router.__path_decoder__(path)
-        models = router.source.get(mod)
-        # if len(models) > 1:
-        #     continue
-        lang = get_lang_prefix(lang)
-        fields_name = router.fields_name
-        main_model = models[0]
-        assert hasattr(main_model, 'id'), f'model {main_model.__name__} has no "id" field'
-        fields_spec = [getattr(main_model, 'id')]
-        for n, field in enumerate(fields_name):
-            for model in models:
-                if all((n > 0, model != main_model)):   # для связанных таблиц берем только 1 поле
-                    continue
-                if lang == '':  # english language
-                    fields_spec.append(getattr(model, field))
-                else:  # all other languages
-                    column = func.coalesce(getattr(model, f'{field}{lang}'), getattr(model, field)).label(field)
-                    fields_spec.append(column)
-        for key in fields_spec:
-            if key.name == 'id':
-                continue
-            assert key.name in fields_name, f'fied name {key.name} is wrong'
-        stmt = (select(*fields_spec))
-        for n, model in enumerate(models):
-            if n == 0:  # первая модель основная ее джойнить не надо
-                m1 = model
-                continue
-            subs = model
-            # clause = get_id_field(m1, subs)
-            stmt = stmt.join(subs, get_id_field(m1, subs) == subs.id)
-            m1 = subs
-        stmt = stmt.where(models[0].id == expected_id)
-        # print(stmt)
-        print('----------------')
-        compiled = stmt.compile(dialect=postgresql.dialect(),
-                                compile_kwargs={"literal_binds": True})
-        print(str(compiled))
-    assert True   # замени на False что бы посмотреть генерируемый sql code
-
-
-@pytest.mark.skip
-async def test_service_get_non_orm(test_db_session):
-    """
-        тестирование service layer & repo
-        постреть что нагенерировано см предыдущий тест
-    """
-
-    from app.preact import GetRouter, get_lang_prefix
-    from app.core.utils.alchemy_utils import get_id_field
-    # client = authenticated_client_with_db
-    # service = Service
-    router = GetRouter()
-    session = test_db_session
-    expected_id = 1
-    for prefix, tag, function in router.__source_generator__(router.source, router.languages):
-        path = f'{router.prefix}/{prefix}/{expected_id}'
-        mod, lang = router.__path_decoder__(path)
-        models = router.source.get(mod)
-        lang = get_lang_prefix(lang)
-        fields_name = router.fields_name
-        main_model = models[0]
-        assert hasattr(main_model, 'id'), f'model {main_model.__name__} has no "id" field'
-        fields_spec = [getattr(main_model, 'id')]
-        for n, field in enumerate(fields_name):
-            for model in models:
-                if all((n > 0, model != main_model)):  # для связанных таблиц берем только 1 поле
-                    continue
-                if lang == '':  # english language
-                    fields_spec.append(getattr(model, field))
-                else:  # all other languages
-                    column = func.coalesce(getattr(model, f'{field}{lang}'), getattr(model, field)).label(field)
-                    fields_spec.append(column)
-        for key in fields_spec:
-            if key.name == 'id':
-                continue
-            assert key.name in fields_name, f'fied name {key.name} is wrong'
-        stmt = (select(*fields_spec))
-        for n, model in enumerate(models):
-            if n == 0:  # первая модель основная ее джойнить не надо
-                m1 = model
-                continue
-            subs = model
-            # clause = get_id_field(m1, subs)
-            stmt = stmt.join(subs, get_id_field(m1, subs) == subs.id)
-            m1 = subs
-        stmt = stmt.where(models[0].id == expected_id)
-        result = await session.execute(stmt)
-        print(result)
-
-
 async def test_create_routers(authenticated_client_with_db, test_db_session):
     """
-        тестируем создание
+        тестируем роутеры CREATE
     """
     from app.preact.create.router import CreateRouter
     from tests.data_factory.fake_generator import generate_test_data
@@ -152,33 +45,29 @@ async def test_create_routers(authenticated_client_with_db, test_db_session):
 
 async def test_get_routers(authenticated_client_with_db, test_db_session,
                            fakedata_generator):
-    """  запускаем после test_create_routers """
+    """  тесты GET """
     from app.preact.get.router import GetRouter
-    # from app.core.utils.common_utils import jprint
     client = authenticated_client_with_db
     router = GetRouter()
     id = 1   # ищем первую запись
     prefix = router.prefix
     subprefix = [key for key, val in router.source.items()]
-    # subprefix = list(router.source.keys())
     language = router.languages
     test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
     for pref in test_set:
         pre = f'{pref}/{id}'
         response = await client.get(pre)
-        print(pre, response.status_code)
         assert response.status_code == 200, f'{pre=}  {response.text}'
         result = response.json()
         assert isinstance(result, dict), result
-        assert result['id'] == id, result['id']
+        assert result['id'] == id, f'ожидалась запись {id=}, получена id = {result['id']}'
 
 
 async def test_path_routers(authenticated_client_with_db, test_db_session,
                             fakedata_generator):
-    """ тестирование route path """
+    """ тестирование route PATCH """
     from app.preact.get.router import GetRouter
     from app.preact.patch.router import PatchRouter
-    # from app.core.utils.common_utils import jprint
     client = authenticated_client_with_db
     router = GetRouter()
     router2 = PatchRouter()
@@ -188,17 +77,18 @@ async def test_path_routers(authenticated_client_with_db, test_db_session,
     subprefix = [key for key, val in router2.source.items()]
     test_set = [f'/{a}' for a in subprefix]
     for pref in test_set:
-        # get_by_id
+        # поиск запси get_by_id
         response = await client.get(f'{prefix}{pref}/en/{id}')
         assert response.status_code == 200, f'{prefix}{pref}/en/{id} | {response.text}'
         result = response.json()
-        print('-----', result)
+        # генерируем измененния в текстовых полях
         result.pop('id')
         expected_data = 'updated_data'
         data = {key: expected_data for key, val in result.items() if isinstance(val, str)}
-        prefi = f'{prefix2}{pref}/{id}'
-        response = await client.patch(prefi, json=data)
-        assert response.status_code == 200, f'{prefi} |  | {response.text}'
+        # запускаем изменение
+        full_prefix = f'{prefix2}{pref}'
+        response = await client.patch(f'{full_prefix}/{id}', json=data)
+        assert response.status_code == 200, f'{full_prefix}/{id} |  | {response.text}'
         result = response.json()
         result_dict = {key: val for key, val in result.items() if isinstance(val, str) and val != expected_data}
         if result_dict:
@@ -208,7 +98,7 @@ async def test_path_routers(authenticated_client_with_db, test_db_session,
 
 async def test_delete_routers(authenticated_client_with_db, test_db_session,
                               fakedata_generator):
-    """  запускаем после test_create_routers """
+    """  тестирование роутера DELETE """
     from app.preact.delete.router import DeleteRouter
     client = authenticated_client_with_db
     router = DeleteRouter()

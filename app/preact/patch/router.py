@@ -10,12 +10,15 @@ from app.core.utils.pydantic_utils import pyschema_helper
 
 class PatchRouter(PreactRouter):
     def __init__(self):
-        super().__init__(prefix='path', method='PATH', tier=3)
+        super().__init__(prefix='path', method='PATCH', tier=3)
 
     def __set_schema__(self, model):
         """  находит  Update схему для response_model """
-        setattr(self, f'{model.__name__}Update', pyschema_helper(model, 'update'))
-        # setattr(self, f'{model.__name__}Update', sqlalchemy_to_pydantic_post(model))
+        try:
+            setattr(self, f'{model.__name__}Update', pyschema_helper(model, 'update'))
+            # setattr(self, f'{model.__name__}Update', sqlalchemy_to_pydantic_post(model))
+        except Exception as e:
+            print(f'updatr.__set_schema__.error:: {e}')
 
     def __get_schemas__(self, model):
         """ получает ранее созданную Create схему """
@@ -31,21 +34,20 @@ class PatchRouter(PreactRouter):
             возвращает список
             [prefix, response_model]
         """
-        return ((f'/{key}', self.__get_schemas__(val)) for key, val in source.items())
+        return ((f'/{key}' + '/{id}', self.__get_schemas__(val)) for key, val in source.items())
 
-    async def endpoint(self, request: Request, data: Dict[str, Any] = Body(...),
+    async def endpoint(self, request: Request, id: int, data: Dict[str, Any] = Body(...),
                        session: AsyncSession = Depends(get_db)):
         try:
             current_path = request.url.path
-            tmp = self.__path_decoder__(current_path)
+            _, tmp = self.__path_decoder__(current_path, self.tier)
             model = self.source.get(tmp)
+            print(f'{model.__name__}=============')
             schema = self.__get_schemas__(model)
             repo = self.get_repo(model)
             service = self.get_service(model)
             model_data = schema(**data)
-            # obj = await service.patch(id, model_data, repo, model, session)
-            result = await service.patch(id, data, repo, model, session)
-            print(result, '===============================')
+            result = await service.patch(id, model_data, repo, model, session)
             return result
         except Exception as e:
             await session.rollback()

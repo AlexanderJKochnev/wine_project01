@@ -20,7 +20,6 @@ from app.core.services.service import Service
 
 class PreactRouter:
     def __init__(self, prefix: str, method: str = 'GET', tier: int = 2):
-        # prefix = settings.HANDBOOKS_PREFIX
         self.tags, self.prefix = [f'{prefix}'], f'/{prefix}'
         self.languages = settings.LANGUAGES  # ['en', 'ru', 'fr', ...]
         self.tier = tier  # применяется в _path_decoder-

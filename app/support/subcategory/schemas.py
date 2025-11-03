@@ -132,7 +132,7 @@ class CustomCreateRelation:
 
 class CustomUpdSchema:
     # category: Optional[CategoryCreateRelation]
-    pass
+    category_id: Optional[int] = None
 
 
 class SubcategoryRead(ReadSchema, CustomReadSchema):

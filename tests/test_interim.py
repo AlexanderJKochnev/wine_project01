@@ -390,3 +390,12 @@ def test_pyschema_register():
         print('--------------------')
         # jprint(sorted(register))
         assert False
+
+
+def test_routers_list():
+    from app.main import app
+    from app.core.utils.pydantic_utils import get_routers
+    result = get_routers(app)
+    for route in result:
+        print(route)
+    assert False

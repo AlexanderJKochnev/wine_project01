@@ -10,6 +10,21 @@ from sqlalchemy.sql.type_api import TypeEngine
 from app.core.schemas.base import PaginatedResponse, SchemaMeta, PyModel
 from app.core.repositories.sqlalchemy_repository import RepositoryMeta
 from app.core.services.service import ServiceMeta
+# from fastapi import APIRouter
+from fastapi.routing import APIRoute
+
+
+def get_routers(app, method: str = None) -> List[APIRoute]:
+    """  список роутеров, содержащих указанный метод """
+    # prefix содердится в a.path
+    exc_route = ('/', '/auth/token', '/wait')
+    if method:
+        return [a for a in app.routes
+                if all((isinstance(a, APIRoute), a.path not in exc_route)) and all((hasattr(a, 'methods'),
+                                                                                    method in a.methods))]
+    else:
+        return [a for a in app.routes
+                if all((isinstance(a, APIRoute), a.path not in exc_route)) and hasattr(a, 'methods')]
 
 
 def get_service(model: Union[Type[DeclarativeBase], str]):

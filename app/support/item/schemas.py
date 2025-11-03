@@ -144,3 +144,24 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
 
 class ItemCreateRelation(BaseModel, CustomCreateRelation):
     pass
+
+# -------------------preact schemas-----------------------
+
+
+class DrinkPreactDetailView:
+    id: int
+    drink: DrinkReadApi
+
+class DrinkPreactListView:
+    id: int
+    drink: int
+    vol: Optional[float] = None
+
+
+class DrinkPreactUpdate:
+    id: int
+
+class DrinkPreactCreate: 
+    title: str
+    title_ru: Optional[str]
+    title_fr: Optional[str]
