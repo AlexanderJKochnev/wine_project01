@@ -29,6 +29,8 @@ async def test_fault_delete_foreign_violation(authenticated_client_with_db, test
                                               fakedata_generator):
     """
         неудачное удаление due to foregn violation
+        неудалчный тест - переделать - сначала найти запсиси с зависимостями потом попробовать их удалить
+        и получитьь ошибку
     """
     from app.support.drink.router import DrinkRouter
     item = DrinkRouter

@@ -1,5 +1,9 @@
 # app/core/repositories/sqlalchemy_repository.py
-""" не использовать Depends в этом контексте, он не входит в FastApi - только в роутере"""
+""" не использовать Depends в этом контексте, он не входит в FastApi - только в роутере
+    переделать на ._mapping (.mappings().all()) (в результате словарь вместо объекта)
+    get_all     result.mappings().all()
+    get_by_id   result.scalar_one_or_none()
+"""
 from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
@@ -9,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.sql.elements import ColumnElement
 from app.core.services.logger import logger
-from app.core.utils.alchemy_utils import (create_enum_conditions, create_search_conditions,
+from app.core.utils.alchemy_utils import (create_enum_conditions,
                                           create_search_conditions2, ModelType)
 from app.core.utils.alchemy_utils import get_sqlalchemy_fields
 
@@ -31,6 +35,47 @@ class Repository(metaclass=RepositoryMeta):
     model: ModelType
 
     @classmethod
+    def get_query(cls, model: ModelType):
+        """
+            Переопределяемый метод.
+            Возвращает select() с полными selectinload.
+            По умолчанию — без связей.
+        """
+        return select(model)
+
+    @classmethod
+    def get_short_query(cls, model: ModelType):
+        """
+            Переопределяемый метод.
+            Возвращает select() только с нужными полями - использовать для list_view.
+            По умолчанию — без связей.
+        """
+        """ пример
+        stmt = (
+        select(
+            Drink.id,
+            Drink.name,
+            Subregion.name.label('subregion_name'),
+            Region.name.label('region_name'),
+            Country.name.label('country_name'),
+            Subcategory.name.label('subcategory_name'),
+            Category.name.label('category_name')
+        )
+        .select_from(Drink)
+        .join(Drink.subregion)
+        .join(Subregion.region)
+        .join(Region.country)
+        .join(Drink.subcategory)
+        .join(Subcategory.category)
+        .options(
+            selectinload(Drink.foods).load_only(Food.id, Food.name),
+            selectinload(Drink.varietals).load_only(Varietal.id, Varietal.name)
+            )
+        )
+        """
+        return select(model)
+
+    @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
         session.add(obj)
@@ -40,7 +85,7 @@ class Repository(metaclass=RepositoryMeta):
 
     @classmethod
     async def patch(cls, obj: ModelType,
-                    data: Dict[str, Any], session: AsyncSession) -> Optional[ModelType]:
+                    data: Dict[str, Any], session: AsyncSession) -> Union[ModelType, str, None]:
         """
         редактирование записи
         :param obj: редактируемая запись
@@ -66,7 +111,7 @@ class Repository(metaclass=RepositoryMeta):
             return f"database_error: {str(e)}"
 
     @classmethod
-    async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
+    async def delete(cls, obj: ModelType, session: AsyncSession) -> Union[bool, str]:
         """
         удаление записи
         :param obj: instance
@@ -85,15 +130,6 @@ class Repository(metaclass=RepositoryMeta):
         except Exception as e:
             await session.rollback()
             return f"database_error: {str(e)}"
-
-    @classmethod
-    def get_query(cls, model: ModelType):
-        """
-            Переопределяемый метод.
-            Возвращает select() с нужными selectinload.
-            По умолчанию — без связей.
-        """
-        return select(model)
 
     @classmethod
     async def get_by_id(cls, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
@@ -135,6 +171,7 @@ class Repository(metaclass=RepositoryMeta):
         total = await cls.get_count(after_date, model, session)
         result = await session.execute(stmt)
         items = result.scalars().all()
+        # items = result.mappings().all()
         return items, total
 
     @classmethod
@@ -143,6 +180,7 @@ class Repository(metaclass=RepositoryMeta):
         stmt = cls.get_query(model).where(model.updated_at > after_date)
         result = await session.execute(stmt)
         items = result.scalars().all()
+        # items = result.mappings().all()
         return items
 
     @classmethod
@@ -182,57 +220,18 @@ class Repository(metaclass=RepositoryMeta):
 
     @classmethod
     async def get_count(cls, after_date: datetime, model: ModelType, session: AsyncSession) -> int:
+        """ подсчет количества записей после указанной даты"""
         count_stmt = select(func.count()).select_from(model).where(model.updated_at > after_date)
         count_result = await session.execute(count_stmt)
-        total = count_result.scalar()
+        total = count_result.scalar()   # ok
         return total
 
     @classmethod
-    async def search_in_main_table(cls,
-                                   search_str: str,
-                                   model: Type[ModelType],
-                                   session: AsyncSession,
-                                   skip: int = None,
-                                   limit: int = None) -> Optional[List[ModelType]]:
-        """
-        НЕ ИСПОЛЬЗУЕТСЯ ПОСЛЕ ПРОВЕРКИ УДАЛИТЬ
-        Поиск по всем заданным текстовым полям основной таблицы
-        если указана pagination - возвращвет pagination
-        :param search_str:  текстовое условие поиска
-        :type search_str:   str
-        :param model:       модель
-        :type model:        sqlalchemy model
-        :param session:     async session
-        :type session:      async session
-        :param skip:        сдвиг на кол-во записей (для пагинации)
-        :type skip:         int
-        :param limit:       кол-во записей
-        :type limit:        int
-        :param and_condition:   дополнительные условия _AND
-        :type and_condition:    dict
-        :return:                Optional[List[ModelType]]
-        :rtype:                 Optional[List[ModelType]]
-        """
-        try:
-            conditions = create_search_conditions(model, search_str, 1)
-            # query = cls.get_query(model).where(or_(*conditions))
-            query = cls.get_query(model).where(conditions)
-            # получаем общее количество записей удовлетворяющих условию
-            # count = select(func.count()).select_from(model).where(or_(*conditions))
-            count = select(func.count()).select_from(model).where(conditions)
-            result = await session.execute(count)
-            total = result.scalar()
-            # Добавляем пагинацию если указано
-            if limit is not None:
-                query = query.limit(limit)
-            if skip is not None:
-                query = query.offset(skip)
-            result = await session.execute(query)
-            records = result.scalars().all()
-            return (records if records else [], total)
-        except Exception as e:
-            logger.error(f'ошибка search_in_main_table: {e}')
-            print(f'search_in_main_table.error: {e}')
+    async def get_all_count(cls, model: ModelType, session: AsyncSession) -> int:
+        """ колитчество всех записей в таблице """
+        count_stmt = select(func.count()).select_from(model)
+        result = await session.execute(count_stmt).scalar()
+        return result
 
     @classmethod
     async def search_by_enum(cls, enum: str,
@@ -299,7 +298,7 @@ class Repository(metaclass=RepositoryMeta):
                 count_stmt = cls.apply_search_filter(select(func.count()).select_from(cls.get_query(model)),
                                                      **kwargs)
                 result = await session.execute(count_stmt)
-                total = result.scalar()
+                total = result.scalar()     # ok
                 query = query.limit(limit)
             if skip is not None:
                 query = query.offset(skip)
@@ -310,34 +309,22 @@ class Repository(metaclass=RepositoryMeta):
             logger.error(f'ошибка search: {e}')
 
     @classmethod
-    async def get_list_view_page(cls, skip: int, limit: int,
-                                 model: ModelType, session: AsyncSession, ) -> Tuple[List[tuple], int]:
-        # Запрос с загрузкой связей и пагинацией
-        stmt = cls.get_query(model).offset(skip).limit(limit)
+    async def get_list_paging(cls, skip: int, limit: int,
+                              model: ModelType, session: AsyncSession, ) -> Tuple[List[Dict], int]:
+        """Запрос с загрузкой связей и пагинацией - ListView плиткой"""
+        stmt = cls.get_short_query(model).offset(skip).limit(limit)
         fields = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
         stmt = select(*fields)
-        total = await cls.get_count(model, session)
+        # получение результата всех записей
+        total = cls.get_all_count(model, session)
         result = await session.execute(stmt)
-        rows = result.all()
-        print(f'======{model.__name__=}')
-        for row in rows:
-            print('==', type(row), row)
+        rows: List[Dict] = result.mappings().all()
         return rows, total
 
     @classmethod
-    async def get_list_view(cls, model: ModelType, session: AsyncSession, ) -> List[Tuple]:
-        # Запрос с загрузкой связей без пагинации (для справочников)
-        stmt = cls.get_query(model)
+    async def get_list(cls, model: ModelType, session: AsyncSession, ) -> List[Dict]:
+        """ Запрос с загрузкой связей без пагинации (для справочников)"""
+        stmt = cls.get_short_query(model)
         # compiled_pg = stmt.compile(dialect=postgresql.dialect())
         result = await session.execute(stmt)
-        rows = result.scalar().all()
-        result = [row._mapping for row in rows]
-        return result
-
-    @classmethod
-    async def get_nodate(cls, model: ModelType, session: AsyncSession, ) -> list:
-        # Запрос с загрузкой связей NO PAGINATION
-        stmt = cls.get_query(model)
-        result = await session.execute(stmt)
-        items = result.scalars().all()
-        return items
+        return result.mappings().all()
