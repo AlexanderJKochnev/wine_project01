@@ -66,7 +66,7 @@ class ImageService:
                     # content = remove_background(content)
                     # content = remove_background_with_mask(content)
                     content_type = 'image/png'
-                    filename = f'{filename.rsplit('.', 1)[0]}.png'
+                    filename = f"{filename.rsplit('.', 1)[0]}.png"
                 except Exception as e:
                     HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,

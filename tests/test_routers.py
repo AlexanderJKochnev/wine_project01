@@ -123,12 +123,12 @@ async def test_greenlet(authenticated_client_with_db, test_db_session):
     # генератор данных slave
     for x in result['items']:
         try:
-            data = {key: f'{val}_{x['id']}' for key, val in slave.items()}
+            data = {key: f"{val}_{x['id']}" for key, val in slave.items()}
             data['customer_id'] = 1
             response = await client.post(f'{prefix_slave}', json=data)
-            assert response.status_code == 200, f'create for data_slave error {data}'
+            assert response.status_code == 200, f"create for data_slave error {data}"
         except Exception as e:
-            assert False, f'{e} {data=} {x['id']=}'
+            assert False, f"{e} {data=} {x['id']=}"
 
 
 @pytest.mark.skip

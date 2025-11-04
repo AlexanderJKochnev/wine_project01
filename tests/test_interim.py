@@ -4,6 +4,7 @@
 """
 from pathlib import Path
 # from fastapi import status
+import datetime
 import pytest
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint  # NOQA: F401
@@ -66,6 +67,24 @@ trob = ["-Lymvm4_ThSSpUZ-RzFJ.png",
         "-OIbfLSrTlhW28GIGDCJ.png",
         "-OIbpopAiQkIQZ4gOnc5.png"
         ]
+
+model_list = ['Category',
+              'Country',
+              'Drink',
+              'Food',
+              'Item',
+              'Region',
+              'Subcategory',
+              'Subregion',
+              'Sweetness',
+              'Varietal']
+mandatory_sets = ['Read',
+                  'Create',
+                  'Update',
+                  'CreateRelation',
+                  'ReadRelation',
+                  'CreateResponseSchema'
+                  ]
 
 
 def test_get_path_to_root():
@@ -268,41 +287,22 @@ def test_get_sqlalchemy_fields():
         assert key == val.name
 
 
-def test_pydantic_models_register():
-    # from app.core.schemas.base import PYDANTIC_MODELS
-    from app.core.utils.pydantic_utils import get_pyschema, pyschema_helper   # NOQA: F401
-    from app.support import Category, Subcategory, Country, Region, Subregion  # NOQA: F401
-    result = pyschema_helper(Subcategory, 'list', 'en')
-    expected_result = 'SubcategoryListViewEn'
-    assert result.__name__ == expected_result, result.__name__
-    result = pyschema_helper(Category, 'list', 'en')
-    expected_result = 'ListViewEn'
-    assert result.__name__ == expected_result, result.__name__
-
-
 def test_pyschema_list():
     """ сверяет каких pydantic схем нехватает """
-    from app.core.schemas.base import PYDANTIC_MODELS
+    from app.service_registry import get_all_pyschema
     mandatory_sets = ['Read',
                       'Create',
                       'Update',
                       'CreateRelation',
-                      'ReadRelation,'
-                      'CreateResponse'
+                      'ReadRelation',
+                      'CreateResponseSchema'
                       ]
-    model_list = ['Category',
-                  'Country',
-                  'Drink',
-                  'Food',
-                  'Item',
-                  'Region',
-                  'Subcategory',
-                  'Subregion',
-                  'Sweetness',
-                  'Varietal']
     mandatory_schema = [f'{model}{schema}' for model in model_list for schema in mandatory_sets]
-    current_schemas = [key.__name__ for key in PYDANTIC_MODELS]
-    missed_schemas = [schema for schema in mandatory_schema if schema not in current_schemas]
+    registered_schemas: dict = get_all_pyschema()
+    for n, key in enumerate(registered_schemas.keys()):
+        print(n, key)
+    print('--------------------------')
+    missed_schemas = [schema for schema in mandatory_schema if schema.lower() not in registered_schemas.keys()]
     if missed_schemas:
         for key in missed_schemas:
             print(f'{key}')
@@ -310,86 +310,93 @@ def test_pyschema_list():
     assert True
 
 
-def test_repository_register():
+def test_repo_list():
+    """ сверяет каких repositories нехватает """
+    from app.service_registry import get_all_repo
+
+    registered_repo: dict = get_all_repo()
+    for n, key in enumerate(registered_repo.keys()):
+        print(n, key)
+    print('--------------------------')
+    missed_repo = [model for model in model_list if model.lower() not in registered_repo.keys()]
+    if missed_repo:
+        for n, key in enumerate(missed_repo):
+            print(f'{key}')
+        assert False
+    assert True
+
+
+def test_services_list():
+    """ сверяет каких services нехватает """
+    from app.service_registry import get_all_services
+    registered_services: dict = get_all_services()
+    for n, key in enumerate(registered_services.keys()):
+        print(n, key)
+    print('--------------------------')
+    missed_repo = [model for model in model_list if model.lower() not in registered_services.keys()]
+    if missed_repo:
+        for n, key in enumerate(missed_repo):
+            print(f'{key}')
+        assert False
+    assert True
+
+
+def test_get_pyschema():
     """
-    проверяем как действует регистр репозиториев
+    проверяем как действует метод регистр репозиториев
+    :return:
+    :rtype:
+    """
+    from app.core.utils.pydantic_utils import get_pyschema
+    from app.support.category.model import Category
+    for key in mandatory_sets:
+        schema = get_pyschema(Category, key)
+        expected_result = f'{Category.__name__}{key}'
+        assert schema, f'{Category.__name__}{key} схема не получена'
+        assert schema.__name__ == expected_result, f'получено {schema.__name__}. Ожидалось {Category.__name__}{key}'
+        for model in model_list:
+            schema = get_pyschema(model, key)
+            expected_result = f'{model}{key}'
+            assert schema, f'{model}{key} схема не получена'
+            assert schema.__name__ == expected_result, f'получено {schema.__name__}. Ожидалось {model}{key}'
+
+
+def test_get_repo():
+    """
+    проверяем как действует метод get_repo
     :return:
     :rtype:
     """
     from app.core.utils.pydantic_utils import get_repo
-    from app.support import Item, Subregion, Subcategory, Country
-    for m, val in enumerate([Country, Item, Subregion, Subcategory]):
-        name = val.__name__
-        repo = get_repo(val)
-        repo2 = get_repo(name)
-        # for n, (key, val) in enumerate(RepositoryMeta._registry.items()):
-        #     print(n, key, val)
-        print(m, name, '===========')
-        assert repo, f'не найден репозиторий для {name}'
-        assert repo2, f'не найден репозиторий для {name} по имени'
-        assert repo.__name__ == f'{val.__name__}Repository'
-        assert repo == repo2, ''
+    from app.support.category.model import Category
+    item = get_repo(Category)
+    expected_result = f'{Category.__name__}Repository'
+    assert item, f'Repository для модели {Category.__name__} не получен'
+    assert item.__name__ == expected_result, f'получено {item.__name__}. Ожидалось {Category.__name__}Repository'
+    missed = [model for model in model_list if f'{model}Repository' != get_repo(model).__name__]
+    if missed:
+        for n, key in enumerate(missed):
+            print(n, key)
+        assert False, 'repo are missed for the model above'
 
 
-def test_service_register():
+def test_get_services():
     """
-    проверяем как действует регистр services
+    проверяем как действует метод get_repo
     :return:
     :rtype:
     """
     from app.core.utils.pydantic_utils import get_service
-    from app.core.services.service import ServiceMeta
-    from app.support import (Item, Subregion, Subcategory, Country,
-                             Category, Drink, Food, Region, Sweetness, Superfood, Varietal, Warehouse)
-    for m, val in enumerate([Item, Subregion, Subcategory, Country,
-                             Category, Drink, Food, Region, Sweetness, Superfood, Varietal, Warehouse]):
-        name = val.__name__
-        service = get_service(val)
-        service2 = get_service(name)
-        for n, (key, val1) in enumerate(ServiceMeta._registry.items()):
-            print(n, key, val1)
-        print(m, name, '===========')
-        assert service, f'не найден service для {name}'
-        assert service2, f'не найден service для {name} по имени'
-        assert service.__name__ == f'{val.__name__}Service'
-        assert service == service2, ''
-
-
-def test_pyschema_register():
-    """
-    проверяем как действует регистр services
-    :return:
-    :rtype:
-    """
-    from app.core.utils.pydantic_utils import get_pyschema2
-    from app.core.schemas.base import SchemaMeta
-    from app.support import (Item, Subregion, Subcategory, Country,
-                             Category, Drink, Food, Region, Sweetness, Superfood, Varietal, Warehouse)
-    schemas = ['Read',
-               'Create',
-               'Update',
-               'CreateRelation',
-               'ReadRelation',
-               'CreateResponseSchema',
-               # 'ListViewRu',
-               # 'ListViewFr',
-               # 'ListViewEn',
-               # 'DetailViewRu',
-               # 'DetailViewFr',
-               # 'DetailViewEn'
-               ]
-    models = [Subregion, Subcategory, Country, Category, Drink, Food, Region, Sweetness, Superfood, Varietal,
-              Warehouse, Item]
-    register = list(SchemaMeta._registry.keys())
-    # direct from register
-    schemas_name = [f'{model.__name__}{schema}' for model in models for schema in schemas]
-    result = [name for name in schemas_name if name.lower() not in register]
-    if result:
-        print(len(result))
-        jprint(sorted(result))
-        print('--------------------')
-        # jprint(sorted(register))
-        assert False
+    from app.support.category.model import Category
+    item = get_service(Category)
+    expected_result = f'{Category.__name__}Service'
+    assert item, f'Service для модели {Category.__name__} не получен'
+    assert item.__name__ == expected_result, f'получено {item.__name__}. Ожидалось {Category.__name__}Service'
+    missed = [model for model in model_list if f'{model}Service' != get_service(model).__name__]
+    if missed:
+        for n, key in enumerate(missed):
+            print(n, key)
+        assert False, 'services are missed for the model above'
 
 
 def test_routers_list():
@@ -399,3 +406,36 @@ def test_routers_list():
     for route in result:
         print(route)
     assert False
+
+
+def test_flatten_dict_with_localized_fields():
+    from app.core.utils.common_utils import flatten_dict_with_localized_fields
+    data = {"description": "english shg d",
+            "description_ru": "русск",
+            "description_fr": "francaise",
+            "updated_at": "some data",
+            "name": "Novokuznetsk",
+            "name_ru": "Новокузнецк",
+            "id": 100,
+            "district": {
+                "name": "Kemerovo region",
+                "name_ru": "Кемеровская область",
+                "id": 50,
+                "country": {"name": "Russia",
+                            "name_ru": "Россия",
+                            "id": 7
+                            }
+            }
+            }
+    data = {'id': 1, 'name': 'Free owner trip word unit.', 'description': None, 'created_at': datetime.datetime(2025, 11, 4, 1, 11, 34, 411105, tzinfo=datetime.timezone.utc), 'updated_at': datetime.datetime(2025, 11, 4, 1, 11, 34, 411105, tzinfo=datetime.timezone.utc), 'name_ru': None, 'name_fr': 'Bleu honneur lien phrase.', 'description_ru': None, 'description_fr': 'Extraordinaire leur façon obliger souffrir long. Derrière continuer etc terrain absolu signer fixe. Vous paix argent.\nGrâce petit volonté nouveau fou rassurer rêve. Pied sept mine partie acte conseil frapper. Cesse voler indiquer retomber unique.\nFenêtre reposer situation rencontrer renverser delà demander politique.'}
+    print(flatten_dict_with_localized_fields(data, ['name', 'description'], lang='ru', reverse=True))
+    print(flatten_dict_with_localized_fields(data, ['name', 'description'], lang='en', reverse=False))
+    assert False
+
+
+def test_coalesce():
+    from app.core.utils.common_utils import coalesce
+    test = ["", '1', 2, None]
+    result = coalesce(*test)
+    exp = '1'
+    assert result == exp, result

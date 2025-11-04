@@ -735,3 +735,135 @@ def joiner(joint: str = '. ', *args) -> str:
 
 def dict_sorter(source: dict) -> dict:
     return dict(sorted(source.items(), key=lambda item: item[1]))
+
+
+def flatten_dict_with_localized_fields(
+    data: Dict[str, Any],
+    fields: List[str],
+    lang: str = 'en',
+    reverse: bool = True
+) -> Dict[str, Any]:
+    """
+    Преобразует вложенный словарь (с единственным dict-ключом на каждом уровне)
+    в плоский, объединяя локализованные поля по иерархии.
+
+    Args:
+        data: Вложенный словарь, где каждый уровень содержит не более одного ключа со словарём.
+        fields: Список базовых имён полей для объединения (например, ['name', 'description']).
+        lang: Язык (например, 'ru', 'fr'). Для 'en' используется поле без суффикса.
+        reverse: Если True — от корня к листу, иначе — от листа к корню.
+
+    Returns:
+        Плоский словарь с объединёнными значениями и скалярными полями (например, 'id').
+    """
+    def extract_chain(node: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Рекурсивно извлекает цепочку узлов от текущего до корня (в порядке: текущий → родитель → ...)."""
+        chain = [node]
+        # Найти единственный ключ, значение которого — dict
+        nested_key = None
+        for k, v in node.items():
+            if isinstance(v, dict):
+                if nested_key is not None:
+                    raise ValueError("More than one nested dict key found at a level.")
+                nested_key = k
+        if nested_key is not None:
+            chain.extend(extract_chain(node[nested_key]))
+        return chain
+
+    # Получаем цепочку узлов от листа к корню
+    chain_leaf_to_root = extract_chain(data)
+
+    # Определяем порядок: reverse=True → корень → ... → лист
+    if reverse:
+        nodes = list(reversed(chain_leaf_to_root))
+    else:
+        nodes = chain_leaf_to_root
+
+    # Собираем все ключи для определения доступных языков
+    all_keys = set()
+    for node in nodes:
+        all_keys.update(node.keys())
+    # Извлекаем все возможные языковые суффиксы
+    suffixes = set()
+    for key in all_keys:
+        if '_' in key:
+            parts = key.split('_', 1)
+            if len(parts) == 2 and parts[1].isalpha():
+                suffixes.add(parts[1])
+    suffixes = sorted(suffixes)  # для детерминированности
+
+    # Определяем порядок fallback для значений
+    def get_value_for_field(node: Dict[str, Any], base_field: str) -> Union[str, None]:
+        # 1. Целевой язык (если не 'en')
+        if lang != 'en':
+            key_lang = f"{base_field}_{lang}"
+            if key_lang in node and node[key_lang] not in (None, ''):
+                return node[key_lang]
+        # 2. Базовое поле (без суффикса) — используется для 'en' или как fallback
+        if base_field in node and node[base_field] not in (None, ''):
+            return node[base_field]
+        # 3. Любое другое непустое локализованное поле (в порядке суффиксов)
+        for suf in suffixes:
+            if suf == lang:
+                continue
+            key = f"{base_field}_{suf}"
+            if key in node and node[key] not in (None, ''):
+                return node[key]
+        # 4. Ничего не найдено
+        return None
+
+    result = {}
+
+    # Сбор скалярных полей (не входящих в `fields` и не являющихся dict)
+    # Берём первое непустое значение по порядку nodes
+    """
+    scalar_candidates = set()
+    for node in nodes:
+        for k, v in node.items():
+            if all((not isinstance(v, dict),
+                    k not in fields,
+                    not any(k == f"{f}_{s}"
+                            for f in fields
+                            for s in ([''] + list(suffixes))))):
+                scalar_candidates.add(k)
+
+    for key in scalar_candidates:
+        for node in nodes:
+            val = node.get(key)
+            if val is not None and val != '':
+                result[key] = val
+                break
+    """
+
+    nodes_for_scalars = list(reversed(chain_leaf_to_root))  # корень → ... → лист
+    scalar_candidates = set()
+    for node in nodes_for_scalars:
+        for k, v in node.items():
+            if not isinstance(v, dict) and k not in fields and not any(
+                    k == f"{f}_{s}" for f in fields for s in ([''] + list(suffixes))
+            ):
+                scalar_candidates.add(k)
+
+    for key in scalar_candidates:
+        for node in nodes_for_scalars:
+            val = node.get(key)
+            if val is not None and val != '':
+                result[key] = val
+                break
+
+    # Обработка запрошенных полей
+    for base_field in fields:
+        parts = []
+        for node in nodes:
+            val = get_value_for_field(node, base_field)
+            if val is not None:
+                parts.append(val)
+        if parts:
+            result[base_field] = '. '.join(parts) + '.'
+    return result
+
+
+def coalesce(*args):
+    for x in args:
+        if x is not None:
+            return x

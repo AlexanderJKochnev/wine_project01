@@ -16,17 +16,18 @@ from app.core.services.logger import logger
 from app.core.utils.alchemy_utils import (create_enum_conditions,
                                           create_search_conditions2, ModelType)
 from app.core.utils.alchemy_utils import get_sqlalchemy_fields
+from app.service_registry import register_repo
 
 
 class RepositoryMeta(ABCMeta):
-    _registry = {}
 
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         # Регистрируем сам класс, а не его экземпляр
         if not attrs.get('__abstract__', False):
             key = name.lower().replace('repository', '')
-            cls._registry[key] = new_class  # ← Сохраняем класс!
+            register_repo(key, new_class)
+            # cls._registry[key] = new_class  # ← Сохраняем класс!
         return new_class
 
 

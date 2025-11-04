@@ -7,11 +7,9 @@ from pydantic import BaseModel, create_model
 from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
-from app.core.schemas.base import PaginatedResponse, SchemaMeta, PyModel
-from app.core.repositories.sqlalchemy_repository import RepositoryMeta
-from app.core.services.service import ServiceMeta
-# from fastapi import APIRouter
+from app.core.schemas.base import PaginatedResponse, PyModel
 from fastapi.routing import APIRoute
+from app.service_registry import get_service as get_serv, get_repo as get_rep, get_pyschema as get_pyschem
 
 
 def get_routers(app, method: str = None) -> List[APIRoute]:
@@ -34,8 +32,8 @@ def get_service(model: Union[Type[DeclarativeBase], str]):
     """
     if not isinstance(model, str):
         model = model.__name__
-    return ServiceMeta._registry.get(f'{model}'.lower(), None)
-    # return ServiceRegistry.get(f'{model}'.lower())
+    return get_serv(model)
+    # return ServiceMeta._registry.get(f'{model}'.lower(), None)
 
 
 def get_repo(model: Union[Type[DeclarativeBase], str]):
@@ -45,56 +43,18 @@ def get_repo(model: Union[Type[DeclarativeBase], str]):
     """
     if not isinstance(model, str):
         model = model.__name__
-    return RepositoryMeta._registry.get(f'{model}'.lower(), None)
-    # print(result, result.__name__, model)
-    # return result
+    return get_rep(model)
 
 
-def get_pyschema2(model: Union[Type[DeclarativeBase], str], schema: str, lang: str = None) -> PyModel:
-    """
-        получение Pydantic schemas по модели/имени модели  и типу схемы
-    """
-    if not isinstance(model, str):
-        model = model.__name__
-    schema_name = f'{model}{schema}{lang}'.lower() if lang else f'{model}{schema}'.lower()
-    return ServiceMeta._registry.get(schema_name, None)
-
-
-def get_pyschema(name: str, default: str = 'ReadSchema') -> PyModel:
+def get_pyschema(model: Union[Type[DeclarativeBase]], schema: str = 'Read') -> PyModel:
     """
         получение pydantic schema по ее имени:
         name: имя схемы
         default: дефолтное имя (не у всех схем есть кастомизированные схемы, в этом случае берем базовую
     """
-    def_schema = None
-    for scname, schema in SchemaMeta._registry.items():
-        if scname == name.lower():
-            return schema
-        if scname == default.lower():
-            def_schema = schema
-    return def_schema
-
-
-def pyschema_helper(model: Type[DeclarativeBase], schema_type: str, lang: str = None) -> PyModel:
-    """
-    получение py схемы для alchemy model по назначению (schema_type)
-    :param model:
-    :param schema_type:
-    """
-    name: str = model.__name__
-    schema_types: dict = {'list': 'ListView',
-                          'single': 'DetailView',
-                          'read': 'Read',
-                          'create': 'Create',
-                          'update': 'Update',
-                          'create_relation': 'CreateRelation',
-                          'read_relation': 'ReadRelation'
-                          }
-    default: str = f'{schema_types.get(schema_type)}'
-    if lang:
-        default: str = f'{default}{lang.capitalize()}'
-    pyname: str = f'{name}{default}'
-    return get_pyschema(pyname, default)
+    if not isinstance(model, str):
+        model = model.__name__
+    return get_pyschem(f'{model}{schema}'.lower())
 
 
 def sqlalchemy_to_pydantic_post(

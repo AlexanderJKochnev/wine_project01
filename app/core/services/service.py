@@ -7,22 +7,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
+from app.service_registry import register_service
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import coalesce, flatten_dict_with_localized_fields
 
 joint = '. '
 
 
 class ServiceMeta(ABCMeta):
-    _registry = {}
 
     def __new__(cls, name, bases, attrs):
-        if not hasattr(cls, '_registry'):
-            cls._registry = {}
+        # if not hasattr(cls, '_registry'):
+        #     cls._registry = {}
 
         new_class = super().__new__(cls, name, bases, attrs)
         # Регистрируем сам класс, а не его экземпляр
         if not attrs.get('__abstract__', False):
             key = name.lower().replace('service', '')
-            cls._registry[key] = new_class  # ← Сохраняем класс!
+            register_service(key, new_class)
+            # cls._registry[key] = new_class  # ← Сохраняем класс!
             # print(f"✅ Зарегистрирован сервис: {name} -> ключ: '{key}'")
         return new_class
 
@@ -275,3 +278,22 @@ class Service(metaclass=ServiceMeta):
         # Запрос с загрузкой связей -  возвращает список
         result = await repository.get_nodate(model, session)
         return result
+
+    @classmethod
+    async def get_detail_view(cls, lang: str, id: int, repository: Type[Repository],
+                              model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        """ Получение и обработка записи по ID """
+        lang = '' if lang == 'en' else f'_{lang}'
+        detail_fields = ['id', *settings.DETAIL_VIEW]
+        obj = await repository.get_by_id(id, model, session)
+        if not obj:
+            return None
+        if not isinstance(obj, dict):   # если объект не словарь
+            obj = obj.to_dict()
+        for key in ['created_at', 'updated_at']:
+            pass
+            # obj.pop(key, None)
+        print(obj)
+        result = flatten_dict_with_localized_fields(obj, detail_fields, lang)
+        for key, val in result.items():
+            print(key, val)

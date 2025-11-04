@@ -62,7 +62,7 @@ class ItemService(Service):
                     await cls.create_relation(data_model, ItemRepository, Item, session)
                     # await asyncio.sleep(0.01)
                 except Exception:
-                    print(f'"{item.get('image_path', 'no image_path')}",')
+                    print(f"{item.get('image_path', 'no image_path')}")
                     # print(f'{item.get("image_path")}')
                     error_list.append(item)
                     await session.rollback()

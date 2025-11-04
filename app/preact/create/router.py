@@ -1,9 +1,9 @@
 # app/preact/create/router.py
-from typing import Any, Dict
-
+from typing import Any, Dict, Type
+from app.core.models.base_model import DeclarativeBase
 from fastapi import Body, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.pydantic_utils import pyschema_helper
+from app.core.utils.pydantic_utils import sqlalchemy_to_pydantic_post, get_pyschema
 from app.core.config.database.db_async import get_db
 from app.preact.core.router import PreactRouter
 
@@ -12,12 +12,14 @@ class CreateRouter(PreactRouter):
     def __init__(self):
         super().__init__(prefix='create', method='POST', tier=2)
 
-    def __set_schema__(self, model):
-        """ создает Create схему для response_model """
-        setattr(self, f'{model.__name__}Create', pyschema_helper(model, 'create'))
-        # setattr(self, f'{model.__name__}Create', sqlalchemy_to_pydantic_post(model))
+    def __set_schema__(self, model: Type[DeclarativeBase]):
+        """ по имени модели находит для response_model соотвествующую Create схему,
+            а если ее нет то создает
+        """
+        schema = get_pyschema(model, 'Create') or sqlalchemy_to_pydantic_post(model)
+        setattr(self, f'{model.__name__}Create', schema)
 
-    def __get_schemas__(self, model):
+    def __get_schemas__(self, model: Type[DeclarativeBase]):
         """ получает ранее созданную Create схему """
         return getattr(self, f'{model.__name__}Create')
 
@@ -26,11 +28,7 @@ class CreateRouter(PreactRouter):
         for model in self.source.values():
             self.__set_schema__(model)
 
-    def __source_generator__(self, source: dict, langs: list):
-        """
-            возвращает список
-            [prefix, response_model]
-        """
+    def __source_generator__(self, source: dict):
         return ((f'/{key}', self.__get_schemas__(val)) for key, val in source.items())
 
     async def endpoint(self, request: Request, data: Dict[str, Any] = Body(...),

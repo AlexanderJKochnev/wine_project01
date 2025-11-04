@@ -199,7 +199,7 @@ def simple_router_list():
     source = (CategoryRouter,
               # ColorRouter,
               CountryRouter,
-              CustomerRouter,
+              # CustomerRouter,
               SuperfoodRouter,
               SweetnessRouter,
               VarietalRouter,
@@ -221,7 +221,7 @@ def complex_router_list():
     return (SubcategoryRouter,
             RegionRouter,
             SubregionRouter,
-            WarehouseRouter,
+            # WarehouseRouter,
             DrinkRouter,
             ItemRouter)
 

@@ -3,8 +3,6 @@ from fastapi import Request, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
-from typing import Type
-from app.core.models.base_model import DeclarativeBase
 from app.core.schemas.base import DeleteResponse
 
 
@@ -12,23 +10,11 @@ class DeleteRouter(PreactRouter):
     def __init__(self):
         super().__init__(prefix='delete', method='DELETE', tier=2)
 
-    def __get_prepaire__(self, key: str, model: Type[DeclarativeBase]) -> tuple:
-        """
-        get the prefix & responsible pydantic model
-        :param key:     self.source.key
-        :param model:  self.source.value
-        :param lang:    one item from self.languages
-        :return:        (prefix, response_model)
-        """
-        prefix = f'/{key}' + '/{id}'
-        response_model = DeleteResponse
-        return (prefix, response_model)
-
-    def __source_generator__(self, source: dict, langs: list):
+    def __source_generator__(self, source: dict):
         """
         генератор для создания роутов
         """
-        return (self.__get_prepaire__(key, val) for key, val in source.items())
+        return ((f'/{key}' + '/{id}', DeleteResponse) for key, val in source.items())
 
     async def endpoint(self, request: Request, id: int,
                        session: AsyncSession = Depends(get_db)) -> DeleteResponse:

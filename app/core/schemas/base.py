@@ -10,37 +10,27 @@ PaginatedResponse - см ниже на базе ReadSchema
 ListResponse - тоже что и Pagianted только без Pagianted
 """
 from datetime import datetime
-from typing import Generic, List, NewType, Optional, Set, Type, TypeVar
-
+from typing import Generic, List, NewType, Optional, TypeVar
+from app.service_registry import register_pyschema
 from pydantic import BaseModel as BaseOrigin, ConfigDict, Field
 
 # from abc import ABC
 
 # Глобальный реестр pydantic схем
-PYDANTIC_MODELS: Set[Type[BaseOrigin]] = set()
+# PYDANTIC_MODELS: Set[Type[BaseOrigin]] = set()
 
 
-class SchemaMeta(type(BaseOrigin)):
-    _registry = {}
-
-    def __new__(cls, name, bases, attrs, **kwargs):
-        if not hasattr(cls, '_registry'):
-            cls._registry = {}
-
-        new_class = super().__new__(cls, name, bases, attrs)
-        # Регистрируем сам класс, а не его экземпляр
-        if not attrs.get('__abstract__', False):
-            key = name.lower()
-            cls._registry[key] = new_class  # ← Сохраняем класс!
-            print(f"✅ Зарегистрирована схема: {name} -> ключ: '{key}'")
-        return new_class
-
-
-class BaseModel(BaseOrigin, metaclass=SchemaMeta):
+class BaseModel(BaseOrigin):
     """
          вводим метод для получения только обязательных полей
     """
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, extra='ignore')
+
+    def __init_subclass__(cls, **kwargs):
+        # Автоматическая регистрация всех не-абстрактных классов
+        if not getattr(cls, '__abstract__', False):
+            key = cls.__name__.lower()
+            register_pyschema(key, cls)  # print(f"✅ Зарегистрирована схема: {cls.__name__} -> ключ: '{key}'")
 
     def get_required_structure(self, deep: bool = False) -> dict:
         """ Рекурсивно получает структуру только с обязательными полями
@@ -199,17 +189,16 @@ class UpdateResponse(BaseModel):
 # ---------------------NEW VIEWS--------------------------
 
 
-class ListView(PkSchema, NameExcludeSchema):
+class ListView(PkSchema):
     """
-        только минимум полей
-        name - невидимые - будут переделаны в языковые поля
         id, name
+        может быть еще что-то добавить из общих полей?
     """
+    name: str
 
 
-class DetailView(PkSchema, NameExcludeSchema, DescriptionExcludeSchema):
+class DetailView(PkSchema):
     """
-        поля по максимуму
-        id, видимое
-        name, description невидимое
     """
+    name: str
+    description: Optional[str] = None

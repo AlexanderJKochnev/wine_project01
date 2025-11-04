@@ -14,8 +14,7 @@ from app.core.utils.common_utils import back_to_the_future
 from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
                                    CreateResponse, UpdateSchema, CreateSchema)
 from app.core.exceptions import exception_to_http
-from app.core.utils.pydantic_utils import get_repo, get_service
-from app.core.utils.pydantic_utils import pyschema_helper
+from app.core.utils.pydantic_utils import get_repo, get_service, get_pyschema
 
 
 paging = get_paging
@@ -44,15 +43,15 @@ class BaseRouter:
         self.repo = get_repo(model)
         self.service = get_service(model)
         # input py schema for simple create without relation
-        self.create_schema = pyschema_helper(model, 'create')
+        self.create_schema = get_pyschema(model, 'Create')
         # input py schema for create with relation
-        self.create_schema_relation = pyschema_helper(model, 'create_relation')
+        self.create_schema_relation = get_pyschema(model, 'CreateRelation')
         # input update schema
-        self.update_schema = pyschema_helper(model, 'update')
+        self.update_schema = get_pyschema(model, 'Update')
 
         # response schemas:
-        self.read_schema = pyschema_helper(model, 'read')
-        self.read_schema_relation = pyschema_helper(model, 'read_relation') or self.read_schema
+        self.read_schema = get_pyschema(model, 'Read')
+        self.read_schema_relation = get_pyschema(model, 'ReadRelation') or self.read_schema
         self.paginated_response = PaginatedResponse[self.read_schema_relation]
         self.nonpaginated_response = List[self.read_schema_relation]
         self.delete_response = DeleteResponse

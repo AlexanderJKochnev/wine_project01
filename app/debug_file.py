@@ -1,6 +1,4 @@
 # debug_services.py
-import sys
-
 
 def check_imports():
     print("=== ПРОВЕРКА ИМПОРТОВ ===")
@@ -31,33 +29,32 @@ def check_imports():
 
 def verify_registration():
     print("\n=== ПРОВЕРКА РЕГИСТРАЦИИ ===")
-    
     from app.core.services.service import ServiceMeta
-    
+
     print("Все зарегистрированные сервисы:")
     for key, service_class in ServiceMeta._registry.items():
         is_abstract = getattr(service_class, '__abstract__', False)
         status = "ABSTRACT" if is_abstract else "CONCRETE"
         print(f"  {key:15} -> {service_class.__name__:20} [{status}]")
-    
+
     # Проверьте, доступны ли сервисы через registry
     drink_service = ServiceMeta._registry.get('drink')
     item_service = ServiceMeta._registry.get('item')
-    
+
     print(f"\nDrinkService доступен через registry: {drink_service is not None}")
     print(f"ItemService доступен через registry: {item_service is not None}")
 
 
 def check_metaclass_instances():
     print("\n=== ПРОВЕРКА МЕТАКЛАССА ===")
-    
+
     from app.core.services.service import ServiceMeta, Service
-    
+
     print(f"ServiceMeta: {ServiceMeta}")
     print(f"Service.__class__: {Service.__class__}")
     print(f"ServiceMeta._registry id: {id(ServiceMeta._registry)}")
     print(f"ServiceMeta._registry: {ServiceMeta._registry}")
-    
+
     # Проверьте все классы Service
     print("\nВсе классы с метаклассом ServiceMeta:")
     for cls in ServiceMeta._registry.values():

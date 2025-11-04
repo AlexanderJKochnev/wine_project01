@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
 from typing import List, Type
-from app.core.utils.pydantic_utils import pyschema_helper
+from app.core.schemas.base import ListView
 from app.core.models.base_model import DeclarativeBase
 
 
@@ -17,7 +17,7 @@ class HandbookRouter(PreactRouter):
     def __init__(self):
         super().__init__(prefix='handbooks', method='GET', tier=2)
 
-    def __get_prepaire__(self, key: str, model: Type[DeclarativeBase], lang: str) -> tuple:
+    def __get_prepaire__(self, key: str, model: Type[DeclarativeBase]) -> tuple:
         """
         get the prefix & responsible pydantic model
         :param key:     self.source.key
@@ -25,15 +25,16 @@ class HandbookRouter(PreactRouter):
         :param lang:    one item from self.languages
         :return:        (prefix, response_model)
         """
-        prefix = f'/{key}/{lang}'
-        response_model = List[pyschema_helper(model, 'list', lang)]
+        prefix = f'/{key}'
+        # response_model = List[get_pyschema(model, 'View')]
+        response_model = List[ListView]
         return (prefix, response_model)
 
-    async def endpoint(self, request: Request, session: AsyncSession = Depends(get_db)):
+    async def endpoint(self, request: Request, lang: str, session: AsyncSession = Depends(get_db)):
         current_path = request.url.path
         route = request.scope["route"]
         # response_model = route.response_model
-        pref, lang = self.__path_decoder__(current_path)
+        pref, _ = self.__path_decoder__(current_path)
         model = self.source.get(pref)
         lang = self.get_lang_prefix(lang)  # convert lang to lang pref 'en' -> '', 'ru' -> '_ru' ...
         repo = self.get_repo(model)

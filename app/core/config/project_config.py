@@ -48,10 +48,20 @@ class Settings(BaseSettings):
     HANDBOOKS_PREFIX: str = 'handbooks'
     LANGS: str = 'en, ru, fr'
     DEFAULT_LANG: str = 'en'
+    IDETAIL_VIEW: str = 'name, description'
+    ILIST_VIEW: str = 'name'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
+
+    @property
+    def DETAIL_VIEW(self) -> list:
+        return strtolist(self.IDETAIL_VIEW)
+
+    @property
+    def LIST_VIEW(self) -> list:
+        return strtolist(self.ILIST_VIEW)
 
     @property
     def LANGUAGES(self):

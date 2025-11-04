@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
 from typing import Dict, Any
-from app.core.utils.pydantic_utils import pyschema_helper
-# from app.core.models.base_model import DeclarativeBase
+from app.core.utils.pydantic_utils import get_pyschema
 
 
 class PatchRouter(PreactRouter):
@@ -14,11 +13,8 @@ class PatchRouter(PreactRouter):
 
     def __set_schema__(self, model):
         """  находит  Update схему для response_model """
-        try:
-            setattr(self, f'{model.__name__}Update', pyschema_helper(model, 'update'))
-            # setattr(self, f'{model.__name__}Update', sqlalchemy_to_pydantic_post(model))
-        except Exception as e:
-            print(f'updatr.__set_schema__.error:: {e}')
+        schema = get_pyschema(model, 'Update')  # or sqlalchemy_to_pydantic_post(model)
+        setattr(self, f'{model.__name__}Create', schema)
 
     def __get_schemas__(self, model):
         """ получает ранее созданную Create схему """
@@ -29,12 +25,11 @@ class PatchRouter(PreactRouter):
         for model in self.source.values():
             self.__set_schema__(model)
 
-    def __source_generator__(self, source: dict, langs: list):
+    def __source_generator__(self, source: dict):
         """
-            возвращает список
-            [prefix, response_model]
+        генератор для создания роутов
         """
-        return ((f'/{key}' + '/{id}', self.__get_schemas__(val)) for key, val in source.items())
+        return ((f'/{key}' + '/{lang}/{id}', self.__get_schemas__(val)) for key, val in source.items())
 
     async def endpoint(self, request: Request, id: int, data: Dict[str, Any] = Body(...),
                        session: AsyncSession = Depends(get_db)):

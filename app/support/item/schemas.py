@@ -152,6 +152,7 @@ class DrinkPreactDetailView:
     id: int
     drink: DrinkReadApi
 
+
 class DrinkPreactListView:
     id: int
     drink: int
@@ -161,7 +162,8 @@ class DrinkPreactListView:
 class DrinkPreactUpdate:
     id: int
 
-class DrinkPreactCreate: 
+
+class DrinkPreactCreate:
     title: str
     title_ru: Optional[str]
     title_fr: Optional[str]

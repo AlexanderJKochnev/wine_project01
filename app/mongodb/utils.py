@@ -105,7 +105,7 @@ def file_name(origin: str, length: int = 10, ext: str = None) -> str:
     :return: имя файла с расширением
     """
     if not ext:
-        ext = f'.{origin.rsplit('.', 1)}' if '.' in origin else ''
+        ext = f".{origin.rsplit('.', 1)}" if '.' in origin else ''
     name = ''.join(random.choice(string.ascii_letters) for _ in range(length))
     return f'{name}{ext}'
 

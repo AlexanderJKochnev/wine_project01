@@ -7,7 +7,7 @@ from app.support.warehouse.model import Warehouse
 # from app.support.warehouse.repository import WarehouseRepository
 from app.support.warehouse.schemas import (WarehouseRead, WarehouseCreate, WarehouseUpdate,
                                            WarehouseCreateRelation, WarehouseCreateResponseSchema)
-from app.support.warehouse.service import WarehouseService
+# from app.support.warehouse.service import WarehouseService
 
 
 class WarehouseRouter(BaseRouter):

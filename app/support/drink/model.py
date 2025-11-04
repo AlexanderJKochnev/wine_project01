@@ -66,7 +66,6 @@ class Drink(Base, BaseAt, Lang):
     subcategory: Mapped["Subcategory"] = relationship(back_populates="drinks")
     subregion: Mapped["Subregion"] = relationship(back_populates="drinks")
     sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
-    # type: Mapped["Type"] = relationship(back_populates="drinks")
 
     # обратная связь
     items = relationship("Item", back_populates=single_name,
