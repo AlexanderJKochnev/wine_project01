@@ -770,6 +770,10 @@ def flatten_dict_with_localized_fields(
             chain.extend(extract_chain(node[nested_key]))
         return chain
 
+    # убираем лишние поля
+    data = {key: val for key, val in data.items() if any((key.startswith(tuple(fields)), key == 'id'))}
+    id = data.pop('id')
+
     # Получаем цепочку узлов от листа к корню
     chain_leaf_to_root = extract_chain(data)
 
@@ -860,6 +864,7 @@ def flatten_dict_with_localized_fields(
                 parts.append(val)
         if parts:
             result[base_field] = '. '.join(parts) + '.'
+    result['id'] = id
     return result
 
 

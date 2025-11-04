@@ -428,6 +428,8 @@ def test_flatten_dict_with_localized_fields():
             }
             }
     data = {'id': 1, 'name': 'Free owner trip word unit.', 'description': None, 'created_at': datetime.datetime(2025, 11, 4, 1, 11, 34, 411105, tzinfo=datetime.timezone.utc), 'updated_at': datetime.datetime(2025, 11, 4, 1, 11, 34, 411105, tzinfo=datetime.timezone.utc), 'name_ru': None, 'name_fr': 'Bleu honneur lien phrase.', 'description_ru': None, 'description_fr': 'Extraordinaire leur façon obliger souffrir long. Derrière continuer etc terrain absolu signer fixe. Vous paix argent.\nGrâce petit volonté nouveau fou rassurer rêve. Pied sept mine partie acte conseil frapper. Cesse voler indiquer retomber unique.\nFenêtre reposer situation rencontrer renverser delà demander politique.'}
+    fields = ('name', 'description')
+    print({key for key in data.keys() if any((key.startswith(fields), key == 'id'))})
     print(flatten_dict_with_localized_fields(data, ['name', 'description'], lang='ru', reverse=True))
     print(flatten_dict_with_localized_fields(data, ['name', 'description'], lang='en', reverse=False))
     assert False

@@ -293,7 +293,8 @@ class Service(metaclass=ServiceMeta):
         for key in ['created_at', 'updated_at']:
             pass
             # obj.pop(key, None)
-        print(obj)
+        # print(obj)
         result = flatten_dict_with_localized_fields(obj, detail_fields, lang)
-        for key, val in result.items():
-            print(key, val)
+        # for key, val in result.items():
+        #     print(lang, key, val)
+        return result
