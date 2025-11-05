@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     DEFAULT_LANG: str = 'en'
     IDETAIL_VIEW: str = 'name, description'
     ILIST_VIEW: str = 'name'
+    # Redis settings
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    # Cache settings
+    CACHE_DEFAULT_EXPIRE: int = 300
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

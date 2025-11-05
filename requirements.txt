@@ -24,4 +24,5 @@ Faker
 itsdangerous>=2.1.0
 pydantic_factories
 python-magic
+redis==5.0.1
 #для работы python-magic нужно: brew install libmagic

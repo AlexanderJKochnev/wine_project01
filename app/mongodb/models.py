@@ -4,6 +4,8 @@ from datetime import datetime
 from typing import Optional, List
 from app.core.config.project_config import settings
 
+from bson import ObjectId
+
 
 class ZeroBase(BaseModel):
     filename: str = Field(default=None, exclude=True)
@@ -49,9 +51,11 @@ class FileResponse(FileBase):
     size: int
     content_type: str
 
-
-class JustListResponse(ZeroBase):
-    images: List[FileResponse]
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+            ObjectId: lambda v: str(v)
+        }
 
 
 class FileListResponse(BaseModel):
@@ -59,3 +63,7 @@ class FileListResponse(BaseModel):
     images: List[FileResponse]
     total: int
     has_more: bool
+
+
+class JustListResponse(ZeroBase):
+    images: List[FileResponse]

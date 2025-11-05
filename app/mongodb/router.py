@@ -12,8 +12,8 @@ from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
 from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
+from app.core.cache import cache_key_builder, invalidate_cache
 
-# from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
@@ -26,6 +26,7 @@ router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depend
 
 
 @router.get(f'/{subprefix}', response_model=FileListResponse)
+@cache_key_builder(prefix='mongodb_images', expire=300, key_params=["after_date", "page", "per_page"])
 async def get_images_after_date(
     after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
@@ -45,6 +46,7 @@ async def get_images_after_date(
 
 
 @router.get(f'/{subprefix}list', response_model=dict)
+@cache_key_builder(prefix='mongodb_images_list', expire=300, key_params=["after_date"])
 async def get_images_list_after_date(
     after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
         image_service: ImageService = Depends()) -> dict:
@@ -62,6 +64,7 @@ async def get_images_list_after_date(
 
 
 @router.get(f'/{subprefix}/' + "{file_id}")  # , response_model=StreamingResponse)
+@cache_key_builder(prefix='mongodb_image', expire=600, key_params=["file_id"])
 async def download_image(
     file_id: str,
     image_service: ImageService = Depends()
@@ -79,6 +82,7 @@ async def download_image(
 
 
 @router.get(f'/{fileprefix}/' + "{filename}")
+@cache_key_builder(prefix='mongodb_file', expire=600, key_params=["filename"])
 async def download_file(
     filename: str,
     image_service: ImageService = Depends()
@@ -96,6 +100,7 @@ async def download_file(
 
 
 @router.post(f'/{subprefix}', response_model=dict)
+@invalidate_cache(patterns=["mongodb_images:*", "mongodb_images_list:*", "mongodb_image:*", "mongodb_file:*"])
 async def upload_image(
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
@@ -109,6 +114,7 @@ async def upload_image(
 
 
 @router.post(f'/{directprefix}')
+@invalidate_cache(patterns=["mongodb_images:*", "mongodb_images_list:*", "mongodb_image:*", "mongodb_file:*"])
 async def direct_upload(image_service: ImageService = Depends()) -> dict:
     """
         импортирование рисунков из директории UPLOAD_DIR (см. .env file
@@ -122,6 +128,7 @@ async def direct_upload(image_service: ImageService = Depends()) -> dict:
 
 
 @router.delete(f'/{subprefix}/' + "{file_id}", response_model=dict)
+@invalidate_cache(patterns=["mongodb_images:*", "mongodb_images_list:*", "mongodb_image:*", "mongodb_file:*"])
 async def delete_image(
     file_id: str,
     image_service: ImageService = Depends()

@@ -4,7 +4,7 @@ import logging
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.core.cache import redis_cache
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
@@ -18,7 +18,7 @@ from app.support.api.router import ApiRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
-from app.support.customer.router import CustomerRouter
+# from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
@@ -29,7 +29,7 @@ from app.support.superfood.router import SuperfoodRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
-from app.support.warehouse.router import WarehouseRouter
+# from app.support.warehouse.router import WarehouseRouter
 
 # from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware
@@ -102,7 +102,7 @@ async def health_check(mongodb_instance: MongoDB = Depends(get_mongodb)):
 
 @app.on_event("startup")
 async def startup_event():
-    pass
+    await redis_cache.init_redis()
 
 
 @app.on_event("shutdown")
@@ -110,3 +110,4 @@ async def shutdown_event():
     mongodb_instance = await get_mongodb()
     await mongodb_instance.disconnect()
     await engine.dispose()
+    await redis_cache.close()
