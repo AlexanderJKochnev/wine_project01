@@ -9,8 +9,7 @@ from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
 from app.service_registry import register_service
 from app.core.config.project_config import settings
-from app.core.utils.alchemy_utils import model_to_dict
-from app.core.utils.common_utils import coalesce, flatten_dict_with_localized_fields
+from app.core.utils.common_utils import flatten_dict_with_localized_fields
 
 joint = '. '
 
@@ -267,17 +266,16 @@ class Service(metaclass=ServiceMeta):
         return result
 
     @classmethod
-    async def get_list_view(cls, repository: Type[Repository],
+    async def get_list_view(cls, lang: str, repository: Type[Repository],
                             model: ModelType, session: AsyncSession, ) -> List[tuple]:
         # Запрос с загрузкой связей и пагинацией
-        rows = await repository.get_list_view(model, session)
-        return rows
-
-    @classmethod
-    async def get_nodate(cls, repository: Type[Repository],
-                         model: ModelType, session: AsyncSession, ) -> Optional[List[ModelType]]:
-        # Запрос с загрузкой связей -  возвращает список
-        result = await repository.get_nodate(model, session)
+        rows = await repository.get_list(model, session)
+        list_fields = ['name']
+        for row in rows:
+            print(type(row), row)
+        
+        
+        result = [flatten_dict_with_localized_fields(obj.to_dict(), list_fields, lang) for obj in rows]
         return result
 
     @classmethod

@@ -328,4 +328,5 @@ class Repository(metaclass=RepositoryMeta):
         stmt = cls.get_short_query(model)
         # compiled_pg = stmt.compile(dialect=postgresql.dialect())
         result = await session.execute(stmt)
-        return result.mappings().all()
+        res: List[ModelType] = result.scalars().all()
+        return res

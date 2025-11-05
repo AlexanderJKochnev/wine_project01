@@ -112,3 +112,20 @@ async def test_delete_routers(authenticated_client_with_db, test_db_session,
         assert response.status_code == 200, f'{full_prefix}/{id}, {response.text}'
         result = response.json()
         assert result.get('success'), f'{full_prefix}/{id} :: {result}'
+
+
+async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
+                                 fakedata_generator, routers_get):
+    from app.preact.handbook.router import HandbookRouter
+    client = authenticated_client_with_db
+    router = HandbookRouter()
+    prefix = router.prefix
+    subprefix = [key for key, val in router.source.items()]
+    language = ['ru', 'en', 'fr']
+    test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
+    for pref in test_set:
+        pre = f'{pref}'
+        response = await client.get(pre)
+        assert response.status_code == 200, f'{pre=}  {response.text}'
+        result = response.json()
+        assert isinstance(result, List), result

@@ -1,7 +1,7 @@
 # app/support/food/schemas.py
 
 from typing import Optional
-from app.core.schemas.base import (CreateResponse, CreateSchema, ReadSchema, UpdateSchema, DetailView, ListView)
+from app.core.schemas.base import CreateResponse, CreateSchema, ReadSchema, UpdateSchema, DetailView, ListView
 from app.support.superfood.schemas import SuperfoodCreateRelation, SuperfoodRead
 
 
@@ -46,4 +46,8 @@ class FoodCreateResponseSchema(FoodCreate, CreateResponse):
 
 
 class FoodDetailView(DetailView):
+    superfood: Optional[ListView] = None
+
+
+class FoodListView(ListView):
     superfood: Optional[ListView] = None

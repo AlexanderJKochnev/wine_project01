@@ -78,3 +78,7 @@ class SubcategoryCreateResponseSchema(SubcategoryCreate, CreateResponse):
 
 class SubcategoryDetailView(DetailView):
     country: Optional[ListView] = None
+
+
+class SubcategoryListView(ListView):
+    country: Optional[ListView] = None
