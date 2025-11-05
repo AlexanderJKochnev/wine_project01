@@ -9,6 +9,7 @@ from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
 from app.service_registry import register_service
 from app.core.config.project_config import settings
+from app.core.utils.alchemy_utils import model_to_dict
 from app.core.utils.common_utils import coalesce, flatten_dict_with_localized_fields
 
 joint = '. '
@@ -283,18 +284,13 @@ class Service(metaclass=ServiceMeta):
     async def get_detail_view(cls, lang: str, id: int, repository: Type[Repository],
                               model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """ Получение и обработка записи по ID """
-        lang = '' if lang == 'en' else f'_{lang}'
-        detail_fields = ['id', *settings.DETAIL_VIEW]
+        # lang = '' if lang == 'en' else f'_{lang}'
+        detail_fields = settings.DETAIL_VIEW
         obj = await repository.get_by_id(id, model, session)
+        # return obj
         if not obj:
             return None
         if not isinstance(obj, dict):   # если объект не словарь
-            obj = obj.to_dict()
-        for key in ['created_at', 'updated_at']:
-            pass
-            # obj.pop(key, None)
-        # print(obj)
+            obj = obj.to_dict()  # model_to_dict(obj)
         result = flatten_dict_with_localized_fields(obj, detail_fields, lang)
-        # for key, val in result.items():
-        #     print(lang, key, val)
         return result

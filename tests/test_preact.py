@@ -49,12 +49,11 @@ async def test_get_routers(authenticated_client_with_db, test_db_session,
     from app.preact.get.router import GetRouter
     client = authenticated_client_with_db
     router = GetRouter()
-    id = 1   # ищем первую запись
+    id = 3   # ищем первую запись
     prefix = router.prefix
     subprefix = [key for key, val in router.source.items()]
     language = ['ru', 'en', 'fr']
     test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
-    jprint(test_set)
     for pref in test_set:
         pre = f'{pref}/{id}'
         response = await client.get(pre)
@@ -62,9 +61,6 @@ async def test_get_routers(authenticated_client_with_db, test_db_session,
         result = response.json()
         assert isinstance(result, dict), result
         assert result['id'] == id, f"ожидалась запись {id=}, получена id = {result['id']}"
-        print(f'{pre}====================')
-        jprint(result)
-    assert False
 
 
 async def test_path_routers(authenticated_client_with_db, test_db_session,

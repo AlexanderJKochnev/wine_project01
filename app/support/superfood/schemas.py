@@ -1,6 +1,6 @@
 # app/support/superfood/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, CreateResponse
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, CreateResponse, DetailView, ListView
 
 
 class CustomReadSchema:
@@ -40,4 +40,8 @@ class SuperfoodUpdate(UpdateSchema, CustomUpdSchema):
 
 
 class SuperfoodCreateResponseSchema(SuperfoodCreate, CreateResponse):
+    pass
+
+
+class SuperfoodDetailView(DetailView):
     pass

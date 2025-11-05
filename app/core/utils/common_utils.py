@@ -737,136 +737,73 @@ def dict_sorter(source: dict) -> dict:
     return dict(sorted(source.items(), key=lambda item: item[1]))
 
 
-def flatten_dict_with_localized_fields(
-    data: Dict[str, Any],
-    fields: List[str],
-    lang: str = 'en',
-    reverse: bool = True
-) -> Dict[str, Any]:
-    """
-    Преобразует вложенный словарь (с единственным dict-ключом на каждом уровне)
-    в плоский, объединяя локализованные поля по иерархии.
+def flatten_dict_with_localized_fields(data: Dict[str, Any],
+                                       fields: List[str],
+                                       lang: str = 'en',
+                                       reverse: bool = True) -> Dict[str, Any]:
+    if not fields:
+        result = {'id': data['id']} if 'id' in data else {}
+        return result
 
-    Args:
-        data: Вложенный словарь, где каждый уровень содержит не более одного ключа со словарём.
-        fields: Список базовых имён полей для объединения (например, ['name', 'description']).
-        lang: Язык (например, 'ru', 'fr'). Для 'en' используется поле без суффикса.
-        reverse: Если True — от корня к листу, иначе — от листа к корню.
+    # === 1. Извлекаем цепочку узлов от корня к самому глубокому уровню ===
+    def get_nodes(node: Dict[str, Any]) -> List[Dict[str, Any]]:
+        nodes = [node]
+        for value in node.values():
+            if isinstance(value, dict):
+                nodes.extend(get_nodes(value))
+                break
+        return nodes
 
-    Returns:
-        Плоский словарь с объединёнными значениями и скалярными полями (например, 'id').
-    """
-    def extract_chain(node: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Рекурсивно извлекает цепочку узлов от текущего до корня (в порядке: текущий → родитель → ...)."""
-        chain = [node]
-        # Найти единственный ключ, значение которого — dict
-        nested_key = None
-        for k, v in node.items():
-            if isinstance(v, dict):
-                if nested_key is not None:
-                    raise ValueError("More than one nested dict key found at a level.")
-                nested_key = k
-        if nested_key is not None:
-            chain.extend(extract_chain(node[nested_key]))
-        return chain
-
-    # убираем лишние поля
-    data = {key: val for key, val in data.items() if any((key.startswith(tuple(fields)), key == 'id'))}
-    id = data.pop('id')
-
-    # Получаем цепочку узлов от листа к корню
-    chain_leaf_to_root = extract_chain(data)
-
-    # Определяем порядок: reverse=True → корень → ... → лист
-    if reverse:
-        nodes = list(reversed(chain_leaf_to_root))
-    else:
-        nodes = chain_leaf_to_root
-
-    # Собираем все ключи для определения доступных языков
-    all_keys = set()
-    for node in nodes:
-        all_keys.update(node.keys())
-    # Извлекаем все возможные языковые суффиксы
-    suffixes = set()
-    for key in all_keys:
-        if '_' in key:
-            parts = key.split('_', 1)
-            if len(parts) == 2 and parts[1].isalpha():
-                suffixes.add(parts[1])
-    suffixes = sorted(suffixes)  # для детерминированности
-
-    # Определяем порядок fallback для значений
-    def get_value_for_field(node: Dict[str, Any], base_field: str) -> Union[str, None]:
-        # 1. Целевой язык (если не 'en')
-        if lang != 'en':
-            key_lang = f"{base_field}_{lang}"
-            if key_lang in node and node[key_lang] not in (None, ''):
-                return node[key_lang]
-        # 2. Базовое поле (без суффикса) — используется для 'en' или как fallback
-        if base_field in node and node[base_field] not in (None, ''):
-            return node[base_field]
-        # 3. Любое другое непустое локализованное поле (в порядке суффиксов)
-        for suf in suffixes:
-            if suf == lang:
-                continue
-            key = f"{base_field}_{suf}"
-            if key in node and node[key] not in (None, ''):
-                return node[key]
-        # 4. Ничего не найдено
-        return None
+    all_nodes = get_nodes(data)
+    ordered_nodes = list(reversed(all_nodes)) if not reverse else all_nodes
 
     result = {}
+    if 'id' in data:
+        result['id'] = data['id']
 
-    # Сбор скалярных полей (не входящих в `fields` и не являющихся dict)
-    # Берём первое непустое значение по порядку nodes
-    """
-    scalar_candidates = set()
-    for node in nodes:
-        for k, v in node.items():
-            if all((not isinstance(v, dict),
-                    k not in fields,
-                    not any(k == f"{f}_{s}"
-                            for f in fields
-                            for s in ([''] + list(suffixes))))):
-                scalar_candidates.add(k)
+    main_field = fields[0]
 
-    for key in scalar_candidates:
-        for node in nodes:
-            val = node.get(key)
-            if val is not None and val != '':
-                result[key] = val
-                break
-    """
+    # === 2. Обработка ПЕРВОГО поля (рекурсивно, с объединением) ===
+    def get_main_value(node: Dict[str, Any]) -> str | None:
+        if lang != 'en':
+            val = node.get(f"{main_field}_{lang}")
+            if isinstance(val, str) and val != '':
+                return val
+        val = node.get(main_field)
+        if isinstance(val, str) and val != '':
+            return val
+        return None
 
-    nodes_for_scalars = list(reversed(chain_leaf_to_root))  # корень → ... → лист
-    scalar_candidates = set()
-    for node in nodes_for_scalars:
-        for k, v in node.items():
-            if not isinstance(v, dict) and k not in fields and not any(
-                    k == f"{f}_{s}" for f in fields for s in ([''] + list(suffixes))
-            ):
-                scalar_candidates.add(k)
+    main_parts = []
+    for node in ordered_nodes:
+        val = get_main_value(node)
+        if val is not None:
+            main_parts.append(val)
+    if main_parts:
+        result[main_field] = '. '.join(main_parts) + '.'
 
-    for key in scalar_candidates:
-        for node in nodes_for_scalars:
-            val = node.get(key)
-            if val is not None and val != '':
-                result[key] = val
-                break
+    # === 3. Обработка ОСТАЛЬНЫХ полей (только корень, без рекурсии) ===
+    root = data
+    for field in fields[1:]:
+        # coalesce: field_lang → field
+        if lang != 'en':
+            val = root.get(f"{field}_{lang}")
+            if isinstance(val, str) and val != '':
+                result[field] = val
+                continue
+        val = root.get(field)
+        # Даже если None или пусто — сохраняем как есть (в примере: 'description test')
+        # Но по ТЗ: если coalesce дал непустое — берём, иначе?
+        # В примере: 'description' = 'description test' → сохраняем
+        if isinstance(val, str) and val != '':
+            result[field] = val
+        else:
+            # Если хотим сохранять даже None/пустое — раскомментируйте:
+            # result[field] = val
+            # Но в примере вывода поле присутствует, значит — сохраняем любое значение из корня
+            result[field] = val  # включая None, '', и т.д.
 
-    # Обработка запрошенных полей
-    for base_field in fields:
-        parts = []
-        for node in nodes:
-            val = get_value_for_field(node, base_field)
-            if val is not None:
-                parts.append(val)
-        if parts:
-            result[base_field] = '. '.join(parts) + '.'
-    result['id'] = id
     return result
-
 
 def coalesce(*args):
     for x in args:

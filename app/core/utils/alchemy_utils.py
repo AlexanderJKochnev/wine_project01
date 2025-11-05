@@ -97,7 +97,8 @@ async def mass_delete(query: Query, batch: int, session: AsyncSession):
 
 def model_to_dict(obj, seen=None):
     """
-    преобразует sqlalchemy instance в словарь
+        преобразует sqlalchemy instance в словарь
+        foreign filed with lazy load преобразует во вложенные словари любой губины
     """
     if seen is None:
         seen = set()

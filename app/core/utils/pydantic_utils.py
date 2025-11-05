@@ -54,7 +54,10 @@ def get_pyschema(model: Union[Type[DeclarativeBase]], schema: str = 'Read') -> P
     """
     if not isinstance(model, str):
         model = model.__name__
-    return get_pyschem(f'{model}{schema}'.lower())
+    result = get_pyschem(f'{model}{schema}'.lower())
+    if not result:
+        result = get_pyschem(f'{schema}'.lower())
+    return result
 
 
 def sqlalchemy_to_pydantic_post(

@@ -4,92 +4,9 @@ from typing import Optional
 
 from pydantic import computed_field, Field
 
-from app.core.schemas.base import (CreateResponse, CreateSchemaSub, ReadApiSchema, ReadSchema, UpdateSchema)
-from app.core.schemas.lang_schemas import (DetailViewEn, DetailViewFr, DetailViewRu,
-                                           ListViewEn, ListViewFr, ListViewRu)
+from app.core.schemas.base import (CreateResponse, CreateSchemaSub, ReadApiSchema, ReadSchema, UpdateSchema,
+                                   DetailView, ListView)
 from app.support.category.schemas import CategoryCreateRelation, CategoryRead
-
-
-class SubcategoryDetailViewEn(DetailViewEn):
-    # category_id: Optional[int] = Field(exclude=True)
-    category: ListViewEn = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        return (f'{self.category.display_name}.'
-                f' {self.name or self.name_ru or self.name_fr or ""}')
-
-
-class SubcategoryDetailViewRu(DetailViewRu):
-    category: ListViewRu = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.category.display_name
-        return f'{self.category.display_name}. {self.name_ru or self.name or self.name_fr or ""}'
-
-
-class SubcategoryDetailViewFr(DetailViewFr):
-    category: ListViewFr = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.category.display_name
-        return f'{self.category.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
-
-# --LIST VIEW-------------------------------
-
-
-class SubcategoryListViewEn(ListViewEn):
-    # category_id: Optional[int] = Field(exclude=True)
-    category: ListViewEn = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        return (f'{self.category.display_name}.'
-                f' {self.name or self.name_ru or self.name_fr or ""}')
-
-
-class SubcategoryListViewRu(ListViewRu):
-    category: ListViewRu = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.category.display_name
-        return f'{self.category.display_name}. {self.name_ru or self.name or self.name_fr or ""}'
-
-
-class SubcategoryListViewFr(ListViewFr):
-    category: ListViewFr = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.category.display_name
-        return f'{self.category.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
 
 
 class CustomReadSchema:
@@ -157,3 +74,7 @@ class SubcategoryUpdate(UpdateSchema, CustomUpdSchema):
 
 class SubcategoryCreateResponseSchema(SubcategoryCreate, CreateResponse):
     pass
+
+
+class SubcategoryDetailView(DetailView):
+    country: Optional[ListView] = None

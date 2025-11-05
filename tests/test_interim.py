@@ -348,6 +348,7 @@ def test_get_pyschema():
     :rtype:
     """
     from app.core.utils.pydantic_utils import get_pyschema
+    from app.service_registry import get_all_pyschema
     from app.support.category.model import Category
     for key in mandatory_sets:
         schema = get_pyschema(Category, key)
@@ -359,7 +360,10 @@ def test_get_pyschema():
             expected_result = f'{model}{key}'
             assert schema, f'{model}{key} схема не получена'
             assert schema.__name__ == expected_result, f'получено {schema.__name__}. Ожидалось {model}{key}'
-
+        all = get_all_pyschema()
+        for key in all:
+            print(key)
+        assert False
 
 def test_get_repo():
     """
@@ -427,7 +431,19 @@ def test_flatten_dict_with_localized_fields():
                             }
             }
             }
-    data = {'id': 1, 'name': 'Free owner trip word unit.', 'description': None, 'created_at': datetime.datetime(2025, 11, 4, 1, 11, 34, 411105, tzinfo=datetime.timezone.utc), 'updated_at': datetime.datetime(2025, 11, 4, 1, 11, 34, 411105, tzinfo=datetime.timezone.utc), 'name_ru': None, 'name_fr': 'Bleu honneur lien phrase.', 'description_ru': None, 'description_fr': 'Extraordinaire leur façon obliger souffrir long. Derrière continuer etc terrain absolu signer fixe. Vous paix argent.\nGrâce petit volonté nouveau fou rassurer rêve. Pied sept mine partie acte conseil frapper. Cesse voler indiquer retomber unique.\nFenêtre reposer situation rencontrer renverser delà demander politique.'}
+    data={'name': None, 'id': 3,
+     'created_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 170061, tzinfo = datetime.timezone.utc), 'name_ru': None,
+     'description_ru': 'Нервно исследование хозяйка валюта. Еврейский райком товар пропаганда кольцо багровый.\nСомнительный терапия развернуться издали посидеть пламя. Строительство второй выкинуть возмутиться точно песня страсть. Ребятишки князь предоставить виднеться. Пасть привлекать болото жестокий.',
+     'category_id': 8,
+     'description': 'Field wear time establish kid. Cup choose indeed ball fund decision. Discuss argue growth common.\nThem include no because management government onto. Today Congress responsibility.\nSport economic have some. Born present main suffer drug. Floor work response check little place.',
+     'updated_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 170061, tzinfo = datetime.timezone.utc),
+     'name_fr': 'Terrain prêt goutte claire.', 'description_fr': None, 'drinks': [],
+     'category': {'id': 8, 'name': 'Image edge clear where.',
+                  'created_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 109514, tzinfo = datetime.timezone.utc),
+                  'name_ru': 'Жидкий неожиданно решение.', 'description_ru': None, 'description': None,
+                  'updated_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 109514, tzinfo = datetime.timezone.utc),
+                  'name_fr': 'Donner neuf cesser franc.', 'description_fr': None}}
+    
     fields = ('name', 'description')
     print({key for key in data.keys() if any((key.startswith(fields), key == 'id'))})
     print(flatten_dict_with_localized_fields(data, ['name', 'description'], lang='ru', reverse=True))

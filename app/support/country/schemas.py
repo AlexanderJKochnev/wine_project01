@@ -1,6 +1,6 @@
 # app/support/country/schemas.py
 
-from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
+from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse, DetailView)
 
 
 class CustomReadSchema:
@@ -40,4 +40,8 @@ class CountryUpdate(UpdateSchema, CustomUpdSchema):
 
 
 class CountryCreateResponseSchema(CountryCreate, CreateResponse):
+    pass
+
+
+class CountryDetailView(DetailView):
     pass

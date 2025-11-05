@@ -12,7 +12,7 @@ class DeleteRouter(PreactRouter):
 
     def __source_generator__(self, source: dict):
         """
-        генератор для создания роутов
+            генератор для создания роутов
         """
         return ((f'/{key}' + '/{id}', DeleteResponse) for key, val in source.items())
 
@@ -24,7 +24,6 @@ class DeleteRouter(PreactRouter):
         current_path = request.url.path
         pref, _ = self.__path_decoder__(current_path, 2)
         model = self.source.get(pref)
-        # print('=', current_path, pref, model.__name__)
         repo = self.get_repo(model)
         service = self.get_service(model)
         result = await service.delete(id, model, repo, session)

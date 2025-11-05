@@ -2,99 +2,9 @@
 
 from typing import Optional
 
-from pydantic import computed_field, Field
-
-from app.core.schemas.base import (CreateResponse, CreateSchemaSub, FullSchema, ReadApiSchema, ReadSchema, UpdateSchema)
-from app.core.schemas.lang_schemas import (DetailViewEn, DetailViewFr, DetailViewRu, ListViewEn, ListViewFr, ListViewRu)
-from app.support.region.schemas import RegionCreateRelation, RegionListViewEn, RegionListViewFr, RegionListViewRu, \
-    RegionRead, RegionReadApiSchema
-
-
-# -----------DETAIL VIEW START ------------
-
-
-class SubregionDetailViewEn(DetailViewEn):
-    # region_id: Optional[int] = Field(exclude=True)
-    region: RegionListViewEn = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        return (f'{self.region.display_name}.'
-                f' {self.name or self.name_ru or self.name_fr or ""}')
-
-
-class SubregionDetailViewRu(DetailViewRu):
-    region: RegionListViewRu = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.region.display_name
-        return f'{self.region.display_name}. {self.name_ru or self.name or self.name_fr or ""}'
-
-
-class SubregionDetailViewFr(DetailViewFr):
-    region: RegionListViewFr = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.region.display_name
-        return f'{self.region.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
-
-# -----------END DETAIL ---- START LIST-----
-
-
-class SubregionListViewEn(ListViewEn):
-    #  region_id: Optional[int] = Field(exclude=True)
-    region: RegionListViewEn = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        return (f'{self.region.display_name}.'
-                f' {self.name or self.name_ru or self.name_fr or ""}')
-
-
-class SubregionListViewRu(ListViewRu):
-    region: RegionListViewRu = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.region.display_name
-        return f'{self.region.display_name}. {self.name_ru or self.name or self.name_fr or ""}'
-
-
-class SubregionListViewFr(ListViewFr):
-    region: RegionListViewFr = Field(exclude=True)
-
-    @computed_field(description='Name',  # Это будет подписью/лейблом (human readable)
-                    title='Отображаемое имя'  # Это для swagger (machine readable)
-                    )
-    @property
-    def display_name(self) -> str:
-        """Возвращает первое непустое значение из name, name_ru, name_fr"""
-        self.region.display_name
-        return f'{self.region.display_name}. {self.name_fr or self.name or self.name_ru or ""}'
-
-# -------- END LIST VIEW --------------
+from app.core.schemas.base import (CreateResponse, CreateSchemaSub, FullSchema,
+                                   ReadApiSchema, ReadSchema, UpdateSchema, DetailView, ListView)
+from app.support.region.schemas import RegionCreateRelation, RegionReadApiSchema, RegionRead
 
 
 class SubregionReadApiSchema(ReadApiSchema):
@@ -143,3 +53,7 @@ class SubregionFull(FullSchema, CustomReadSchema):
 
 class SubregionCreateResponseSchema(SubregionCreate, CreateResponse):
     pass
+
+
+class SubregionDetailView(DetailView):
+    region: Optional[ListView] = None

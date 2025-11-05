@@ -7,7 +7,7 @@ from typing import Annotated
 # from sqlalchemy.dialects.postgresql import MONEY
 from sqlalchemy import DateTime, DECIMAL, func, Integer, text, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import class_mapper, DeclarativeBase, declared_attr, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
 
 # from app.core.config.project_config import settings
 from app.core.utils.common_utils import plural
@@ -93,12 +93,33 @@ class Base(AsyncAttrs, DeclarativeBase):
         # return f"<Category(name={self.name})>"
         return str(self)
 
-    def to_dict(self) -> dict:
-        """Универсальный метод для конвертации объекта SQLAlchemy в словарь"""
-        # Получаем маппер для текущей модели
-        columns = class_mapper(self.__class__).columns
-        # Возвращаем словарь всех колонок и их значений
-        return {column.key: getattr(self, column.key) for column in columns}
+    def to_dict(self, seen=None) -> dict:
+        """
+        преобразует sqlalchemy instance в словарь
+        foreign filed with lazy load преобразует во вложенные словари любой губины
+        """
+        if seen is None:
+            seen = set()
+        if self is None:
+            return None
+
+        obj_id = f"{self.__class__.__name__}_{id(self)}"
+        if obj_id in seen:
+            return None  # защита от циклов
+        seen.add(obj_id)
+
+        result = {}
+        for key in self.__dict__.keys():
+            if key.startswith("_"):
+                continue
+            value = getattr(self, key)
+            if isinstance(value, list):
+                result[key] = [self.to_dict(item, seen) for item in value]
+            elif hasattr(value, "__table__"):  # ORM-объект
+                result[key] = value.to_dict(seen)
+            else:
+                result[key] = value
+        return result
 
 
 class BaseAt:
