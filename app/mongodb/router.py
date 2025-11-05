@@ -14,6 +14,7 @@ from app.mongodb.models import FileListResponse
 from app.mongodb.service import ImageService
 from app.core.cache import cache_key_builder, invalidate_cache
 
+
 prefix = settings.MONGODB_PREFIX
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
@@ -64,7 +65,6 @@ async def get_images_list_after_date(
 
 
 @router.get(f'/{subprefix}/' + "{file_id}")  # , response_model=StreamingResponse)
-@cache_key_builder(prefix='mongodb_image', expire=600, key_params=["file_id"])
 async def download_image(
     file_id: str,
     image_service: ImageService = Depends()
@@ -82,7 +82,6 @@ async def download_image(
 
 
 @router.get(f'/{fileprefix}/' + "{filename}")
-@cache_key_builder(prefix='mongodb_file', expire=600, key_params=["filename"])
 async def download_file(
     filename: str,
     image_service: ImageService = Depends()
@@ -100,7 +99,14 @@ async def download_file(
 
 
 @router.post(f'/{subprefix}', response_model=dict)
-@invalidate_cache(patterns=["mongodb_images:*", "mongodb_images_list:*", "mongodb_image:*", "mongodb_file:*"])
+@invalidate_cache(patterns=[
+    "mongodb_images:*",
+    "mongodb_images_list:*",
+    "mongodb_image:*",
+    "mongodb_file:*",
+    "binary:mongodb_image:*",
+    "binary:mongodb_file:*"
+])
 async def upload_image(
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
@@ -114,7 +120,14 @@ async def upload_image(
 
 
 @router.post(f'/{directprefix}')
-@invalidate_cache(patterns=["mongodb_images:*", "mongodb_images_list:*", "mongodb_image:*", "mongodb_file:*"])
+@invalidate_cache(patterns=[
+    "mongodb_images:*",
+    "mongodb_images_list:*",
+    "mongodb_image:*",
+    "mongodb_file:*",
+    "binary:mongodb_image:*",
+    "binary:mongodb_file:*"
+])
 async def direct_upload(image_service: ImageService = Depends()) -> dict:
     """
         импортирование рисунков из директории UPLOAD_DIR (см. .env file
@@ -128,7 +141,14 @@ async def direct_upload(image_service: ImageService = Depends()) -> dict:
 
 
 @router.delete(f'/{subprefix}/' + "{file_id}", response_model=dict)
-@invalidate_cache(patterns=["mongodb_images:*", "mongodb_images_list:*", "mongodb_image:*", "mongodb_file:*"])
+@invalidate_cache(patterns=[
+    "mongodb_images:*",
+    "mongodb_images_list:*",
+    "mongodb_image:*",
+    "mongodb_file:*",
+    "binary:mongodb_image:*",
+    "binary:mongodb_file:*"
+])
 async def delete_image(
     file_id: str,
     image_service: ImageService = Depends()

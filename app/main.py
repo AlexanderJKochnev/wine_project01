@@ -5,6 +5,7 @@ import logging
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.cache import redis_cache
+from app.core.binary_cache import binary_redis_cache
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
@@ -103,6 +104,7 @@ async def health_check(mongodb_instance: MongoDB = Depends(get_mongodb)):
 @app.on_event("startup")
 async def startup_event():
     await redis_cache.init_redis()
+    await binary_redis_cache.init_redis()
 
 
 @app.on_event("shutdown")
@@ -111,3 +113,4 @@ async def shutdown_event():
     await mongodb_instance.disconnect()
     await engine.dispose()
     await redis_cache.close()
+    await binary_redis_cache.close()
