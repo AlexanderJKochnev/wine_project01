@@ -271,10 +271,6 @@ class Service(metaclass=ServiceMeta):
         # Запрос с загрузкой связей и пагинацией
         rows = await repository.get_list(model, session)
         list_fields = ['name']
-        for row in rows:
-            print(type(row), row)
-        
-        
         result = [flatten_dict_with_localized_fields(obj.to_dict(), list_fields, lang) for obj in rows]
         return result
 
