@@ -9,7 +9,7 @@ from app.core.utils.pydantic_utils import get_pyschema
 
 class PatchRouter(PreactRouter):
     def __init__(self):
-        super().__init__(prefix='path', method='PATCH', tier=3)
+        super().__init__(prefix='patch', method='PATCH', tier=3)
 
     def __set_schema__(self, model):
         """  находит  Update схему для response_model """
@@ -29,7 +29,7 @@ class PatchRouter(PreactRouter):
         """
         генератор для создания роутов
         """
-        return ((f'/{key}' + '/{lang}/{id}', self.__get_schemas__(val)) for key, val in source.items())
+        return ((f'/{key}' + '/{id}', get_pyschema(val, 'Update')) for key, val in source.items())
 
     async def endpoint(self, request: Request, id: int, data: Dict[str, Any] = Body(...),
                        session: AsyncSession = Depends(get_db)):
@@ -37,8 +37,8 @@ class PatchRouter(PreactRouter):
             current_path = request.url.path
             _, tmp = self.__path_decoder__(current_path, self.tier)
             model = self.source.get(tmp)
-            print(f'{model.__name__}=============')
-            schema = self.__get_schemas__(model)
+            route = request.scope["route"]
+            schema = route.response_model
             repo = self.get_repo(model)
             service = self.get_service(model)
             model_data = schema(**data)

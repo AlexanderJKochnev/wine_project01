@@ -8,9 +8,7 @@ from fastapi import Request, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
-from typing import List, Type
-from app.core.schemas.base import ListView
-from app.core.models.base_model import DeclarativeBase
+from typing import List
 from app.core.utils.pydantic_utils import get_pyschema
 
 
@@ -26,13 +24,11 @@ class HandbookRouter(PreactRouter):
 
     async def endpoint(self, request: Request, lang: str, session: AsyncSession = Depends(get_db)):
         current_path = request.url.path
-        route = request.scope["route"]
-        # response_model = route.response_model
         pref, lang = self.__path_decoder__(current_path)
         model = self.source.get(pref)
         # lang = self.get_lang_prefix(lang)  # convert lang to lang pref 'en' -> '', 'ru' -> '_ru' ...
         repo = self.get_repo(model)
         service = self.get_service(model)
-        print(f'{route.response_model=}, {repo=}')
+        # print(f'{route.response_model=}, {repo=}')
         rows = await service.get_list_view(lang, repo, model, session)
         return rows

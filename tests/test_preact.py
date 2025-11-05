@@ -63,8 +63,8 @@ async def test_get_routers(authenticated_client_with_db, test_db_session,
         assert result['id'] == id, f"ожидалась запись {id=}, получена id = {result['id']}"
 
 
-async def test_path_routers(authenticated_client_with_db, test_db_session,
-                            fakedata_generator):
+async def test_patch_routers(authenticated_client_with_db, test_db_session,
+                             fakedata_generator):
     """ тестирование route PATCH """
     from app.preact.get.router import GetRouter
     from app.preact.patch.router import PatchRouter

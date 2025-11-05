@@ -59,7 +59,7 @@ app.include_router(HandbookRouter().router)
 app.include_router(CreateRouter().router)
 app.include_router(GetRouter().router)
 app.include_router(DeleteRouter().router)
-# app.include_router(PatchRouter().router)
+app.include_router(PatchRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 
