@@ -29,7 +29,7 @@ router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depend
 async def get_images_after_date(
     after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
-    per_page: int = Query(100, ge=1, le=1000, description="Количество элементов на странице"),
+    per_page: int = Query(10, ge=1, le=1000, description="Количество элементов на странице"),
     image_service: ImageService = Depends()
 ):
     """

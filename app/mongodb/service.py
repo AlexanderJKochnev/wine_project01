@@ -1,5 +1,7 @@
 # app/mongodb/service.py
 import asyncio
+import io
+from PIL import Image
 from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 from typing import List, Tuple
@@ -229,11 +231,15 @@ class ThumbnailImageService:
                 return {"content": thumbnail_content, "filename": f"thumb_{image_data['filename']}",
                         "content_type": "image/png", "from_cache": False}
             else:
-                # Если не удалось создать thumbnail, возвращаем оригинал
-                return full_image
+                # ❌ ВАЖНО: если не удалось создать thumbnail, НЕ возвращаем оригинал
+                # Вместо этого создаем принудительно уменьшенную версию
+                forced_thumbnail = await self._create_forced_thumbnail(full_image["content"])
+                return {"content": forced_thumbnail, "filename": f"thumb_forced_{full_image['filename']}",
+                        "content_type": "image/png", "from_cache": False}
 
-        return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
-                "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
+                # Если thumbnail уже есть в базе
+            return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
+                    "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
 
     # @cache_image_memcached(prefix='thumbnail', expire=3600, key_params=['filename'])
     async def get_thumbnail_by_filename(self, filename: str) -> dict:
@@ -259,3 +265,43 @@ class ThumbnailImageService:
 
     async def delete_image(self, file_id: str) -> bool:
         return await self.image_repository.delete_image(file_id)
+
+    async def _create_forced_thumbnail(self, image_content: bytes) -> bytes:
+        """Создает thumbnail принудительно, даже если предыдущая попытка не удалась"""
+        try:
+            image = Image.open(io.BytesIO(image_content))
+
+            # Принудительно уменьшаем до 300px по большей стороне
+            max_size = (300, 300)
+            image.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+            # Сохраняем с оптимизацией
+            output = io.BytesIO()
+            if image.mode in ('RGBA', 'LA', 'P'):
+                image.save(output, format='PNG', optimize=True)
+            else:
+                image.save(output, format='PNG', optimize=True)
+
+            return output.getvalue()
+        except Exception as e:
+            print(f"Forced thumbnail creation failed: {e}")
+            # Если все совсем плохо, возвращаем очень маленький placeholder
+            return self._create_placeholder()
+
+    def _create_placeholder(self) -> bytes:
+        """Создает placeholder изображение"""
+        try:
+            from PIL import Image, ImageDraw
+            # Создаем простое серое изображение 150x150
+            img = Image.new('RGB', (150, 150), color='gray')
+            draw = ImageDraw.Draw(img)
+            draw.text((50, 65), "No Image", fill='white')
+
+            output = io.BytesIO()
+            img.save(output, format='PNG')
+            return output.getvalue()
+        except Exception:
+            # Аварийный fallback - простой PNG 1x1 пиксель
+            return b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\
+            x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\
+            x00\x05\x00\x00\x00\x00IEND\xaeB`\x82'

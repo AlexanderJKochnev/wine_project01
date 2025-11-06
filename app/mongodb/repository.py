@@ -1,11 +1,11 @@
 # app/mongodb/repository.py
 from bson import ObjectId, Binary
 from datetime import datetime, timezone
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from typing import List, Tuple, Optional, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.mongodb.config import get_database
-from app.mongodb.models import FileResponse, ImageResponse
+from app.mongodb.models import FileResponse  # , ImageResponse
 
 import io
 from PIL import Image
@@ -155,27 +155,32 @@ class ThumbnailImageRepository:
     def _create_thumbnail_png(self, image_content: bytes) -> bytes:
         """Создает thumbnail в формате PNG с сохранением прозрачности"""
         try:
-            # Открываем изображение из bytes
+            # Открываем изображение
             image = Image.open(io.BytesIO(image_content))
+            original_size = image.size
+            print(f"Original image size: {original_size}")
 
-            # Сохраняем оригинальный режим (для прозрачности)
-            original_mode = image.mode
-
-            # Создаем thumbnail с сохранением пропорций
-            image.thumbnail(self.thumbnail_size, Image.Resampling.LANCZOS)
-
-            # Сохраняем в PNG с оптимизацией
-            output = io.BytesIO()
-
-            # Сохраняем с оптимизацией для PNG
-            if original_mode in ('RGBA', 'LA', 'P'):
-                # Сохраняем прозрачность для PNG
-                image.save(output, format='PNG', optimize=True)
+            # Вычисляем новые размеры сохраняя пропорции
+            max_size = 300
+            if image.width > image.height:
+                new_width = max_size
+                new_height = int((max_size / image.width) * image.height)
             else:
-                # Для RGB и других режимов
-                image.save(output, format='PNG', optimize=True)
+                new_height = max_size
+                new_width = int((max_size / image.height) * image.width)
 
-            return output.getvalue()
+            print(f"Thumbnail target size: ({new_width}, {new_height})")
+
+            # Ресайзим изображение
+            resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+            # Сохраняем в PNG
+            output = io.BytesIO()
+            resized_image.save(output, format='PNG', optimize=True)
+            result = output.getvalue()
+
+            print(f"Thumbnail created: {len(result)} bytes (was {len(image_content)} bytes)")
+            return result
         except Exception as e:
             print(f"Thumbnail creation error: {e}")
             return None
