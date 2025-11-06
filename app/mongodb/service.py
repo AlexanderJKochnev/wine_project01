@@ -1,4 +1,5 @@
 # app/mongodb/service.py
+import asyncio
 from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 from typing import List, Tuple
@@ -12,6 +13,9 @@ from app.mongodb.models import FileListResponse, FileResponse
 from app.mongodb.repository import ImageRepository
 from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
                                )
+# from app.core.memcached_cache import cache_image_memcached
+from app.mongodb.repository import ThumbnailImageRepository
+
 
 # delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 delta = datetime.now(timezone.utc) - relativedelta(years=2)
@@ -182,3 +186,76 @@ class ImageService:
             return images
         except Exception as e:
             raise Exception(f"Service error: {str(e)}")
+
+
+class ThumbnailImageService:
+    def __init__(self, repository: ThumbnailImageRepository = Depends()):
+        self.image_repository = repository
+
+    async def upload_image(self, file, description: str = None):
+        """Загрузка изображения с созданием thumbnail'а"""
+        content = await file.read()
+
+        result = await self.image_repository.create_image(
+            filename=file.filename, content=content,
+            content_type=file.content_type, description=description
+        )
+
+        return result["id"], file.filename, result["has_thumbnail"]
+
+    # @cache_image_memcached(prefix='full_image', expire=3600, key_params=['file_id'])
+    async def get_full_image(self, file_id: str) -> dict:
+        """Получить полноразмерное изображение (для DetailView)"""
+        image_data = await self.image_repository.get_image(file_id, include_content=True)
+        if not image_data or "content" not in image_data:
+            raise HTTPException(status_code=404, detail="Image not found")
+        return {"content": image_data["content"], "filename": image_data["filename"],
+                "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
+
+    # @cache_image_memcached(prefix='thumbnail', expire=3600, key_params=['file_id'])
+    async def get_thumbnail(self, file_id: str) -> dict:
+        """Получить thumbnail (для списков)"""
+        image_data = await self.image_repository.get_thumbnail(file_id)
+        if not image_data or "thumbnail" not in image_data:
+            # Если thumbnail нет, создаем его на лету (и кэшируем)
+            full_image = await self.get_full_image(file_id)
+            thumbnail_content = self.image_repository._create_thumbnail_png(full_image["content"])
+
+            if thumbnail_content:
+                # Сохраняем thumbnail в базу асинхронно
+                asyncio.create_task(
+                    self.image_repository.update_image_with_thumbnail(file_id, thumbnail_content)
+                )
+                return {"content": thumbnail_content, "filename": f"thumb_{image_data['filename']}",
+                        "content_type": "image/png", "from_cache": False}
+            else:
+                # Если не удалось создать thumbnail, возвращаем оригинал
+                return full_image
+
+        return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
+                "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
+
+    # @cache_image_memcached(prefix='thumbnail', expire=3600, key_params=['filename'])
+    async def get_thumbnail_by_filename(self, filename: str) -> dict:
+        """Получить thumbnail по имени файла"""
+        image_data = await self.image_repository.get_thumbnail_by_filename(filename)
+        if not image_data or "thumbnail" not in image_data:
+            raise HTTPException(status_code=404, detail="Thumbnail not found")
+        return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
+                "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
+
+    async def get_images_after_date(self, after_date: datetime, page: int, per_page: int):
+        """Получить список изображений (только метаданные)"""
+        skip = (page - 1) * per_page
+        images = await self.image_repository.get_images_after_date(after_date, skip, per_page)
+        total = await self.image_repository.count_images_after_date(after_date)
+
+        return {"images": images, "total": total, "has_more": (skip + len(images)) < total}
+
+    # Остальные методы остаются без изменений
+    async def get_images_list_after_date(self, after_date: datetime):
+        result = await self.image_repository.get_images_after_date_nopage(after_date)
+        return result
+
+    async def delete_image(self, file_id: str) -> bool:
+        return await self.image_repository.delete_image(file_id)

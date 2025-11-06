@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, computed_field
 from datetime import datetime
 from typing import Optional, List
 from app.core.config.project_config import settings
+# from bson import ObjectId
 
 
 class ZeroBase(BaseModel):
@@ -38,7 +39,7 @@ class FileBase(NoPathBase):
     description: Optional[str] = None
 
 
-class ImageCreate(FileBase):
+class ImageCreate2(FileBase):
     content: bytes
 
 
@@ -59,3 +60,45 @@ class FileListResponse(BaseModel):
     images: List[FileResponse]
     total: int
     has_more: bool
+
+# ---THUMBNAIL VERSION ---
+
+
+class ImageBase(BaseModel):
+    filename: str
+    description: Optional[str] = None
+
+
+class ImageCreate(ImageBase):
+    content: bytes
+    thumbnail: Optional[bytes] = None
+
+
+class ImageResponse(ImageBase):
+    id: str = Field(alias="_id")
+    created_at: datetime
+    size: int
+    content_type: str
+    thumbnail_size: Optional[int] = None
+    has_thumbnail: bool = False
+    thumbnail_type: Optional[str] = None
+
+
+class ImageListResponse(BaseModel):
+    images: List[ImageResponse]
+    total: int
+    has_more: bool
+
+
+class ThumbnailResponse(BaseModel):
+    content: bytes
+    filename: str
+    content_type: str = "image/png"
+    from_cache: bool = False
+
+
+class FullImageResponse(BaseModel):
+    content: bytes
+    filename: str
+    content_type: str = "image/png"
+    from_cache: bool = False

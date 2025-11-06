@@ -11,7 +11,7 @@ from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
 from app.mongodb.models import FileListResponse
-from app.mongodb.service import ImageService
+from app.mongodb.service import ImageService, ThumbnailImageService
 
 # from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
@@ -133,3 +133,55 @@ async def delete_image(
     if success:
         return {"message": "Image deleted successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+
+# --- thumbnails ---
+
+# Существующие endpoint'ы меняем на thumbnail'ы:
+
+
+@router.get(f'/{subprefix}/' + "{file_id}")
+async def download_thumbnail(file_id: str, image_service: ThumbnailImageService = Depends()):
+    """Получить thumbnail изображения по ID (для списков)"""
+    image_data = await image_service.get_thumbnail(file_id)
+
+    headers = {"Content-Disposition": f"inline; filename={image_data['filename']}", "X-Image-Type": "thumbnail"}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    return StreamingResponse(
+        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
+    )
+
+
+@router.get(f'/{subprefix}/full/' + "{file_id}")
+async def download_full_image(file_id: str, image_service: ThumbnailImageService = Depends()):
+    """Получить полноразмерное изображение по ID (для детального просмотра)"""
+    image_data = await image_service.get_full_image(file_id)
+
+    headers = {"Content-Disposition": f"attachment; filename={image_data['filename']}", "X-Image-Type": "full"}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    return StreamingResponse(
+        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
+    )
+
+
+# Аналогично для filename endpoints...
+@router.get(f'/{fileprefix}/' + "{filename}")
+async def download_thumbnail_by_filename(filename: str, image_service: ThumbnailImageService = Depends()):
+    """Получить thumbnail по имени файла"""
+    image_data = await image_service.get_thumbnail_by_filename(filename)
+
+    headers = {"Content-Disposition": f"inline; filename={image_data['filename']}", "X-Image-Type": "thumbnail"}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    return StreamingResponse(io.BytesIO(image_data["content"]),
+                             media_type=image_data['content_type'], headers=headers)

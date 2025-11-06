@@ -10,6 +10,7 @@
 !/alembic.sh
 !/streamlit_app
 !/requirements_streamlit.txt
+!/mongo_migration.sh
 # Разрешить тесты (убрать в production)
 !/tests/
 
