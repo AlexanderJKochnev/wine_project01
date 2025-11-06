@@ -193,115 +193,83 @@ class ImageService:
 class ThumbnailImageService:
     def __init__(self, repository: ThumbnailImageRepository = Depends()):
         self.image_repository = repository
-
-    async def upload_image(self, file, description: str = None):
-        """Загрузка изображения с созданием thumbnail'а"""
-        content = await file.read()
-
-        result = await self.image_repository.create_image(
-            filename=file.filename, content=content,
-            content_type=file.content_type, description=description
-        )
-
-        return result["id"], file.filename, result["has_thumbnail"]
-
-    # @cache_image_memcached(prefix='full_image', expire=3600, key_params=['file_id'])
-    async def get_full_image(self, file_id: str) -> dict:
-        """Получить полноразмерное изображение (для DetailView)"""
-        image_data = await self.image_repository.get_image(file_id, include_content=True)
-        if not image_data or "content" not in image_data:
-            raise HTTPException(status_code=404, detail="Image not found")
-        return {"content": image_data["content"], "filename": image_data["filename"],
-                "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
-
-    # @cache_image_memcached(prefix='thumbnail', expire=3600, key_params=['file_id'])
+    
+    # @cache_image_memcached(prefix = 'thumbnail', expire = 3600, key_params = ['file_id'])
     async def get_thumbnail(self, file_id: str) -> dict:
-        """Получить thumbnail (для списков)"""
-        image_data = await self.image_repository.get_thumbnail(file_id)
-        if not image_data or "thumbnail" not in image_data:
-            # Если thumbnail нет, создаем его на лету (и кэшируем)
-            full_image = await self.get_full_image(file_id)
-            thumbnail_content = self.image_repository._create_thumbnail_png(full_image["content"])
-
-            if thumbnail_content:
-                # Сохраняем thumbnail в базу асинхронно
-                asyncio.create_task(
-                    self.image_repository.update_image_with_thumbnail(file_id, thumbnail_content)
-                )
-                return {"content": thumbnail_content, "filename": f"thumb_{image_data['filename']}",
-                        "content_type": "image/png", "from_cache": False}
-            else:
-                # ❌ ВАЖНО: если не удалось создать thumbnail, НЕ возвращаем оригинал
-                # Вместо этого создаем принудительно уменьшенную версию
-                forced_thumbnail = await self._create_forced_thumbnail(full_image["content"])
-                return {"content": forced_thumbnail, "filename": f"thumb_forced_{full_image['filename']}",
-                        "content_type": "image/png", "from_cache": False}
-
-                # Если thumbnail уже есть в базе
+        """Получить thumbnail (для списков) - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+        try:
+            image_data = await self.image_repository.get_thumbnail(file_id)
+            
+            if not image_data or "thumbnail" not in image_data:
+                print(f"Thumbnail not found in DB for {file_id}, creating...")
+                # Если thumbnail нет в базе, создаем его
+                full_image = await self.get_full_image(file_id)
+                thumbnail_content = self.image_repository._create_thumbnail_png(full_image["content"])
+                
+                if thumbnail_content:
+                    # Сохраняем в базу асинхронно
+                    asyncio.create_task(
+                            self._save_thumbnail_background(file_id, thumbnail_content)
+                            )
+                    
+                    return {"content": thumbnail_content, "filename": f"thumb_{full_image['filename']}",
+                            "content_type": "image/png", "from_cache": False}
+                else:
+                    # Если не удалось создать thumbnail, создаем принудительно
+                    print(f"Thumbnail creation failed for {file_id}, using forced resize")
+                    forced_thumbnail = await self._create_forced_thumbnail(full_image["content"])
+                    return {"content": forced_thumbnail, "filename": f"thumb_forced_{full_image['filename']}",
+                            "content_type": "image/png", "from_cache": False}
+            
+            # Если thumbnail уже есть в базе
+            print(f"Thumbnail found in DB for {file_id}, size: {len(image_data['thumbnail'])} bytes")
             return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
                     "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
-
-    # @cache_image_memcached(prefix='thumbnail', expire=3600, key_params=['filename'])
-    async def get_thumbnail_by_filename(self, filename: str) -> dict:
-        """Получить thumbnail по имени файла"""
-        image_data = await self.image_repository.get_thumbnail_by_filename(filename)
-        if not image_data or "thumbnail" not in image_data:
-            raise HTTPException(status_code=404, detail="Thumbnail not found")
-        return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
-                "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
-
-    async def get_images_after_date(self, after_date: datetime, page: int, per_page: int):
-        """Получить список изображений (только метаданные)"""
-        skip = (page - 1) * per_page
-        images = await self.image_repository.get_images_after_date(after_date, skip, per_page)
-        total = await self.image_repository.count_images_after_date(after_date)
-
-        return {"images": images, "total": total, "has_more": (skip + len(images)) < total}
-
-    # Остальные методы остаются без изменений
-    async def get_images_list_after_date(self, after_date: datetime):
-        result = await self.image_repository.get_images_after_date_nopage(after_date)
-        return result
-
-    async def delete_image(self, file_id: str) -> bool:
-        return await self.image_repository.delete_image(file_id)
-
-    async def _create_forced_thumbnail(self, image_content: bytes) -> bytes:
-        """Создает thumbnail принудительно, даже если предыдущая попытка не удалась"""
+        
+        except Exception as e:
+            print(f"Error in get_thumbnail for {file_id}: {e}")
+            raise HTTPException(status_code = 500, detail = f"Thumbnail retrieval failed: {str(e)}")
+    
+    # @cache_image_memcached(prefix = 'full_image', expire = 3600, key_params = ['file_id'])
+    async def get_full_image(self, file_id: str) -> dict:
+        """Получить полноразмерное изображение - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
         try:
-            image = Image.open(io.BytesIO(image_content))
-
-            # Принудительно уменьшаем до 300px по большей стороне
-            max_size = (300, 300)
-            image.thumbnail(max_size, Image.Resampling.LANCZOS)
-
-            # Сохраняем с оптимизацией
-            output = io.BytesIO()
-            if image.mode in ('RGBA', 'LA', 'P'):
-                image.save(output, format='PNG', optimize=True)
+            image_data = await self.image_repository.get_image(file_id, include_content = True)
+            if not image_data or "content" not in image_data:
+                raise HTTPException(status_code = 404, detail = "Image not found")
+            
+            print(f"Full image retrieved for {file_id}, size: {len(image_data['content'])} bytes")
+            return {"content": image_data["content"], "filename": image_data["filename"],
+                    "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
+        except Exception as e:
+            print(f"Error in get_full_image for {file_id}: {e}")
+            raise
+    
+    async def _save_thumbnail_background(self, file_id: str, thumbnail_content: bytes):
+        """Фоновая задача для сохранения thumbnail'а"""
+        try:
+            success = await self.image_repository.update_image_with_thumbnail(file_id, thumbnail_content)
+            if success:
+                print(f"✓ Thumbnail saved to DB for {file_id}")
             else:
-                image.save(output, format='PNG', optimize=True)
-
+                print(f"✗ Failed to save thumbnail for {file_id}")
+        except Exception as e:
+            print(f"✗ Error saving thumbnail for {file_id}: {e}")
+    
+    async def _create_forced_thumbnail(self, image_content: bytes) -> bytes:
+        """Создает thumbnail принудительно"""
+        try:
+            # from PIL import Image
+            # import io
+            
+            image = Image.open(io.BytesIO(image_content))
+            image.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            
+            output = io.BytesIO()
+            image.save(output, format = 'PNG', optimize = True)
             return output.getvalue()
+        
         except Exception as e:
             print(f"Forced thumbnail creation failed: {e}")
-            # Если все совсем плохо, возвращаем очень маленький placeholder
-            return self._create_placeholder()
-
-    def _create_placeholder(self) -> bytes:
-        """Создает placeholder изображение"""
-        try:
-            from PIL import Image, ImageDraw
-            # Создаем простое серое изображение 150x150
-            img = Image.new('RGB', (150, 150), color='gray')
-            draw = ImageDraw.Draw(img)
-            draw.text((50, 65), "No Image", fill='white')
-
-            output = io.BytesIO()
-            img.save(output, format='PNG')
-            return output.getvalue()
-        except Exception:
-            # Аварийный fallback - простой PNG 1x1 пиксель
-            return b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\
-            x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\
-            x00\x05\x00\x00\x00\x00IEND\xaeB`\x82'
+            # Возвращаем оригинал как fallback
+            return image_content

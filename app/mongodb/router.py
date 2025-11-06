@@ -1,43 +1,38 @@
-# app/mongodb/router.py
 import io
 from datetime import datetime, timezone
 from typing import Optional
-
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, status, UploadFile
 from fastapi.responses import StreamingResponse
-# from app.auth.dependencies import get_current_active_user
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
 from app.mongodb.models import FileListResponse
-from app.mongodb.service import ImageService, ThumbnailImageService
+from app.mongodb.service import ThumbnailImageService
+# from app.core.cache import cache_key_builder, invalidate_cache  #  потом может быть закэшируем
 
-# from app.auth.dependencies import get_current_user, User
 prefix = settings.MONGODB_PREFIX
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
 directprefix = f"{subprefix}/direct"
 delta = (datetime.now(timezone.utc) - relativedelta(years=2))
 
-
-# -----------------------
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_active_user_or_internal)])
 
 
+# === Списки изображений (метаданные) ===
 @router.get(f'/{subprefix}', response_model=FileListResponse)
+# @cache_key_builder(prefix = 'mongodb_images', expire = 300, key_params = ["after_date", "page", "per_page"])
 async def get_images_after_date(
     after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
     page: int = Query(1, ge=1, description="Номер страницы"),
-    per_page: int = Query(10, ge=1, le=1000, description="Количество элементов на странице"),
-    image_service: ImageService = Depends()
+    per_page: int = Query(10, ge=1, le=1000, description="Количество элементов на страницу"),
+    image_service: ThumbnailImageService = Depends()
 ):
     """
     Получение постраничного списка id изображений, созданных после заданной даты.
-    по умолчанию за 2 года до сейчас
     """
     try:
-        # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
         return await image_service.get_images_after_date(after_date, page, per_page)
     except Exception as e:
@@ -45,15 +40,15 @@ async def get_images_after_date(
 
 
 @router.get(f'/{subprefix}list', response_model=dict)
+# @cache_key_builder(prefix = 'mongodb_images_list', expire = 300, key_params = ["after_date"])
 async def get_images_list_after_date(
     after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
-        image_service: ImageService = Depends()) -> dict:
+    image_service: ThumbnailImageService = Depends()  # ← Используем новый сервис
+) -> dict:
     """
     список всех изображений в базе данных без страниц
-    :return: возвращает список кортежей (id файла, имя файла)
     """
     try:
-        # Проверяем, что дата не в будущем
         after_date = back_to_the_future(after_date)
         result = await image_service.get_images_list_after_date(after_date)
         return {a: b for b, a in result}
@@ -61,45 +56,110 @@ async def get_images_list_after_date(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get(f'/{subprefix}/' + "{file_id}")  # , response_model=StreamingResponse)
-async def download_image(
-    file_id: str,
-    image_service: ImageService = Depends()
+# === THUMBNAIL endpoint'ы (для списков) ===
+@router.get(f'/{subprefix}/' + "{file_id}")
+async def download_thumbnail(
+    file_id: str, image_service: ThumbnailImageService = Depends()
 ):
     """
-        Получение одного изображения по _id
+    Получить THUMBNAIL изображения по ID (для списков)
     """
-    image_data = await image_service.get_image(file_id)
+    # print(f"📱 THUMBNAIL request for ID: {file_id}")
+    image_data = await image_service.get_thumbnail(file_id)
+
+    headers = {"Content-Disposition": f"inline; filename={image_data['filename']}", "X-Image-Type": "thumbnail",
+               "X-File-Size": str(len(image_data["content"]))}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    # print(f"📱 Returning THUMBNAIL: {len(image_data['content'])} bytes")
 
     return StreamingResponse(
-        io.BytesIO(image_data["content"]),
-        media_type=image_data['content_type'],
-        headers={"Content-Disposition": f"attachment; filename={image_data['filename']}"}
+        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
     )
 
 
 @router.get(f'/{fileprefix}/' + "{filename}")
-async def download_file(
-    filename: str,
-    image_service: ImageService = Depends()
+async def download_thumbnail_by_filename(
+    filename: str, image_service: ThumbnailImageService = Depends()
 ):
     """
-        Получение одного изображения по имени файла
+    Получить THUMBNAIL по имени файла
     """
-    image_data = await image_service.get_image_by_filename(filename)
+    # print(f"📱 THUMBNAIL request for filename: {filename}")
+    image_data = await image_service.get_thumbnail_by_filename(filename)
+
+    headers = {"Content-Disposition": f"inline; filename={image_data['filename']}", "X-Image-Type": "thumbnail",
+               "X-File-Size": str(len(image_data["content"]))}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    # print(f"📱 Returning THUMBNAIL: {len(image_data['content'])} bytes")
 
     return StreamingResponse(
-        io.BytesIO(image_data["content"]),
-        media_type=image_data['content_type'],
-        headers={"Content-Disposition": f"attachment; filename={image_data['filename']}"}
+        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
     )
 
 
+# === FULL IMAGE endpoint'ы (для детального просмотра) ===
+@router.get(f'/{subprefix}/full/' + "{file_id}")
+async def download_full_image(
+    file_id: str, image_service: ThumbnailImageService = Depends()
+):
+    """
+    Получить ПОЛНОРАЗМЕРНОЕ изображение по ID (для детального просмотра)
+    """
+    # print(f"🖼️  FULL IMAGE request for ID: {file_id}")
+    image_data = await image_service.get_full_image(file_id)
+
+    headers = {"Content-Disposition": f"attachment; filename={image_data['filename']}", "X-Image-Type": "full",
+               "X-File-Size": str(len(image_data["content"]))}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    # print(f"🖼️  Returning FULL IMAGE: {len(image_data['content'])} bytes")
+
+    return StreamingResponse(
+        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
+    )
+
+
+@router.get(f'/{fileprefix}/full/' + "{filename}")
+async def download_full_image_by_filename(
+    filename: str, image_service: ThumbnailImageService = Depends()
+):
+    """
+    Получить ПОЛНОРАЗМЕРНОЕ изображение по имени файла
+    """
+    # print(f"🖼️  FULL IMAGE request for filename: {filename}")
+    image_data = await image_service.get_full_image_by_filename(filename)
+
+    headers = {"Content-Disposition": f"attachment; filename={image_data['filename']}", "X-Image-Type": "full",
+               "X-File-Size": str(len(image_data["content"]))}
+    if image_data.get("from_cache"):
+        headers["X-Cache"] = "HIT"
+    else:
+        headers["X-Cache"] = "MISS"
+
+    # print(f"🖼️  Returning FULL IMAGE: {len(image_data['content'])} bytes")
+
+    return StreamingResponse(
+        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
+    )
+
+
+# === Операции записи (остаются без изменений) ===
 @router.post(f'/{subprefix}', response_model=dict)
+# @invalidate_cache(patterns = ["mongodb_images:*", "mongodb_images_list:*"])
 async def upload_image(
-    file: UploadFile = File(...),
-    description: Optional[str] = Form(None),
-    image_service: ImageService = Depends()
+    file: UploadFile = File(...), description: Optional[str] = Form(None),
+    image_service: ThumbnailImageService = Depends()  # ← Используем новый сервис
 ):
     """
     загрузка одного изображения в базу данных
@@ -109,79 +169,24 @@ async def upload_image(
 
 
 @router.post(f'/{directprefix}')
-async def direct_upload(image_service: ImageService = Depends()) -> dict:
+# @invalidate_cache(patterns = ["mongodb_images:*", "mongodb_images_list:*"])
+async def direct_upload(image_service: ThumbnailImageService = Depends()) -> dict:  # ← Используем новый сервис
     """
-        импортирование рисунков из директории UPLOAD_DIR (см. .env file
-        загрузка происходит в обход api. Для того что бы выполнить импорт нужно
-        на сервере поместить файлы с изображениями в директорию UPLOAD_DIR.
-        операция длительная - наберитесь терпения.
+    импортирование рисунков из директории UPLOAD_DIR
     """
     images = await image_service.direct_upload_image()
-    # result = {b: a for a, b in images}
     return images
 
 
 @router.delete(f'/{subprefix}/' + "{file_id}", response_model=dict)
+# @invalidate_cache(patterns = ["mongodb_images:*", "mongodb_images_list:*"])
 async def delete_image(
-    file_id: str,
-    image_service: ImageService = Depends()
+    file_id: str, image_service: ThumbnailImageService = Depends()  # ← Используем новый сервис
 ):
     """
     удаление одного изображения по _id
     """
-    success = await image_service.delete_image(file_id)  # , current_user.id)
+    success = await image_service.delete_image(file_id)
     if success:
         return {"message": "Image deleted successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-
-# --- thumbnails ---
-
-# Существующие endpoint'ы меняем на thumbnail'ы:
-
-
-@router.get(f'/{subprefix}/' + "{file_id}")
-async def download_thumbnail(file_id: str, image_service: ThumbnailImageService = Depends()):
-    """Получить thumbnail изображения по ID (для списков)"""
-    image_data = await image_service.get_thumbnail(file_id)
-
-    headers = {"Content-Disposition": f"inline; filename={image_data['filename']}", "X-Image-Type": "thumbnail"}
-    if image_data.get("from_cache"):
-        headers["X-Cache"] = "HIT"
-    else:
-        headers["X-Cache"] = "MISS"
-
-    return StreamingResponse(
-        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
-    )
-
-
-@router.get(f'/{subprefix}/full/' + "{file_id}")
-async def download_full_image(file_id: str, image_service: ThumbnailImageService = Depends()):
-    """Получить полноразмерное изображение по ID (для детального просмотра)"""
-    image_data = await image_service.get_full_image(file_id)
-
-    headers = {"Content-Disposition": f"attachment; filename={image_data['filename']}", "X-Image-Type": "full"}
-    if image_data.get("from_cache"):
-        headers["X-Cache"] = "HIT"
-    else:
-        headers["X-Cache"] = "MISS"
-
-    return StreamingResponse(
-        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
-    )
-
-
-# Аналогично для filename endpoints...
-@router.get(f'/{fileprefix}/' + "{filename}")
-async def download_thumbnail_by_filename(filename: str, image_service: ThumbnailImageService = Depends()):
-    """Получить thumbnail по имени файла"""
-    image_data = await image_service.get_thumbnail_by_filename(filename)
-
-    headers = {"Content-Disposition": f"inline; filename={image_data['filename']}", "X-Image-Type": "thumbnail"}
-    if image_data.get("from_cache"):
-        headers["X-Cache"] = "HIT"
-    else:
-        headers["X-Cache"] = "MISS"
-
-    return StreamingResponse(io.BytesIO(image_data["content"]),
-                             media_type=image_data['content_type'], headers=headers)
