@@ -107,12 +107,50 @@ class ThumbnailImageRepository:
         self.thumbnail_size = (300, 300)  # Размер thumbnail'а
 
     async def ensure_indexes(self):
-        if not self._indexes_created:
-            await self.collection.create_index([("_id", 1)])
-            await self.collection.create_index([("filename", 1)], unique=True)
-            await self.collection.create_index([("created_at", -1), ("_id", 1)])
-            print("Thumbnail image repository indexes ensured")
+        """Создает индексы только если они не существуют"""
+        if self._indexes_created:
+            return
+
+        try:
+            # Получаем информацию о существующих индексах
+            existing_indexes = await self.collection.index_information()
+            indexes_to_create = []
+
+            # Проверяем какие индексы нужны
+            required_indexes = [{"key": [("filename", 1)], "name": "filename_1", "unique": True},
+                                {"key": [("created_at", -1), ("_id", 1)], "name": "created_at_-1__id_1"}]
+
+            for required_index in required_indexes:
+                index_name = required_index["name"]
+                if index_name not in existing_indexes:
+                    indexes_to_create.append(required_index)
+                    print(f"Index {index_name} will be created")
+                else:
+                    print(f"Index {index_name} already exists")
+            # Создаем только недостающие индексы
+            if indexes_to_create:
+                for index_spec in indexes_to_create:
+                    # Создаем индекс с указанием фона, чтобы не блокировать коллекцию
+                    await self.collection.create_index(
+                        index_spec["key"], name=index_spec["name"], unique=index_spec.get("unique", False),
+                        background=True  # Важно: создаем в фоне
+                    )
+                    print(f"✓ Index {index_spec['name']} created successfully")
+
             self._indexes_created = True
+            print("All indexes are ready")
+
+        except Exception as e:
+            print(f"Error ensuring indexes: {e}")
+
+    async def check_indexes_status(self) -> Dict:
+        """Проверяет статус всех индексов (для диагностики)"""
+        try:
+            existing_indexes = await self.collection.index_information()
+            return {"total_indexes": len(existing_indexes), "indexes": list(existing_indexes.keys()),
+                    "status": "healthy"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
     def _create_thumbnail_png(self, image_content: bytes) -> bytes:
         """Создает thumbnail в формате PNG с сохранением прозрачности"""
