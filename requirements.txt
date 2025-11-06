@@ -24,4 +24,5 @@ Faker
 itsdangerous>=2.1.0
 pydantic_factories
 python-magic
+pymemcache==4.0.0
 #для работы python-magic нужно: brew install libmagic

@@ -4,7 +4,7 @@ import logging
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.core.memcached_cache import memcached_cache
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
@@ -102,7 +102,7 @@ async def health_check(mongodb_instance: MongoDB = Depends(get_mongodb)):
 
 @app.on_event("startup")
 async def startup_event():
-    pass
+    await memcached_cache.init_memcached()
 
 
 @app.on_event("shutdown")
@@ -110,3 +110,4 @@ async def shutdown_event():
     mongodb_instance = await get_mongodb()
     await mongodb_instance.disconnect()
     await engine.dispose()
+    await memcached_cache.close()

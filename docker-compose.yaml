@@ -32,6 +32,32 @@ services:
           cpus: '0.125'
           memory: 256M
   
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: memcached_cache
+    restart: unless-stopped
+    command:
+      - memcached
+      - -m 512  # 512MB памяти
+      - -I 10m  # максимальный размер объекта 10MB
+      - -v
+      - -t 4    # 4 потока
+    expose:
+      - "11211"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "11211" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+  
   adminer:
     container_name: pg_admin
     image: adminer:4.8.1
@@ -62,6 +88,8 @@ services:
         condition: service_healthy
       mongo:
         condition: service_healthy
+      memcached:
+        condition: service_healthy
     ports:
       - ${API_PORT}:${API_PORT}
     environment:
@@ -69,6 +97,8 @@ services:
       WEB_PORT: ${API_PORT}
       WEB_HOST: ${API_HOST}
       BASE_URL: ${BASE_URL}
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
     volumes:
       - ./templates:/app/templates
       - ./migration_volume:/app/app/migration/versions

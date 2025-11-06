@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     DEFAULT_LANG: str = 'en'
     IDETAIL_VIEW: str = 'name, description'
     ILIST_VIEW: str = 'name'
-
+    MEMCACHED_HOST: str = 'memcached'
+    MEMCACHED_PORT: int = 11211
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')

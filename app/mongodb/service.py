@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 from typing import List, Tuple
 
 from fastapi import Depends, HTTPException, status, UploadFile
-
+from app.core.memcached_cache import cache_image_memcached
 # from app.core.config.project_config import settings
 from app.core.utils.io_utils import get_filepath_from_dir
 from app.mongodb.config import settings
@@ -96,6 +96,7 @@ class ImageService:
             result['lost images': lost_images]
         return result
 
+    # @cache_image_memcached(prefix='image', expire=3600, key_params=['file_id'])
     async def get_image(self,
                         image_id: str
                         ) -> FileResponse:
@@ -106,6 +107,7 @@ class ImageService:
         #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return image
 
+    # @cache_image_memcached(prefix='image', expire=3600, key_params=['filename'])
     async def get_image_by_filename(self, filename: str) -> FileResponse:
         image = await self.image_repository.get_image_by_filename(filename)
         if not image:

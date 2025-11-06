@@ -42,6 +42,9 @@ class ImageCreate(FileBase):
     content: bytes
 
 
+class Thumbnail
+
+
 class FileResponse(FileBase):
     id: str = Field(alias="_id")
     filename: str
