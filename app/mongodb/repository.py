@@ -24,6 +24,7 @@ class ImageRepository:
             print("Image repository indexes ensured")
 
     async def create_image(self, filename: str, content: bytes, content_type: str, description: str) -> str:
+        """ сохранение изображения в базе данных"""
         await self.ensure_indexes()
         document = {
             "filename": filename,
@@ -40,6 +41,7 @@ class ImageRepository:
             return None
 
     async def get_image(self, image_id: str):
+        """ получение изображени по _id """
         await self.ensure_indexes()
         return await self.collection.find_one({"_id": ObjectId(image_id)})
 
@@ -50,6 +52,7 @@ class ImageRepository:
                                            after_date: datetime
                                            ) -> List[Tuple]:
         """
+            получение списка изображений
             возвращает список кортежей [(image_path, image_id)...]
         """
         await self.ensure_indexes()
@@ -64,6 +67,7 @@ class ImageRepository:
                                     after_date: datetime,
                                     skip: int = 0,
                                     limit: int = 100) -> List[FileResponse]:
+        """ получение постраничного списка изображений с деталями"""
         await self.ensure_indexes()
         query = {"created_at": {"$gt": after_date}}
         cursor = self.collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
@@ -85,5 +89,6 @@ class ImageRepository:
             raise Exception(f"Error counting images: {str(e)}")
 
     async def delete_image(self, image_id: str):
+        """ удаление изображения по _id"""
         result = await self.collection.delete_one({"_id": ObjectId(image_id)})
         return result.deleted_count > 0
