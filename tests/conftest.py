@@ -97,7 +97,7 @@ async def test_mongodb(clean_database):
 
 @pytest.fixture(scope="session")  # , autouse=True)
 async def clean_database():
-    """Очищает базу данных перед каждым тестами"""
+    """Очищает базу данных перед каждой сессией"""
     test_mongo = MongoDB()
     test_url = f'{settings_db.mongo_url}'
     await test_mongo.connect(test_url, settings_db.MONGO_DATABASE)
@@ -441,6 +441,8 @@ def mock_db_url():
     # return "sqlite+aiosqlite:///:memory:"
     # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
     st = settings_db
+    # return (f"postgresql+asyncpg://{st.POSTGRES_USER}:"
+    #         f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
     return (f"postgresql+psycopg_async://{st.POSTGRES_USER}:"
             f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
 

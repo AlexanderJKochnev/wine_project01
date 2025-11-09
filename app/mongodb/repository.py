@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from fastapi import Depends
 from typing import List, Tuple, Optional, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.mongodb.config import get_database
+from app.mongodb.config import get_database, settings
 from app.mongodb.models import FileResponse  # , ImageResponse
 
 import io

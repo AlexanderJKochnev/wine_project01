@@ -22,7 +22,7 @@ from pydantic import BaseModel as BaseOrigin, ConfigDict, Field
 
 class BaseModel(BaseOrigin):
     """
-         вводим метод для получения только обязательных полей
+         вводим метод для получения только обязательных полей и регистрацию моделей
     """
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True, extra='ignore')
 

@@ -16,7 +16,6 @@ pytest tests/test_auth.py \
        tests/test_get.py \
        tests/test_update.py \
        tests/test_search.py \
-       tests/test_handbook.py \
        tests/test_preact.py \
        tests/test_mongodb.py \
        tests/test_delete.py

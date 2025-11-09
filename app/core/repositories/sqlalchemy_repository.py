@@ -1,5 +1,5 @@
 # app/core/repositories/sqlalchemy_repository.py
-""" не использовать Depends в этом контексте, он не входит в FastApi - только в роутере
+"""
     переделать на ._mapping (.mappings().all()) (в результате словарь вместо объекта)
     get_all     result.mappings().all()
     get_by_id   result.scalar_one_or_none()
