@@ -417,4 +417,4 @@ class JsonConverter():
 
 if __name__ == '__main__':
     result = JsonConverter()
-    result()
+    print(result())

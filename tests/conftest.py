@@ -167,6 +167,7 @@ def disable_httpx_logging():
 
 @pytest.fixture(scope=scope)
 def import_data() -> List[Dict]:
+    """ конвертация архива """
     data = JsonConverter()()
     return list(data.values())
 
@@ -188,7 +189,7 @@ def simple_router_list():
     from app.support.category.router import CategoryRouter
     # from app.support.color.router import ColorRouter
     from app.support.country.router import CountryRouter
-    from app.support.customer.router import CustomerRouter
+    # from app.support.customer.router import CustomerRouter
     from app.support.sweetness.router import SweetnessRouter
     from app.support.varietal.router import VarietalRouter
     from app.support.superfood.router import SuperfoodRouter   # noqa: F401
@@ -215,7 +216,7 @@ def complex_router_list():
     from app.support.subcategory.router import SubcategoryRouter
     from app.support.region.router import RegionRouter
     from app.support.subregion.router import SubregionRouter
-    from app.support.warehouse.router import WarehouseRouter
+    # from app.support.warehouse.router import WarehouseRouter
     from app.support.drink.router import DrinkRouter
     from app.support.item.router import ItemRouter
     return (SubcategoryRouter,
@@ -318,6 +319,7 @@ async def test_schemas(authenticated_client_with_db, test_db_session):
 
 @pytest.fixture(scope=scope)
 def base_url():
+    """ базовый url """
     return "http://testserver"
 
 
@@ -341,6 +343,7 @@ def get_fields_type() -> Dict[str, Any]:
 @pytest.fixture(scope=scope)
 async def fakedata_generator(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list):
+    """ генератор тестовых данных """
     failed_cases = []
     source = simple_router_list + complex_router_list
     test_number = 5
@@ -437,12 +440,10 @@ def super_user_data():
 # ---- DATABASE MOCK ----
 @pytest.fixture(scope=scope)
 def mock_db_url():
-    """URL для тестовой базы данных SQLite"""
+    """URL для тестовой базы данных POPSTGRESQL"""
     # return "sqlite+aiosqlite:///:memory:"
-    # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db"
+    # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db" этот драйвер не походит для тестирования
     st = settings_db
-    # return (f"postgresql+asyncpg://{st.POSTGRES_USER}:"
-    #         f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
     return (f"postgresql+psycopg_async://{st.POSTGRES_USER}:"
             f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
 

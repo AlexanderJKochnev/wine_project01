@@ -62,7 +62,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     """ clear model with id only,
         common methods and properties, table name
     """
-    __abstarct__ = True
+    __abstract__ = True
 
     id: Mapped[int_pk]
 
