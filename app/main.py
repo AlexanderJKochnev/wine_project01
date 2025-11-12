@@ -4,7 +4,7 @@ import logging
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from starlette.middleware.gzip import GZipMiddleware
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_async import engine, get_db  # noqa: F401
 from app.mongodb.config import get_mongodb, MongoDB  # close_mongo_connection, connect_to_mongo
@@ -47,11 +47,11 @@ app = FastAPI(title="Hybrid PostgreSQL-MongoDB API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    # allow_origins=["http://localhost:5173"],  # адрес Vite-дев-сервера, что еще?
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)  # минимальный размер для сжатия
 
 app.include_router(ApiRouter().router)
 app.include_router(MongoRouter)
