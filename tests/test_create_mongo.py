@@ -63,4 +63,3 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
                     print(f"Response status: {response.status_code=}")
                     print(f"Response text: {response.text=}")
                 assert False, e
-

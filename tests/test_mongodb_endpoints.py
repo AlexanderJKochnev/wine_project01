@@ -9,6 +9,7 @@ from tests.config import settings_db
 
 pytestmark = pytest.mark.asyncio
 
+
 async def test_api_health_endpoint(test_client_with_mongo):
     """Тестирует health endpoint через API - ДОЛЖЕН ПАДАТЬ при отсутствии MongoDB"""
     client = test_client_with_mongo

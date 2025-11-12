@@ -805,6 +805,7 @@ def flatten_dict_with_localized_fields(data: Dict[str, Any],
 
     return result
 
+
 def coalesce(*args):
     for x in args:
         if x is not None:

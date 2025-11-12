@@ -16,7 +16,7 @@ def json_reader(schema: str = 'drink',
     try:
         source = Path(__file__).resolve().parent.joinpath(
             input_dir, filename
-            )
+        )
         if source.exists():
             with open(source) as f:
                 data = json.load(f)
@@ -47,10 +47,12 @@ def get_relations(data: dict) -> list:
     tmp: dict = {key: val for key, val in data.items() if isinstance(val, Union[Dict, List])}
     return tmp
 
+
 generator = TestDataGenerator()
 template = remove_id(json_reader())
 data = generator.generate(template, count=5)
 # 1. отфильторовать все вложенные словари
+
 
 def get_nested(d: dict, path: str) -> Any:
     """
@@ -64,7 +66,7 @@ def get_nested(d: dict, path: str) -> Any:
     """
     keys = path.split('.')
     current: Any = d
-    
+
     for key in keys:
         if isinstance(current, dict) and key in current:
             current = current[key]
@@ -180,9 +182,10 @@ def get_all_dict_paths(data: Any, parent_path: str = "") -> list[str]:
                 # Исключаем сам list_path из подпутей
                 paths.extend(p for p in sub_paths if p != list_path)
 
-    result =  sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
-    return {x: x.split('.')[-1].replace('_id','').split('[', 1)[0]  for x in result}
-    
+    result = sorted(paths, key=lambda p: p.count('.') + p.count('['), reverse=True)
+    return {x: x.split('.')[-1].replace('_id', '').split('[', 1)[0] for x in result}
+
+
 # single = get_relations(data[0])
 # print(json.dumps(single, indent=2, ensure_ascii=False))
 # result = get_all_dict_paths(single)

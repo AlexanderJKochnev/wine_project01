@@ -33,6 +33,7 @@ class BaseRouter:
     Базовый роутер с общими CRUD-методами.
     Наследуйте и переопределяйте get_query() для добавления selectinload.
     """
+
     def __init__(
         self,
         model: Type[Any],

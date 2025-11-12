@@ -7,6 +7,7 @@ class PreactLangMixin(NameExcludeSchema):
     """
         языковая схема - возвращает поле <name> на заданном языке или англ
     """
+
     def __get_lang__(self, schema, lang: str = '', field_name: str = 'name') -> str:
         return getattr(schema, f'{field_name}{lang}') or getattr(schema, f'{field_name}')
 

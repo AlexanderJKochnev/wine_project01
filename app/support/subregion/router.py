@@ -22,6 +22,7 @@ class SubregionRouter(BaseRouter):
         except Exception as e:
             print(f'===============subregion routert error {e}==========')
         """
+
     async def create(self, data: SubregionCreate,
                      session: AsyncSession = Depends(get_db)) -> SubregionCreateResponseSchema:
         return await super().create(data, session)

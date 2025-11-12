@@ -1,0 +1,99 @@
+{
+  "image_path": "68d569ead32da9f29370d11c",
+  "subcategory": {
+    "category": {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 15
+    },
+    "name": "string",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "string",
+    "name_fr": "string",
+    "id": 3
+  },
+  "sweetness": {
+    "name": "string",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "string",
+    "name_fr": "string",
+    "id": 1
+  },
+  "subregion": {
+    "region": {
+      "country": {
+        "name": "string",
+        "description": "string",
+        "description_ru": "string",
+        "description_fr": "string",
+        "name_ru": "string",
+        "name_fr": "string",
+        "id": 2
+      },
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 2
+    },
+    "name": "string",
+    "description": "string",
+    "description_ru": "string",
+    "description_fr": "string",
+    "name_ru": "string",
+    "name_fr": "string",
+    "id": 2
+  },
+  "title": "string777",
+  "title_native": "string",
+  "subtitle_native": "string",
+  "subtitle": "string",
+  "recommendation": "string",
+  "recommendation_ru": "string",
+  "recommendation_fr": "string",
+  "madeof": "string",
+  "madeof_ru": "string",
+  "alc": 0,
+  "sugar": 0,
+  "aging": 0,
+  "age": "string",
+  "sparkling": false,
+  "foods": [
+    {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 4
+    }
+  ],
+  "varietals": [
+    {
+      "name": "string",
+      "description": "string",
+      "description_ru": "string",
+      "description_fr": "string",
+      "name_ru": "string",
+      "name_fr": "string",
+      "id": 1
+    }
+  ],
+  "description": "string",
+  "description_ru": "string",
+  "description_fr": "string",
+  "id": 5,
+  "image_url": "http://123/68d569ead32da9f29370d11c"
+}
+

@@ -18,7 +18,7 @@ from app.support.api.router import ApiRouter
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
-from app.support.customer.router import CustomerRouter
+# from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
@@ -29,7 +29,7 @@ from app.support.superfood.router import SuperfoodRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
-from app.support.warehouse.router import WarehouseRouter
+# from app.support.warehouse.router import WarehouseRouter
 
 # from sqladmin import Admin
 # from app.middleware.auth_middleware import AuthMiddleware

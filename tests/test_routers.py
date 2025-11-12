@@ -183,37 +183,37 @@ async def test_get_relation(authenticated_client_with_db, test_db_session):
     # from app.support.country.router import CountryRouter as Router
     from app.core.utils.common_utils import get_all_dict_paths, get_nested, set_nested, pop_nested
     client = authenticated_client_with_db
-    
+
     router = Router()
     create_schema = router.create_schema
     create_schema_relation = router.create_schema_relation
     adapter = TypeAdapter(create_schema_relation)
     prefix = router.prefix
     service = router.service
-    
+
     data = {
-    "region": {
-      "country": {
-        "name": "Spain",
-        "name_ru": "Испания",
-        "name_fr": "Espagne",
-        "description": "Spain is a country in Europe known for wine.",
-        "description_ru": "Испания — страна в Европе, известная своими винами.",
-        "description_fr": "Espagne est un pays d'Europe réputé pour son vin."
-      },
-      "name": "Rioja",
-      "name_ru": "Рибера-дель-Дуэро",
-      "name_fr": "Rioja",
-      "description": "Rioja is a wine region in Spain.",
-      "description_ru": "Рибера-дель-Дуэро — винный регион в Испания.",
-      "description_fr": "Rioja est une région viticole en Espagne."
-    },
-    "name": "Alavesa",
-    "name_ru": "Алавеса",
-    "name_fr": "Alavesa",
-    "description": "Alavesa is a subregion of Rioja.",
-    "description_ru": "Алавеса — субрегион Рибера-дель-Дуэро.",
-    "description_fr": "Alavesa est un sous-région de Rioja."
+        "region": {
+            "country": {
+                "name": "Spain",
+                "name_ru": "Испания",
+                "name_fr": "Espagne",
+                "description": "Spain is a country in Europe known for wine.",
+                "description_ru": "Испания — страна в Европе, известная своими винами.",
+                "description_fr": "Espagne est un pays d'Europe réputé pour son vin."
+            },
+            "name": "Rioja",
+            "name_ru": "Рибера-дель-Дуэро",
+            "name_fr": "Rioja",
+            "description": "Rioja is a wine region in Spain.",
+            "description_ru": "Рибера-дель-Дуэро — винный регион в Испания.",
+            "description_fr": "Rioja est une région viticole en Espagne."
+        },
+        "name": "Alavesa",
+        "name_ru": "Алавеса",
+        "name_fr": "Alavesa",
+        "description": "Alavesa is a subregion of Rioja.",
+        "description_ru": "Алавеса — субрегион Рибера-дель-Дуэро.",
+        "description_fr": "Alavesa est un sous-région de Rioja."
     }
     # data = data.get('region')
     # data = data.get('country')
@@ -257,7 +257,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
              'float_range': (0.1, 1.0),
              # 'field_overrides': {'name': 'Special Product'},
              'faker_seed': 42}
-            )
+        )
         for m, data in enumerate(test_data):
             try:
                 # _ = schema(**data)      # валидация данных
@@ -268,7 +268,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
             return
             try:
-                response = await client.post(f'{prefix}', json = data)
+                response = await client.post(f'{prefix}', json=data)
                 assert response.status_code == 200, f'||{prefix}, {response.text}'
             except Exception as e:
                 assert False, f'{response.status_code=} {prefix=}, error: {e}, example {m}, {response.text}'
@@ -292,9 +292,8 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
                         'model': Region,
                         'repo': RegionRepository,
                         'service': RegionService}
-    }
-    
-    
+             }
+
     source = [SubregionRouter, ]
     test_number = 1
     client = authenticated_client_with_db
@@ -311,7 +310,7 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
              'float_range': (0.1, 1.0),
              # 'field_overrides': {'name': 'Special Product'},
              'faker_seed': 42}
-            )
+        )
         for m, data in enumerate(test_data):
             try:
                 # _ = schema(**data)      # валидация данных
@@ -321,7 +320,7 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
             except Exception as e:
                 assert False, f'Error IN INPUT VALIDATION {e}, router {prefix}, example {m}'
         vv = get_all_dict_paths(data)
-        
+
         for key in get_all_dict_paths(data):
             idx = key.split('.')[-1]
             val: dict = stock[idx]
@@ -360,7 +359,7 @@ async def test_create_relations(authenticated_client_with_db, test_db_session,
 
 
 async def test_create_region_relation(authenticated_client_with_db, test_db_session,
-                                  simple_router_list, complex_router_list):
+                                      simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.region.router import RegionRouter, Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
@@ -382,13 +381,13 @@ async def test_create_region_relation(authenticated_client_with_db, test_db_sess
             adapter.validate_json(json_data)
         except Exception as e:
             assert False, e
-    
+
         response = await client.post(f'{prefix}/hierarchy', json=data)
         assert response.status_code in [200, 201], f'{response.text}'
 
 
 async def test_create_subregion_relation(authenticated_client_with_db, test_db_session,
-                                  simple_router_list, complex_router_list):
+                                         simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.subregion.router import SubregionRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
@@ -410,13 +409,13 @@ async def test_create_subregion_relation(authenticated_client_with_db, test_db_s
             adapter.validate_json(json_data)
         except Exception as e:
             assert False, e
-    
+
         response = await client.post(f'{prefix}/hierarchy', json=data)
         assert response.status_code in [200, 201], f'{response.text}'
 
 
 async def test_create_drink_relation(authenticated_client_with_db, test_db_session,
-                                  simple_router_list, complex_router_list):
+                                     simple_router_list, complex_router_list):
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.drink.router import DrinkRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
@@ -433,13 +432,13 @@ async def test_create_drink_relation(authenticated_client_with_db, test_db_sessi
                                     'float_range': (0.1, 1.0),
                                     # 'field_overrides': {'name': 'Special Product'},
                                     'faker_seed': 42})
-    for data in  test_data:
+    for data in test_data:
         try:
             json_data = json.dumps(data)
             adapter.validate_json(json_data)
         except Exception as e:
             print('================================')
-            print(json.dumps(data, indent = 2, ensure_ascii = False))
+            print(json.dumps(data, indent=2, ensure_ascii=False))
             print('============================================')
             assert False, e
         # print('================================')
@@ -451,7 +450,7 @@ async def test_create_drink_relation(authenticated_client_with_db, test_db_sessi
 
 async def test_create_warehouse_relation(
         authenticated_client_with_db, test_db_session, simple_router_list, complex_router_list
-        ):
+):
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.warehouse.router import WarehouseRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
@@ -465,21 +464,21 @@ async def test_create_warehouse_relation(
         schema, test_number, {'int_range': (1, test_number), 'decimal_range': (0.5, 1), 'float_range': (0.1, 1.0),
                               # 'field_overrides': {'name': 'Special Product'},
                               'faker_seed': 42}
-        )
+    )
     for data in test_data:
         try:
             json_data = json.dumps(data)
             adapter.validate_json(json_data)
         except Exception as e:
             assert False, e
-        
-        response = await client.post(f'{prefix}/hierarchy', json = data)
+
+        response = await client.post(f'{prefix}/hierarchy', json=data)
         assert response.status_code in [200, 201], f'{response.text}'
 
 
 async def test_create_item_relation(
         authenticated_client_with_db, test_db_session, simple_router_list, complex_router_list
-        ):
+):
     from tests.data_factory.fake_generator import generate_test_data
     from app.support.item.router import ItemRouter  # , Region, RegionCreate, RegionCreateRelation
     # source = simple_router_list + complex_router_list
@@ -493,42 +492,99 @@ async def test_create_item_relation(
         schema, test_number, {'int_range': (1, test_number), 'decimal_range': (0.5, 1), 'float_range': (0.1, 1.0),
                               # 'field_overrides': {'name': 'Special Product'},
                               'faker_seed': 42}
-        )
+    )
     data = {
-      "drink": {
-        "category": {
-          "name": "string",
-          "description": "string",
-          "description_ru": "string",
-          "description_fr": "string",
-          "name_ru": "string",
-          "name_fr": "string"
+        "drink": {
+            "category": {
+                "name": "string",
+                "description": "string",
+                "description_ru": "string",
+                "description_fr": "string",
+                "name_ru": "string",
+                "name_fr": "string"
+            },
+            "color": {
+                "name": "string",
+                "description": "string",
+                "description_ru": "string",
+                "description_fr": "string",
+                "name_ru": "string",
+                "name_fr": "string"
+            },
+            "sweetness": {
+                "name": "string",
+                "description": "string",
+                "description_ru": "string",
+                "description_fr": "string",
+                "name_ru": "string",
+                "name_fr": "string"
+            },
+            "subregion": {
+                "region": {
+                    "country": {
+                        "name": "string",
+                        "description": "string",
+                        "description_ru": "string",
+                        "description_fr": "string",
+                        "name_ru": "string",
+                        "name_fr": "string"
+                    },
+                    "name": "string",
+                    "description": "string",
+                    "description_ru": "string",
+                    "description_fr": "string",
+                    "name_ru": "string",
+                    "name_fr": "string"
+                },
+                "name": "string",
+                "description": "string",
+                "description_ru": "string",
+                "description_fr": "string",
+                "name_ru": "string",
+                "name_fr": "string"
+            },
+            "title": "string",
+            "title_native": "string",
+            "subtitle_native": "string",
+            "subtitle": "string",
+            "alc": 0,
+            "sugar": 0,
+            "aging": 0,
+            "sparkling": False,
+            "foods": [
+                {
+                    "name": "string",
+                    "description": "string",
+                    "description_ru": "string",
+                    "description_fr": "string",
+                    "name_ru": "string",
+                    "name_fr": "string"
+                }
+            ],
+            "varietals": [
+                {
+                    "varietal": {
+                        "name": "string",
+                        "description": "string",
+                        "description_ru": "string",
+                        "description_fr": "string",
+                        "name_ru": "string",
+                        "name_fr": "string"
+                    },
+                    "percentage": 0,
+                    "additionalProp1": {}
+                }
+            ],
+            "description": "string",
+            "description_ru": "string",
+            "description_fr": "string"
         },
-        "color": {
-          "name": "string",
-          "description": "string",
-          "description_ru": "string",
-          "description_fr": "string",
-          "name_ru": "string",
-          "name_fr": "string"
-        },
-        "sweetness": {
-          "name": "string",
-          "description": "string",
-          "description_ru": "string",
-          "description_fr": "string",
-          "name_ru": "string",
-          "name_fr": "string"
-        },
-        "subregion": {
-          "region": {
-            "country": {
-              "name": "string",
-              "description": "string",
-              "description_ru": "string",
-              "description_fr": "string",
-              "name_ru": "string",
-              "name_fr": "string"
+        "warehouse": {
+            "customer": {
+                "login": "string",
+                "firstname": "string",
+                "lastname": "string",
+                "account": "string"
             },
             "name": "string",
             "description": "string",
@@ -536,69 +592,12 @@ async def test_create_item_relation(
             "description_fr": "string",
             "name_ru": "string",
             "name_fr": "string"
-          },
-          "name": "string",
-          "description": "string",
-          "description_ru": "string",
-          "description_fr": "string",
-          "name_ru": "string",
-          "name_fr": "string"
         },
-        "title": "string",
-        "title_native": "string",
-        "subtitle_native": "string",
-        "subtitle": "string",
-        "alc": 0,
-        "sugar": 0,
-        "aging": 0,
-        "sparkling": False,
-        "foods": [
-          {
-            "name": "string",
-            "description": "string",
-            "description_ru": "string",
-            "description_fr": "string",
-            "name_ru": "string",
-            "name_fr": "string"
-          }
-        ],
-        "varietals": [
-          {
-            "varietal": {
-              "name": "string",
-              "description": "string",
-              "description_ru": "string",
-              "description_fr": "string",
-              "name_ru": "string",
-              "name_fr": "string"
-            },
-            "percentage": 0,
-            "additionalProp1": {}
-          }
-        ],
-        "description": "string",
-        "description_ru": "string",
-        "description_fr": "string"
-      },
-      "warehouse": {
-        "customer": {
-          "login": "string",
-          "firstname": "string",
-          "lastname": "string",
-          "account": "string"
-        },
-        "name": "string",
-        "description": "string",
-        "description_ru": "string",
-        "description_fr": "string",
-        "name_ru": "string",
-        "name_fr": "string"
-      },
-      "volume": 0,
-      "price": 0,
-      "count": 0
+        "volume": 0,
+        "price": 0,
+        "count": 0
     }
-    
+
     for data1 in test_data:
         try:
             json_data = json.dumps(data)
@@ -606,8 +605,8 @@ async def test_create_item_relation(
             _ = schema(**data)
         except Exception as e:
             assert False, e
-        
-        response = await client.post(f'{prefix}/hierarchy', json = data)
+
+        response = await client.post(f'{prefix}/hierarchy', json=data)
         assert response.status_code in [200, 201], f'{response.text}'
 
 
@@ -635,7 +634,7 @@ async def test_real_data_relation(authenticated_client_with_db, test_db_session,
             # jprint(data)
             assert False, e
         try:
-            response = await client.post(f'{prefix}/hierarchy', json = data)
+            response = await client.post(f'{prefix}/hierarchy', json=data)
             assert response.status_code in [200, 201], f'{prefix}, {response.text}'
         except Exception as e:
             jprint(data)

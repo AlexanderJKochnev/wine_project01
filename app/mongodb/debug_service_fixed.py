@@ -8,19 +8,19 @@ from app.mongodb.config import settings
 
 async def debug_service_fixed():
     """Проверка работы сервиса - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
-    client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongo_url, serverSelectionTimeoutMS = 5000)
+    client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongo_url, serverSelectionTimeoutMS=5000)
     db = client[settings.MONGO_DATABASE]
     repository = ThumbnailImageRepository(db)
     service = ThumbnailImageService(repository)
-    
+
     print("=== SERVICE DIAGNOSTIC FIXED ===")
-    
+
     # Найдем тестовое изображение
     test_doc = await repository.collection.find_one({"has_thumbnail": True})
     if test_doc:
         file_id = str(test_doc['_id'])
         print(f"Testing with file: {test_doc['filename']} (ID: {file_id})")
-        
+
         try:
             # Получаем thumbnail через сервис
             print("\n1. Getting thumbnail via service...")
@@ -32,7 +32,7 @@ async def debug_service_fixed():
             else:
                 print("❌ Thumbnail data is None or missing content")
                 return
-            
+
             # Получаем полное изображение
             print("\n2. Getting full image via service...")
             full_data = await service.get_full_image(file_id)
@@ -42,27 +42,27 @@ async def debug_service_fixed():
             else:
                 print("❌ Full image data is None or missing content")
                 return
-            
+
             # Сравниваем
             ratio = len(thumbnail_data['content']) / len(full_data['content']) * 100
             print(f"\n3. Size comparison:")
             print(f"Thumbnail: {len(thumbnail_data['content'])} bytes")
             print(f"Full image: {len(full_data['content'])} bytes")
             print(f"Ratio: {ratio:.1f}%")
-            
+
             if ratio > 50:
                 print("❌ PROBLEM: Thumbnail is too large!")
             else:
                 print("✅ Thumbnail size looks good")
-        
+
         except Exception as e:
             print(f"❌ Error during service test: {e}")
             import traceback
             traceback.print_exc()
-    
+
     else:
         print("❌ No test documents found")
-    
+
     client.close()
 
 

@@ -27,6 +27,7 @@ class RegionRouter(BaseRouter):
         self.router.add_api_route("/{id}", self.patch, methods=["PATCH"], response_model=self.read_schema)
         self.router.add_api_route("/{id}", self.delete, methods=["DELETE"], response_model=self.delete_response)
     """
+
     async def create(self, data: RegionCreate,
                      session: AsyncSession = Depends(get_db)) -> RegionCreateResponseSchema:
         return await super().create(data, session)
