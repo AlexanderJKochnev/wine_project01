@@ -1,4 +1,5 @@
 # import asyncio
+# flake8: NOQA: F401, E402
 from logging.config import fileConfig
 
 # from sqlalchemy import pool
@@ -11,25 +12,25 @@ from os.path import dirname, abspath
 from app.core.config.database.db_sync import engine_sync as app_engine
 
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
-from app.core.models.base_model import Base  # noqa: F401, E402
+from app.core.models.base_model import Base 
 # -------model import----------------
-from app.support.drink.model import Drink  # noqa: F401, E402
-from app.support.country.model import Country  # noqa: F401, E402
-from app.support.category.model import Category  # noqa: F401, E402
-from app.support.customer.model import Customer   # noqa: F401, E402
-from app.support.warehouse.model import Warehouse   # noqa: F401, E402
-from app.support.food.model import Food   # noqa: F401, E402
-from app.support.superfood.model import Superfood   # noqa: F401, E402
-from app.support.item.model import Item   # noqa: F401, E402
-from app.support.region.model import Region   # noqa: F401, E402
-from app.support.sweetness.model import Sweetness   # noqa: F401, E402
-from app.auth.models import User  # noqa: F401, E402
-from app.core.config.database.db_config import settings_db  # noqa:  F401, E402
-from app.support.drink.model import DrinkFood  # noqa:  F401, E402
-from app.support.subregion.model import Subregion  # noqa:  F401, E402
-from app.support.subcategory.model import Subcategory  # noqa:  F401, E402
+from app.support.drink.model import Drink  
+from app.support.country.model import Country  
+from app.support.category.model import Category  
+from app.support.customer.model import Customer   
+from app.support.warehouse.model import Warehouse   
+from app.support.food.model import Food   
+from app.support.superfood.model import Superfood   
+from app.support.item.model import Item   
+from app.support.region.model import Region   
+from app.support.sweetness.model import Sweetness   
+from app.auth.models import User  
+from app.core.config.database.db_config import settings_db  
+from app.support.drink.model import DrinkFood  
+from app.support.subregion.model import Subregion  
+from app.support.subcategory.model import Subcategory  
+from app.support.parser.model import Name, Image, Code, Rawdata
 
-# F401, E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

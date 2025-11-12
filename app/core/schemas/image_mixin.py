@@ -25,6 +25,7 @@ class ImageUrlMixinPath(BaseModel):
             if not self.image_path:
                 return None
             base_url = settings.BASE_URL or 'http://localhost/'
+
             prefix = settings.MONGODB_PREFIX or 'mongodb'
             # если ссылка по image id
             # images = settings.IMAGES_PREFIX or 'images'
