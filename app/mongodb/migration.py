@@ -5,7 +5,9 @@ import motor.motor_asyncio
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 # from app.core.config.project_config import settings
 from app.mongodb.repository import ThumbnailImageRepository
-from app.mongodb.config import get_database, settings
+from app.mongodb.config import get_database
+# from app.mongodb.config import settings
+from app.core.config.project_config import settings
 
 
 async def get_migration_database(database: AsyncIOMotorDatabase = Depends(get_database)):

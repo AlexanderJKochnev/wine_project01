@@ -1,23 +1,20 @@
 # app/mongodb/service.py
 import asyncio
 import io
-from PIL import Image
 from datetime import datetime, timezone
-from dateutil.relativedelta import relativedelta
 from typing import List, Tuple
 
+from dateutil.relativedelta import relativedelta
 from fastapi import Depends, HTTPException, status, UploadFile
+from PIL import Image
 
-# from app.core.config.project_config import settings
+# from app.mongodb.config import settings
+from app.core.config.project_config import settings
 from app.core.utils.io_utils import get_filepath_from_dir
-from app.mongodb.config import settings
 from app.mongodb.models import FileListResponse, FileResponse
-from app.mongodb.repository import ImageRepository
-from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator,
-                               )
 # from app.core.memcached_cache import cache_image_memcached
-from app.mongodb.repository import ThumbnailImageRepository
-
+from app.mongodb.repository import ImageRepository, ThumbnailImageRepository
+from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator, )
 
 # delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
 delta = datetime.now(timezone.utc) - relativedelta(years=2)

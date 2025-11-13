@@ -3,7 +3,8 @@ import asyncio
 import motor.motor_asyncio
 from app.mongodb.service import ThumbnailImageService
 from app.mongodb.repository import ThumbnailImageRepository
-from app.mongodb.config import settings
+# from app.mongodb.config import settings
+from app.core.config.project_config import settings
 
 
 async def debug_service():

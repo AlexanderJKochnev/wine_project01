@@ -8,48 +8,119 @@ from app.core.utils.common_utils import strtolist
 
 class Settings(BaseSettings):
     """ Project Settings """
-    DB_ECHO: bool
-    PROJECT_NAME: str
-    VERSION: str
-    DEBUG: bool
-    CORS_ALLOWED_ORIGINS: str
-    # PAGING
+    # внешний адрес и порт
+    BASE_URL: str = "http://83.167.126.4/"
+    PORT: int = 18091
+
+    DEV: int = 1
+
+    API_PREFIX: str = "api"
+    # === PREACT ===
+    PREACT_PORT: int = 5555
+    PREACT_PREFIX: str = "preact"
+    # ПОЛЯ ДЛЯ ВЫВОДА В ВИДАХ DETAIL & LIST
+    IDETAIL_VIEW: str = "name, description"
+    ILIST_VIEW: str = "name"
+    # языки
+    LANGS: str = "en, ru, fr"
+    # язык по умолчанию
+    DEFAULT_LANG: str = "en"
+    #  справочники
+    HANDBOOKS_PREFIX: str = "handbooks"
+
+    # === POSTGRES ===
+    POSTGRES_DB: str = "wine_db"
+    POSTGRES_USER: str = "wine"
+    POSTGRES_PASSWORD: str = "wine1"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_HOST: str = "wine_host"
+    DB_ECHO_LOG: int = 0
+
+    # === ADMINER === ДЛЯ ОТЛАДКИ - УДАЛИТЬ В PRODUCTION
+    ADMINER_PORTS: str = "8092:8080"
+
+    # === APP ===
+    API_HOST: str = "0.0.0.0"
+    # ВНУТРЕННИЙ ПОРТ
+    API_PORT: int = 8091
+    DB_ECHO: int = 1
+    DEBUG: int = 1
+    PROJECT_NAME: str = "Wine Project"
+    VERSION: str = "0.0.1"
+    CORS_ALLOWED_ORIGINS: str = "http://localhost:3000"
+    LAZY: str = "selectin"
+    CASCADE: str = "all, delete-orphan"
+    # === ROUTERS ===
+    AUTH_PREFIX: str = "auth"
+    USER_PREFIX: str = "users"
+    IMAGES_PREFIX: str = "images"
+    FILES_PREFIX: str = "files"
+    MONGODB_PREFIX: str = "mongodb"
+    # два ниже удалить ? дублируются с разделом ROUTERS выше
+    MONGO_IMAGES: str = "images"
+    MONGO_DOCUMENTS: str = "documents"
+
+    # ==== TOKENS ====
+    ACCESS_TOKEN_LIFETIME: int = 30000
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30000
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 90
+    REFRESH_TOKEN_LIFETIME: int = 86400
+    REFRESH_TOKEN_ROTATE_MIN_LIFETIME: int = 720000
+    SECRET_KEY: str = "gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt"
+    ALGORITHM: str = "HS256"
+    # В продакшене SECRET_KEY генерируется через openssl rand -hex 32
+
+    # ==== PAGING SETTINGS ====
+    # кол-во записей на странице
     PAGE_DEFAULT: int = 20
+    # минимальное кол-во страниц
     PAGE_MIN: int = 0
-    PAGE_MAX: int = 100
-    # AUTHORIZATIOON
-    SECRET_KEY: str = 'gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt'
-    ALGORITHM: str = 'HS256'
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 50
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
-    # IMAGES
-    UPLOAD_DIR: str = "uploads"
-    MAX_FILE_SIZE: int = 10  # * 1024 * 1024  # 10MB
-    ALLOWED_EXTENSIONS: str = "png, jpg, jpeg, gif, webp"  # shall be converted to set
-    # RELATIONSHIPS
-    LAZY: str = 'selectin'
-    CASCADE: str = 'all, delete-orphan'
-    DJANGO_PORT: int = 8093
-    ADMIN_EMAIL: str
-    ADMIN_PASSWORD: str
-    AUTH_PREFIX: str = 'auth'
-    USER_PREFIX: str = 'user'
-    IMAGES_PREFIX: str = 'images'
-    FILES_PREFIX: str = 'files'
-    MONGODB_PREFIX: str = 'mongodb'
-    BASE_URL: str
-    PORT: int
-    # DEV 0 production, DEV 1 development
-    DEV: int = 0
-    API_PREFIX: str = 'api'
-    JSON_FILENAME: str = 'data.json'
-    # PREACT
-    PREACT_PREFIX: str = 'preact'
-    HANDBOOKS_PREFIX: str = 'handbooks'
-    LANGS: str = 'en, ru, fr'
-    DEFAULT_LANG: str = 'en'
-    IDETAIL_VIEW: str = 'name, description'
-    ILIST_VIEW: str = 'name'
+    # максимальное кол-во страниц
+    PAGE_MAX: int = 1000
+
+    # === настройки для импорта изображений ====
+    # директория куда складывать файлы с картинками и откуда они подтягиваются в mongo
+    UPLOAD_DIR: str = "upload_volume"
+    # максимальная величина файла МБ
+    MAX_FILE_SIZE: int = 10
+    ALLOWED_EXTENSIONS: str = "png, jpg, jpeg, gif, webp"
+    JSON_FILENAME: str = "data.json"
+
+    # MongoDB
+    MONGODB_CONTAINER_NAME: str = "mongo"
+    ME_CONFIG_MONGODB_ADMINUSERNAME: str = "admin"
+    ME_CONFIG_MONGODB_ADMINPASSWORD: str = "admin"
+    ME_CONFIG_MONGODB_SERVER: str = "mongo"
+    ME_CONFIG_BASICAUTH_USERNAME: str = "admin"
+    ME_CONFIG_BASICAUTH_PASSWORD: str = "admin"
+    MONGO_HOSTNAME: str = "mongodb"
+    MONGO_INITDB_ROOT_USERNAME: str = "admin"
+    MONGO_INITDB_ROOT_PASSWORD: str = "admin"
+    MONGO_INITDB_DATABASE: str = "admin"
+    MONGO_DATABASE: str = "wine_database"
+
+    MONGO_OUT_PORT: int = 27017
+    MONGO_INN_PORT: int = 27017
+
+    # mongo-express УДАЛИТЬ В PRODUCTION
+    MONGO_EXPRESS_CONTAINER_NAME: str = "mongo-express"
+    MONGO_EXPRESS_PORT: int = 8081
+    # Application
+    API_V1_STR: str = "/api/v1"
+    ME_CONFIG_MONGODB_ADMINUSERNAME: str = "admin"
+    ME_CONFIG_MONGODB_ADMINPASSWORD: str = "admin"
+    ME_CONFIG_MONGODB_SERVER: str = "mongo"
+    ME_CONFIG_BASICAUTH_USERNAME: str = "admin"
+    ME_CONFIG_BASICAUTH_PASSWORD: str = "admin"
+    ME_OUT_PORT: int = "8081"
+    ME_INN_PORT: int = "8081"
+    # IMAGE SIZING в пикселях
+    IMAGE_WIDTH: int = 2000
+    IMAGE_HEIGH: int = 5000
+    # для jpg только
+    IMAGE_QUALITY: int = 85
+    # ДЛИНА РАНДОМНОГО ИМЕНИ ФАЙЛА. чем короче, тем быстрее поиск по имени файла / чем по _id
+    LENGTH_RANDOM_NAME: int = 12
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
@@ -78,6 +149,12 @@ class Settings(BaseSettings):
     @property
     def get_exclude_list(self) -> List[str]:
         return strtolist(self.EXCLUDE_LIST)
+
+    @property
+    def mongo_url(self) -> str:
+        return (f"mongodb://{self.MONGO_INITDB_ROOT_USERNAME}:"
+                f"{self.MONGO_INITDB_ROOT_PASSWORD}@{self.MONGO_HOSTNAME}:"
+                f"{self.MONGO_INN_PORT}")  # {self.MONGO_INITDB_DATABASE}")
 
 
 settings = Settings()

@@ -1,15 +1,18 @@
 # app/mongodb/utils.py
-import string
+import io
 import mimetypes
-import random
-from app.mongodb.config import settings
-from fastapi import UploadFile, HTTPException
 import os
-import magic
+import random
+import string
 from pathlib import Path
 from typing import List, Tuple
-import io
+
+import magic
+from fastapi import HTTPException, UploadFile
 from PIL import Image
+
+# from app.mongodb.config import settings
+from app.core.config.project_config import settings
 
 
 def make_transparent_white_bg(content: bytes) -> bytes:

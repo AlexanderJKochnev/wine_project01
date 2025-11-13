@@ -1,7 +1,8 @@
 # app/mongodb/debug_migration.py
 import asyncio
 import motor.motor_asyncio
-from app.mongodb.config import settings
+# from app.mongodb.config import settings
+from app.core.config.project_config import settings
 from app.mongodb.repository import ThumbnailImageRepository
 from PIL import Image
 import io
