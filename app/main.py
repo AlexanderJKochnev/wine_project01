@@ -29,6 +29,7 @@ from app.support.superfood.router import SuperfoodRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
+from app.support.parser.router import StatusRouter, CodeRouter, NameRouter, ImageRouter, RawdataRouter
 # from app.support.warehouse.router import WarehouseRouter
 
 # from sqladmin import Admin
@@ -72,6 +73,11 @@ app.include_router(SweetnessRouter().router)
 app.include_router(FoodRouter().router)
 app.include_router(SuperfoodRouter().router)
 app.include_router(VarietalRouter().router)
+app.include_router(StatusRouter().router)
+app.include_router(CodeRouter().router)
+app.include_router(NameRouter().router)
+app.include_router(ImageRouter().router)
+app.include_router(RawdataRouter().router)
 # app.include_router(CustomerRouter().router)
 # app.include_router(WarehouseRouter().router)
 

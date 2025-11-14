@@ -34,6 +34,12 @@ from app.support.country.schemas import CountryRead
 from app.support.sweetness.schemas import SweetnessRead
 from app.support.warehouse.schemas import WarehouseRead
 from app.support.customer.schemas import CustomerRead
+from app.support.parser.schemas import (StatusCreate, StatusCreateResponseSchema, StatusRead, StatusUpdate,
+                                        CodeCreate, CodeCreateResponseSchema, CodeRead, CodeUpdate,
+                                        NameCreate, NameCreateResponseSchema, NameRead, NameUpdate,
+                                        ImageCreate, ImageCreateResponseSchema, ImageRead, ImageUpdate,
+                                        RawdataCreate, RawdataCreateResponseSchema,RawdataRead, RawdataUpdate)
+
 
 from app.support.category.service import CategoryService
 from app.support.country.service import CountryService
@@ -47,9 +53,12 @@ from app.support.subregion.service import SubregionService
 from app.support.superfood.service import SuperfoodService
 from app.support.sweetness.service import SweetnessService
 from app.support.varietal.service import VarietalService
+from app.support.parser.service import StatusService, CodeService,  NameService, ImageService, RawdataService
+
 # from app.support.warehouse.service import WarehouseService
 from app.support.warehouse.repository import WarehouseRepository
-
+from app.support.parser.repository import (StatusRepository, CodeRepository, NameRepository, ImageRepository,
+                                           RawdataRepository)
 
 __all__ = [CategoryRead, CategoryReadRelation, CategoryCreate, CategoryUpdate, CategoryCreateResponseSchema,
            ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation, ItemReadRelation, WarehouseRepository

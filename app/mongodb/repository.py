@@ -284,6 +284,26 @@ class ThumbnailImageRepository:
             print(f"Error getting images after date: {e}")
             return []
 
+    async def get_images_after_date_nopage(self,
+                                           after_date: datetime
+                                           ) -> List[Tuple]:
+        """
+            получение списка изображений
+            возвращает список кортежей [(image_path, image_id)...]
+        """
+        await self.ensure_indexes()
+        try:
+            cursor = (self.collection.find({"created_at": {"$gt": after_date}},
+                                           {"content": 0, "thumbnail": 0})).sort("created_at", -1)
+            images = []
+            async for image in cursor:
+                image = (str(image["_id"]), image["filename"])
+                images.append(image)
+            return images
+        except Exception as e:
+            print(f"Error getting images after date: {e}")
+            return []
+
     async def get_image_by_filename(self, filename: str, include_content: bool = True) -> Optional[dict]:
         await self.ensure_indexes()
         projection = {"filename": 1, "description": 1, "created_at": 1, "size": 1, "content_type": 1,

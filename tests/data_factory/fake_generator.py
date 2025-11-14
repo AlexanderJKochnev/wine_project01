@@ -283,6 +283,12 @@ def generate_test_data(
     'field_overrides': {'name': 'Special Product'},
     'faker_seed': 42
     """
+    if not model:
+        print('generate_test_data.error: no model')
+        return
+    if not hasattr(model, 'model_fields'):
+        print(f'model {model} has no attribute "model_fieldas"')
+    
     factory_kwargs = factory_kwargs or {}
 
     # Извлекаем настройки диапазонов

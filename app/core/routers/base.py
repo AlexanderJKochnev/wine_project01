@@ -111,7 +111,12 @@ class BaseRouter:
             return obj
         except Exception as e:
             await session.rollback()
-            raise exception_to_http(e)
+            detail = (f'ошибка создания записи {e}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo}')
+            print(detail)
+            raise HTTPException(status_code=405, detail=detail)
 
     async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """

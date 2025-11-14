@@ -28,6 +28,11 @@ class ImageService:
                            file: UploadFile,
                            description: str,
                            ):
+        """
+            Создание одной записи с зависимостями - если в таблице есть зависимости
+            они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
+            кроме того будет добавлено изображение
+        """
         try:
             content = await file.read()
             content = make_transparent_white_bg(content)
@@ -117,13 +122,10 @@ class ImageService:
 
     async def delete_image(self,
                            image_id: str,
-                           # drink_id: int
                            ):
         image = await self.image_repository.get_image(image_id)
         if not image:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-        # if image["drink_id"] != drink_id:
-        #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return await self.image_repository.delete_image(image_id)
 
     async def get_images_after_date(
@@ -165,7 +167,7 @@ class ImageService:
 
     async def get_recent_images(self, hours: int = 24) -> List[FileResponse]:
         """
-        Упрощенный метод для получения изображений за последние N часов
+            Упрощенный метод для получения изображений за последние N часов
         """
         from datetime import datetime, timedelta
 
@@ -289,3 +291,121 @@ class ThumbnailImageService:
             )
         _id = await self.image_repository.create_image(filename, content, content_type, description)
         return _id, filename
+
+    async def delete_image(self,
+                           image_id: str,
+                           ):
+        """
+           удаление одного изображения по _id
+        """
+        image = await self.image_repository.get_image(image_id)
+        if not image:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        return await self.image_repository.delete_image(image_id)
+
+    async def direct_upload_image(self, limit: int = 3):
+        """ прямая загрузка файлов
+            из upload_dir
+            limit - ограничение на количество загружаемых файлов (в основном для целей тестирования)
+        """
+        try:
+            # upload_dir = settings.UPLOAD_DIR
+            lost_images = []  # список потерянных файлов
+            image_paths = get_filepath_from_dir()
+            n = len(image_paths)
+            # запускаем
+            for m, upload_file in enumerate(read_image_generator(image_paths)):
+                try:
+                    content = await upload_file.read()
+                    filename = upload_file.filename
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"upload_file fault: {e}"
+                    )
+                # удалегние фона 3 варианта закоммнетировано - доделать
+                try:
+                    # content = make_transparent_white_bg(content)
+                    # content = remove_background(content)
+                    # content = remove_background_with_mask(content)
+                    content_type = 'image/png'
+                    filename = f"{filename.rsplit('.', 1)[0]}.png"
+                except Exception as e:
+                    HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Удаление фона не получилось для {filename}. {e}. Оставляем без изменения')
+                # подгоняем размер
+                try:
+                    if len(content) > 8 * 1024 * 1024:
+                        # уменьшениие размера до приемлемого
+                        content = image_aligning(content)
+                except Exception as e:
+                    HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f'Изменение размера не получилось для {filename}. {e}. Оставляем без изменения'
+                    )
+                description = f'импортированный файл {datetime.now(timezone.utc)}'
+
+                id = await self.image_repository.create_image(filename, content, content_type, description)
+                if not id:
+                    lost_images.append(filename)
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"error: {e}"
+            )
+        result = {'number of images': n + 1,
+                  'loaded images': m + 1}
+        if lost_images:
+            result['lost images': lost_images]
+        return result
+
+    async def get_images_after_date(
+        self, after_date: datetime, page: int = 1, per_page: int = 100
+    ) -> FileListResponse:
+        """
+        Сервисный метод для получения изображений с пагинацией
+
+        Args:
+            after_date: Дата для фильтрации
+            page: Номер страницы (начинается с 1)
+            per_page: Количество элементов на странице
+
+        Returns:
+            FileListResponse с изображениями и метаданными
+        """
+        try:
+            # Валидация параметров
+            if page < 1:
+                page = 1
+            skip = (page - 1) * per_page
+            # Получаем изображения
+            images = await self.image_repository.get_images_after_date(
+                after_date, skip, per_page
+            )
+            # Получаем общее количество для пагинации
+            total = await self.image_repository.count_images_after_date(after_date)
+
+            # Проверяем, есть ли еще страницы
+            has_more = (skip + len(images)) < total
+
+            return FileListResponse(
+                images=images, total=total, has_more=has_more
+            )
+
+        except Exception as e:
+            raise Exception(f"Service error: {str(e)}")
+
+    async def get_images_list_after_date(
+        self, after_date: datetime = delta
+    ) -> List[Tuple]:
+        """
+            возвращает кортеж кортежей  (image_file_name, image_id)...
+        """
+        try:
+            images = await self.image_repository.get_images_after_date_nopage(
+                after_date
+            )
+            return images
+        except Exception as e:
+            raise Exception(f"Service error: {str(e)}")

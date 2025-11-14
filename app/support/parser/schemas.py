@@ -1,98 +1,121 @@
 # app/support/parser/schemas.py
 from typing import Optional
 
-from pydantic import computed_field, Field
-
-from app.core.schemas.base import PkSchema, DateSchema
+from app.core.schemas.base import BaseModel
 
 
-class StatusCreateSchema(DateSchema):
+class StatusCreate(BaseModel):
     status: str
 
 
-class StatusUpdateSchema(DateSchema):
+class StatusCreateRelation(BaseModel):
+    status: str
+
+
+class StatusCreateResponseSchema(StatusCreate):
+    id: int
+
+
+class StatusUpdate(BaseModel):
     status: Optional[str] = None
 
 
-class StatusReadSchema(DateSchema):
+class StatusRead(BaseModel):
     id: int
     status: str
 
 
-class CodeCreateSchema(DateSchema):
+class StatusReadRelation(BaseModel):
+    id: int
+    status: str
+
+
+class CodeCreate(BaseModel):
     code: str
-    url: Optional[str] = None
-    status_id: Optional[str] = 1
+    url: str
+    status_id: Optional[int] = 1
 
 
-class CodeUpdateSchema(DateSchema):
+class CodeCreateResponseSchema(CodeCreate):
+    id: int
+
+
+class CodeUpdate(BaseModel):
     code: Optional[str] = None
     url: Optional[str] = None
-    status_id: Optional[str] = None
+    status_id: Optional[int] = 1
 
 
-class CodeReadSchema(DateSchema):
+class CodeRead(BaseModel):
     code: str
     url: Optional[str] = None
-    status: Optional[StatusReadSchema] = None
+    status: Optional[StatusRead] = None
 
 
-class NameCreateSchema(DateSchema):
+class NameCreate(BaseModel):
     name: str
-    url: Optional[str] = None
+    url: str
     code_id: int
-    status_id: Optional[str] = 1
+    status_id: Optional[int] = 1
 
 
-class NameUpdateSchema(DateSchema):
+class NameCreateResponseSchema(NameCreate):
+    id: int
+
+
+class NameUpdate(BaseModel):
     name: Optional[str] = None
-    code_id = Optional[int] = None
+    code_id: Optional[int] = None
     url: Optional[str] = None
-    status_id: Optional[str] = None
+    status_id: Optional[int] = 1
 
 
-class NameReadSchema(DateSchema):
+class NameRead(BaseModel):
     name: str
-    code: CodeReadSchema
+    code: CodeRead
     url: Optional[str] = None
-    status: Optional[StatusReadSchema] = None
+    status: Optional[StatusRead] = None
 
 
-class RawdataCreateSchema(DateSchema):
+class RawdataCreate(BaseModel):
     body_html: str
     name_id: int
-    status_id: Optional[str] = 1
+    status_id: Optional[int] = 1
 
 
-class RawdataUpdateSchema(DateSchema):
+class RawdataCreateResponseSchema(RawdataCreate):
+    id: int
+
+
+class RawdataUpdate(BaseModel):
     body_html: Optional[str] = None
-    name_id = Optional[int] = None
-    status_id: Optional[str] = None
+    name_id: Optional[int] = None
+    status_id: Optional[int] = 1
 
 
-class RawdataReadSchema(DateSchema):
+class RawdataRead(BaseModel):
     body_html: str
-    name: NameReadSchema
-    status: Optional[StatusReadSchema] = None
+    name: NameRead
+    status: Optional[StatusRead] = None
 
 
-class ImageCreateSchema(DateSchema):
-    file_id: Optional[str] = None
-    file_url: Optional[str] = None
-    url: Optional[str] = None
+class ImageCreate(BaseModel):
     name_id: int
-    status_id: Optional[str] = 1
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None
 
 
-class ImageUpdateSchema(DateSchema):
-    file_id: Optional[str] = None
-    file_url: Optional[str] = None
-    url: Optional[str] = None
-    status_id: Optional[str] = None
+class ImageCreateResponseSchema(ImageCreate):
+    id: int
 
 
-class ImageReadSchema(DateSchema):
-    file_id: Optional[str] = None
-    file_url: Optional[str] = None
-    name: NameReadSchema
-    status: Optional[StatusReadSchema] = None
+class ImageUpdate(BaseModel):
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None
+    name_id: Optional[int] = None
+
+
+class ImageRead(BaseModel):
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None
+    name: NameRead

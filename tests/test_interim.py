@@ -190,7 +190,7 @@ def test_jsonconverter():
 
 def test_jsonconverter2():
     """
-    тестируем 'битыеэ записи
+    тестируем 'битые записи'
     тестирует исходные данные (если выбрасывает - см. diff)
     """
     from app.core.utils.alchemy_utils import JsonConverter
@@ -323,7 +323,7 @@ def test_repo_list():
         for n, key in enumerate(missed_repo):
             print(f'{key}')
         assert False
-    assert True
+    assert False
 
 
 def test_services_list():
@@ -338,7 +338,7 @@ def test_services_list():
         for n, key in enumerate(missed_repo):
             print(f'{key}')
         assert False
-    assert True
+    assert False
 
 
 def test_get_pyschema():
@@ -361,8 +361,8 @@ def test_get_pyschema():
             assert schema, f'{model}{key} схема не получена'
             assert schema.__name__ == expected_result, f'получено {schema.__name__}. Ожидалось {model}{key}'
         all = get_all_pyschema()
-        for key in all:
-            print(key)
+        for n, key in enumerate(all):
+            print(n, key)
         assert False
 
 
@@ -387,7 +387,7 @@ def test_get_repo():
 
 def test_get_services():
     """
-    проверяем как действует метод get_repo
+    проверяем как действует метод get_service
     :return:
     :rtype:
     """
@@ -433,10 +433,17 @@ def test_flatten_dict_with_localized_fields():
             }
             }
     data = {'name': None, 'id': 3,
-            'created_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 170061, tzinfo=datetime.timezone.utc), 'name_ru': None,
-            'description_ru': 'Нервно исследование хозяйка валюта. Еврейский райком товар пропаганда кольцо багровый.\nСомнительный терапия развернуться издали посидеть пламя. Строительство второй выкинуть возмутиться точно песня страсть. Ребятишки князь предоставить виднеться. Пасть привлекать болото жестокий.',
+            'created_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 170061,
+                                            tzinfo=datetime.timezone.utc), 'name_ru': None,
+            'description_ru': 'Нервно исследование хозяйка валюта. Еврейский райком товар пропаганда кольцо багровый.'
+                              '\nСомнительный терапия развернуться издали посидеть пламя. '
+                              'Строительство второй выкинуть возмутиться точно песня страсть. '
+                              'Ребятишки князь предоставить виднеться. Пасть привлекать болото жестокий.',
             'category_id': 8,
-            'description': 'Field wear time establish kid. Cup choose indeed ball fund decision. Discuss argue growth common.\nThem include no because management government onto. Today Congress responsibility.\nSport economic have some. Born present main suffer drug. Floor work response check little place.',
+            'description': 'Field wear time establish kid. Cup choose indeed ball fund decision. '
+                           'Discuss argue growth common.\nThem include no because management government onto. '
+                           'Today Congress responsibility.\nSport economic have some. Born present main suffer drug. '
+                           'Floor work response check little place.',
             'updated_at': datetime.datetime(2025, 11, 5, 7, 22, 15, 170061, tzinfo=datetime.timezone.utc),
             'name_fr': 'Terrain prêt goutte claire.', 'description_fr': None, 'drinks': [],
             'category': {'id': 8, 'name': 'Image edge clear where.',

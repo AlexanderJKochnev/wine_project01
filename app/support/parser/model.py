@@ -5,6 +5,7 @@ from sqlalchemy.sql import func
 from datetime import datetime
 from typing import Optional, List
 from app.core.models.base_model import Base, BaseAt
+from app.core.models.image_mixin import ImageMixin
 
 
 class Code(Base, BaseAt):
@@ -44,12 +45,11 @@ class Rawdata(Base):
     name: Mapped["Name"] = relationship("Name", back_populates="raw_data")
 
 
-class Image(Base):
+class Image(Base, ImageMixin):
 
     name_id: Mapped[int] = mapped_column(ForeignKey("names.id", ondelete="CASCADE"))
-    file_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
-    file_url: Mapped[Optional[str]] = mapped_column(String(255), index=True)
-
+    # file_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    # file_url: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     name: Mapped["Name"] = relationship("Name", back_populates="images")
 
 

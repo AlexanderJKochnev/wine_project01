@@ -30,6 +30,8 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
              # 'field_overrides': {'name': 'Special Product'},
              'faker_seed': 42}
         )
+        if not test_data:
+            assert False, f'create_schema is model {model} '
         for m, data in enumerate(test_data):
             try:
                 # валидируем по Pydantic схеме

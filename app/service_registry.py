@@ -1,5 +1,12 @@
 # app/service_registry.py
+"""
+    здесь явно регистрируются все
+    сервисы
+    репозитории
+    схемы
+    и даны методы их регистрации и получения списком и по имени файла / типу схемы
 
+"""
 _SERVICE_REGISTRY: dict = {}
 _REPOSITORY_REGISTRY: dict = {}
 _PYSCHEMA_REGISTRY: dict = {}
