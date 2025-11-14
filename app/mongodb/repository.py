@@ -24,7 +24,7 @@ class ImageRepository:
             await self.collection.create_index([("created_at", -1)])
             await self.collection.create_index([("filename", "text")])  # Текстовый поиск
             self._indexes_created = True
-            print("Image repository indexes ensured")
+            # print("Image repository indexes ensured")
 
     async def create_image(self, filename: str, content: bytes, content_type: str, description: str) -> str:
         """ сохранение изображения в базе данных"""
@@ -124,9 +124,10 @@ class ThumbnailImageRepository:
                 index_name = required_index["name"]
                 if index_name not in existing_indexes:
                     indexes_to_create.append(required_index)
-                    print(f"Index {index_name} will be created")
+                    # print(f"Index {index_name} will be created")
                 else:
-                    print(f"Index {index_name} already exists")
+                    pass
+                    # print(f"Index {index_name} already exists")
             # Создаем только недостающие индексы
             if indexes_to_create:
                 for index_spec in indexes_to_create:
@@ -138,7 +139,7 @@ class ThumbnailImageRepository:
                     print(f"✓ Index {index_spec['name']} created successfully")
 
             self._indexes_created = True
-            print("All indexes are ready")
+            # print("All indexes are ready")
 
         except Exception as e:
             print(f"Error ensuring indexes: {e}")
@@ -157,8 +158,8 @@ class ThumbnailImageRepository:
         try:
             # Открываем изображение
             image = Image.open(io.BytesIO(image_content))
-            original_size = image.size
-            print(f"Original image size: {original_size}")
+            # original_size = image.size
+            # print(f"Original image size: {original_size}")
 
             # Вычисляем новые размеры сохраняя пропорции
             max_size = 300
@@ -169,7 +170,7 @@ class ThumbnailImageRepository:
                 new_height = max_size
                 new_width = int((max_size / image.height) * image.width)
 
-            print(f"Thumbnail target size: ({new_width}, {new_height})")
+            # print(f"Thumbnail target size: ({new_width}, {new_height})")
 
             # Ресайзим изображение
             resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
@@ -179,7 +180,7 @@ class ThumbnailImageRepository:
             resized_image.save(output, format='PNG', optimize=True)
             result = output.getvalue()
 
-            print(f"Thumbnail created: {len(result)} bytes (was {len(image_content)} bytes)")
+            # print(f"Thumbnail created: {len(result)} bytes (was {len(image_content)} bytes)")
             return result
         except Exception as e:
             print(f"Thumbnail creation error: {e}")
@@ -204,6 +205,7 @@ class ThumbnailImageRepository:
                     "has_thumbnail": thumbnail_content is not None}
 
         result = await self.collection.insert_one(document)
+
         return {"id": str(result.inserted_id), "has_thumbnail": thumbnail_content is not None}
 
     async def get_image(self, image_id: str, include_content: bool = True) -> Optional[dict]:

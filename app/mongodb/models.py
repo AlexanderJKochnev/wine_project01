@@ -102,3 +102,10 @@ class FullImageResponse(BaseModel):
     filename: str
     content_type: str = "image/png"
     from_cache: bool = False
+
+
+class ImageCreateResponse(BaseModel):
+    id: str
+    filename: str
+    has_thumbnail: bool
+    message: str

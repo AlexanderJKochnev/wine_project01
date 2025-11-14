@@ -5,7 +5,9 @@
 # pytest tests/ --ignore=tests/test_postgres.py --tb=no --disable-warnings -vv
 # docker exec -it app pytest tests/test_postgres.py --tb=no --disable-warnings -vv
 # pytest -m 'not docker' --tb=no --disable-warnings -vv
-pytest tests/test_mongodb_crud.py
+# pytest tests/test_mongodb_crud.py
+# вместо tests/test_mongodb_crud.py tests/test_mongodb_integral.py
+pytest tests/test_mongodb_integral.py
 pytest tests/test_mongodb_endpoints.py
 pytest tests/test_auth.py \
        tests/test_configs.py \

@@ -22,7 +22,6 @@ async def test_api_mongo_crud_operations(authenticated_client_with_db,
     for n, image in enumerate(sample_image_paths):
         with open(image, 'rb') as f:
             image_content = f.read()
-        # file_size = len(image_content)
         file_name = image.name
         data = {"description": "Test image for integration test"}
         files = {"file": (file_name, image_content)}

@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
-from app.mongodb.models import FileListResponse
+from app.mongodb.models import FileListResponse, ImageCreateResponse
 from app.mongodb.service import ThumbnailImageService
 # from app.core.cache import cache_key_builder, invalidate_cache  #  потом может быть закэшируем
 
@@ -51,6 +51,7 @@ async def get_images_list_after_date(
     try:
         after_date = back_to_the_future(after_date)
         result = await image_service.get_images_list_after_date(after_date)
+        # {filename: +id}
         return {a: b for b, a in result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -155,7 +156,7 @@ async def download_full_image_by_filename(
 
 
 # === Операции записи (остаются без изменений) ===
-@router.post(f'/{subprefix}', response_model=dict)
+@router.post(f'/{subprefix}', response_model=ImageCreateResponse)
 # @invalidate_cache(patterns = ["mongodb_images:*", "mongodb_images_list:*"])
 async def upload_image(
     file: UploadFile = File(...), description: Optional[str] = Form(None),
@@ -164,8 +165,12 @@ async def upload_image(
     """
     загрузка одного изображения в базу данных
     """
-    file_id, filename = await image_service.upload_image(file, description)
-    return {"id": file_id, 'file_name': filename, "message": "Image uploaded successfully"}
+    result = await image_service.upload_image(file, description)
+    if result.get('file_id'):
+        result['mesage'] = "Image uploaded successfully"
+    else:
+        result['message'] = "Image upload fail"
+    return result
 
 
 @router.post(f'/{directprefix}')

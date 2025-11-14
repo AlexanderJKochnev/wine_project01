@@ -3,6 +3,7 @@ import asyncio
 import io
 from datetime import datetime, timezone
 from typing import List, Tuple
+from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
 from fastapi import Depends, HTTPException, status, UploadFile
@@ -17,7 +18,7 @@ from app.mongodb.repository import ImageRepository, ThumbnailImageRepository
 from app.mongodb.utils import (file_name, image_aligning, make_transparent_white_bg, read_image_generator, )
 
 # delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
-delta = datetime.now(timezone.utc) - relativedelta(years=2)
+delta = datetime.now(timezone.utc) - relativedelta(years=100)
 
 
 class ImageService:
@@ -221,7 +222,7 @@ class ThumbnailImageService:
                             "content_type": "image/png", "from_cache": False}
 
             # Если thumbnail уже есть в базе
-            print(f"Thumbnail found in DB for {file_id}, size: {len(image_data['thumbnail'])} bytes")
+            # print(f"Thumbnail found in DB for {file_id}, size: {len(image_data['thumbnail'])} bytes")
             return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
                     "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
 
@@ -237,7 +238,7 @@ class ThumbnailImageService:
             if not image_data or "content" not in image_data:
                 raise HTTPException(status_code=404, detail="Image not found")
 
-            print(f"Full image retrieved for {file_id}, size: {len(image_data['content'])} bytes")
+            # print(f"Full image retrieved for {file_id}, size: {len(image_data['content'])} bytes")
             return {"content": image_data["content"], "filename": image_data["filename"],
                     "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
         except Exception as e:
@@ -249,9 +250,11 @@ class ThumbnailImageService:
         try:
             success = await self.image_repository.update_image_with_thumbnail(file_id, thumbnail_content)
             if success:
-                print(f"✓ Thumbnail saved to DB for {file_id}")
+                pass
+                # print(f"✓ Thumbnail saved to DB for {file_id}")
             else:
-                print(f"✗ Failed to save thumbnail for {file_id}")
+                pass
+                # print(f"✗ Failed to save thumbnail for {file_id}")
         except Exception as e:
             print(f"✗ Error saving thumbnail for {file_id}: {e}")
 
@@ -279,7 +282,7 @@ class ThumbnailImageService:
                            ):
         try:
             content = await file.read()
-            content = make_transparent_white_bg(content)
+            # content = make_transparent_white_bg(content)
             content_type = "image/png"
             # content = remove_background_with_mask(content)
             if len(content) > 8 * 1024 * 1024:
@@ -289,8 +292,9 @@ class ThumbnailImageService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=f"image aligning fault: {e}"
             )
-        _id = await self.image_repository.create_image(filename, content, content_type, description)
-        return _id, filename
+        result = await self.image_repository.create_image(filename, content, content_type, description)
+        result['filename'] = filename
+        return result
 
     async def delete_image(self,
                            image_id: str,
@@ -307,14 +311,26 @@ class ThumbnailImageService:
         """ прямая загрузка файлов
             из upload_dir
             limit - ограничение на количество загружаемых файлов (в основном для целей тестирования)
+            1. get list of images in upload directory
+            2. compair with database list and filter new only files
+            3. add new only files to database
         """
         try:
             # upload_dir = settings.UPLOAD_DIR
             lost_images = []  # список потерянных файлов
-            image_paths = get_filepath_from_dir()
+            # список подходящих файлов
+            image_paths: List[Path] = get_filepath_from_dir()
+            # количество подходящих файлов
             n = len(image_paths)
+            # получаем списков файлов в базе данных [(_id, filename)]
+            current_image_list = await self.image_repository.get_images_after_date_nopage(delta)
+            # список уже существующих имен файлов
+            current_filenames = [b for a, b in current_image_list]
+            image_paths_clear = (path for path in image_paths if path.name not in current_filenames)
+            dublicate_images = [path.name for path in image_paths if path.name in current_filenames]  # список
+            # файлов уже существующих в бд
             # запускаем
-            for m, upload_file in enumerate(read_image_generator(image_paths)):
+            for m, upload_file in enumerate(read_image_generator(image_paths_clear)):
                 try:
                     content = await upload_file.read()
                     filename = upload_file.filename
@@ -358,6 +374,10 @@ class ThumbnailImageService:
                   'loaded images': m + 1}
         if lost_images:
             result['lost images': lost_images]
+            result['number of lost images': len(lost_images)]
+        if dublicate_images:
+            result['dublicate_images': dublicate_images]
+            result['number of dublicate images': len(dublicate_images)]
         return result
 
     async def get_images_after_date(
@@ -409,3 +429,54 @@ class ThumbnailImageService:
             return images
         except Exception as e:
             raise Exception(f"Service error: {str(e)}")
+
+    async def get_thumbnail_by_filename(self, file_name: str) -> dict:
+        """Получить thumbnail (для списков) - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+        try:
+            image_data = await self.image_repository.get_thumbnail_by_filename(file_name)
+            print(f'{image_data.keys()=}=========')
+            if not image_data or "thumbnail" not in image_data:
+                print(f"Thumbnail not found in DB for {file_name}, creating...")
+                # Если thumbnail нет в базе, создаем его
+                full_image = await self.get_full_image_by_filename(file_name)
+                thumbnail_content = self.image_repository._create_thumbnail_png(full_image["content"])
+
+                if thumbnail_content:
+                    # Сохраняем в базу асинхронно
+                    file_id = image_data.get('_id')
+                    asyncio.create_task(
+                        self._save_thumbnail_background(file_id, thumbnail_content)
+                    )
+
+                    return {"content": thumbnail_content, "filename": f"thumb_{full_image['filename']}",
+                            "content_type": "image/png", "from_cache": False}
+                else:
+                    # Если не удалось создать thumbnail, создаем принудительно
+                    print(f"Thumbnail creation failed for {file_name}, using forced resize")
+                    forced_thumbnail = await self._create_forced_thumbnail(full_image["content"])
+                    return {"content": forced_thumbnail, "filename": f"thumb_forced_{full_image['filename']}",
+                            "content_type": "image/png", "from_cache": False}
+
+            # Если thumbnail уже есть в базе
+            # print(f"Thumbnail found in DB for {file_id}, size: {len(image_data['thumbnail'])} bytes")
+            return {"content": image_data["thumbnail"], "filename": f"thumb_{image_data['filename']}",
+                    "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
+
+        except Exception as e:
+            print(f"Error in get_thumbnail for {file_id}: {e}")
+            raise HTTPException(status_code=500, detail=f"Thumbnail retrieval failed: {str(e)}")
+
+    # @cache_image_memcached(prefix = 'full_image', expire = 3600, key_params = ['file_id'])
+    async def get_full_image_by_filename(self, file_name: str) -> dict:
+        """Получить полноразмерное изображение - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+        try:
+            image_data = await self.image_repository.get_image_by_filename(file_name, include_content=True)
+            if not image_data or "content" not in image_data:
+                raise HTTPException(status_code=404, detail="Image not found")
+
+            # print(f"Full image retrieved for {file_id}, size: {len(image_data['content'])} bytes")
+            return {"content": image_data["content"], "filename": image_data["filename"],
+                    "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
+        except Exception as e:
+            print(f"Error in get_full_image for {file_name}: {e}")
+            raise
