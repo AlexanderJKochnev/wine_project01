@@ -48,8 +48,6 @@ class Rawdata(Base):
 class Image(Base, ImageMixin):
 
     name_id: Mapped[int] = mapped_column(ForeignKey("names.id", ondelete="CASCADE"))
-    # file_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
-    # file_url: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     name: Mapped["Name"] = relationship("Name", back_populates="images")
 
 

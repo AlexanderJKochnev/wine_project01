@@ -46,7 +46,7 @@ class BaseRouter:
         # input py schema for simple create without relation
         self.create_schema = get_pyschema(model, 'Create')
         # input py schema for create with relation
-        self.create_schema_relation = get_pyschema(model, 'CreateRelation')
+        self.create_schema_relation = get_pyschema(model, 'CreateRelation') or self.create_schema
         # input update schema
         self.update_schema = get_pyschema(model, 'Update')
 

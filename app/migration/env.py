@@ -87,7 +87,7 @@ def run_migrations_offline() -> None:
 
 def include_object(object, name, type_, reflected, compare_to):
     if type_ == "table":
-        if name.startswith("auth_") or name.startswith("django_") or name.startswith("directus_"):
+        if name.startswith("auth_"):
             return False
     return True
 

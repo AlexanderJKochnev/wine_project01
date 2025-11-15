@@ -2,6 +2,7 @@
 from typing import Optional
 
 from app.core.schemas.base import BaseModel
+from app.core.schemas.image_mixin import ImageUrlMixin
 
 
 class StatusCreate(BaseModel):
@@ -36,6 +37,12 @@ class CodeCreate(BaseModel):
     status_id: Optional[int] = 1
 
 
+class CodeCreateRelation(BaseModel):
+    code: str
+    url: str
+    status: StatusCreateRelation
+
+
 class CodeCreateResponseSchema(CodeCreate):
     id: int
 
@@ -57,6 +64,13 @@ class NameCreate(BaseModel):
     url: str
     code_id: int
     status_id: Optional[int] = 1
+
+
+class NameCreateRelation(BaseModel):
+    name: str
+    url: str
+    code: CodeCreateRelation
+    status: StatusCreateRelation
 
 
 class NameCreateResponseSchema(NameCreate):
@@ -83,6 +97,13 @@ class RawdataCreate(BaseModel):
     status_id: Optional[int] = 1
 
 
+class RawdataCreateRelation(BaseModel):
+    body_html: str
+    url: str
+    name: NameCreateRelation
+    status: StatusCreateRelation
+
+
 class RawdataCreateResponseSchema(RawdataCreate):
     id: int
 
@@ -105,6 +126,12 @@ class ImageCreate(BaseModel):
     image_id: Optional[str] = None
 
 
+class ImageCreateRelation(BaseModel):
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None
+    name: NameCreateRelation
+ 
+
 class ImageCreateResponseSchema(ImageCreate):
     id: int
 
@@ -115,7 +142,5 @@ class ImageUpdate(BaseModel):
     name_id: Optional[int] = None
 
 
-class ImageRead(BaseModel):
-    image_path: Optional[str] = None
-    image_id: Optional[str] = None
+class ImageRead(BaseModel, ImageUrlMixin):
     name: NameRead

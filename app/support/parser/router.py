@@ -23,6 +23,11 @@ class CodeRouter(BaseRouter):
                     session: AsyncSession = Depends(get_db)) -> schemas.CodeCreateResponseSchema:
         return await super().patch(id, data, session)
 
+    async def create_relation(self, data: schemas.CodeCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.CodeRead:
+        result = await super().create_relation(data, session)
+        return result
+
 
 class StatusRouter(BaseRouter):
     def __init__(self):
@@ -39,6 +44,11 @@ class StatusRouter(BaseRouter):
                     data: schemas.StatusUpdate,
                     session: AsyncSession = Depends(get_db)) -> schemas.StatusCreateResponseSchema:
         return await super().patch(id, data, session)
+
+    async def create_relation(self, data: schemas.StatusCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.StatusRead:
+        result = await super().create_relation(data, session)
+        return result
 
 
 class NameRouter(BaseRouter):
@@ -57,6 +67,11 @@ class NameRouter(BaseRouter):
                     session: AsyncSession = Depends(get_db)) -> schemas.NameCreateResponseSchema:
         return await super().patch(id, data, session)
 
+    async def create_relation(self, data: schemas.NameCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.NameRead:
+        result = await super().create_relation(data, session)
+        return result
+
 
 class RawdataRouter(BaseRouter):
     def __init__(self):
@@ -74,6 +89,11 @@ class RawdataRouter(BaseRouter):
                     session: AsyncSession = Depends(get_db)) -> schemas.RawdataCreateResponseSchema:
         return await super().patch(id, data, session)
 
+    async def create_relation(self, data: schemas.RawdataCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.RawdataRead:
+        result = await super().create_relation(data, session)
+        return result
+
 
 class ImageRouter(BaseRouter):
     def __init__(self):
@@ -90,3 +110,8 @@ class ImageRouter(BaseRouter):
                     data: schemas.ImageUpdate,
                     session: AsyncSession = Depends(get_db)) -> schemas.ImageCreateResponseSchema:
         return await super().patch(id, data, session)
+
+    async def create_relation(self, data: schemas.ImageCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.ImageRead:
+        result = await super().create_relation(data, session)
+        return result

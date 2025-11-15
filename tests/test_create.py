@@ -59,8 +59,7 @@ async def test_new_data_generator(authenticated_client_with_db, test_db_session,
 
 async def test_new_data_generator_relation_validation(simple_router_list, complex_router_list):
     """
-        валидация генерируемых данных
-        create schema принимает сгенерированные данные
+        валидация генерируемых данных со связанныим полями
     """
     import json
     from tests.data_factory.fake_generator import generate_test_data
@@ -73,6 +72,7 @@ async def test_new_data_generator_relation_validation(simple_router_list, comple
         schema = router.create_schema_relation
         adapter = TypeAdapter(schema)
         prefix = router.prefix
+        print(f'{schema=}===={prefix=}====')
         test_data = generate_test_data(
             schema, test_number,
             {'int_range': (1, test_number),
@@ -81,6 +81,7 @@ async def test_new_data_generator_relation_validation(simple_router_list, comple
              # 'field_overrides': {'name': 'Special Product'},
              'faker_seed': 42}
         )
+        print(f'======================={test_data=}')
         for m, data in enumerate(test_data):
             try:
                 _ = schema(**data)
@@ -95,8 +96,8 @@ async def test_new_data_generator_relation_validation(simple_router_list, comple
 
 async def test_new_data_generator_relation_correctness(simple_router_list, complex_router_list):
     """
-        сравнивает сгенерированные данные
-        и отвалидированные
+        сравнивает сгенерированные данные и отвалидированные
+        (валидация не должна изменять сгенерированные данные)
     """
     from tests.data_factory.fake_generator import generate_test_data
     failed_cases = []
@@ -146,18 +147,24 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
              'faker_seed': 42}
         )
         for m, data in enumerate(test_data):
+            # валидация
             try:
                 _ = schema(**data)
             except Exception as e:
                 if assertions(False, failed_cases, item, prefix, f'ошибка валидации: {e}'):
                     continue  # Продолжаем со следующим роутером
+            # запись валидированных данных
             try:
                 response = await client.post(f'{prefix}/hierarchy', json=data)
-                # if response.status_code not in [200, 201]:
+                if response.status_code != 200:
+                    print(prefix)
+                    jprint(data)
+                assert response.status_code == 200, response.text
+
                 if assertions(response.status_code not in [200, 201], failed_cases, item,
                               prefix, f'status_code {response.status_code}'):
+                    print(f'---------{prefix=}--------------')
                     jprint(data)
-                    print('-------------------------------')
                 # assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
                 jprint(data)
