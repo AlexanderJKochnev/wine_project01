@@ -109,3 +109,12 @@ class ImageCreateResponse(BaseModel):
     filename: str
     has_thumbnail: bool
     message: str
+
+
+class DirectUploadResponse(BaseModel):
+    number_of_images: int
+    loaded_images: int
+    lost_images: Optional[List[str]] = None
+    number_of_lost_images: Optional[int] = None
+    duplicate_images: Optional[List[str]] = None
+    number_of_duplicate_images: Optional[int] = None

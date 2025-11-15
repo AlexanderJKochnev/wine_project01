@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import back_to_the_future
-from app.mongodb.models import FileListResponse, ImageCreateResponse
+from app.mongodb.models import FileListResponse, ImageCreateResponse, DirectUploadResponse
 from app.mongodb.service import ThumbnailImageService
 # from app.core.cache import cache_key_builder, invalidate_cache  #  потом может быть закэшируем
 
@@ -15,6 +15,7 @@ prefix = settings.MONGODB_PREFIX
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
 directprefix = f"{subprefix}/direct"
+upload_dir = settings.UPLOAD_DIR
 delta = (datetime.now(timezone.utc) - relativedelta(years=2))
 
 router = APIRouter(prefix=f"/{prefix}", tags=[f"{prefix}"], dependencies=[Depends(get_active_user_or_internal)])
@@ -139,28 +140,30 @@ async def download_full_image_by_filename(
     Получить ПОЛНОРАЗМЕРНОЕ изображение по имени файла
     """
     # print(f"🖼️  FULL IMAGE request for filename: {filename}")
-    image_data = await image_service.get_full_image_by_filename(filename)
+    try:
+        image_data = await image_service.get_full_image_by_filename(filename)
 
-    headers = {"Content-Disposition": f"attachment; filename={image_data['filename']}", "X-Image-Type": "full",
-               "X-File-Size": str(len(image_data["content"]))}
-    if image_data.get("from_cache"):
-        headers["X-Cache"] = "HIT"
-    else:
-        headers["X-Cache"] = "MISS"
+        headers = {"Content-Disposition": f"attachment; filename={image_data['filename']}", "X-Image-Type": "full",
+                   "X-File-Size": str(len(image_data["content"]))}
+        if image_data.get("from_cache"):
+            headers["X-Cache"] = "HIT"
+        else:
+            headers["X-Cache"] = "MISS"
 
-    # print(f"🖼️  Returning FULL IMAGE: {len(image_data['content'])} bytes")
+        # print(f"🖼️  Returning FULL IMAGE: {len(image_data['content'])} bytes")
 
-    return StreamingResponse(
-        io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
-    )
+        return StreamingResponse(
+            io.BytesIO(image_data["content"]), media_type=image_data['content_type'], headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
-# === Операции записи (остаются без изменений) ===
 @router.post(f'/{subprefix}', response_model=ImageCreateResponse)
 # @invalidate_cache(patterns = ["mongodb_images:*", "mongodb_images_list:*"])
 async def upload_image(
     file: UploadFile = File(...), description: Optional[str] = Form(None),
-    image_service: ThumbnailImageService = Depends()  # ← Используем новый сервис
+    image_service: ThumbnailImageService = Depends()
 ):
     """
     загрузка одного изображения в базу данных
@@ -173,9 +176,9 @@ async def upload_image(
     return result
 
 
-@router.post(f'/{directprefix}')
+@router.post(f'/{directprefix}', response_model=DirectUploadResponse)
 # @invalidate_cache(patterns = ["mongodb_images:*", "mongodb_images_list:*"])
-async def direct_upload(image_service: ThumbnailImageService = Depends()) -> dict:  # ← Используем новый сервис
+async def direct_upload(image_service: ThumbnailImageService = Depends()) -> dict:
     """
     импортирование рисунков из директории UPLOAD_DIR
     """

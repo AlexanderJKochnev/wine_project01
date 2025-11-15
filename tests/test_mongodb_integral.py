@@ -3,8 +3,8 @@ from bson import ObjectId
 from fastapi import status
 
 from app.core.utils.common_utils import jprint
-from app.mongodb.router import fileprefix, prefix, subprefix  # Импортируем префиксы для корректного URL
-
+from app.mongodb.router import (fileprefix, prefix, directprefix,
+                                subprefix)  # Импортируем префиксы для корректного URL
 pytestmark = pytest.mark.asyncio
 
 # Предполагается, что следующие фикстуры определены с scope="function" в conftest.py
@@ -23,6 +23,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_mongodb_image_crud_and_lists(authenticated_client_with_db,
                                             test_db_session, sample_image_paths,
+                                            test_images_dir,
                                             todayutc,
                                             futureutc,
                                             pastutc
@@ -202,7 +203,7 @@ async def test_mongodb_image_crud_and_lists(authenticated_client_with_db,
 
     if failed_checks or errors:
         # Если есть ошибки или проваленные проверки, объединяем их и выбрасываем AssertionError
-        all_failures = failed_checks + errors
+        # all_failures = failed_checks + errors
         error_message = f"Тест не пройден. Проваленные проверки: {failed_checks}. Дополнительные ошибки: {errors}"
         assert False, error_message
     else:

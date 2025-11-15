@@ -201,7 +201,7 @@ class ThumbnailImageService:
             image_data = await self.image_repository.get_thumbnail(file_id)
 
             if not image_data or "thumbnail" not in image_data:
-                print(f"Thumbnail not found in DB for {file_id}, creating...")
+                # print(f"Thumbnail not found in DB for {file_id}, creating...")
                 # Если thumbnail нет в базе, создаем его
                 full_image = await self.get_full_image(file_id)
                 thumbnail_content = self.image_repository._create_thumbnail_png(full_image["content"])
@@ -227,8 +227,8 @@ class ThumbnailImageService:
                     "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
 
         except Exception as e:
-            print(f"Error in get_thumbnail for {file_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Thumbnail retrieval failed: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Thumbnail for {file_id} retrieval failed: {str(e)}")
 
     # @cache_image_memcached(prefix = 'full_image', expire = 3600, key_params = ['file_id'])
     async def get_full_image(self, file_id: str) -> dict:
@@ -242,8 +242,9 @@ class ThumbnailImageService:
             return {"content": image_data["content"], "filename": image_data["filename"],
                     "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
         except Exception as e:
-            print(f"Error in get_full_image for {file_id}: {e}")
-            raise
+            raise HTTPException(
+                status_code=404, detail=f"Error in get_full_image for {file_id}: {e}"
+            )
 
     async def _save_thumbnail_background(self, file_id: str, thumbnail_content: bytes):
         """Фоновая задача для сохранения thumbnail'а"""
@@ -316,7 +317,6 @@ class ThumbnailImageService:
             3. add new only files to database
         """
         try:
-            # upload_dir = settings.UPLOAD_DIR
             lost_images = []  # список потерянных файлов
             # список подходящих файлов
             image_paths: List[Path] = get_filepath_from_dir()
@@ -327,7 +327,7 @@ class ThumbnailImageService:
             # список уже существующих имен файлов
             current_filenames = [b for a, b in current_image_list]
             image_paths_clear = (path for path in image_paths if path.name not in current_filenames)
-            dublicate_images = [path.name for path in image_paths if path.name in current_filenames]  # список
+            duplicate_images = [path.name for path in image_paths if path.name in current_filenames]  # список
             # файлов уже существующих в бд
             # запускаем
             for m, upload_file in enumerate(read_image_generator(image_paths_clear)):
@@ -339,7 +339,7 @@ class ThumbnailImageService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"upload_file fault: {e}"
                     )
-                # удалегние фона 3 варианта закоммнетировано - доделать
+                # удаление фона 3 варианта закоммнетировано - доделать
                 try:
                     # content = make_transparent_white_bg(content)
                     # content = remove_background(content)
@@ -370,14 +370,14 @@ class ThumbnailImageService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=f"error: {e}"
             )
-        result = {'number of images': n + 1,
-                  'loaded images': m + 1}
+        result = {'number_of_images': n + 1,
+                  'loaded_images': m + 1}
         if lost_images:
-            result['lost images': lost_images]
-            result['number of lost images': len(lost_images)]
-        if dublicate_images:
-            result['dublicate_images': dublicate_images]
-            result['number of dublicate images': len(dublicate_images)]
+            result['lost_images': lost_images]
+            result['number_of_lost_images': len(lost_images)]
+        if duplicate_images:
+            result['duplicate_images': duplicate_images]
+            result['number_of_duplicate_images': len(duplicate_images)]
         return result
 
     async def get_images_after_date(
@@ -434,9 +434,8 @@ class ThumbnailImageService:
         """Получить thumbnail (для списков) - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
         try:
             image_data = await self.image_repository.get_thumbnail_by_filename(file_name)
-            print(f'{image_data.keys()=}=========')
             if not image_data or "thumbnail" not in image_data:
-                print(f"Thumbnail not found in DB for {file_name}, creating...")
+                # print(f"Thumbnail not found in DB for {file_name}, creating...")
                 # Если thumbnail нет в базе, создаем его
                 full_image = await self.get_full_image_by_filename(file_name)
                 thumbnail_content = self.image_repository._create_thumbnail_png(full_image["content"])
@@ -463,8 +462,8 @@ class ThumbnailImageService:
                     "content_type": image_data.get("thumbnail_type", "image/png"), "from_cache": False}
 
         except Exception as e:
-            print(f"Error in get_thumbnail for {file_id}: {e}")
-            raise HTTPException(status_code=500, detail=f"Thumbnail retrieval failed: {str(e)}")
+            raise HTTPException(status_code=500,
+                                detail=f"Thumbnail for {file_id} retrieval failed: {str(e)}")
 
     # @cache_image_memcached(prefix = 'full_image', expire = 3600, key_params = ['file_id'])
     async def get_full_image_by_filename(self, file_name: str) -> dict:
@@ -478,5 +477,5 @@ class ThumbnailImageService:
             return {"content": image_data["content"], "filename": image_data["filename"],
                     "content_type": image_data.get("content_type", "image/png"), "from_cache": False}
         except Exception as e:
-            print(f"Error in get_full_image for {file_name}: {e}")
-            raise
+            raise HTTPException(status_code=404,
+                                detail=f"Error in get_full_image for {file_name}: {e}")
