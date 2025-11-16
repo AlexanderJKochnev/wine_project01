@@ -327,8 +327,8 @@ class ThumbnailImageService:
             # список уже существующих имен файлов
             current_filenames = [b for a, b in current_image_list]
             image_paths_clear = (path for path in image_paths if path.name not in current_filenames)
-            duplicate_images = [path.name for path in image_paths if path.name in current_filenames]  # список
-            # файлов уже существующих в бд
+            duplicate_images = [path.name for path in image_paths if path.name in current_filenames]
+            # список файлов уже существующих в бд
             # запускаем
             for m, upload_file in enumerate(read_image_generator(image_paths_clear)):
                 try:
@@ -365,20 +365,21 @@ class ThumbnailImageService:
                 id = await self.image_repository.create_image(filename, content, content_type, description)
                 if not id:
                     lost_images.append(filename)
-
+            result = {'number_of_images': n + 1}
+            if lost_images:
+                result['lost_images'] = tuple(lost_images)
+                result['number_of_lost_images'] = len(lost_images)
+            if duplicate_images:
+                result['duplicate_images'] = duplicate_images
+                result['number_of_duplicate_images'] = len(duplicate_images)
+            result['loaded_images'] = (
+                (result.get('number_of_images', 0) -
+                 result.get('number_of_lost_images', 0)) - result.get('number_of_duplicate_images'))
+            return result
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=f"error: {e}"
             )
-        result = {'number_of_images': n + 1,
-                  'loaded_images': m + 1}
-        if lost_images:
-            result['lost_images': lost_images]
-            result['number_of_lost_images': len(lost_images)]
-        if duplicate_images:
-            result['duplicate_images': duplicate_images]
-            result['number_of_duplicate_images': len(duplicate_images)]
-        return result
 
     async def get_images_after_date(
         self, after_date: datetime, page: int = 1, per_page: int = 100

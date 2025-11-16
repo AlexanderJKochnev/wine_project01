@@ -24,6 +24,7 @@ class CodeService(Service):
             data_dict['status_id'] = result.id
         data_schema = schemas.CodeCreate(**data_dict)
         print(f'{data_schema.model_dump()=}================')
+        print(f'{data_schema.get_required_structure()=}')
         result = await cls.get_or_create(data_schema, repository, model, session)
         print(f'{result=}============')
         return result

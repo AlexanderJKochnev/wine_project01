@@ -551,13 +551,12 @@ class JsonConverter():
             return None
 
     def input_validate(self, data: dict) -> dict:
-        """ валидирует полученный словарь """
+        """ валидирует полученный словарь. убирает root item если есть """
         if isinstance(data, dict):
             result = data.get('items')
-            # print(f'{len(result)=}')
             if all((result, isinstance(result, dict))):
                 return result
-        return None
+        return  data
 
     def json_list(self, data: dict) -> dict:
         """ проходит по верхнему уровню словаря """
