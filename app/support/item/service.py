@@ -15,6 +15,7 @@ from app.support.item.model import Item
 
 
 class ItemService(Service):
+    default = ['vol', 'drink_id']
 
     @classmethod
     async def create_relation(cls, data: ItemCreateRelation,
@@ -36,7 +37,7 @@ class ItemService(Service):
             #                                                     Warehouse, session)
             #     item_data['warehouse_id'] = result.id
             item = ItemCreate(**item_data)
-            item_instance = await cls.get_or_create(item, ItemRepository, Item, session)
+            item_instance, _ = await cls.get_or_create(item, ItemRepository, Item, session)
             return item_instance
         except Exception as e:
             raise Exception(f'itemservice.create_relation. {e}')

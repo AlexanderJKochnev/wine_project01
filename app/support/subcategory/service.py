@@ -18,8 +18,8 @@ class SubcategoryService(Service):
         # pydantic model -> dict
         category_data: dict = data.model_dump(exclude={'category'}, exclude_unset=True)
         if data.category:
-            result = await CategoryService.get_or_create(data.category, CategoryRepository, Category, session)
+            result, _ = await CategoryService.get_or_create(data.category, CategoryRepository, Category, session)
             category_data['category_id'] = result.id
         region = SubcategoryCreate(**category_data)
-        result = await cls.get_or_create(region, SubcategoryRepository, Subcategory, session)
+        result, _ = await cls.get_or_create(region, SubcategoryRepository, Subcategory, session)
         return result

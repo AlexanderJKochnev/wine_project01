@@ -23,12 +23,12 @@ class SubregionService(Service):
         if data.region:
             region_data: dict = data.region.model_dump(exclude={'country'}, exclude_unset=True)
             if data.region.country:
-                result = await CountryService.get_or_create(data.region.country, CountryRepository, Country, session)
+                result, _ = await CountryService.get_or_create(data.region.country, CountryRepository, Country, session)
                 region_data['country_id'] = result.id
             region = RegionCreate(**region_data)
-            result = await RegionService.get_or_create(region, RegionRepository, Region, session)
+            result, _ = await RegionService.get_or_create(region, RegionRepository, Region, session)
         subregion_data: dict = data.model_dump(exclude={'region'}, exclude_unset=True)
         subregion_data['region_id'] = result.id
         subregion = SubregionCreate(**subregion_data)
-        result = await SubregionService.get_or_create(subregion, SubregionRepository, Subregion, session)
+        result, _ = await SubregionService.get_or_create(subregion, SubregionRepository, Subregion, session)
         return result

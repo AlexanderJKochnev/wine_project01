@@ -213,7 +213,6 @@ class Repository(metaclass=RepositoryMeta):
                 else:
                     conditions.append(column == value)
             stmt = select(model).where(and_(*conditions)).limit(1)
-            # stmt = select(model).filter_by(**filter)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:

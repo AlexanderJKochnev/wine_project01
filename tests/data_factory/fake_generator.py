@@ -382,7 +382,7 @@ def generate_test_data(
 
     # Генерируем данные
     result = (factory_class.build().model_dump() for _ in range(n))
-    return (validate_and_fix_numeric_ranges(val, int_range=(1, 10), float_range=(0.1, 1.0)) for val in result)
+    return (validate_and_fix_numeric_ranges(val, int_range=(1, n//2), float_range=(0.1, 1.0)) for val in result)
 
 
 def dict_validator(source: dict, n: int = 3) -> dict:

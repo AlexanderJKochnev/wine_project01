@@ -161,13 +161,14 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
                     jprint(data)
                 assert response.status_code == 200, response.text
 
-                if assertions(response.status_code not in [200, 201], failed_cases, item,
-                              prefix, f'status_code {response.status_code}'):
-                    print(f'---------{prefix=}--------------')
-                    jprint(data)
+                # if assertions(response.status_code not in [200, 201], failed_cases, item,
+                #               prefix, f'status_code {response.status_code}'):
+                #     print(f'---------{prefix=}--------------')
+                #     jprint(data)
                 # assert response.status_code in [200, 201], f'{prefix}, {response.text}'
             except Exception as e:
+                print(f'{response.text=}')
                 jprint(data)
-                assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
+                assert False, f'{e} {response.status_code} {prefix=}'
     if failed_cases:
-        pytest.fail("Failed routers:\n" + "\n".join(failed_cases))
+        pytest.fail("Failed routers:" + "\n".join(failed_cases))

@@ -8,6 +8,8 @@ from app.support.parser import model as mode
 
 
 class CodeService(Service):
+    default = ['code', 'url']
+
     @classmethod
     async def create_relation(
             cls, data: schemas.CodeCreateRelation,
@@ -18,15 +20,11 @@ class CodeService(Service):
         # pydantic model -> dict
         data_dict: dict = data.model_dump(exclude={'status'}, exclude_unset=True)
         if data.status:
-            print(f'{data.status=}{type(data.status)=}')
-            result = await StatusService.get_or_create(data.status, repo.StatusRepository,
-                                                       mode.Status, session)
+            result, _ = await StatusService.get_or_create(data.status, repo.StatusRepository,
+                                                          mode.Status, session)
             data_dict['status_id'] = result.id
         data_schema = schemas.CodeCreate(**data_dict)
-        print(f'{data_schema.model_dump()=}================')
-        print(f'{data_schema.get_required_structure()=}')
-        result = await cls.get_or_create(data_schema, repository, model, session)
-        print(f'{result=}============')
+        result, _ = await cls.get_or_create(data_schema, repository, model, session)
         return result
 
 
@@ -40,19 +38,21 @@ class NameService(Service):
     ) -> schemas.NameRead:
         name_data: dict = data.model_dump(exclude={'status', 'code'}, exclude_unset=True)
         if data.status:
-            result = await StatusService.get_or_create(data.status, repo.StatusRepository,
-                                                       mode.Status, session)
+            result, _ = await StatusService.get_or_create(data.status, repo.StatusRepository,
+                                                          mode.Status, session)
             name_data['status_id'] = result.id
         if data.code:
             result = await CodeService.create_relation(data.code, repo.CodeRepository,
                                                        mode.Code, session)
             name_data['code_id'] = result.id
         name = schemas.NameCreate(**name_data)
-        result = await cls.get_or_create(name, repository, model, session)
+        result, _ = await cls.get_or_create(name, repository, model, session)
         return result
 
 
 class ImageService(Service):
+    default = ['image_id', 'name_id']
+
     @classmethod
     async def create_relation(
             cls, data: schemas.ImageCreateRelation,
@@ -66,11 +66,13 @@ class ImageService(Service):
                                                        mode.Name, session)
             image_data['name_id'] = result.id
         image = schemas.ImageRead(**image_data)
-        result = await cls.get_or_create(image, repository, model, session)
+        result, _ = await cls.get_or_create(image, repository, model, session)
         return result
 
 
 class RawdataService(Service):
+    default = ['name_id']
+
     @classmethod
     async def create_relation(
             cls, data: schemas.RawdataCreateRelation,
@@ -80,17 +82,18 @@ class RawdataService(Service):
     ) -> schemas.RawdataRead:
         raw_data: dict = data.model_dump(exclude={'name', 'status'}, exclude_unset=True)
         if data.status:
-            result = await StatusService.get_or_create(data.status, repo.StatusRepository,
-                                                       mode.Status, session)
+            result, _ = await StatusService.get_or_create(data.status, repo.StatusRepository,
+                                                          mode.Status, session)
             raw_data['status_id'] = result.id
         if data.name:
             result = await NameService.create_relation(data.name, repo.NameRepository,
                                                        mode.Name, session)
             raw_data['name_id'] = result.id
         rawdata = schemas.RawdataRead(**raw_data)
-        result = await cls.get_or_create(rawdata, repository, model, session)
+        result, _ = await cls.get_or_create(rawdata, repository, model, session)
+
         return result
 
 
 class StatusService(Service):
-    pass
+    default = ['status']

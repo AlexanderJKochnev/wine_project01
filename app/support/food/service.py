@@ -19,8 +19,8 @@ class FoodService(Service):
         # pydantic model -> dict
         food_data: dict = data.model_dump(exclude={'superfood'}, exclude_unset=True)
         if data.superfood:
-            result = await SuperfoodService.get_or_create(data.superfood, SuperfoodRepository, Superfood, session)
+            result, _ = await SuperfoodService.get_or_create(data.superfood, SuperfoodRepository, Superfood, session)
             food_data['superfood_id'] = result.id
         food = FoodCreate(**food_data)
-        result = await cls.get_or_create(food, FoodRepository, Food, session)
+        result, _ = await cls.get_or_create(food, FoodRepository, Food, session)
         return result

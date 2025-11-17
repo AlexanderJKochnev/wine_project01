@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models.base_model import Base, BaseAt, ion, money, volume
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
 
 
 class Item(Base, BaseAt, ImageMixin):
+    __table_args__ = (UniqueConstraint('vol', 'drink_id', name='uq_items_unique'),)
     vol: Mapped[volume]  # объем тары
     price: Mapped[money]    # цена
     count: Mapped[ion]      # количество

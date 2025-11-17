@@ -107,7 +107,7 @@ class BaseRouter:
         """
         try:
             # obj = await self.service.create(data, self.repo, self.model, session)
-            obj = await self.service.get_or_create(data, self.repo, self.model, session)
+            obj, created = await self.service.get_or_create(data, self.repo, self.model, session)
             return obj
         except Exception as e:
             await session.rollback()
@@ -132,13 +132,26 @@ class BaseRouter:
             logger.error(f"Unexpected error in create_item: {e}")
             raise exception_to_http(e)
 
+    async def get_or_update(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        """ обновление / добавление одной записи """
+        try:
+            obj, created = await self.service.get_or_update(data, self.repo, self.model, session)
+            return obj
+        except Exception as e:
+            await session.rollback()
+            detail = (f'ошибка обновления записи {e}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo}')
+            print(detail)
+            raise HTTPException(status_code=405, detail=detail)
+
     async def patch(self, id: int,
                     data: TUpdateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """
         Изменение одной записи по id
         """
         result = await self.service.patch(id, data, self.repo, self.model, session)
-
         if not result.get('success'):
             error_type = result.get('error_type')
             error_message = result.get('message', 'Неизвестная ошибка')

@@ -2,7 +2,7 @@
 from typing import Optional
 
 from app.core.schemas.base import BaseModel
-from app.core.schemas.image_mixin import ImageUrlMixin
+# from app.core.schemas.image_mixin import ImageUrlMixin
 
 
 class StatusCreate(BaseModel):
@@ -54,9 +54,16 @@ class CodeUpdate(BaseModel):
 
 
 class CodeRead(BaseModel):
+    id: int
     code: str
     url: Optional[str] = None
-    status: Optional[StatusRead] = None
+    status: Optional[StatusReadRelation] = None
+
+
+class CodeReadRelation(BaseModel):
+    id: int
+    code: str
+    url: Optional[str] = None
 
 
 class NameCreate(BaseModel):
@@ -85,10 +92,17 @@ class NameUpdate(BaseModel):
 
 
 class NameRead(BaseModel):
+    id: int
     name: str
-    code: CodeRead
+    code: Optional[CodeReadRelation]
     url: Optional[str] = None
-    status: Optional[StatusRead] = None
+    status: Optional[StatusReadRelation] = None
+
+
+class NameReadRelation:
+    id: int
+    name: str
+    url: Optional[str] = None
 
 
 class RawdataCreate(BaseModel):
@@ -99,7 +113,6 @@ class RawdataCreate(BaseModel):
 
 class RawdataCreateRelation(BaseModel):
     body_html: str
-    url: str
     name: NameCreateRelation
     status: StatusCreateRelation
 
@@ -115,8 +128,9 @@ class RawdataUpdate(BaseModel):
 
 
 class RawdataRead(BaseModel):
-    body_html: str
-    name: NameRead
+    id: int
+    body_html: Optional[str]
+    name_id: int
     status: Optional[StatusRead] = None
 
 
@@ -130,7 +144,7 @@ class ImageCreateRelation(BaseModel):
     image_path: Optional[str] = None
     image_id: Optional[str] = None
     name: NameCreateRelation
- 
+
 
 class ImageCreateResponseSchema(ImageCreate):
     id: int
@@ -142,5 +156,8 @@ class ImageUpdate(BaseModel):
     name_id: Optional[int] = None
 
 
-class ImageRead(BaseModel, ImageUrlMixin):
-    name: NameRead
+class ImageRead(BaseModel):
+    id: int
+    name_id: int  # NameReadRelation
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None

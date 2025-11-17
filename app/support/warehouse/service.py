@@ -17,8 +17,8 @@ class WarehouseService(Service):
         # pydantic model -> dict
         warehouse_data: dict = data.model_dump(exclude={'customer'}, exclude_unset=True)
         if data.customer:
-            result = await CustomerService.get_or_create(data.customer, CustomerRepository, Customer, session)
+            result, _ = await CustomerService.get_or_create(data.customer, CustomerRepository, Customer, session)
             warehouse_data['customer_id'] = result.id
         warehouse = WarehouseCreate(**warehouse_data)
-        result = await WarehouseService.get_or_create(warehouse, WarehouseRepository, Warehouse, session)
+        result, _ = await WarehouseService.get_or_create(warehouse, WarehouseRepository, Warehouse, session)
         return result

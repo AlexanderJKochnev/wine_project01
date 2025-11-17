@@ -18,8 +18,8 @@ class RegionService(Service):
         # pydantic model -> dict
         region_data: dict = data.model_dump(exclude={'country'}, exclude_unset=True)
         if data.country:
-            result = await CountryService.get_or_create(data.country, CountryRepository, Country, session)
+            result, _ = await CountryService.get_or_create(data.country, CountryRepository, Country, session)
             region_data['country_id'] = result.id
         region = RegionCreate(**region_data)
-        result = await cls.get_or_create(region, RegionRepository, Region, session)
+        result, _ = await cls.get_or_create(region, RegionRepository, Region, session)
         return result

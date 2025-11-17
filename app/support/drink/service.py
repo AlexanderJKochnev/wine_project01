@@ -38,6 +38,7 @@ from app.support.varietal.service import VarietalService
 class DrinkService(Service):
     """ переписываем методы для обрабоки manytomany relationships """
     __abstract__ = False
+    default = ['title', 'subtitle']
 
     @classmethod
     async def get_dict_by_id(cls, id: int, repository: Type[Repository],
@@ -77,11 +78,11 @@ class DrinkService(Service):
             drink_data['subcategory_id'] = result.id
 
         if data.sweetness:
-            result = await SweetnessService.get_or_create(data.sweetness, SweetnessRepository, Sweetness, session)
+            result, _ = await SweetnessService.get_or_create(data.sweetness, SweetnessRepository, Sweetness, session)
             drink_data['sweetness_id'] = result.id
         try:
             drink = DrinkCreate(**drink_data)
-            drink_instance = await cls.get_or_create(drink, DrinkRepository, Drink, session)
+            drink_instance, _ = await cls.get_or_create(drink, DrinkRepository, Drink, session)
             drink_id = drink_instance.id
         except Exception as e:
             print(f'drink/service/create_relation:70 {e}==========================')
@@ -102,7 +103,7 @@ class DrinkService(Service):
             for dvschema in data.varietals:
                 item = dvschema.varietal
                 percentage = dvschema.percentage
-                result = await VarietalService.get_or_create(item, VarietalRepository, Varietal, session)
+                result, _ = await VarietalService.get_or_create(item, VarietalRepository, Varietal, session)
                 varietal_percentage[result.id] = percentage
                 varietal_ids.append(result.id)
             # 2. set drink_varietal

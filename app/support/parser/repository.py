@@ -11,7 +11,7 @@ class CodeRepository(Repository):
 
     @classmethod
     def get_query(cls, model: ModelType):
-        return select(model).options(selectinload(Status.status))
+        return select(model).options(selectinload(model.status))
 
 
 class NameRepository(Repository):
@@ -20,8 +20,8 @@ class NameRepository(Repository):
     @classmethod
     def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
-        return select(model).options(selectinload(model.code),
-                                     selectinload(Status.status))
+        return select(model).options(selectinload(model.code).selectinload(Code.status),
+                                     selectinload(model.status))
 
 
 class ImageRepository(Repository):
@@ -30,7 +30,9 @@ class ImageRepository(Repository):
     @classmethod
     def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
-        return select(model).options(selectinload(model.name))
+        return select(model).options(selectinload(model.name)
+                                     .selectinload(Name.code)
+                                     .selectinload(Code.status))
 
 
 class RawdataRepository(Repository):
@@ -39,8 +41,12 @@ class RawdataRepository(Repository):
     @classmethod
     def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
-        return select(model).options(selectinload(model.name),
-                                     selectinload(Status.status))
+        return select(model).options(selectinload(model.name)
+                                     .selectinload(Name.code)
+                                     .selectinload(Code.status),
+                                     selectinload(model.name)
+                                     .selectinload(Name.status),
+                                     selectinload(model.status))
 
 
 class StatusRepository(Repository):
