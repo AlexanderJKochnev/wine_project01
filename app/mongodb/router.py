@@ -15,6 +15,7 @@ prefix = settings.MONGODB_PREFIX
 subprefix = f"{settings.IMAGES_PREFIX}"
 fileprefix = f"{settings.FILES_PREFIX}"
 directprefix = f"{subprefix}/direct"
+thumbprefix = "thumbnails"
 upload_dir = settings.UPLOAD_DIR
 delta = (datetime.now(timezone.utc) - relativedelta(years=2))
 
@@ -59,7 +60,7 @@ async def get_images_list_after_date(
 
 
 # === THUMBNAIL endpoint'ы (для списков) ===
-@router.get(f'/{subprefix}/' + "{file_id}")
+@router.get(f'/{thumbprefix}/' + "{file_id}")
 async def download_thumbnail(
     file_id: str, image_service: ThumbnailImageService = Depends()
 ):
@@ -83,7 +84,7 @@ async def download_thumbnail(
     )
 
 
-@router.get(f'/{fileprefix}/' + "{filename}")
+@router.get(f'/{thumbprefix}/name/' + "{filename}")
 async def download_thumbnail_by_filename(
     filename: str, image_service: ThumbnailImageService = Depends()
 ):
@@ -108,7 +109,7 @@ async def download_thumbnail_by_filename(
 
 
 # === FULL IMAGE endpoint'ы (для детального просмотра) ===
-@router.get(f'/{subprefix}/full/' + "{file_id}")
+@router.get(f'/{subprefix}/' + "{file_id}")
 async def download_full_image(
     file_id: str, image_service: ThumbnailImageService = Depends()
 ):
@@ -132,7 +133,7 @@ async def download_full_image(
     )
 
 
-@router.get(f'/{fileprefix}/full/' + "{filename}")
+@router.get(f'/{fileprefix}/' + "{filename}")
 async def download_full_image_by_filename(
     filename: str, image_service: ThumbnailImageService = Depends()
 ):

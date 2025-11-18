@@ -35,7 +35,7 @@ export const ItemImage = ({ image_id, alt = 'Item', size = 'medium' }: ItemImage
   };
 
   const { width, height } = sizeClasses[size];
-  const imageUrl = `${IMAGE_BASE_URL}/mongodb/images/${image_id}`;
+  const imageUrl = `${IMAGE_BASE_URL}/mongodb/thumbnails/${image_id}`;
 
   return (
     <img
