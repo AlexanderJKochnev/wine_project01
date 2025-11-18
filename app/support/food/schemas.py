@@ -10,11 +10,11 @@ class CustomReadSchema:
 
 
 class CustomCreateSchema:
-    superfood_id: int
+    superfood_id: Optional[int] = None
 
 
 class CustomCreateRelation:
-    superfood: SuperfoodCreateRelation
+    superfood: Optional[SuperfoodCreateRelation] = None
 
 
 class CustomUpdSchema:

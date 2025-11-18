@@ -109,6 +109,13 @@ class CustomCreateRelation:
     image_id: Optional[str] = None
 
 
+class DirectUploadSchema:
+    total_input: int
+    count_of_added_records: int
+    error: Optional[list] = None
+    error_nmbr: Optional[int] = None
+
+
 class CustomUpdSchema:
     drink_id: Optional[int] = None
     vol: Optional[float] = None

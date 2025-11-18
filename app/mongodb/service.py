@@ -372,9 +372,11 @@ class ThumbnailImageService:
             if duplicate_images:
                 result['duplicate_images'] = duplicate_images
                 result['number_of_duplicate_images'] = len(duplicate_images)
-            result['loaded_images'] = (
-                (result.get('number_of_images', 0) -
-                 result.get('number_of_lost_images', 0)) - result.get('number_of_duplicate_images'))
+            result['loaded_images'] = \
+                (result.get('number_of_images',
+                            0) - result.get('number_of_lost_images',
+                                            0) - result.get('number_of_duplicate_images', 0))
+
             return result
         except Exception as e:
             raise HTTPException(

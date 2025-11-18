@@ -13,7 +13,8 @@ from app.core.schemas.base import PaginatedResponse
 from app.mongodb.service import ImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import (ItemCreate, ItemCreateRelation, ItemCreateResponseSchema, ItemUpdate)
+from app.support.item.schemas import (ItemCreate, ItemCreateRelation, DirectUploadSchema,
+                                      ItemCreateResponseSchema, ItemUpdate)
 
 paging = get_paging
 
@@ -57,7 +58,7 @@ class ItemRouter(BaseRouter):
 
     async def direct_import_data(self,
                                  session: AsyncSession = Depends(get_db),
-                                 image_service: ImageService = Depends()) -> dict:
+                                 image_service: ImageService = Depends()) -> DirectUploadSchema:
         """
         Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
         на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с
@@ -67,17 +68,19 @@ class ItemRouter(BaseRouter):
         /mongodb/images/direct.
         операция длительная - наберитесь терпения
         """
-        try:
-            result = await self.service.direct_upload(session, image_service)
-            """
+        file_name = 'data.json'
+        result = await self.service.direct_upload(file_name, session, image_service)
+        """
             {'total_input': n,
-             'count of added records': n - len(error_list),
+             'count_of_added_records': n - len(error_list),
              'error': error_list,
              'error_nmbr': len(error_list)}
-            """
-            return result
-        except Exception as e:
-            raise HTTPException(status_code=422, detail=e)
+        """
+        if result.get('error_nmbr'):
+            raise HTTPException(status_code=402,
+                                detail=f'незагружено {result.get('error_nmbr')} из '
+                                       f'{result.get('total_input')}')
+        return result
 
     async def create_relation_image(self,
                                     data: str = Form(..., description="JSON string of DrinkCreateRelation"),

@@ -27,13 +27,6 @@ class DrinkRouter(BaseRouter):
 
     def setup_routes(self):
         super().setup_routes()
-        # self.router.add_api_route("/full",
-        #                           self.create_relation_image,
-        #                           status_code=status.HTTP_200_OK,
-        #                           methods=["POST"], response_model=self.read_schema)
-        # self.router.add_api_route("/direct", self.direct_import_data,
-        #                           status_code=status.HTTP_200_OK, methods=["POST"],
-        #                           response_model=dict)
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
                                   methods=["PATCH"])
@@ -109,21 +102,3 @@ class DrinkRouter(BaseRouter):
         """
         obj = await self.service.get_by_id(id, self.repo, self.model, session)
         return obj  # self.read_schema.model_validate(obj)
-
-    async def direct_import_data(self,
-                                 session: AsyncSession = Depends(get_db),
-                                 image_service: ImageService = Depends()) -> dict:
-        """
-        Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
-        на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с
-        изображениями.
-        - если в таблице есть зависимости они будут рекурсивно найдены в связанных таблицах (или добавлены при
-        отсутсвии), кроме того будет добавлено изображение по его имени (перед этим выполнить импорт изображений
-        /mongodb/images/direct.
-        операция длительная - наберитесь терпения
-        """
-        try:
-            result = await self.service.direct_upload(session)
-            return result
-        except Exception as e:
-            raise HTTPException(status_code=422, detail=e)

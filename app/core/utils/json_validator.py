@@ -1,7 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from typing import Union, Tuple, List, Dict, Any
+from typing import Any, Dict, List, Union
 
 
 class JSONValidator:
@@ -44,7 +44,13 @@ class JSONValidator:
             return self._analyze_json_error(e)
 
         # If valid, return number of top-level keys
+        if all((isinstance(parsed_json, dict),
+                len(parsed_json.keys()) == 1,
+                parsed_json.get('items'))):
+            parsed_json = parsed_json.get('items')
         if isinstance(parsed_json, dict):
+            if len(parsed_json.keys()) == 1 and parsed_json.get('items'):
+                return len(parsed_json.get('items'))
             return len(parsed_json.keys())
         elif isinstance(parsed_json, list):
             return len(parsed_json)
@@ -158,7 +164,7 @@ def validate_json_file(file_path: str) -> Union[int, List[Dict[str, Any]]]:
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python json_validator.py <path_to_json_file>")
+        print("Usage: python app/core/utils/json_validator.py upload_volume/data.json")
         sys.exit(1)
 
     file_path = sys.argv[1]

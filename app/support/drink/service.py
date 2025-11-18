@@ -64,52 +64,55 @@ class DrinkService(Service):
                               repository: DrinkRepository, model: Drink,
                               session: AsyncSession) -> DrinkRead:
         # pydantic model -> dict
-        drink_data: dict = data.model_dump(exclude={'subregion', 'subcategory', 'color',
-                                                    'sweetness', 'varietals', 'foods'},
-                                           exclude_unset=True)
-        if data.subregion:
-            result = await SubregionService.create_relation(data.subregion, SubregionRepository,
-                                                            Subregion, session)
-            drink_data['subregion_id'] = result.id
-
-        if data.subcategory:
-            result = await SubcategoryService.create_relation(data.subcategory, SubcategoryRepository,
-                                                              Subcategory, session)
-            drink_data['subcategory_id'] = result.id
-
-        if data.sweetness:
-            result, _ = await SweetnessService.get_or_create(data.sweetness, SweetnessRepository, Sweetness, session)
-            drink_data['sweetness_id'] = result.id
         try:
+            drink_data: dict = data.model_dump(exclude={'subregion', 'subcategory', 'color',
+                                                        'sweetness', 'varietals', 'foods'},
+                                               exclude_unset=True)
+            if data.subregion:
+                result = await SubregionService.create_relation(data.subregion, SubregionRepository,
+                                                                Subregion, session)
+                drink_data['subregion_id'] = result.id
+
+            if data.subcategory:
+                result = await SubcategoryService.create_relation(data.subcategory, SubcategoryRepository,
+                                                                  Subcategory, session)
+                drink_data['subcategory_id'] = result.id
+
+            if data.sweetness:
+                result, _ = await SweetnessService.get_or_create(data.sweetness,
+                                                                 SweetnessRepository, Sweetness, session)
+                drink_data['sweetness_id'] = result.id
+
             drink = DrinkCreate(**drink_data)
             drink_instance, _ = await cls.get_or_create(drink, DrinkRepository, Drink, session)
             drink_id = drink_instance.id
+
+            if isinstance(data.foods, list):
+                food_ids = []
+                # 1. get_or_create foods in Food
+                for item in data.foods:
+                    result = await FoodService.create_relation(item, FoodRepository, FoodService, session)
+                    food_ids.append(result.id)
+                # 2. set drink_food
+                await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
+            if isinstance(data.varietals, list):
+                varietal_ids = []
+                varietal_percentage = {}
+                # 1. get_or_create varietals in Varietal
+                # data.varietals is List[{varietal: VarietalCreateRelation
+                #                         percentage: float}]
+                for dvschema in data.varietals:
+                    item = dvschema.varietal
+                    percentage = dvschema.percentage
+                    result, _ = await VarietalService.get_or_create(item, VarietalRepository, Varietal, session)
+                    varietal_percentage[result.id] = percentage
+                    varietal_ids.append(result.id)
+                # 2. set drink_varietal
+                await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
+                # 3. set up percentage
+                for key, val in varietal_percentage.items():
+                    await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
+            await session.refresh(drink_instance)
+            return drink_instance
         except Exception as e:
-            print(f'drink/service/create_relation:70 {e}==========================')
-        if isinstance(data.foods, list):
-            food_ids = []
-            # 1. get_or_create foods in Food
-            for item in data.foods:
-                result = await FoodService.create_relation(item, FoodRepository, FoodService, session)
-                food_ids.append(result.id)
-            # 2. set drink_food
-            await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
-        if isinstance(data.varietals, list):
-            varietal_ids = []
-            varietal_percentage = {}
-            # 1. get_or_create varietals in Varietal
-            # data.varietals is List[{varietal: VarietalCreateRelation
-            #                         percentage: float}]
-            for dvschema in data.varietals:
-                item = dvschema.varietal
-                percentage = dvschema.percentage
-                result, _ = await VarietalService.get_or_create(item, VarietalRepository, Varietal, session)
-                varietal_percentage[result.id] = percentage
-                varietal_ids.append(result.id)
-            # 2. set drink_varietal
-            await DrinkVarietalRepository.set_drink_varietals(drink_id, varietal_ids, session)
-            # 3. set up percentage
-            for key, val in varietal_percentage.items():
-                await DrinkVarietalRepository.update_percentage(drink_id, key, val, session)
-        await session.refresh(drink_instance)
-        return drink_instance
+            print(f'drink_create_relation error: {e}')
