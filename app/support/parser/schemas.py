@@ -1,7 +1,8 @@
 # app/support/parser/schemas.py
 from typing import Optional
 
-from app.core.schemas.base import BaseModel
+from app.core.schemas.base import (CreateResponse, DateSchema,
+                                   BaseModel, PkSchema)
 # from app.core.schemas.image_mixin import ImageUrlMixin
 
 
@@ -9,26 +10,24 @@ class StatusCreate(BaseModel):
     status: str
 
 
-class StatusCreateRelation(BaseModel):
-    status: str
+class StatusCreateRelation(StatusCreate):
+    pass
 
 
-class StatusCreateResponseSchema(StatusCreate):
-    id: int
+class StatusCreateResponseSchema(StatusCreate, CreateResponse):
+    pass
 
 
 class StatusUpdate(BaseModel):
     status: Optional[str] = None
 
 
-class StatusRead(BaseModel):
-    id: int
-    status: str
+class StatusRead(StatusCreate, PkSchema, DateSchema):
+    pass
 
 
-class StatusReadRelation(BaseModel):
-    id: int
-    status: str
+class StatusReadRelation(StatusRead):
+    pass
 
 
 class CodeCreate(BaseModel):
@@ -43,8 +42,8 @@ class CodeCreateRelation(BaseModel):
     status: StatusCreateRelation
 
 
-class CodeCreateResponseSchema(CodeCreate):
-    id: int
+class CodeCreateResponseSchema(CodeCreate, CreateResponse):
+    pass
 
 
 class CodeUpdate(BaseModel):
@@ -53,17 +52,14 @@ class CodeUpdate(BaseModel):
     status_id: Optional[int] = 1
 
 
-class CodeRead(BaseModel):
-    id: int
-    code: str
-    url: Optional[str] = None
-    status: Optional[StatusReadRelation] = None
+class CodeRead(CodeCreate, PkSchema, DateSchema):
+    pass
 
 
-class CodeReadRelation(BaseModel):
-    id: int
+class CodeReadRelation(PkSchema, DateSchema):
     code: str
     url: Optional[str] = None
+    status: StatusRead
 
 
 class NameCreate(BaseModel):
@@ -80,8 +76,8 @@ class NameCreateRelation(BaseModel):
     status: StatusCreateRelation
 
 
-class NameCreateResponseSchema(NameCreate):
-    id: int
+class NameCreateResponseSchema(NameCreate, CreateResponse):
+    pass
 
 
 class NameUpdate(BaseModel):
@@ -91,18 +87,15 @@ class NameUpdate(BaseModel):
     status_id: Optional[int] = 1
 
 
-class NameRead(BaseModel):
-    id: int
-    name: str
-    code: Optional[CodeReadRelation]
-    url: Optional[str] = None
-    status: Optional[StatusReadRelation] = None
+class NameRead(NameCreate, PkSchema, DateSchema):
+    pass
 
 
-class NameReadRelation:
-    id: int
+class NameReadRelation(PkSchema, DateSchema):
     name: str
-    url: Optional[str] = None
+    url: str
+    code: CodeRead
+    status: StatusRead
 
 
 class RawdataCreate(BaseModel):
@@ -117,8 +110,8 @@ class RawdataCreateRelation(BaseModel):
     status: StatusCreateRelation
 
 
-class RawdataCreateResponseSchema(RawdataCreate):
-    id: int
+class RawdataCreateResponseSchema(RawdataCreate, CreateResponse):
+    pass
 
 
 class RawdataUpdate(BaseModel):
@@ -127,11 +120,14 @@ class RawdataUpdate(BaseModel):
     status_id: Optional[int] = 1
 
 
-class RawdataRead(BaseModel):
-    id: int
+class RawdataRead(RawdataCreate, PkSchema, DateSchema):
+    pass
+
+
+class RawdataReadRelation(PkSchema, DateSchema):
     body_html: Optional[str]
-    name_id: int
-    status: Optional[StatusRead] = None
+    name: NameRead
+    status: StatusRead
 
 
 class ImageCreate(BaseModel):
@@ -146,8 +142,8 @@ class ImageCreateRelation(BaseModel):
     name: NameCreateRelation
 
 
-class ImageCreateResponseSchema(ImageCreate):
-    id: int
+class ImageCreateResponseSchema(ImageCreate, CreateResponse):
+    pass
 
 
 class ImageUpdate(BaseModel):
@@ -156,8 +152,11 @@ class ImageUpdate(BaseModel):
     name_id: Optional[int] = None
 
 
-class ImageRead(BaseModel):
-    id: int
-    name_id: int  # NameReadRelation
+class ImageRead(ImageCreate, PkSchema, DateSchema):
+    pass
+
+
+class ImageReadRelation(PkSchema, DateSchema):
     image_path: Optional[str] = None
     image_id: Optional[str] = None
+    name: NameRead

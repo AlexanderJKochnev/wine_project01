@@ -65,7 +65,7 @@ class ImageService(Service):
             result = await NameService.create_relation(data.name, repo.NameRepository,
                                                        mode.Name, session)
             image_data['name_id'] = result.id
-        image = schemas.ImageRead(**image_data)
+        image = schemas.ImageCreate(**image_data)
         result, _ = await cls.get_or_create(image, repository, model, session)
         return result
 
@@ -89,7 +89,7 @@ class RawdataService(Service):
             result = await NameService.create_relation(data.name, repo.NameRepository,
                                                        mode.Name, session)
             raw_data['name_id'] = result.id
-        rawdata = schemas.RawdataRead(**raw_data)
+        rawdata = schemas.RawdataCreate(**raw_data)
         result, _ = await cls.get_or_create(rawdata, repository, model, session)
 
         return result

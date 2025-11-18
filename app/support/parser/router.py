@@ -92,6 +92,7 @@ class RawdataRouter(BaseRouter):
     async def create_relation(self, data: schemas.RawdataCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.RawdataRead:
         result = await super().create_relation(data, session)
+        print('=================', result)
         return result
 
 

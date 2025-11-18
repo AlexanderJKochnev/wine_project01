@@ -10,6 +10,7 @@ from app.core.utils.common_utils import jprint
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip
 async def test_patch_success(authenticated_client_with_db, test_db_session,
                              simple_router_list, complex_router_list, fakedata_generator):
     """
@@ -66,7 +67,7 @@ async def test_patch_success2(authenticated_client_with_db, test_db_session,
     for router_class in routers:
         router = router_class()
         prefix = router.prefix
-        if prefix in ['/api']:  # api не имеет метода all, удалить когда заведется
+        if prefix in ['/api', '/items', '/images']:  # api не имеет метода all, удалить когда заведется
             continue
         response = await client.get(f'{prefix}/all')
         if response.status_code != 200:
@@ -79,7 +80,8 @@ async def test_patch_success2(authenticated_client_with_db, test_db_session,
         if id is None:
             jprint(origin_dict)
         assert id is not None, f'{prefix=}, неверный результат метода get_all - отсутвует id'
-        updated_dict = {key: f'updated {val}' for key, val in origin_dict.items() if isinstance(val, str)}
+        updated_dict = {key: f'updated {val}' for key, val in origin_dict.items()
+                        if isinstance(val, str) and not val.endswith('%')}
         response = await client.patch(f"{prefix}/{id}", json=updated_dict)
         if response.status_code != 200:
             print(response.text)

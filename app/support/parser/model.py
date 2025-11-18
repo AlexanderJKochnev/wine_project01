@@ -1,12 +1,11 @@
 # app/support/parser/model.py
-from sqlalchemy import String, Integer, Text, ForeignKey, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
-from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
+
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.models.base_model import Base, BaseAt
 from app.core.models.image_mixin import ImageMixin
-from sqlalchemy import ForeignKey, UniqueConstraint
 
 
 class Code(Base, BaseAt):
@@ -49,7 +48,7 @@ class Rawdata(Base, BaseAt):
     name: Mapped["Name"] = relationship("Name", back_populates="raw_data")
 
     def __str__(self):
-        return self.name or ""
+        return str(self.name_id) or ""
 
 
 class Image(Base, BaseAt, ImageMixin):
