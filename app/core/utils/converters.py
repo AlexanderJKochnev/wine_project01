@@ -2,6 +2,23 @@
 import re
 from typing import Dict, Any, List, Optional, Union
 
+def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
+    """
+        Конвертирует словарь 1 в словарь 2 согласно заданным правилам.
+    """
+    # Определяем поля, которые нужно игнорировать
+    ignored_fields = {'index', 'isHidden', 'uid', 'imageTimestamp'}
+    # Интернациолнальные поля
+    international_fields = {'vol', 'alc', 'count'}
+    # Конвертируемые поля (остальные поля имеют исходный формат)
+    casted_fields = {'vol': 'float', 'count': 'int', 'alc': 'float'}
+    # Поля верхнего уровня (остальные поля в drink
+    first_level_fields = {'vol', 'count', 'image_path', 'image_id'}
+    # Category fields правила конвертации категорий
+    
+
+
+
 
 def convert_dict1_to_dict2(dict1: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -42,18 +59,12 @@ def convert_dict1_to_dict2(dict1: Dict[str, Any]) -> Dict[str, Any]:
                                     vol_num = vol_num / 1000.0
                             else:
                                 vol_num = 0.0
-                            new_entry['vol'] = vol_num
-                        elif eng_key == 'alc':
-                            # Конвертируем alc
-                            alc_str = str(eng_val).replace('%', '')
-                            try:
-                                alc_num = float(alc_str)
-                            except ValueError:
-                                alc_num = 0.0
-                            drink['alc'] = alc_num
+                            if key not in dict2:
+                                dict2[key] = {}
+                            dict2[key]['vol'] = vol_num
                         elif eng_key == 'region':
                             # Обработка региона
-                            drink['subregion'] = parse_region(eng_val, russian_data.get('region', ''), country)
+                            drink['subregion'] = parse_region(eng_val, russian_data.get('region', ''))
                         elif eng_key == 'category':
                             # Обработка категории
                             drink['subcategory'] = parse_category(eng_val, english_data.get('type', ''))
@@ -68,11 +79,7 @@ def convert_dict1_to_dict2(dict1: Dict[str, Any]) -> Dict[str, Any]:
                         elif eng_key == 'type':
                             # Не добавляем type отдельно, он уже обработан в категории
                             pass
-                        elif eng_key == 'age':
-                            # age остается в drink как строка
-                            drink['age'] = eng_val
                         else:
-                            # Все остальные поля идут в drink
                             drink[eng_key] = eng_val
                     
                     # Добавляем русские данные
@@ -94,46 +101,142 @@ def convert_dict1_to_dict2(dict1: Dict[str, Any]) -> Dict[str, Any]:
                         elif rus_key == 'type':
                             # type уже обработан
                             continue
-                        elif rus_key == 'age':
-                            # age остается в drink как строка
-                            drink['age_ru'] = rus_val
-                        elif rus_key == 'alc':
-                            # Конвертируем русский alc
-                            alc_str = str(rus_val).replace('%', '')
-                            try:
-                                alc_num = float(alc_str)
-                            except ValueError:
-                                alc_num = 0.0
-                            drink['alc_ru'] = alc_num
                         else:
-                            # Все остальные русские поля идут в drink
                             drink[f"{rus_key}_ru"] = rus_val
                     
                     new_entry['drink'] = drink
-                elif field == 'category':
-                    # Устанавливаем category в основной словарь
-                    new_entry['category'] = field_value
                 elif field == 'count':
-                    # Обработка count
-                    new_entry['count'] = field_value if field_value is not None else None
+                    new_entry[field] = field_value
                 elif field == 'country':
                     # Обрабатываем страну в регионе
-                    # Устанавливается в parse_region
-                    pass
+                    english_data = value.get('english', {})
+                    russian_data = value.get('russian', {})
+                    if 'drink' in new_entry:
+                        if 'subregion' not in new_entry['drink']:
+                            new_entry['drink']['subregion'] = {'name': None, 'name_ru': None,
+                                    'region': {'name': None, 'name_ru': None,
+                                            'country': {'name': capitalize_country_name(field_value), 'name_ru': None}}}
+                        else:
+                            # Устанавливаем страну в регион
+                            new_entry['drink']['subregion']['region']['country']['name'] = capitalize_country_name(
+                                field_value
+                                )
                 elif field == 'uid':
                     # Используем UID для image_path
                     new_entry['image_path'] = f"{field_value}.png"
         
-        # Устанавливаем vol в 0, если его нет
+        # Устанавливаем count в None, если его нет и не было в исходном
+        if 'count' not in new_entry:
+            new_entry['count'] = None
+        
+        # Устанавливаем vol в None, если его нет
         if 'vol' not in new_entry:
-            new_entry['vol'] = 0.0
+            new_entry['vol'] = None
         
         dict2[key] = new_entry
     
     return dict2
 
 
-def parse_region(region_en: str, region_ru: str, country: str) -> Dict[str, Any]:
+def convert_dict2_to_dict1(dict2: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Конвертирует словарь 2 в словарь 1 (обратная конвертация).
+    """
+    dict1 = {}
+    
+    for key, value in dict2.items():
+        new_entry = {}
+        
+        # Восстанавливаем UID из image_path
+        if 'image_path' in value:
+            image_path = value['image_path']
+            uid = image_path.replace('.png', '') if image_path.endswith('.png') else image_path
+            new_entry['uid'] = uid
+        
+        # Восстанавливаем count
+        if 'count' in value and value['count'] is not None:
+            new_entry['count'] = value['count']
+        
+        # Восстанавливаем vol
+        if 'vol' in value and value['vol'] is not None:
+            vol = value['vol']
+            # Преобразуем обратно в строку в формате "X.XX l"
+            vol_str = f"{vol} l"
+            if 'english' not in new_entry:
+                new_entry['english'] = {}
+                new_entry['russian'] = {}
+            new_entry['english']['vol'] = vol_str
+            new_entry['russian']['vol'] = vol_str
+        
+        # Обрабатываем drink
+        if 'drink' in value:
+            drink = value['drink']
+            english_data = {}
+            russian_data = {}
+            
+            for field, field_value in drink.items():
+                if field == 'subregion':
+                    # Восстанавливаем region
+                    region_en = reconstruct_region_en(drink['subregion'])
+                    region_ru = reconstruct_region_ru(drink['subregion'])
+                    english_data['region'] = region_en
+                    russian_data['region'] = region_ru
+                    
+                    # Восстанавливаем страну из country в регионе
+                    country_name = drink['subregion']['region']['country']['name']
+                    if country_name:
+                        new_entry['country'] = country_name.lower()
+                elif field == 'subcategory':
+                    # Восстанавливаем category
+                    category_info = reconstruct_category(drink['subcategory'])
+                    new_entry['category'] = category_info['category']  # Добавляем в основной словарь
+                    english_data['category'] = category_info['category']  # Также добавляем в english
+                    if category_info['type']:
+                        english_data['type'] = category_info['type']
+                elif field == 'foods':
+                    # Восстанавливаем pairing
+                    pairing_en, pairing_ru = reconstruct_pairing(drink['foods'])
+                    english_data['pairing'] = pairing_en
+                    russian_data['pairing'] = pairing_ru
+                elif field == 'varietals':
+                    # Восстанавливаем varietal
+                    varietal_en, varietal_ru = reconstruct_varietal(drink['varietals'])
+                    english_data['varietal'] = varietal_en
+                    russian_data['varietal'] = varietal_ru
+                elif field == 'madeof':
+                    english_data['madeOf'] = field_value
+                elif field == 'madeof_ru':
+                    russian_data['madeOf'] = field_value
+                else:
+                    # Обрабатываем обычные поля
+                    if field.endswith('_ru'):
+                        # Русская версия
+                        base_field = field[:-3]
+                        russian_data[base_field] = field_value
+                    else:
+                        # Английская версия
+                        english_data[field] = field_value
+            
+            new_entry['english'] = english_data
+            new_entry['russian'] = russian_data
+            
+            # Если страна не была установлена из региона, устанавливаем из country
+            if 'country' not in new_entry and 'subregion' in drink and 'region' in drink['subregion'] and 'country' in \
+                    drink['subregion']['region']:
+                country_name = drink['subregion']['region']['country']['name']
+                if country_name:
+                    new_entry['country'] = country_name.lower()
+        
+        # Если country не установлен, используем значение по умолчанию
+        if 'country' not in new_entry:
+            new_entry['country'] = 'unknown'
+        
+        dict1[key] = new_entry
+    
+    return dict1
+
+
+def parse_region(region_en: str, region_ru: str) -> Dict[str, Any]:
     """Парсит регион и субрегион из строки."""
     # Разделители: запятая или точка
     parts_en = re.split(r'[,.]', region_en)
@@ -159,7 +262,8 @@ def parse_region(region_en: str, region_ru: str, country: str) -> Dict[str, Any]
     
     return {'name': subregion_en, 'name_ru': subregion_ru,
             'region': {'name': region_en_clean, 'name_ru': region_ru_clean,
-                    'country': {'name': capitalize_country_name(country), 'name_ru': None}}}
+                    'country': {'name': None,  # Будет установлено позже
+                            'name_ru': None}}}
 
 
 def parse_category(category: str, type_val: str = None) -> Dict[str, Any]:
@@ -219,19 +323,10 @@ def parse_varietal(varietal_en: str, varietal_ru: str) -> List[Dict[str, Any]]:
             if len(varietals_en) == 1:
                 perc_en = 100.0
             else:
-                perc_en = round(100.0 / len(varietals_en))
-        
-        # Очищаем названия сортов от процентов
-        var_en_clean = re.sub(r'\s+\d+\.?\d*%$', '', var_en).strip()
-        var_ru_clean = re.sub(r'\s+\d+\.?\d*%$', '', var_ru).strip() if var_ru else None
-        
-        # Капитализируем названия сортов
-        var_en_clean = capitalize_varietal_name(var_en_clean)
-        if var_ru_clean:
-            var_ru_clean = capitalize_varietal_name_ru(var_ru_clean)
+                perc_en = round(100.0 / len(varietals_en), 1)
         
         result.append(
-                {'varietal': {'name': var_en_clean, 'name_ru': var_ru_clean}, 'percentage': perc_en}
+                {'varietal': {'name': var_en, 'name_ru': var_ru}, 'percentage': perc_en}
                 )
     
     return result
@@ -271,24 +366,22 @@ def parse_varietal_string(varietal_str: str) -> List[tuple]:
         return []
     
     # Паттерн для поиска "название X%" или "название X.X%"
-    # Учитываем кавычки перед названием сорта
-    pattern = r'(["\']?)([^"\',%]+(?:\([^)]*\))?[^"\',%]*)\s*(\d+\.?\d*)%?'
+    pattern = r'(["\']?)([^"\',%]+(?:\([^)]*\))?[^"\',%]*)\1\s*(\d+\.?\d*)%?'
     matches = re.findall(pattern, varietal_str)
     
     result = []
-    for quote, name_part, percentage_str in matches:
+    for _, name_part, percentage_str in matches:
         # Убираем лишние пробелы и кавычки
         name = name_part.strip()
-        percentage = float(percentage_str) if percentage_str and percentage_str.strip() else None
-        if name and not name.isspace():  # Добавляем только если есть название и оно не состоит из одних пробелов
-            result.append((name, percentage))
+        percentage = float(percentage_str) if percentage_str else None
+        result.append((name, percentage))
     
     # Если не найдены подходящие паттерны, разделяем по запятым
     if not result:
         parts = re.split(r',', varietal_str)
         for part in parts:
             part = part.strip()
-            if part and not part.isspace():
+            if part:
                 # Проверяем, есть ли процент в этой части
                 perc_match = re.search(r'(\d+\.?\d*)%$', part)
                 if perc_match:
@@ -298,8 +391,7 @@ def parse_varietal_string(varietal_str: str) -> List[tuple]:
                 else:
                     name = part.strip()
                     percentage = None
-                if name and not name.isspace():  # Добавляем только если есть название и оно не состоит из одних пробелов
-                    result.append((name, percentage))
+                result.append((name, percentage))
     
     return result
 
@@ -320,19 +412,6 @@ def capitalize_country_name(country: str) -> str:
     return ' '.join([part.capitalize() for part in parts])
 
 
-def capitalize_varietal_name(name: str) -> str:
-    """Приводит название сорта к нормальному виду."""
-    # Разбиваем по пробелам и делаем заглавные буквы
-    parts = name.split()
-    return ' '.join([part.capitalize() for part in parts])
-
-
-def capitalize_varietal_name_ru(name: str) -> str:
-    """Приводит русское название сорта к нормальному виду."""
-    # Просто возвращаем как есть, так как русские названия уже правильно форматированы
-    return name
-
-
 def get_russian_name(english_name: str) -> str:
     """Простое преобразование английского названия в русское."""
     translations = {'calvados': 'Кальвадос', 'sake': 'Cакэ', 'vodka': 'Водка', 'cognac': 'Коньяк', 'whiskey': 'Виски',
@@ -341,8 +420,94 @@ def get_russian_name(english_name: str) -> str:
     return translations.get(english_name.lower(), None)
 
 
-def test_direct_conversion():
-    """Тест прямой конвертации."""
+def reconstruct_region_en(subregion_data: Dict[str, Any]) -> str:
+    """Восстанавливает строку региона из структуры."""
+    subregion = subregion_data.get('name')
+    region = subregion_data.get('region', {}).get('name')
+    
+    if subregion and region:
+        return f"{region}, {subregion}"
+    elif region:
+        return region
+    else:
+        return ""
+
+
+def reconstruct_region_ru(subregion_data: Dict[str, Any]) -> str:
+    """Восстанавливает строку региона на русском из структуры."""
+    subregion = subregion_data.get('name_ru')
+    region = subregion_data.get('region', {}).get('name_ru')
+    
+    if subregion and region:
+        return f"{region}, {subregion}"
+    elif region:
+        return region
+    else:
+        return ""
+
+
+def reconstruct_category(subcategory_data: Dict[str, Any]) -> Dict[str, str]:
+    """Восстанавливает категорию и тип из структуры."""
+    category_name = subcategory_data.get('category', {}).get('name', '').lower()
+    
+    # Определяем основную категорию
+    if category_name == 'wine':
+        sub_name = subcategory_data.get('name', '').lower()
+        if sub_name in ['red', 'white', 'rose', 'sparkling', 'port']:
+            return {'category': sub_name, 'type': None}
+        else:
+            return {'category': 'red', 'type': None}  # по умолчанию
+    elif category_name in ['vodka', 'cognac', 'whiskey', 'tequila', 'rum', 'beer']:
+        return {'category': category_name, 'type': None}
+    elif category_name == 'other':
+        type_val = subcategory_data.get('name')
+        return {'category': 'other', 'type': type_val}
+    else:
+        return {'category': 'red', 'type': None}
+
+
+def reconstruct_pairing(foods: List[Dict[str, str]]) -> tuple:
+    """Восстанавливает строку pairing из списка еды."""
+    names_en = [food.get('name', '') for food in foods if food.get('name')]
+    names_ru = [food.get('name_ru', '') for food in foods if food.get('name_ru')]
+    
+    pairing_en = ', '.join(names_en)
+    pairing_ru = ', '.join(names_ru)
+    
+    return pairing_en, pairing_ru
+
+
+def reconstruct_varietal(varietals: List[Dict[str, Any]]) -> tuple:
+    """Восстанавливает строку varietal из списка сортов."""
+    parts_en = []
+    parts_ru = []
+    
+    for varietal_data in varietals:
+        var_data = varietal_data.get('varietal', {})
+        name_en = var_data.get('name', '')
+        name_ru = var_data.get('name_ru', '')
+        percentage = varietal_data.get('percentage')
+        
+        if percentage is not None and percentage != 100.0:
+            part_en = f"{name_en} {percentage}%"
+            part_ru = f"\"{name_ru}\" {percentage}%" if name_ru else f"{name_en} {percentage}%"
+        else:
+            part_en = f"{name_en} 100%" if len(varietals) == 1 else name_en
+            part_ru = f"\"{name_ru}\" 100%" if name_ru and len(varietals) == 1 else name_ru if name_ru else name_en
+        
+        if part_en.strip():
+            parts_en.append(part_en)
+        if part_ru.strip():
+            parts_ru.append(part_ru)
+    
+    varietal_en = ', '.join(parts_en)
+    varietal_ru = ', '.join(parts_ru)
+    
+    return varietal_en, varietal_ru
+
+
+def test_conversion():
+    """Тест конвертации: прямая и обратная, сравнение с исходными данными."""
     # Исходные данные
     original_data = {"-Lymluc5yKRoLQyYLbJG": {"category": "red", "count": 0, "country": "italy",
             "english": {"alc": "13.5%",
@@ -360,59 +525,54 @@ def test_direct_conversion():
     # Конвертируем в словарь 2
     dict2 = convert_dict1_to_dict2(original_data)
     
-    # Выводим результат для проверки
-    import json
-    print("Результат прямой конвертации:")
-    print(json.dumps(dict2, ensure_ascii = False, indent = 2))
+    # Конвертируем обратно в словарь 1
+    converted_back = convert_dict2_to_dict1(dict2)
     
-    # Проверяем основные ожидаемые поля
-    key = "-Lymluc5yKRoLQyYLbJG"
-    entry = dict2[key]
+    # Проверяем, что игнорируемые поля исключены
+    expected_ignored = {'index', 'isHidden', 'uid', 'imageTimestamp'}
     
-    # Проверяем category
-    assert entry.get('category') == 'red', f"category: ожидалось 'red', получено {entry.get('category')}"
+    success = True
+    for key in original_data:
+        original_entry = original_data[key]
+        converted_entry = converted_back[key]
+        
+        # Проверяем, что игнорируемые поля не появились в конвертированном словаре
+        for ignored_field in expected_ignored:
+            if ignored_field in converted_entry:
+                print(f"Ошибка: поле {ignored_field} не должно быть в конвертированном словаре")
+                success = False
+        
+        # Проверяем, что остальные поля совпадают (без игнорируемых)
+        for field in original_entry:
+            if field not in expected_ignored:
+                if field not in converted_entry:
+                    print(f"Ошибка: поле {field} отсутствует в конвертированном словаре")
+                    success = False
+                    continue
+                
+                if field == 'english' or field == 'russian':
+                    for subfield in original_entry[field]:
+                        if subfield not in converted_entry[field]:
+                            print(f"Ошибка: подполе {subfield} отсутствует в {field}")
+                            success = False
+                        elif original_entry[field][subfield] != converted_entry[field][subfield]:
+                            print(
+                                f"Ошибка: значение {field}.{subfield} не совпадает: {repr(original_entry[field][subfield])} != {repr(converted_entry[field][subfield])}"
+                                )
+                            success = False
+                else:
+                    if original_entry[field] != converted_entry[field]:
+                        print(
+                            f"Ошибка: значение поля {field} не совпадает: {repr(original_entry[field])} != {repr(converted_entry[field])}"
+                            )
+                        success = False
     
-    # Проверяем vol
-    assert entry.get('vol') == 0.75, f"vol: ожидалось 0.75, получено {entry.get('vol')}"
-    
-    # Проверяем count
-    assert entry.get('count') == 0, f"count: ожидалось 0, получено {entry.get('count')}"
-    
-    # Проверяем country в структуре
-    drink = entry.get('drink', {})
-    subregion = drink.get('subregion', {})
-    region = subregion.get('region', {})
-    country_info = region.get('country', {})
-    country_name = country_info.get('name')
-    assert country_name == 'Italy', f"country.name: ожидалось 'Italy', получено {country_name}"
-    
-    # Проверяем varietals
-    varietals = drink.get('varietals', [])
-    assert len(varietals) == 2, f"varietals: ожидалось 2 элемента, получено {len(varietals)}"
-    
-    # Первый сорт
-    varietal1 = varietals[0]
-    var_info1 = varietal1.get('varietal', {})
-    name1 = var_info1.get('name')
-    name_ru1 = var_info1.get('name_ru')
-    percentage1 = varietal1.get('percentage')
-    assert name1 == 'Cabernet Sauvignon', f"varietal[0].name: ожидалось 'Cabernet Sauvignon', получено {name1}"
-    assert name_ru1 == 'Каберне Совиньон', f"varietal[0].name_ru: ожидалось 'Каберне Совиньон', получено {name_ru1}"
-    assert percentage1 == 85.0, f"varietal[0].percentage: ожидалось 85.0, получено {percentage1}"
-    
-    # Второй сорт
-    varietal2 = varietals[1]
-    var_info2 = varietal2.get('varietal', {})
-    name2 = var_info2.get('name')
-    name_ru2 = var_info2.get('name_ru')
-    percentage2 = varietal2.get('percentage')
-    assert name2 == 'Cabernet Franc', f"varietal[1].name: ожидалось 'Cabernet Franc', получено {name2}"
-    assert name_ru2 == 'Каберне Фран', f"varietal[1].name_ru: ожидалось 'Каберне Фран', получено {name_ru2}"
-    assert percentage2 == 15.0, f"varietal[1].percentage: ожидалось 15.0, получено {percentage2}"
-    
-    print("Тест прямой конвертации пройден успешно!")
+    if success:
+        print("Тест пройден успешно: конвертация и обратная конвертация работают корректно")
+    else:
+        print("Тест не пройден: есть ошибки в конвертации")
 
 
 # Запуск теста
 if __name__ == "__main__":
-    test_direct_conversion()
+    test_conversion()

@@ -622,9 +622,45 @@ def get_value(source: list, search: str) -> Union[list, str]:
         return None
 
 
+def compare_dict_keys(dict1, dict2, path=""):
+    """
+    Сравнивает ключи двух вложенных словарей и возвращает разницу в ключах.
+    Возвращает два списка:
+    - added: ключи, которые есть в dict2, но нет в dict1 (путь +)
+    - removed: ключи, которые есть в dict1, но нет в dict2 (путь -)
+    """
+    added = []
+    removed = []
+
+    # Собираем все пути до ключей в каждом словаре
+    def get_all_paths(d, current_path=""):
+        paths = set()
+        if isinstance(d, dict):
+            for key, value in d.items():
+                new_path = f"{current_path}.{key}" if current_path else key
+                paths.add(new_path)
+                if isinstance(value, dict):
+                    paths.update(get_all_paths(value, new_path))
+                elif isinstance(value, list):
+                    # Если значение — список, проверим его элементы на словари
+                    for i, item in enumerate(value):
+                        list_path = f"{new_path}[{i}]"
+                        if isinstance(item, dict):
+                            paths.update(get_all_paths(item, list_path))
+        return paths
+
+    paths1 = get_all_paths(dict1)
+    paths2 = get_all_paths(dict2)
+
+    added = sorted(paths2 - paths1)
+    removed = sorted(paths1 - paths2)
+
+    return added, removed
+
+
 def compare_dicts(dict1, dict2, path="", differences=None):
     """
-    Сравнивает два вложенных словаря и возвращает различия
+    Сравнивает ключи двух вложенных словарей и возвращает различия, если они есть
 
     Args:
         dict1: первый словарь
@@ -646,10 +682,10 @@ def compare_dicts(dict1, dict2, path="", differences=None):
 
         # Проверка наличия ключа
         if key not in dict1:
-            differences.append((current_path, "Ключ отсутствует в первом словаре"))
+            differences.append((current_path, "key is absence in first dict"))
             continue
         elif key not in dict2:
-            differences.append((current_path, "Ключ отсутствует во втором словаре"))
+            differences.append((current_path, "key is absence in second dict"))
             continue
 
         value1 = dict1[key]
@@ -741,6 +777,22 @@ def flatten_dict_with_localized_fields(data: Dict[str, Any],
                                        fields: List[str],
                                        lang: str = 'en',
                                        reverse: bool = True) -> Dict[str, Any]:
+    """
+    принимает словарь с данными (schema.dump_to_dict()...
+    списое полей
+    и возвращает плоский словарь
+    с полями только из fields,
+    :param data:    словарь
+    :type data:     dict
+    :param fields:  имена полей которые должны войти в результат
+    :type fields:   List[str]
+    :param lang:    код языка (en, ru, fr, ...)
+    :type lang:     str
+    :param reverse:
+    :type reverse:
+    :return:
+    :rtype:
+    """
     if not fields:
         result = {'id': data['id']} if 'id' in data else {}
         return result

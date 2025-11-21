@@ -775,7 +775,7 @@ def replace_commas_in_parentheses(match, rep: str = '@'):
 
 def field_naming(model: TypeVar, suffix: str = '_id') -> str:
     """
-    по модели строим имя поля foreign key для эьтой модели Drink -> drink_id
+    по модели строим имя поля foreign key для этой модели Drink -> drink_id
     :param model:
     :param suffix:
     :return:

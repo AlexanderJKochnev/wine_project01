@@ -21,3 +21,122 @@ def test_convers():
             jprint(val)
             print(e)
             assert False
+
+
+def test_dict_compair():
+    dict1 = {
+        "-Lymluc5yKRoLQyYLbJG": {
+            "count": 0,
+            "vol": 0.75,
+            "drink": {
+                "alc": 13.5,
+                "description": "Intense, concentrated and deep ruby-colored, this wine offers elegant, complex aromas of red fruits. In the mouth it is rich and dense, but harmonious, with sweet, balanced tannins. \nThe wine has a long finish with a depth and structure that ensure its extraordinary longevity.",
+                "foods": [
+                    {
+                        "name": "Game (venison, birds)",
+                        "name_ru": "с дичью"
+                    },
+                    {
+                        "name": "Lamb.",
+                        "name_ru": "бараниной."
+                    }
+                ],
+                "subregion": {
+                    "name": "Bolgheri",
+                    "name_ru": "Болгери",
+                    "region": {
+                        "name": "Tuscany",
+                        "name_ru": "Тоскана",
+                        "country": {
+                            "name": "Italy",
+                            "name_ru": None
+                        }
+                    }
+                },
+                "subtitle": "Tenuta San Guido",
+                "title": "Bolgheri Sassicaia 2014 DOC",
+                "varietals": [
+                    {
+                        "varietal": {
+                            "name": "Cabernet Sauvignon 8",
+                            "name_ru": "8"
+                        },
+                        "percentage": 5.0
+                    },
+                    {
+                        "varietal": {
+                            "name": "Cabernet Franc 1",
+                            "name_ru": "1"
+                        },
+                        "percentage": 5.0
+                    }
+                ],
+                "description_ru": "Насыщенное, полнотелое вино, глубокого рубинового оттенка предлагает элегантные, сложные ароматы красных фруктов. Вино имеет богатый и плотный, но гармоничный вкус, со сладкими, сбалансированными танинами. \nОбладает послевкусием с глубиной и структурой, обеспечивающей его необычайную продолжительность.",
+                "subtitle_ru": "Тенута Сан Гвидо",
+                "title_ru": "Болгери Сассициана 2014 DOC",
+                "vol_ru": "0.75 l"
+            }
+        }
+    }
+    dict2 = {
+        "-Lymluc5yKRoLQyYLbJG": {
+            "vol": 0.75,
+            "drink": {
+                "alc": 13.5,
+                "description": "Intense, concentrated and deep ruby-colored, this wine offers elegant, complex aromas of red fruits. In the mouth it is rich and dense, but harmonious, with sweet, balanced tannins. The wine has a long finish with a depth and structure that ensure its extraordinary longevity.",
+                "subtitle": "Tenuta San Guido",
+                "title": "Bolgheri Sassicaia 2014 DOC",
+                "description_ru": "Насыщенное, полнотелое вино, глубокого рубинового оттенка предлагает элегантные, сложные ароматы красных фруктов. Вино имеет богатый и плотный, но гармоничный вкус, со сладкими, сбалансированными танинами. Обладает послевкусием с глубиной и структурой, обеспечивающей его необычайную продолжительность.",
+                "subtitle_ru": "Тенута Сан Гвидо",
+                "title_ru": "Болгери Сассициана 2014 DOC",
+                "subregion": {
+                    "name": "Bolgheri",
+                    "name_ru": "Болгери",
+                    "region": {
+                        "name": "Tuscany",
+                        "name_ru": "Тоскана",
+                        "country": {
+                            "name": "Italy",
+                            "name_ru": None
+                        }
+                    }
+                },
+                "subcategory": {
+                    "name": "Red",
+                    "name_ru": None,
+                    "category": {
+                        "name": "Wine",
+                        "name_ru": None
+                    }
+                },
+                "foods": [
+                    {
+                        "name": "Game (venison, birds)",
+                        "name_ru": "С дичью"
+                    },
+                    {
+                        "name": "Lamb",
+                        "name_ru": "Бараниной"
+                    }
+                ],
+                "varietals": [
+                    {
+                        "varietal": {
+                            "name": "Cabernet Sauvignon",
+                            "name_ru": "Каберне Совиньон"
+                        },
+                        "percentage": 85.0
+                    },
+                    {
+                        "varietal": {
+                            "name": "Cabernet Franc",
+                            "name_ru": "Каберне Фран"
+                        },
+                        "percentage": 15.0
+                    }
+                ]
+            },
+            "count": 0,
+            "image_path": "-Lymluc5yKRoLQyYLbJG.png"
+        }}
+    assert dict1 == dict2

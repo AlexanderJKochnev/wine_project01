@@ -163,11 +163,16 @@ def test_compaire_image_json():
 
 def test_jsonconverter():
     """
-    тестирует from app.core.utils.io_utils import loadJsonConverter
-    тестирует исходные данные (если выбрасывает - см. diff
+    тестирует конвертацию 
+    1. data.json -> JsonConverter
+    2. -> dict
+    3. -> ItemCreateRelation
+    4. -> обратно в dict
+    сравнивает результаты действий 2 и 4
     """
     from app.core.utils.alchemy_utils import JsonConverter
     filepath = get_filepath_from_dir_by_name()
+    print('==================', filepath)
     JsonConv = JsonConverter(filepath)()
     for n, (key, item) in enumerate(JsonConv.items()):
         try:
@@ -194,7 +199,7 @@ def test_jsonconverter2():
     тестирует исходные данные (если выбрасывает - см. diff)
     """
     from app.core.utils.alchemy_utils import JsonConverter
-    from app.core.utils.common_utils import compare_dicts
+    from app.core.utils.common_utils import compare_dicts, compare_dict_keys
     filepath = get_filepath_from_dir_by_name()
     shit_list = [a.rstrip('.png') for a in trob]
 
@@ -204,9 +209,11 @@ def test_jsonconverter2():
         if key not in shit_list:
             continue
         print('-------------------')
-        diff = compare_dicts(temp, item)
+        diff = compare_dict_keys(temp, item)
+        print(diff)
+        assert False
         assert not diff, key
-
+        # assert temp == item, f'{type(temp)=}, {type(item)=}'
 
 def test_source_constraint_data():
     """
@@ -465,3 +472,16 @@ def test_coalesce():
     result = coalesce(*test)
     exp = '1'
     assert result == exp, result
+
+
+def test_jsonconverter3():
+    """
+    выдает на консоль рузельтат конвертации JsonConverter
+    """
+    from app.core.utils.alchemy_utils import JsonConverter
+    filepath = get_filepath_from_dir_by_name('test.json')
+    print(filepath)
+    # конвертирует json в словарь relation
+    JsonConv = JsonConverter(filepath)()
+    jprint(JsonConv)
+    assert False
