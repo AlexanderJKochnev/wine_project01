@@ -72,67 +72,92 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
             assert item == back_item
     """
     source = deepcopy(dict1)
-    # Определяем поля, которые нужно игнорировать ('index', 'isHidden', 'uid', 'imageTimestamp')
+    # Определяем поля, которые нужно игнорировать ('index', 'isHidden', 'imageTimestamp')
     ignored_fields: list = settings.ignored_fields
     # Интернацинальные поля ('vol', 'alc', 'count')
     international_fields = settings.international_fields
     # Конвертируемые поля (остальные поля имеют исходный формат){'vol': 'float', 'count': 'int', 'alc': 'float'}
     casted_fields: dict = settings.casted_fields
-    # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id')
+    # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id', 'uid')
     first_level_fields: list = settings.first_level_fields
     # сложные поля ('country', 'category', 'region', 'pairing', 'varietal')
     complex_fields = settings.complex_fields
     language_key: dict = settings.language_key  # {english: en, ...}
     intl_fields = [val for val in international_fields if val not in first_level_fields]
-
-    # Category fields правила конвертации категорий
-    # category
-    # country / region / subregion
-    newdict: dict = {}
-    drink: dict = {}
-    # 0. add first level key:value
-    newdict.update(root_level(source, first_level_fields, casted_fields))
-    # 1. add simple international fields to drink
-    drink.update(drink_level_intl(source, intl_fields))
-    # 2. exclude complex field from source:
-    complex_dict: dict = exctract_complex_fields(source, complex_fields,
-                                                 first_level_fields, language_key)
-    # 2.1. удалаем игнорируемые поля
-    delet_ignored_fields(source, ignored_fields)
-    # 2.1 add simple non international fields to drink
-    # 3. add complex fields to drink
-    # 4. add foods
-    # 5. add varietals
-    return newdict
+    # delimiter1
+    delim = settings.RE_DELIMITER
+    # result dict root level
+    item_dict: dict = {}
+    # second level dict
+    drink_dict: dict = {}
+    # 0. make root level dict
+    item_dict.update(root_level(source, first_level_fields, casted_fields))
+    # 1. make drink level with simple fields
+    drink_dict.update(drink_level(source, casted_fields, language_key))
+    # 2.country->region->subregion
+    return item_dict
 
 
-def delet_ignored_fields(source: dict, ignored_fields: tuple):
-    """  2.1. удалаем игнорируемые поля """
-    for key in ignored_fields:
-        _ = dict_pop(source, key)
-
-
-def exctract_complex_fields(source: dict, complex_fields: tuple,
-                            first_level_fields: tuple, language_key: dict) -> dict:
+def get_subregion(drink_dict: dict, language_key: str,
+                  delim: str) -> dict:
     """
-    извлекает из  источника сложные поля и возвращает их
+
     """
+    try:
+        subregion = {"region": {"country": {"name": dict_pop(drink_dict, 'country')}}}
+        for lang in language_key.values():
+            tmp = dict_pop(drink_dict, f'region{lang}')
+            region, sub = split_outside_parentheses(tmp, delim)
+            subregion[f'name{lang}'] = sub
+            subregion['region'][f'name{lang}'] = region
+        drink_dict['subregion'] = subregion
+        print(4)
+        return True
+    except Exception as e:
+        print(f'get_subregion.error: {e}')
+
+
+def split_outside_parentheses(text: str, separators=',.:;') -> List:
+    """
+    Разделяет строку по первому найденному разделителю (из списка ',.:;'),
+    который находится **вне скобок** `()`.
+    Возвращает список из двух частей (до и после разделителя).
+    Если разделителей вне скобок нет — возвращает список с одной строкой
+    (без изменений, но с удалёнными пробелами по краям) + None.
+    """
+    if not text:
+        return [text]
+
+    depth = 0  # уровень вложенности скобок
+    for i, char in enumerate(text):
+        if char == '(':
+            depth += 1
+        elif char == ')':
+            depth -= 1
+            # Защита от отрицательной глубины (например, ")abc")
+            if depth < 0:
+                depth = 0
+        elif depth == 0 and char in separators:
+            # Найден разделитель вне скобок
+            left = text[:i].strip()
+            right = text[i + 1:].strip()
+            return [left, right]
+
+    # Разделителей вне скобок не найдено
+    return [text.strip(), None]
+
+
+def drink_level(source: dict, casted_fields: dict, language_key: dict) -> dict:
     result: dict = {}
-    # 1. root level
-    for key in complex_fields:
-        if key in first_level_fields:
-            result[key] = dict_pop(source, key)
+    for key, val in source.items():
+        if isinstance(val, dict):
+            suffix = language_key[key]
+            for k2, v2 in val.items():
+                result[f'{k2}{suffix}'] = field_cast(k2, v2, casted_fields)
         else:
-            for k2, val in language_key.items():
-                result[f'{key}_{val}'] = dict_pop(source[k2], key)
+            result[key] = field_cast(key, val, casted_fields)
     return result
 
-
-def drink_level_intl(source: dict, intl_fields: str) -> dict:
-    result: dict = {}
-    for key in intl_fields:
-        result[key] = dict_find(source, key)
-    return result
 
 def root_level(source: dict, first_level_fields: tuple, casted_fields: dict) -> dict:
     """
@@ -142,17 +167,19 @@ def root_level(source: dict, first_level_fields: tuple, casted_fields: dict) -> 
     for val in first_level_fields:
         value = dict_find(source, val)
         if val in casted_fields.keys():
-            value = field_cast(value, casted_fields.get(val))
-        newdict[val] = value
-    newdict['image_path'] = dict_find(source, 'uid')
+            value = field_cast(val, value, casted_fields)
+            newdict[val] = value
+        if val == 'uid':
+            newdict['image_path'] = f'{dict_find(source, 'uid')}.png'
     return newdict
 
 
-def field_cast(val: Any, casting: str) -> Union[float, int, str]:
+def field_cast(field_name: str, val: Any, casted_fields: dict) -> Union[float, int, str]:
     """
     преобразует значение в требуемый тип
     """
     try:
+        casting = casted_fields.get(field_name)
         match casting:
             case 'float':
                 result = string_to_float(val)
@@ -255,7 +282,7 @@ def dict_pop(d, key):
     return None
 
 
-# =====
+# ==========================
 def convert_dict1_to_dict2(dict1: Dict[str, Any]) -> Dict[str, Any]:
     """
     Конвертирует словарь 1 в словарь 2 согласно заданным правилам.

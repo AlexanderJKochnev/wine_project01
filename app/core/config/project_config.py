@@ -129,6 +129,7 @@ class Settings(BaseSettings):
     FIRST_LEVEL_FLDS: str = 'vol, count, image_path, image_id'
     COMPLEX_FLDS: str = 'country, category, region, pairing, varietal'
     LANGUAGE_KEY: str = 'english: en, russian: ru'
+    RE_DELIMITER: str = '[.,]'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

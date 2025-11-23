@@ -1,14 +1,39 @@
+from typing import Optional
 from app.core.utils.converters import convert_dict1_to_dict2  # , convert_dict2_to_dict1
 from app.core.utils.converters import (convert_custom, batch_convert_data, root_level,
                                        string_to_float, string_to_int, read_json_by_keys,
-                                       drink_level_intl, exctract_complex_fields)
+                                       drink_level, field_cast, split_outside_parentheses,
+                                       get_subregion)
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
+from pydantic import BaseModel, ValidationError, field_validator
 from app.core.utils.common_utils import jprint
 from app.support.item.schemas import ItemCreateRelation, DrinkCreateRelation  # noqa: F401
 from app.core.config.project_config import settings
 from copy import deepcopy
 
+
 filename = 'data.json'
+
+
+class Item1(BaseModel):
+    vol: float
+    count: int
+    image_path: str
+
+
+class Country(BaseModel):
+    name: str
+
+
+class Region(BaseModel):
+    name: Optional[str]
+    name_ru: Optional[str]
+    country: Country
+
+class Subregion(BaseModel):
+    name: Optional[str]
+    name_ru: Optional[str]
+    region: Region
 
 
 def test_str_to_float():
@@ -29,11 +54,43 @@ def test_str_to_int():
         assert result == b, f'ошибка в методе string_to_int  {a} != {b}'
 
 
+def test_casted_fields():
+    casted_fields = settings.casted_fields
+    test_data = {'vol': '23.4',
+                 'count': '21 l',
+                 'alc': '123%',
+                 'dump': '128763d'}
+    expected_data = {'vol': 23.4,
+                     'count': 21,
+                     'alc': 123.0,
+                     'dump': '128763d'}
+    for key, val in test_data.items():
+        result = field_cast(key, val, casted_fields)
+        assert result == expected_data[key]
+
+
 def test_get_filepath_from_dir_by_name():
     from pathlib import Path
     # 1. получение пути к файлу с данными
     filepath = get_filepath_from_dir_by_name(filename)
     assert isinstance(filepath, Path), f"ошибка получения пути к фалй с данными: {filepath}"
+
+
+def test_split_outside_parentheses():
+    delim = settings.RE_DELIMITER
+    test_data = ['Calabria, Villa K',
+                 'Calabria',
+                 'Calabria(Seven, Tree ), Palau',
+                 'Palau, Calabria(Seven, Tree)'
+                 ]
+    expected = [['Calabria', 'Villa K'],
+                ['Calabria', None],
+                ['Calabria(Seven, Tree )', 'Palau'],
+                ['Palau', 'Calabria(Seven, Tree)']
+                ]
+    for n, item in enumerate(test_data):
+        result = split_outside_parentheses(item, delim)
+        assert result == expected[n]
 
 
 def test_read_json_file():
@@ -53,37 +110,60 @@ def test_read_json_file():
     complex_fields = settings.complex_fields
     language_key = settings.language_key
     intl_fields = [val for val in international_fields if val not in first_level_fields]
-
+    delim = settings.RE_DELIMITER
+    
     # TESTS
     for n, (key, value) in enumerate(read_json_by_keys(filepath)):
         # проверка считывания записи из файла
         root_dict = {}
         drink_dict = {}
         assert isinstance(value, dict), "неправльно считана запись из json файла"
+        # копирование словаря
         source = deepcopy(value)
         result = root_level(source, first_level_fields, casted_fields)
         # проверка корневого уровня root_level
-        assert tuple(result.keys()) == tuple(first_level_fields), \
-            'несоотвествие добавленных корневых полей и неоходимых'
-        # проверка формата полей корневого уровня
-        for key, val in first_casted.items():
-            if val == 'float':
-                assert isinstance(result.get(key), float), \
-                    f'неверный тип данных: {key} {result.get(key)} вместо {val}'
-            elif val == 'int':
-                assert isinstance(result.get(key), int), \
-                    f'неверный тип данных: {key} {result.get(key)} вместо {val}'
-        root_dict.update(result)
-        # добавление простых не языковых полей
-        result = drink_level_intl(source, intl_fields)
-        assert list(result.keys()) == intl_fields
-        drink_dict.update(result)
-        # 2. exclude complex field from source:
-        complex_dict: dict = exctract_complex_fields(source, complex_fields,
-                                                     first_level_fields, language_key)
-        jprint(complex_dict)
-        print('--------------------')
-        print(source)
+        try:
+            _ = Item1(**result)
+            root_dict = result
+        except ValidationError as exc:
+            jprint(result)
+            for error in exc.errors():
+                print(f"  Место ошибки (loc): {error['loc']}")
+                print(f"  Сообщение (msg): {error['msg']}")
+                print(f"  Тип ошибки (type): {error['type']}")
+                # input_value обычно присутствует в словаре ошибки
+                if 'input_value' in error:
+                    print(f"  Некорректное значение (input_value): {error['input_value']}")
+                print("-" * 20)
+            assert False, 'ошибка в методе: root_level'
+        # проверка уровня drink
+        result = drink_level(source, casted_fields, language_key)
+        drink_dict = result
+        x = get_subregion(drink_dict, language_key, delim)
+        assert x, 'функция get_subregion провалилась'
+        assert drink_dict.get('country') is None, 'ключ country не удалился'
+        assert drink_dict.get('region') is None, 'ключ region не удалился'
+        assert drink_dict.get('region_ru') is None, 'ключ region_ru не удалился'
+        try:
+            result = drink_dict.get('subregion')
+            _ = Subregion(**result)
+        except ValidationError as exc:
+            jprint(result)
+            for error in exc.errors():
+                print(f"  Место ошибки (loc): {error['loc']}")
+                print(f"  Сообщение (msg): {error['msg']}")
+                print(f"  Тип ошибки (type): {error['type']}")
+                # input_value обычно присутствует в словаре ошибки
+                if 'input_value' in error:
+                    print(f"  Некорректное значение (input_value): {error['input_value']}")
+                print("-" * 20)
+            assert False, 'ошибка в методе: get_subregion'
+        # ====================
+        jprint(root_dict)
+        print('========')
+        for key, val in drink_dict.items():
+            print(f'{key}:  {val}')
+        # ===================
         assert False
         if n > 5:
             break
