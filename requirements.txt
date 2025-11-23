@@ -19,6 +19,8 @@ sqlalchemy-utils
 motor==3.3.2
 pymongo==4.6.0
 python-dateutil
+# для считывания больших json кусками
+ijson
 # for testing purpose only
 Faker
 itsdangerous>=2.1.0

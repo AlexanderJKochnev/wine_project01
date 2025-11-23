@@ -24,6 +24,15 @@ def strtolist(data: str, delim: str = ',') -> List[str]:
         return []
 
 
+def strtodict(data: str, delim1: str = ',', delim2: str = ':') -> Dict[str, str]:
+    tmp = strtolist(data, delim1)
+    result: dict = {}
+    for item in tmp:
+        key, val = item.split(delim2)
+        result[key.strip()] = val.strip()
+    return result
+
+
 def sort_strings_by_alphabet_and_length(strings: List[str]) -> List[str]:
     """
     Сортирует список строк сначала по алфавиту, затем по длине строки.

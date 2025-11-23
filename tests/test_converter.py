@@ -1,26 +1,93 @@
 from app.core.utils.converters import convert_dict1_to_dict2  # , convert_dict2_to_dict1
-from app.core.utils.io_utils import get_filepath_from_dir_by_name, readJson
+from app.core.utils.converters import (convert_custom, batch_convert_data, root_level,
+                                       string_to_float, string_to_int, read_json_by_keys,
+                                       drink_level_intl, exctract_complex_fields)
+from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.core.utils.common_utils import jprint
 from app.support.item.schemas import ItemCreateRelation, DrinkCreateRelation  # noqa: F401
+from app.core.config.project_config import settings
+from copy import deepcopy
+
+filename = 'data.json'
 
 
-def test_convers():
-    filepath = get_filepath_from_dir_by_name('test.json')
-    dict1 = readJson(filepath)
-    assert isinstance(dict1, dict), type(dict1)
-    convers = convert_dict1_to_dict2(dict1)
-    assert isinstance(convers, dict), type(convers)
-    # jprint(convers)
-    # assert False
-    for key, val in convers.items():
-        try:
-            model = ItemCreateRelation(**val)
-            back_dict = model.model_dump()
-            assert val == back_dict
-        except Exception as e:
-            jprint(val)
-            print(e)
-            assert False
+def test_str_to_float():
+    x = {'11.23 l': 11.23, '0.34': 0.34, '2,43%': 2.43, '5.00': 5.00,
+         'qwe': 0.00
+         }
+    for a, b in x.items():
+        result = string_to_float(a)
+        assert result == b, 'ошибка в методе string_to_float {a} != {b}'
+
+
+def test_str_to_int():
+    x = {'11.23 l': 11, '0.34': 0, '2,43%': 2, '5.00': 5,
+         'qwe': 0, '3,51': 4, '99.9': 100
+         }
+    for a, b in x.items():
+        result = string_to_int(a)
+        assert result == b, f'ошибка в методе string_to_int  {a} != {b}'
+
+
+def test_get_filepath_from_dir_by_name():
+    from pathlib import Path
+    # 1. получение пути к файлу с данными
+    filepath = get_filepath_from_dir_by_name(filename)
+    assert isinstance(filepath, Path), f"ошибка получения пути к фалй с данными: {filepath}"
+
+
+def test_read_json_file():
+    """ чтение файла с данными """
+    filepath = get_filepath_from_dir_by_name(filename)
+    #   НАСТРОЙКИ
+    # Определяем поля, которые нужно игнорировать ('index', 'isHidden', 'uid', 'imageTimestamp')
+    ignored_fields: list = settings.ignored_fields
+    # Интернацинальные поля ('vol', 'alc', 'count')
+    international_fields = settings.international_fields
+    # Конвертируемые поля (остальные поля имеют исходный формат){'vol': 'float', 'count': 'int', 'alc': 'float'}
+    casted_fields: dict = settings.casted_fields
+    # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id')
+    first_level_fields: list = settings.first_level_fields
+    first_casted: dict = {key: val for key, val in casted_fields.items() if key in first_level_fields}
+    # сложные поля ('country', 'category', 'region', 'pairing', 'varietal')
+    complex_fields = settings.complex_fields
+    language_key = settings.language_key
+    intl_fields = [val for val in international_fields if val not in first_level_fields]
+
+    # TESTS
+    for n, (key, value) in enumerate(read_json_by_keys(filepath)):
+        # проверка считывания записи из файла
+        root_dict = {}
+        drink_dict = {}
+        assert isinstance(value, dict), "неправльно считана запись из json файла"
+        source = deepcopy(value)
+        result = root_level(source, first_level_fields, casted_fields)
+        # проверка корневого уровня root_level
+        assert tuple(result.keys()) == tuple(first_level_fields), \
+            'несоотвествие добавленных корневых полей и неоходимых'
+        # проверка формата полей корневого уровня
+        for key, val in first_casted.items():
+            if val == 'float':
+                assert isinstance(result.get(key), float), \
+                    f'неверный тип данных: {key} {result.get(key)} вместо {val}'
+            elif val == 'int':
+                assert isinstance(result.get(key), int), \
+                    f'неверный тип данных: {key} {result.get(key)} вместо {val}'
+        root_dict.update(result)
+        # добавление простых не языковых полей
+        result = drink_level_intl(source, intl_fields)
+        assert list(result.keys()) == intl_fields
+        drink_dict.update(result)
+        # 2. exclude complex field from source:
+        complex_dict: dict = exctract_complex_fields(source, complex_fields,
+                                                     first_level_fields, language_key)
+        jprint(complex_dict)
+        print('--------------------')
+        print(source)
+        assert False
+        if n > 5:
+            break
+
 
 
 def test_dict_compair():

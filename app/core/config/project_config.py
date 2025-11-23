@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 from typing import List
 from app.core.utils.common_utils import get_path_to_root
-from app.core.utils.common_utils import strtolist
+from app.core.utils.common_utils import strtolist, strtodict
 
 
 class Settings(BaseSettings):
@@ -122,9 +122,41 @@ class Settings(BaseSettings):
     # ДЛИНА РАНДОМНОГО ИМЕНИ ФАЙЛА. чем короче, тем быстрее поиск по имени файла / чем по _id
     LENGTH_RANDOM_NAME: int = 12
 
+    # === настройки импорта json в базу данных
+    IGNORED_FLDS: str = 'index, isHidden, uid, imageTimestamp'
+    INTL_FLDS: str = 'vol, alc, count'
+    CASTED_FLDS: str = 'vol: float, count: int, alc: float'
+    FIRST_LEVEL_FLDS: str = 'vol, count, image_path, image_id'
+    COMPLEX_FLDS: str = 'country, category, region, pairing, varietal'
+    LANGUAGE_KEY: str = 'english: en, russian: ru'
+
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
+
+    @property
+    def language_key(self) -> dict:
+        return strtodict(self.LANGUAGE_KEY)
+
+    @property
+    def first_level_fields(self) -> list:
+        return strtolist(self.FIRST_LEVEL_FLDS)
+
+    @property
+    def complex_fields(self) -> list:
+        return strtolist(self.COMPLEX_FLDS)
+
+    @property
+    def ignored_fields(self) -> list:
+        return strtolist(self.IGNORED_FLDS)
+
+    @property
+    def international_fields(self) -> list:
+        return strtolist(self.INTL_FLDS)
+
+    @property
+    def casted_fields(self) -> dict:
+        return strtodict(self.CASTED_FLDS)
 
     @property
     def DETAIL_VIEW(self) -> list:
