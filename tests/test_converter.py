@@ -3,7 +3,7 @@ from app.core.utils.converters import convert_dict1_to_dict2  # , convert_dict2_
 from app.core.utils.converters import (convert_custom, batch_convert_data, root_level,
                                        string_to_float, string_to_int, read_json_by_keys,
                                        drink_level, field_cast, split_outside_parentheses,
-                                       get_subregion)
+                                       get_subregion, get_subcategory)
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from pydantic import BaseModel, ValidationError, field_validator
 from app.core.utils.common_utils import jprint
@@ -26,14 +26,24 @@ class Country(BaseModel):
 
 
 class Region(BaseModel):
-    name: Optional[str]
-    name_ru: Optional[str]
+    name: Optional[str] = None
+    name_ru: Optional[str] = None
     country: Country
 
 class Subregion(BaseModel):
-    name: Optional[str]
-    name_ru: Optional[str]
+    name: Optional[str] = None
+    name_ru: Optional[str] = None
     region: Region
+
+
+class Category(BaseModel):
+    name: str
+
+
+class Subcategory(BaseModel):
+    name: Optional[str] = None
+    name_ru: Optional[str] = None
+    category: Category
 
 
 def test_str_to_float():
@@ -78,10 +88,10 @@ def test_get_filepath_from_dir_by_name():
 
 def test_split_outside_parentheses():
     delim = settings.RE_DELIMITER
-    test_data = ['Calabria, Villa K',
+    test_data = ['Calabria, Villa K.',
                  'Calabria',
-                 'Calabria(Seven, Tree ), Palau',
-                 'Palau, Calabria(Seven, Tree)'
+                 'Calabria(Seven, Tree ), Palau:',
+                 'Palau, Calabria(Seven, Tree).'
                  ]
     expected = [['Calabria', 'Villa K'],
                 ['Calabria', None],
@@ -111,7 +121,7 @@ def test_read_json_file():
     language_key = settings.language_key
     intl_fields = [val for val in international_fields if val not in first_level_fields]
     delim = settings.RE_DELIMITER
-    
+
     # TESTS
     for n, (key, value) in enumerate(read_json_by_keys(filepath)):
         # проверка считывания записи из файла
@@ -139,6 +149,7 @@ def test_read_json_file():
         # проверка уровня drink
         result = drink_level(source, casted_fields, language_key)
         drink_dict = result
+        # проверка get_subregion
         x = get_subregion(drink_dict, language_key, delim)
         assert x, 'функция get_subregion провалилась'
         assert drink_dict.get('country') is None, 'ключ country не удалился'
@@ -158,16 +169,36 @@ def test_read_json_file():
                     print(f"  Некорректное значение (input_value): {error['input_value']}")
                 print("-" * 20)
             assert False, 'ошибка в методе: get_subregion'
+
+        # проверка get_subcategory
+        x = get_subcategory(drink_dict, language_key, delim)
+        assert x, 'функция get_subcategory провалилась'
+        assert drink_dict.get('category') is None, 'ключ category не удалился'
+        assert drink_dict.get('type') is None, 'ключ type не удалился'
+        assert drink_dict.get('type_ru') is None, 'ключ type_ru не удалился'
+        try:
+            result = drink_dict.get('subcategory')
+            _ = Subcategory(**result)
+        except ValidationError as exc:
+            jprint(result)
+            for error in exc.errors():
+                print(f"  Место ошибки (loc): {error['loc']}")
+                print(f"  Сообщение (msg): {error['msg']}")
+                print(f"  Тип ошибки (type): {error['type']}")
+                # input_value обычно присутствует в словаре ошибки
+                if 'input_value' in error:
+                    print(f"  Некорректное значение (input_value): {error['input_value']}")
+                print("-" * 20)
+            assert False, 'ошибка в методе: get_subcategory'
         # ====================
         jprint(root_dict)
         print('========')
         for key, val in drink_dict.items():
             print(f'{key}:  {val}')
         # ===================
-        assert False
-        if n > 5:
-            break
-
+        # assert False
+        # if n > 5:
+        #     break
 
 
 def test_dict_compair():

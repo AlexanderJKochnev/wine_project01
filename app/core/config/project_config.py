@@ -129,8 +129,9 @@ class Settings(BaseSettings):
     FIRST_LEVEL_FLDS: str = 'vol, count, image_path, image_id'
     COMPLEX_FLDS: str = 'country, category, region, pairing, varietal'
     LANGUAGE_KEY: str = 'english: en, russian: ru'
-    RE_DELIMITER: str = '[.,]'
-
+    RE_DELIMITER: str = '.,;:'
+    WINE_CATEGORY: str = 'red, white, rose, sparkling'
+    
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
@@ -142,6 +143,10 @@ class Settings(BaseSettings):
     @property
     def first_level_fields(self) -> list:
         return strtolist(self.FIRST_LEVEL_FLDS)
+
+    @property
+    def wine_category(self) -> list:
+        return strtolist(self.WINE_CATEGORY)
 
     @property
     def complex_fields(self) -> list:

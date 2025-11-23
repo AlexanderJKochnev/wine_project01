@@ -94,27 +94,66 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
     item_dict.update(root_level(source, first_level_fields, casted_fields))
     # 1. make drink level with simple fields
     drink_dict.update(drink_level(source, casted_fields, language_key))
-    # 2.country->region->subregion
+    # 2. country->region->subregion
+    get_subregion(drink_dict, language_key, delim)
+    # 3. subcategory->category
+    get_subcategory(drink_dict, language_key, delim)
     return item_dict
 
 
-def get_subregion(drink_dict: dict, language_key: str,
-                  delim: str) -> dict:
-    """
+def get_pairing(drink_dict: dict, language_key: str,
+                delim: str) -> bool:
+    try:
+        foods = dict_pop(drink_dict, 'pairing')
+        if foods:
+        
+    except Exception as e:
+        print(f'get_pairing.error: {e}')
 
+
+def get_subregion(drink_dict: dict, language_key: str,
+                  delim: str) -> bool:
+    """
+        формируем subregion->region->country
     """
     try:
-        subregion = {"region": {"country": {"name": dict_pop(drink_dict, 'country')}}}
+        country = dict_pop(drink_dict, 'country')
+        subregion = {"region": {"country": {"name": country.capitalize() if country else country}}}
         for lang in language_key.values():
             tmp = dict_pop(drink_dict, f'region{lang}')
             region, sub = split_outside_parentheses(tmp, delim)
-            subregion[f'name{lang}'] = sub
-            subregion['region'][f'name{lang}'] = region
+            subregion[f'name{lang}'] = sub.capitalize() if sub else None
+            subregion['region'][f'name{lang}'] = region.capitalize() if region else None
         drink_dict['subregion'] = subregion
-        print(4)
         return True
     except Exception as e:
         print(f'get_subregion.error: {e}')
+
+
+def get_subcategory(drink_dict: dict, language_key: str,
+                    delim: str) -> bool:
+    """
+    формируем subcategory->category
+    """
+    try:
+        wine_category = settings.wine_category
+        print(f'{wine_category=}')
+        category = dict_pop(drink_dict, 'category')
+        if category in wine_category:
+            subcat, category = category.capitalize(), 'Wine'
+            subcategory = {"name": subcat, "category": {"name": category}}
+        else:
+            subcategory = {"category": {"name": category}}
+            for lang in language_key.values():
+                tmp = dict_pop(drink_dict, f'type{lang}')
+                subcat = tmp.capitalize() if tmp else None
+                subcategory[f'name{lang}'] = subcat
+        drink_dict['subcategory'] = subcategory
+        return True
+
+    except Exception as e:
+        print(f'get_category.error: {e}')
+        return False
 
 
 def split_outside_parentheses(text: str, separators=',.:;') -> List:
@@ -126,7 +165,7 @@ def split_outside_parentheses(text: str, separators=',.:;') -> List:
     (без изменений, но с удалёнными пробелами по краям) + None.
     """
     if not text:
-        return [text]
+        return [None, None]
 
     depth = 0  # уровень вложенности скобок
     for i, char in enumerate(text):
@@ -139,8 +178,8 @@ def split_outside_parentheses(text: str, separators=',.:;') -> List:
                 depth = 0
         elif depth == 0 and char in separators:
             # Найден разделитель вне скобок
-            left = text[:i].strip()
-            right = text[i + 1:].strip()
+            left = text[:i].strip(f' {separators}:')
+            right = text[i + 1:].strip(f' {separators}:')
             return [left, right]
 
     # Разделителей вне скобок не найдено
