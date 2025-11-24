@@ -21,6 +21,9 @@ pymongo==4.6.0
 python-dateutil
 # для считывания больших json кусками
 ijson
+# morphology
+pymorphy2
+pymorphy2-dicts-ru
 # for testing purpose only
 Faker
 itsdangerous>=2.1.0

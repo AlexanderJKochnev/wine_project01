@@ -130,8 +130,9 @@ class Settings(BaseSettings):
     COMPLEX_FLDS: str = 'country, category, region, pairing, varietal'
     LANGUAGE_KEY: str = 'english: en, russian: ru'
     RE_DELIMITER: str = '.,;:'
+    EXT_DELIMITER: str = 'and, or, или, и'
     WINE_CATEGORY: str = 'red, white, rose, sparkling'
-    
+
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
@@ -139,6 +140,10 @@ class Settings(BaseSettings):
     @property
     def language_key(self) -> dict:
         return strtodict(self.LANGUAGE_KEY)
+
+    @property
+    def ext_delimiter(self) -> list:
+        return strtolist(self.EXT_DELIMITER)
 
     @property
     def first_level_fields(self) -> list:

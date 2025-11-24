@@ -1,16 +1,16 @@
-from typing import Optional
-from app.core.utils.converters import convert_dict1_to_dict2  # , convert_dict2_to_dict1
-from app.core.utils.converters import (convert_custom, batch_convert_data, root_level,
-                                       string_to_float, string_to_int, read_json_by_keys,
-                                       drink_level, field_cast, split_outside_parentheses,
-                                       get_subregion, get_subcategory)
-from app.core.utils.io_utils import get_filepath_from_dir_by_name
-from pydantic import BaseModel, ValidationError, field_validator
-from app.core.utils.common_utils import jprint
-from app.support.item.schemas import ItemCreateRelation, DrinkCreateRelation  # noqa: F401
-from app.core.config.project_config import settings
 from copy import deepcopy
+from typing import Optional
 
+from pydantic import BaseModel, ValidationError
+
+from app.core.config.project_config import settings
+from app.core.utils.common_utils import jprint
+from app.core.utils.converters import (drink_level, field_cast, get_subcategory, get_subregion,
+                                       read_json_by_keys, get_pairing,
+                                       root_level, split_outside_parentheses, string_to_float,
+                                       string_to_int, split_outside_parentheses_multi)
+from app.core.utils.io_utils import get_filepath_from_dir_by_name
+from app.support.item.schemas import DrinkCreateRelation, ItemCreateRelation  # noqa: F401
 
 filename = 'data.json'
 
@@ -30,6 +30,7 @@ class Region(BaseModel):
     name_ru: Optional[str] = None
     country: Country
 
+
 class Subregion(BaseModel):
     name: Optional[str] = None
     name_ru: Optional[str] = None
@@ -44,6 +45,17 @@ class Subcategory(BaseModel):
     name: Optional[str] = None
     name_ru: Optional[str] = None
     category: Category
+
+
+class Superfoods(BaseModel):
+    name: str
+    name_ru: Optional[str] = None
+
+
+class Foods(BaseModel):
+    name: str
+    name_ru: Optional[str] = None
+    superfood: Superfoods
 
 
 def test_str_to_float():
@@ -91,16 +103,39 @@ def test_split_outside_parentheses():
     test_data = ['Calabria, Villa K.',
                  'Calabria',
                  'Calabria(Seven, Tree ), Palau:',
-                 'Palau, Calabria(Seven, Tree).'
+                 'Palau, Calabria(Seven, Tree).',
+                 'Game(venison), Lamb.'
                  ]
     expected = [['Calabria', 'Villa K'],
                 ['Calabria', None],
                 ['Calabria(Seven, Tree )', 'Palau'],
-                ['Palau', 'Calabria(Seven, Tree)']
+                ['Palau', 'Calabria(Seven, Tree)'],
+                ['Game(venison)', 'Lamb']
                 ]
     for n, item in enumerate(test_data):
         result = split_outside_parentheses(item, delim)
         assert result == expected[n]
+
+
+def test_split_outside_parentheses_multi():
+    test_data = ['Calabria, Villa K.',
+                 'Calabria',
+                 'Calabria(Seven, Tree ), Palau',
+                 'Palau, Calabria(Seven, Tree).',
+                 'Game(venison), Lamb.',
+                 'Game(venison) and Lamb.'
+                 ]
+    expected = [['Calabria', 'Villa K'],
+                ['Calabria'],
+                ['Calabria(Seven, Tree )', 'Palau'],
+                ['Palau', 'Calabria(Seven, Tree)'],
+                ['Game(venison)', 'Lamb'],
+                ['Game(venison)', 'Lamb']
+                ]
+    for n, item in enumerate(test_data):
+        result = split_outside_parentheses_multi(item)
+        assert result == expected[n], item
+
 
 
 def test_read_json_file():
@@ -115,26 +150,26 @@ def test_read_json_file():
     casted_fields: dict = settings.casted_fields
     # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id')
     first_level_fields: list = settings.first_level_fields
-    first_casted: dict = {key: val for key, val in casted_fields.items() if key in first_level_fields}
+    # first_casted: dict = {key: val for key, val in casted_fields.items() if key in first_level_fields}
     # сложные поля ('country', 'category', 'region', 'pairing', 'varietal')
-    complex_fields = settings.complex_fields
+    # complex_fields = settings.complex_fields
     language_key = settings.language_key
-    intl_fields = [val for val in international_fields if val not in first_level_fields]
+    # intl_fields = [val for val in international_fields if val not in first_level_fields]
     delim = settings.RE_DELIMITER
 
     # TESTS
     for n, (key, value) in enumerate(read_json_by_keys(filepath)):
         # проверка считывания записи из файла
-        root_dict = {}
-        drink_dict = {}
+        root_dict: dict = {}
+        drink_dict: dict = {}
         assert isinstance(value, dict), "неправльно считана запись из json файла"
         # копирование словаря
         source = deepcopy(value)
-        result = root_level(source, first_level_fields, casted_fields)
+        result: dict = root_level(source, first_level_fields, casted_fields)
         # проверка корневого уровня root_level
         try:
             _ = Item1(**result)
-            root_dict = result
+            root_dict: dict = result
         except ValidationError as exc:
             jprint(result)
             for error in exc.errors():
@@ -147,8 +182,8 @@ def test_read_json_file():
                 print("-" * 20)
             assert False, 'ошибка в методе: root_level'
         # проверка уровня drink
-        result = drink_level(source, casted_fields, language_key)
-        drink_dict = result
+        result: dict = drink_level(source, casted_fields, language_key)
+        drink_dict: dict = result
         # проверка get_subregion
         x = get_subregion(drink_dict, language_key, delim)
         assert x, 'функция get_subregion провалилась'
@@ -190,131 +225,38 @@ def test_read_json_file():
                     print(f"  Некорректное значение (input_value): {error['input_value']}")
                 print("-" * 20)
             assert False, 'ошибка в методе: get_subcategory'
-        # ====================
-        jprint(root_dict)
-        print('========')
-        for key, val in drink_dict.items():
-            print(f'{key}:  {val}')
-        # ===================
+
+        # проверка get_pairing
+        try:
+            # pairing = drink_dict.get('pairing')
+            # if pairing:     # pairing is available in data
+            x = get_pairing(drink_dict, language_key, delim)
+            if not x:
+                raise Exception('функция get_pairing провалилась')
+            result: list = drink_dict.get('foods')
+            if result:
+                for item in result:
+                    _ = Foods(**item)
+        except ValidationError as exc:
+            jprint(result)
+            for error in exc.errors():
+                print(f"  Место ошибки (loc): {error['loc']}")
+                print(f"  Сообщение (msg): {error['msg']}")
+                print(f"  Тип ошибки (type): {error['type']}")
+                # input_value обычно присутствует в словаре ошибки
+                if 'input_value' in error:
+                    print(f"  Некорректное значение (input_value): {error['input_value']}")
+                print("-" * 20)
+            assert False, 'ошибка валидации в методе: get_pairing'
+        except Exception as e:
+            # ====================
+            jprint(root_dict)
+            print('========')
+            for key, val in drink_dict.items():
+                print(f'{key}:  {val}')
+            # ===================
+            assert False, f'ошибка в методе: get_pairing: {e}'
         # assert False
         # if n > 5:
         #     break
 
-
-def test_dict_compair():
-    dict1 = {
-        "-Lymluc5yKRoLQyYLbJG": {
-            "count": 0,
-            "vol": 0.75,
-            "drink": {
-                "alc": 13.5,
-                "description": "Intense, concentrated and deep ruby-colored, this wine offers elegant, complex aromas of red fruits. In the mouth it is rich and dense, but harmonious, with sweet, balanced tannins. \nThe wine has a long finish with a depth and structure that ensure its extraordinary longevity.",
-                "foods": [
-                    {
-                        "name": "Game (venison, birds)",
-                        "name_ru": "с дичью"
-                    },
-                    {
-                        "name": "Lamb.",
-                        "name_ru": "бараниной."
-                    }
-                ],
-                "subregion": {
-                    "name": "Bolgheri",
-                    "name_ru": "Болгери",
-                    "region": {
-                        "name": "Tuscany",
-                        "name_ru": "Тоскана",
-                        "country": {
-                            "name": "Italy",
-                            "name_ru": None
-                        }
-                    }
-                },
-                "subtitle": "Tenuta San Guido",
-                "title": "Bolgheri Sassicaia 2014 DOC",
-                "varietals": [
-                    {
-                        "varietal": {
-                            "name": "Cabernet Sauvignon 8",
-                            "name_ru": "8"
-                        },
-                        "percentage": 5.0
-                    },
-                    {
-                        "varietal": {
-                            "name": "Cabernet Franc 1",
-                            "name_ru": "1"
-                        },
-                        "percentage": 5.0
-                    }
-                ],
-                "description_ru": "Насыщенное, полнотелое вино, глубокого рубинового оттенка предлагает элегантные, сложные ароматы красных фруктов. Вино имеет богатый и плотный, но гармоничный вкус, со сладкими, сбалансированными танинами. \nОбладает послевкусием с глубиной и структурой, обеспечивающей его необычайную продолжительность.",
-                "subtitle_ru": "Тенута Сан Гвидо",
-                "title_ru": "Болгери Сассициана 2014 DOC",
-                "vol_ru": "0.75 l"
-            }
-        }
-    }
-    dict2 = {
-        "-Lymluc5yKRoLQyYLbJG": {
-            "vol": 0.75,
-            "drink": {
-                "alc": 13.5,
-                "description": "Intense, concentrated and deep ruby-colored, this wine offers elegant, complex aromas of red fruits. In the mouth it is rich and dense, but harmonious, with sweet, balanced tannins. The wine has a long finish with a depth and structure that ensure its extraordinary longevity.",
-                "subtitle": "Tenuta San Guido",
-                "title": "Bolgheri Sassicaia 2014 DOC",
-                "description_ru": "Насыщенное, полнотелое вино, глубокого рубинового оттенка предлагает элегантные, сложные ароматы красных фруктов. Вино имеет богатый и плотный, но гармоничный вкус, со сладкими, сбалансированными танинами. Обладает послевкусием с глубиной и структурой, обеспечивающей его необычайную продолжительность.",
-                "subtitle_ru": "Тенута Сан Гвидо",
-                "title_ru": "Болгери Сассициана 2014 DOC",
-                "subregion": {
-                    "name": "Bolgheri",
-                    "name_ru": "Болгери",
-                    "region": {
-                        "name": "Tuscany",
-                        "name_ru": "Тоскана",
-                        "country": {
-                            "name": "Italy",
-                            "name_ru": None
-                        }
-                    }
-                },
-                "subcategory": {
-                    "name": "Red",
-                    "name_ru": None,
-                    "category": {
-                        "name": "Wine",
-                        "name_ru": None
-                    }
-                },
-                "foods": [
-                    {
-                        "name": "Game (venison, birds)",
-                        "name_ru": "С дичью"
-                    },
-                    {
-                        "name": "Lamb",
-                        "name_ru": "Бараниной"
-                    }
-                ],
-                "varietals": [
-                    {
-                        "varietal": {
-                            "name": "Cabernet Sauvignon",
-                            "name_ru": "Каберне Совиньон"
-                        },
-                        "percentage": 85.0
-                    },
-                    {
-                        "varietal": {
-                            "name": "Cabernet Franc",
-                            "name_ru": "Каберне Фран"
-                        },
-                        "percentage": 15.0
-                    }
-                ]
-            },
-            "count": 0,
-            "image_path": "-Lymluc5yKRoLQyYLbJG.png"
-        }}
-    assert dict1 == dict2
