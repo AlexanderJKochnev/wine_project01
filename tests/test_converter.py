@@ -2,15 +2,15 @@ from copy import deepcopy
 from typing import Optional
 
 from pydantic import BaseModel, ValidationError
-
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint
 from app.core.utils.converters import (drink_level, field_cast, get_subcategory, get_subregion,
                                        read_json_by_keys, get_pairing, parse_grapes, convert_varietals,
                                        root_level, split_outside_parentheses, string_to_float,
+                                       remove_redundant, convert_custom,
                                        get_varietal, string_to_int, split_outside_parentheses_multi)
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
-from app.support.item.schemas import DrinkCreateRelation, ItemCreateRelation  # noqa: F401
+from app.support.item.schemas import DrinkCreateRelation, ItemCreateRelation
 
 filename = 'data.json'
 
@@ -205,19 +205,11 @@ def test_read_json_file():
     """ чтение файла с данными """
     filepath = get_filepath_from_dir_by_name(filename)
     #   НАСТРОЙКИ
-    # Определяем поля, которые нужно игнорировать ('index', 'isHidden', 'uid', 'imageTimestamp')
-    ignored_fields: list = settings.ignored_fields
-    # Интернацинальные поля ('vol', 'alc', 'count')
-    international_fields = settings.international_fields
     # Конвертируемые поля (остальные поля имеют исходный формат){'vol': 'float', 'count': 'int', 'alc': 'float'}
     casted_fields: dict = settings.casted_fields
-    # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id')
+    # Поля верхнего уровня ('vol', 'count', 'image_path', 'image_id' остальные поля в drink
     first_level_fields: list = settings.first_level_fields
-    # first_casted: dict = {key: val for key, val in casted_fields.items() if key in first_level_fields}
-    # сложные поля ('country', 'category', 'region', 'pairing', 'varietal')
-    # complex_fields = settings.complex_fields
     language_key = settings.language_key
-    # intl_fields = [val for val in international_fields if val not in first_level_fields]
     delim = settings.RE_DELIMITER
 
     # TESTS
@@ -229,7 +221,7 @@ def test_read_json_file():
         # копирование словаря
         source = deepcopy(value)
         result: dict = root_level(source, first_level_fields, casted_fields)
-        # проверка корневого уровня root_level
+        # 0. проверка корневого уровня root_level
         try:
             _ = Item1(**result)
             root_dict: dict = result
@@ -244,10 +236,10 @@ def test_read_json_file():
                     print(f"  Некорректное значение (input_value): {error['input_value']}")
                 print("-" * 20)
             assert False, 'ошибка в методе: root_level'
-        # проверка уровня drink
+        # 1. проверка уровня drink
         result: dict = drink_level(source, casted_fields, language_key)
         drink_dict: dict = result
-        # проверка get_subregion
+        # 2. проверка get_subregion
         x = get_subregion(drink_dict, language_key, delim)
         assert x, 'функция get_subregion провалилась'
         assert drink_dict.get('country') is None, 'ключ country не удалился'
@@ -268,7 +260,7 @@ def test_read_json_file():
                 print("-" * 20)
             assert False, 'ошибка в методе: get_subregion'
 
-        # проверка get_subcategory
+        # 3. проверка get_subcategory
         x = get_subcategory(drink_dict, language_key, delim)
         assert x, 'функция get_subcategory провалилась'
         assert drink_dict.get('category') is None, 'ключ category не удалился'
@@ -289,7 +281,7 @@ def test_read_json_file():
                 print("-" * 20)
             assert False, 'ошибка в методе: get_subcategory'
 
-        # проверка get_pairing
+        # 4. проверка get_pairing
         try:
             x = get_pairing(drink_dict, language_key, delim)
             if not x:
@@ -310,15 +302,13 @@ def test_read_json_file():
                 print("-" * 20)
             assert False, 'ошибка валидации в методе: get_pairing'
         except Exception as e:
-            # ====================
             jprint(root_dict)
             print('========')
             for key, val in drink_dict.items():
                 print(f'{key}:  {val}')
             # ===================
             assert False, f'ошибка в методе: get_pairing: {e}'
-# ------
-        # проверка get_varietals
+        # 5. проверка get_varietals
         try:
             x = get_varietal(drink_dict, language_key)
             if not x:
@@ -339,14 +329,54 @@ def test_read_json_file():
                 print("-" * 20)
             assert False, 'ошибка валидации в методе: get_varietal'
         except Exception as e:
-            # ====================
             jprint(root_dict)
             print('========')
             for key, val in drink_dict.items():
                 print(f'{key}:  {val}')
-            # ===================
             assert False, f'ошибка в методе: get_pairing: {e}'
-        # assert False
-        # if n > 5:
-        #     break
+        # if '-LymvdWInXSaNmZ1Jx04' in root_dict.get('image_path'):
+        #     jprint(root_dict)
+        #     for key, val in drink_dict.items():
+        #         print(key, val)
+        #     assert False
+        # 6. remove redundant
+        redundant_fields = settings.redundant
+        result = remove_redundant(root_dict, redundant_fields)
+        assert result, 'ошибка метода remove_redundant'
+        # 7. DrinkCreateRelation Validation
+        try:
+            # 7. DrinkCreateRelation Validation
+            drink_dict = {key.lower(): val for key, val in drink_dict.items()}
+            drink = DrinkCreateRelation.model_validate(drink_dict)
+            drink_back = drink.model_dump(exclude_unset=True)
+            root_dict['drink'] = drink_back
+            root = ItemCreateRelation.model_validate(root_dict)
+            final_result = root.model_dump(exclude_unset=True)
+            assert final_result == root_dict
+            # raise Exception('just for look at datas')
+        except ValidationError as exc:
+            for error in exc.errors():
+                print(f"  Место ошибки (loc): {error['loc']}")
+                print(f"  Сообщение (msg): {error['msg']}")
+                print(f"  Тип ошибки (type): {error['type']}")
+                # input_value обычно присутствует в словаре ошибки
+                if 'input_value' in error:
+                    print(f"  Некорректное значение (input_value): {error['input_value']}")
+                print("-" * 20)
+            assert False, 'ошибка валидации в методе: get_varietal'
+        except Exception as e:
+            jprint(root_dict)
+            print('========')
+            for key, val in drink_dict.items():
+                print(f'{key}:  {val}')
+            assert False, f'ошибка в DrinkCreateRelation Validation: {e}'
+        result = convert_custom(value)
+        if result != final_result:
+            jprint(result)
+        assert result == final_result
 
+    # print(f'количество обработанных записей {n}')
+    # jprint(root_dict)
+    # for key, val in drink_dict.items():
+    #     print(key, val)
+    # assert False

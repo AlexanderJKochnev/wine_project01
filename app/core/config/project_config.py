@@ -132,10 +132,16 @@ class Settings(BaseSettings):
     RE_DELIMITER: str = '.,;:'
     EXT_DELIMITER: str = 'and, or, или, и'
     WINE_CATEGORY: str = 'red, white, rose, sparkling'
+    REDUNDANT_FIELDS: str = 'uid, imageTimestamp, index, isHidden'
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
+
+    @property
+    def redundant(self) -> list:
+        return strtolist(self.REDUNDANT_FIELDS)
+
 
     @property
     def language_key(self) -> dict:

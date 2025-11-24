@@ -4,9 +4,12 @@ from copy import deepcopy
 from typing import Any, Dict, List, Union
 from app.core.utils.morphology import to_nominative
 import ijson
+from pydantic import ValidationError
 
 from app.core.config.project_config import settings
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
+from app.support.item.schemas import ItemCreateRelation
+from app.support.drink.schemas import DrinkCreateRelation
 
 
 def detect_json_structure(filename):
@@ -74,16 +77,14 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
             assert item == back_item
     """
     source = deepcopy(dict1)
-    # Определяем поля, которые нужно игнорировать ('index', 'isHidden', 'imageTimestamp')
-    # ignored_fields: list = settings.ignored_fields
-    # Интернацинальные поля ('vol', 'alc', 'count')
-    # international_fields = settings.international_fields
+    # fields: madeof, recommendation, age
+    redundant_fields = settings.redundant
     # Конвертируемые поля (остальные поля имеют исходный формат){'vol': 'float', 'count': 'int', 'alc': 'float'}
     casted_fields: dict = settings.casted_fields
     # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id', 'uid')
     first_level_fields: list = settings.first_level_fields
     language_key: dict = settings.language_key  # {english: en, ...}
-    # delimiter1
+    # delimiter
     delim = settings.RE_DELIMITER
     # result dict root level
     item_dict: dict = {}
@@ -99,7 +100,41 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
     get_subcategory(drink_dict, language_key, delim)
     # 4. pairing -> foods
     get_pairing(drink_dict, language_key, delim)
-    return item_dict
+    # 5. varietals
+    get_varietal(drink_dict, language_key)
+    drink_dict = {key.lower(): val for key, val in drink_dict.items()}
+    # 6. remove redundant fields
+    remove_redundant(item_dict, redundant_fields)
+    # 7.1. ваkидация drink_dict
+    try:
+        # 7.1. валидация drink_dict
+        drink = DrinkCreateRelation.model_validate(drink_dict)
+        drink_validated = drink.model_dump(exclude_unset=True)
+        item_dict['drink'] = drink_validated
+        item = ItemCreateRelation.model_validate(item_dict)
+        return item.model_dump(exclude_unset=True)
+    except ValidationError as exc:
+        for error in exc.errors():
+            print(f"  Место ошибки (loc): {error['loc']}")
+            print(f"  Сообщение (msg): {error['msg']}")
+            print(f"  Тип ошибки (type): {error['type']}")
+            # input_value обычно присутствует в словаре ошибки
+            if 'input_value' in error:
+                print(f"  Некорректное значение (input_value): {error['input_value']}")
+            print("-" * 20)
+        assert False, 'ошибка валидации в методе: get_varietal'
+    except Exception as e:
+        print(f'convert_custom.error: {e}')
+
+
+def remove_redundant(root_dict: dict, redundant_fields: list):
+    try:
+        for key in redundant_fields:
+            _ = root_dict.pop(key, None)
+        return True
+    except Exception as e:
+        print(f'remove_redundant.error: {e}')
+        return False
 
 
 def get_varietal(drink_dict: dict, language_key: dict) -> bool:
@@ -565,5 +600,4 @@ def convert_varietals(data: dict) -> list[dict]:
             "varietal": varietal_entry,
             "percentage": percentage
         })
-
     return result
