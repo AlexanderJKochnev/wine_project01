@@ -6,9 +6,9 @@ from pydantic import BaseModel, ValidationError
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint
 from app.core.utils.converters import (drink_level, field_cast, get_subcategory, get_subregion,
-                                       read_json_by_keys, get_pairing,
+                                       read_json_by_keys, get_pairing, parse_grapes, convert_varietals,
                                        root_level, split_outside_parentheses, string_to_float,
-                                       string_to_int, split_outside_parentheses_multi)
+                                       get_varietal, string_to_int, split_outside_parentheses_multi)
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.support.item.schemas import DrinkCreateRelation, ItemCreateRelation  # noqa: F401
 
@@ -56,6 +56,16 @@ class Foods(BaseModel):
     name: str
     name_ru: Optional[str] = None
     superfood: Superfoods
+
+
+class Name(BaseModel):
+    name: str
+    name_ru: Optional[str] = None
+
+
+class Varietal(BaseModel):
+    percentage: int
+    varietal: Name
 
 
 def test_str_to_float():
@@ -136,6 +146,59 @@ def test_split_outside_parentheses_multi():
         result = split_outside_parentheses_multi(item)
         assert result == expected[n], item
 
+
+def test_parse_grapes():
+    datas = {"Pinot Noir 40-45%, Meunier 10-15%, Chardonnay 40%.":
+                 {"Pinot Noir": 42, "Meunier": 12, "Chardonnay": 40},
+             "Сabernet Sauvignon 91%, Merlot 6%, Petit Verdot 2%, Malbec 1%.":
+                 {"Сabernet Sauvignon": 91, "Merlot": 6, "Petit Verdot": 2, "Malbec": 1},
+             "\"каберне совиньон\" 91%, \"мерло\" 6%, \"пти вердо\" 2%, \"мальбек\" 1%.":
+                 {"Каберне Совиньон": 91, "Мерло": 6, "Пти Вердо": 2, "Мальбек": 1},
+             "Sauvignon Blanc 100%.": {"Sauvignon Blanc": 100},
+             "совиньон блан 100%.": {"Совиньон Блан": 100},
+             "Sangiovese Capannelle 50%, Merlot Avignonesi 50%.":
+                 {"Sangiovese Capannelle": 50, "Merlot Avignonesi": 50},
+             "\"санджовезе капаннелле\" 50%, \"мерло авигнонеси» 50%.":
+                 {"Санджовезе Капаннелле": 50, "Мерло Авигнонеси": 50},
+             "\"каберне совиньон\" 79%, \"мерло\" 10%, \"каберне фран\" 10%, \"пти вердо\" 1%.":
+                 {"Каберне Совиньон": 79, "Мерло": 10, "Каберне Фран": 10, "Пти Вердо": 1},
+             "\"мерло\" 70%, \"каберне совиньон\" 15%, \"каберне фран\" 15%.":
+                 {"Мерло": 70, "Каберне Совиньон": 15, "Каберне Фран": 15},
+             "Grenache, Senso, Shiraz (Syrah).":
+                 {"Grenache": 34, "Senso": 33, "Shiraz (Syrah)": 33},
+             "\"гренаш\", \"сенсо\", \"шираз\" (\"сира\").":
+                 {"Гренаш": 34, "Сенсо": 33, "Шираз (Сира)": 33}
+             }
+    for key, val in datas.items():
+        result = parse_grapes(key)
+        assert result == val, key
+
+
+def test_convert_varietals():
+    data = {"name": {"Сabernet Sauvignon": 91,
+                     "Merlot": 6,
+                     "Petit Verdot": 2,
+                     "Malbec": 1},
+            "name_ru": {"Каберне Совиньон": 91,
+                        "Мерло": 6,
+                        "Пти Вердо": 2,
+                        "Мальбек": 1}
+            }
+    expected = [{"varietal": {"name": "Сabernet Sauvignon",
+                              "name_ru": "Каберне Совиньон"},
+                 "percentage": 91},
+                {"varietal": {"name": "Merlot",
+                              "name_ru": "Мерло"},
+                 "percentage": 6},
+                {"varietal": {"name": "Petit Verdot",
+                              "name_ru": "Пти Вердо"},
+                 "percentage": 2},
+                {"varietal": {"name": "Malbec",
+                              "name_ru": "Мальбек"},
+                 "percentage": 1}
+                ]
+    result = convert_varietals(data)
+    assert result == expected
 
 
 def test_read_json_file():
@@ -228,8 +291,6 @@ def test_read_json_file():
 
         # проверка get_pairing
         try:
-            # pairing = drink_dict.get('pairing')
-            # if pairing:     # pairing is available in data
             x = get_pairing(drink_dict, language_key, delim)
             if not x:
                 raise Exception('функция get_pairing провалилась')
@@ -248,6 +309,35 @@ def test_read_json_file():
                     print(f"  Некорректное значение (input_value): {error['input_value']}")
                 print("-" * 20)
             assert False, 'ошибка валидации в методе: get_pairing'
+        except Exception as e:
+            # ====================
+            jprint(root_dict)
+            print('========')
+            for key, val in drink_dict.items():
+                print(f'{key}:  {val}')
+            # ===================
+            assert False, f'ошибка в методе: get_pairing: {e}'
+# ------
+        # проверка get_varietals
+        try:
+            x = get_varietal(drink_dict, language_key)
+            if not x:
+                raise Exception('функция get_varietal провалилась')
+            result: list = drink_dict.get('varietals')
+            if result:
+                for item in result:
+                    _ = Varietal(**item)
+        except ValidationError as exc:
+            jprint(result)
+            for error in exc.errors():
+                print(f"  Место ошибки (loc): {error['loc']}")
+                print(f"  Сообщение (msg): {error['msg']}")
+                print(f"  Тип ошибки (type): {error['type']}")
+                # input_value обычно присутствует в словаре ошибки
+                if 'input_value' in error:
+                    print(f"  Некорректное значение (input_value): {error['input_value']}")
+                print("-" * 20)
+            assert False, 'ошибка валидации в методе: get_varietal'
         except Exception as e:
             # ====================
             jprint(root_dict)

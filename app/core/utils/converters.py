@@ -75,9 +75,9 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
     """
     source = deepcopy(dict1)
     # Определяем поля, которые нужно игнорировать ('index', 'isHidden', 'imageTimestamp')
-    ignored_fields: list = settings.ignored_fields
+    # ignored_fields: list = settings.ignored_fields
     # Интернацинальные поля ('vol', 'alc', 'count')
-    international_fields = settings.international_fields
+    # international_fields = settings.international_fields
     # Конвертируемые поля (остальные поля имеют исходный формат){'vol': 'float', 'count': 'int', 'alc': 'float'}
     casted_fields: dict = settings.casted_fields
     # Поля верхнего уровня (остальные поля в drink ('vol', 'count', 'image_path', 'image_id', 'uid')
@@ -102,7 +102,36 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
     return item_dict
 
 
-def get_pairing(drink_dict: dict, language_key: str,
+def get_varietal(drink_dict: dict, language_key: dict) -> bool:
+    try:
+        tmp: dict = {}
+        for lang in language_key.values():
+            varietal = drink_dict.pop(f'varietal{lang}', None)
+            if not varietal:    # если нет varietal in data
+                return True
+            err = f'1: {varietal}'
+            varietal = parse_grapes(varietal)
+            err = f'2: {varietal}'
+            tmp[f'name{lang}'] = varietal
+        """
+            tmp = {"name": {"Pinot Noir": 42, "Meunier": 12, "Chardonnay": 40},
+                   "name_ru": {"Каберне Совиньон": 91, "Мерло": 6, "Пти Вердо": 2, "Мальбек": 1}
+            convert to:
+            varietals = [{"varietal": {"name": "Pinot Noir", "name_ru": "Пино Нуар"},
+                          "precentage": 42},
+                          ...
+                          ]
+        """
+        varietals = convert_varietals(tmp)
+        drink_dict['varietals'] = varietals
+        return True
+    except Exception as e:
+        print(f'get_varietal.error: {e}')
+        print(f'{err=}')
+        return False
+
+
+def get_pairing(drink_dict: dict, language_key: dict,
                 delim: str) -> bool:
     try:
         pair: dict = {}
@@ -142,7 +171,7 @@ def get_pairing(drink_dict: dict, language_key: str,
         return False
 
 
-def get_subregion(drink_dict: dict, language_key: str,
+def get_subregion(drink_dict: dict, language_key: dict,
                   delim: str) -> bool:
     """
         формируем subregion->region->country
@@ -161,7 +190,7 @@ def get_subregion(drink_dict: dict, language_key: str,
         print(f'get_subregion.error: {e}')
 
 
-def get_subcategory(drink_dict: dict, language_key: str,
+def get_subcategory(drink_dict: dict, language_key: dict,
                     delim: str) -> bool:
     """
     формируем subcategory->category
@@ -421,3 +450,120 @@ def split_outside_parentheses_multi(text: str, maxsplit: int = -1) -> list[str]:
         parts.append(last_part)
 
     return parts
+
+
+def parse_grapes(text: str) -> dict[str, int]:
+    if not text or not text.strip():
+        return {}
+
+    text = text.strip().rstrip('.')
+
+    # Разделяем на компоненты
+    parts = split_outside_parentheses_multi(text)
+
+    items = []
+    total_percent = 0
+    has_percent = False
+
+    for part in parts:
+        part_orig = part.strip()
+        if not part_orig:
+            continue
+
+        # === УДАЛЯЕМ КАВЫЧКИ ТОЛЬКО ПО КРАЯМ (до и после) ===
+        quote_chars = '"«»“”‘’'
+        part_clean = part_orig.strip(quote_chars + ' \t')
+
+        # Ищем процент в конце (даже если были кавычки)
+        # Паттерн: число, возможно диапазон, затем % в конце (с возможными пробелами)
+        percent_match = re.search(r'(\d+(?:\.\d+)?)(?:\s*-\s*(\d+(?:\.\d+)?))?%$', part_clean)
+        if percent_match:
+            has_percent = True
+            low = float(percent_match.group(1))
+            high = float(percent_match.group(2)) if percent_match.group(2) else low
+            percent = round((low + high) / 2)
+            name_raw = part_clean[:percent_match.start()].rstrip()
+            # Удаляем кавычки ещё раз, на случай, если они остались внутри
+            name = name_raw.strip(quote_chars + ' \t')
+            name = _normalize_grape_name(name)
+            items.append((name, percent))
+            total_percent += percent
+        else:
+            # Нет процента — сохраняем как есть (для равномерного деления)
+            name = part_clean.strip(quote_chars + ' \t')
+            name = _normalize_grape_name(name)
+            items.append((name, None))
+
+    # Обработка результатов
+    if has_percent:
+        return {name: p for name, p in items if p is not None}
+    else:
+        n = len(items)
+        if n == 0:
+            return {}
+        base = 100 // n
+        remainder = 100 % n
+        return {
+            name: base + (1 if i < remainder else 0)
+            for i, (name, _) in enumerate(items)
+        }
+
+
+def _normalize_grape_name(name: str) -> str:
+    if not name:
+        return name
+    # Убираем лишние пробелы
+    name = re.sub(r'\s+', ' ', name.strip())
+    # -----------
+    name = name.replace('"', '')
+    # -----------
+    words = []
+    for word in name.split():
+        if len(word) == 0:
+            continue
+        # Если слово — скобка целиком, обрабатываем содержимое
+        if word.startswith('(') and word.endswith(')') and len(word) > 2:
+            inner = word[1:-1]
+            inner_norm = ' '.join(w.capitalize() for w in inner.split())
+            words.append(f"({inner_norm})")
+        else:
+            words.append(word.capitalize())
+    return ' '.join(words)
+
+
+def convert_varietals(data: dict) -> list[dict]:
+    if not data or "name" not in data:
+        return []
+
+    name_dict = data["name"]
+    if not name_dict:
+        return []
+
+    # Получаем все языковые ключи
+    lang_keys = [k for k in data.keys() if isinstance(data[k], dict)]
+
+    # Преобразуем каждый словарь в список значений (названий), в порядке keys
+    name_items = list(name_dict.items())  # [(name_en, pct), ...]
+    lang_lists = {}
+    for lang in lang_keys:
+        lang_dict = data[lang]
+        lang_lists[lang] = list(lang_dict.keys())  # только названия (ключи)
+
+    result = []
+    n = len(name_items)
+
+    for i in range(n):
+        name_en, percentage = name_items[i]
+        varietal_entry = {}
+        for lang in lang_keys:
+            lang_names = lang_lists[lang]
+            if i < len(lang_names):
+                varietal_entry[lang] = lang_names[i]
+            else:
+                varietal_entry[lang] = None
+        result.append({
+            "varietal": varietal_entry,
+            "percentage": percentage
+        })
+
+    return result
