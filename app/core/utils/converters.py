@@ -40,33 +40,34 @@ def read_json_by_keys(filename: str):
     """
         парсит json файл по одному значению (экономия памяти)
     """
-    path = detect_json_structure(filename)
+    # получает путь к файлу
+    filepath = get_filepath_from_dir_by_name(filename)
+    # определяет на какой уровне находятся данныt: {data или {items:{data
+    path = detect_json_structure(filepath)
     if path is None:
         raise ValueError("Не удалось определить структуру JSON-файла")
 
-    with open(filename, 'rb') as file:
+    with open(filepath, 'rb') as file:
         # Итерируемся по парам (ключ, значение) на корневом уровне
-        for key, value in ijson.kvitems(file, path):
+        for n, (key, value) in enumerate(ijson.kvitems(file, path)):
             yield key, value
 
 
-def batch_convert_data(filename: str = 'data.json') -> Dict[str, Any]:
-    try:
-        # 1. получение пути к файлу с данными
-        filepath = get_filepath_from_dir_by_name(filename)
-        # 2. чтение json файла и преобразование его в dict
-        # dict1 = readJson(filepath)
-        # 3. основной цикл
-        # 3.1. проверяем где находятся записи
-        m = 0
-        for n, (key, value) in enumerate(read_json_by_keys(filepath)):
-            if isinstance(value, dict):
-                convert_custom(value)
-                m += 1
-        print(f'обработано {m} записей')
-    except Exception as e:
-        # перехватит в fastapi
-        raise Exception(e)
+def read_convert_json(filename: str = 'data.json'):
+    """
+        парсит json файл по одному значению (экономия памяти)
+    """
+    # получает путь к файлу
+    filepath = get_filepath_from_dir_by_name(filename)
+    # определяет на какой уровне находятся данныt: {data или {items:{data
+    path = detect_json_structure(filepath)
+    if path is None:
+        raise ValueError("Не удалось определить структуру JSON-файла")
+
+    with open(filepath, 'rb') as file:
+        # Итерируемся по парам (ключ, значение) на корневом уровне
+        for n, (key, value) in enumerate(ijson.kvitems(file, path)):
+            yield n, convert_custom(value)
 
 
 def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:

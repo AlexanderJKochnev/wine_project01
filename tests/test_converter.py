@@ -7,7 +7,7 @@ from app.core.utils.common_utils import jprint
 from app.core.utils.converters import (drink_level, field_cast, get_subcategory, get_subregion,
                                        read_json_by_keys, get_pairing, parse_grapes, convert_varietals,
                                        root_level, split_outside_parentheses, string_to_float,
-                                       remove_redundant, convert_custom,
+                                       remove_redundant, convert_custom, read_convert_json,
                                        get_varietal, string_to_int, split_outside_parentheses_multi)
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.support.item.schemas import DrinkCreateRelation, ItemCreateRelation
@@ -334,11 +334,13 @@ def test_read_json_file():
             for key, val in drink_dict.items():
                 print(f'{key}:  {val}')
             assert False, f'ошибка в методе: get_pairing: {e}'
-        # if '-LymvdWInXSaNmZ1Jx04' in root_dict.get('image_path'):
-        #     jprint(root_dict)
-        #     for key, val in drink_dict.items():
-        #         print(key, val)
-        #     assert False
+        """
+        if '-LymvdWInXSaNmZ1Jx04' in root_dict.get('image_path'):
+            jprint(root_dict)
+            for key, val in drink_dict.items():
+                print(key, val)
+            assert False
+        """
         # 6. remove redundant
         redundant_fields = settings.redundant
         result = remove_redundant(root_dict, redundant_fields)
@@ -380,3 +382,15 @@ def test_read_json_file():
     # for key, val in drink_dict.items():
     #     print(key, val)
     # assert False
+
+
+def test_read_convert_json():
+    """
+        тестирование функции read_convert_json
+        считывание по элементно и декодирование файла json
+    """
+    # filename: str = 'data.json'
+    for n, result in read_convert_json(filename):
+        result_validated = ItemCreateRelation.validate(result)
+        back_dict = result_validated.model_dump(exclude_unset=True)
+        assert result == back_dict, f"вол-во записей {n}"

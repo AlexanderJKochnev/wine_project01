@@ -20,6 +20,6 @@ class SubcategoryService(Service):
         if data.category:
             result, _ = await CategoryService.get_or_create(data.category, CategoryRepository, Category, session)
             category_data['category_id'] = result.id
-        region = SubcategoryCreate(**category_data)
-        result, _ = await cls.get_or_create(region, SubcategoryRepository, Subcategory, session)
+        subcategory = SubcategoryCreate(**category_data)
+        result, _ = await cls.get_or_create(subcategory, SubcategoryRepository, Subcategory, session)
         return result

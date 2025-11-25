@@ -67,6 +67,7 @@ class Service(metaclass=ServiceMeta):
                 default = cls.default
             data_dict = data.model_dump(exclude_unset=True)
             default_dict = {key: val for key, val in data_dict.items() if key in default}
+            # ошибка НУЖЕН ПОИСК ПО УНИКАЛЬНЫМ И СВЯЗАННЫМ ПОЛЯМ
             # поиск существующей записи по совпадению объектов по уникальным полям
             instance = await repository.get_by_fields(default_dict, model, session)
             if instance:
