@@ -24,6 +24,7 @@ ijson
 # morphology
 pymorphy2
 pymorphy2-dicts-ru
+deepdiff
 # for testing purpose only
 Faker
 itsdangerous>=2.1.0

@@ -126,6 +126,8 @@ class BaseRouter:
         try:
             # obj = await self.service.create(data, self.model, session)
             obj = await self.service.create_relation(data, self.repo, self.model, session)
+            if isinstance(obj, tuple):
+                obj, _ = obj
             return await self.service.get_by_id(obj.id, self.repo, self.model, session)
         except Exception as e:
             await session.rollback()

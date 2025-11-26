@@ -335,7 +335,7 @@ def test_read_json_file():
                 print(f'{key}:  {val}')
             assert False, f'ошибка в методе: get_pairing: {e}'
         """
-        if '-LymvdWInXSaNmZ1Jx04' in root_dict.get('image_path'):
+        if '-OZiztaGkD89NqkzxZIZ' in root_dict.get('image_path'):
             jprint(root_dict)
             for key, val in drink_dict.items():
                 print(key, val)
@@ -377,12 +377,6 @@ def test_read_json_file():
             jprint(result)
         assert result == final_result
 
-    # print(f'количество обработанных записей {n}')
-    # jprint(root_dict)
-    # for key, val in drink_dict.items():
-    #     print(key, val)
-    # assert False
-
 
 def test_read_convert_json():
     """
@@ -393,4 +387,34 @@ def test_read_convert_json():
     for n, result in read_convert_json(filename):
         result_validated = ItemCreateRelation.validate(result)
         back_dict = result_validated.model_dump(exclude_unset=True)
-        assert result == back_dict, f"вол-во записей {n}"
+        assert result == back_dict, f"кол-во записей {n}"
+
+
+async def test_direct_upload(authenticated_client_with_db, test_db_session):
+    """
+        тестируем получение списка изображений,
+        считывание по элементно и декодирование файла json
+        добавление id изображения, валидация
+    """
+    # from app.mongodb.service import ImageService
+    # image_service = ImageService()
+    # image_list = await image_service.get_images_list_after_date()
+    # assert isinstance(image_list, list), type(image_list)
+    from app.support.item.schemas import FileUpload
+    client = authenticated_client_with_db
+    prefix = 'items/direct'
+    data = {'filename': 'data.json'}
+    try:
+        _ = FileUpload.validate(data)
+    except ValidationError as exc:
+        for error in exc.errors():
+            print(f"  Место ошибки (loc): {error['loc']}")
+            print(f"  Сообщение (msg): {error['msg']}")
+            print(f"  Тип ошибки (type): {error['type']}")
+            # input_value обычно присутствует в словаре ошибки
+            if 'input_value' in error:
+                print(f"  Некорректное значение (input_value): {error['input_value']}")
+            print("-" * 20)
+        assert False, 'ошибка валидации в методе: get_varietal'
+    result = await client.post(prefix, json=data)
+    assert result.status_code == 200, result.text

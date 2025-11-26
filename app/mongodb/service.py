@@ -2,7 +2,7 @@
 import asyncio
 import io
 from datetime import datetime, timezone
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
@@ -482,3 +482,8 @@ class ThumbnailImageService:
         except Exception as e:
             raise HTTPException(status_code=404,
                                 detail=f"Error in get_full_image for {file_name}: {e}")
+
+    async def get_id_by_filename(self, filename: str) -> Optional[str]:
+        if not filename or not isinstance(filename, str):
+            raise ValueError("Filename must be a non-empty string")
+        return await self.image_repository.get_id_by_filename(filename)

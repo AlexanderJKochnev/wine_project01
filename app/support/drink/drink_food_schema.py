@@ -4,16 +4,11 @@ from typing import List
 from pydantic import Field
 from app.core.schemas.base import BaseModel, ConfigDict
 from app.core.schemas.api_mixin import LangMixin
-from app.support.food.schemas import FoodRead
+from app.support.food.schemas import FoodRead, FoodReadRelation
 
 
-class DrinkFoodRelationFlat(BaseModel):
-    model_config = ConfigDict(from_attributes=True,
-                              arbitrary_types_allowed=True,
-                              extra='allow',
-                              populate_by_name=True,
-                              exclude_none=True)
-    food: FoodRead
+class DrinkFoodRelation(BaseModel):
+    food: FoodReadRelation
 
 
 class DrinkFoodRelationApi(LangMixin):
@@ -47,6 +42,3 @@ class DrinkDetailResponse(BaseModel):
     name: str
     # ... другие поля ...
     foods: List[str]  # список __str__() значений
-
-    class Config:
-        from_attributes = True

@@ -6,7 +6,8 @@ from pydantic import Field, model_validator, computed_field
 from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
-from app.support.drink.schemas import DrinkCreateRelation, DrinkReadApi, DrinkReadFlat
+from app.support.drink.schemas import (DrinkCreateRelation, DrinkReadApi, DrinkReadFlat,
+                                       DrinkReadRelation)
 
 
 class CustomReadFlatSchema:
@@ -99,6 +100,15 @@ class CustomCreateSchema:
     image_id: Optional[str] = None
 
 
+class CustomReadRelation:
+    drink: DrinkReadRelation
+    vol: Optional[float] = None
+    price: Optional[float] = None
+    count: Optional[int] = 0
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None
+
+
 class CustomCreateRelation:
     drink: DrinkCreateRelation
     # warehouse: Optional[WarehouseCreateRelation] = None
@@ -109,11 +119,15 @@ class CustomCreateRelation:
     image_id: Optional[str] = None
 
 
-class DirectUploadSchema:
+class DirectUploadSchema(BaseModel):
     total_input: int
     count_of_added_records: int
     error: Optional[list] = None
     error_nmbr: Optional[int] = None
+
+
+class FileUpload(BaseModel):
+    filename: Optional[str] = 'data.json'
 
 
 class CustomUpdSchema:
@@ -129,7 +143,7 @@ class ItemRead(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
     pass
 
 
-class ItemReadRelation(BaseModel, CustomReadFlatSchema, ImageUrlMixin):
+class ItemReadRelation(BaseModel, CustomReadRelation, ImageUrlMixin):
     pass
 
 
@@ -137,11 +151,11 @@ class ItemReadPreact(ItemRead):
     pass
 
 
-class ItemCreate(BaseModel, CustomCreateSchema):
+class ItemCreate(BaseModel, CustomCreateSchema, ImageUrlMixin):
     pass
 
 
-class ItemUpdate(BaseModel, CustomUpdSchema):
+class ItemUpdate(BaseModel, CustomUpdSchema, ImageUrlMixin):
     pass
 
 
@@ -149,7 +163,7 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
     pass
 
 
-class ItemCreateRelation(BaseModel, CustomCreateRelation):
+class ItemCreateRelation(BaseModel, CustomCreateRelation, ImageUrlMixin):
     pass
 
 # -------------------preact schemas-----------------------

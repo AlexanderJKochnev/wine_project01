@@ -11,6 +11,7 @@ from app.support.subcategory.schemas import SubcategoryCreate, SubcategoryCreate
 
 
 class SubcategoryService(Service):
+    default: list = ['name', 'category_id']
 
     @classmethod
     async def create_relation(cls, data: SubcategoryCreateRelation, repository: SubcategoryRepository,

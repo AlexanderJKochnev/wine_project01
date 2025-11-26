@@ -123,7 +123,7 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
             if 'input_value' in error:
                 print(f"  Некорректное значение (input_value): {error['input_value']}")
             print("-" * 20)
-        assert False, 'ошибка валидации в методе: get_varietal'
+        assert False, 'ошибка валидации в методе'
     except Exception as e:
         print(f'convert_custom.error: {e}')
 
@@ -207,19 +207,29 @@ def get_pairing(drink_dict: dict, language_key: dict,
         return False
 
 
+def country_norm(country: str, delim: str = '_') -> str:
+    """ United_states_of_america -> United States Of America"""
+    if not country:
+        return country
+    dlm = settings.RE_DELIMITER
+    return (' ').join((item.capitalize().strip(dlm) for item in country.split("_")))
+
+
 def get_subregion(drink_dict: dict, language_key: dict,
                   delim: str) -> bool:
     """
         формируем subregion->region->country
     """
     try:
+        dlm = settings.RE_DELIMITER
         country = dict_pop(drink_dict, 'country')
-        subregion = {"region": {"country": {"name": country.capitalize() if country else country}}}
+        country = country_norm(country)
+        subregion = {"region": {"country": {"name": country}}}
         for lang in language_key.values():
             tmp = dict_pop(drink_dict, f'region{lang}')
             region, sub = split_outside_parentheses(tmp, delim)
-            subregion[f'name{lang}'] = sub.capitalize() if sub else None
-            subregion['region'][f'name{lang}'] = region.capitalize() if region else None
+            subregion[f'name{lang}'] = sub.capitalize().strip(dlm) if sub else None
+            subregion['region'][f'name{lang}'] = region.capitalize().strip(dlm) if region else None
         drink_dict['subregion'] = subregion
         return True
     except Exception as e:
@@ -232,16 +242,18 @@ def get_subcategory(drink_dict: dict, language_key: dict,
     формируем subcategory->category
     """
     try:
+        delim = settings.RE_DELIMITER
         wine_category = settings.wine_category
         category = dict_pop(drink_dict, 'category')
         if category in wine_category:
             subcat, category = category.capitalize(), 'Wine'
+            subcat = subcat.capitalize().strip(delim)
             subcategory = {"name": subcat, "category": {"name": category}}
         else:
-            subcategory = {"category": {"name": category}}
+            subcategory = {"category": {"name": category.capitalize()}}
             for lang in language_key.values():
                 tmp = dict_pop(drink_dict, f'type{lang}')
-                subcat = tmp.capitalize() if tmp else None
+                subcat = tmp.capitalize().strip(delim) if tmp else None
                 subcategory[f'name{lang}'] = subcat
         drink_dict['subcategory'] = subcategory
         return True

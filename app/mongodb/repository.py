@@ -306,6 +306,12 @@ class ThumbnailImageRepository:
             print(f"Error getting images after date: {e}")
             return []
 
+    async def get_id_by_filename(self, filename: str) -> Optional[ObjectId]:
+        await self.ensure_indexes()
+        projection = {"_id": 1}
+        doc = await self.collection.find_one({"filename": filename}, projection)
+        return str(doc["_id"]) if doc else None
+
     async def get_image_by_filename(self, filename: str, include_content: bool = True) -> Optional[dict]:
         await self.ensure_indexes()
         projection = {"filename": 1, "description": 1, "created_at": 1, "size": 1, "content_type": 1,

@@ -10,11 +10,11 @@ from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging
 from app.core.routers.base import BaseRouter
 from app.core.schemas.base import PaginatedResponse
-from app.mongodb.service import ImageService
+from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemCreate, ItemCreateRelation, DirectUploadSchema,
-                                      ItemCreateResponseSchema, ItemUpdate)
+                                      ItemCreateResponseSchema, ItemUpdate, FileUpload)
 
 paging = get_paging
 
@@ -26,7 +26,7 @@ class ItemRouter(BaseRouter):
             prefix=prefix,
             repo=ItemRepository
         )
-        self.image_service: ImageService = Depends()
+        self.image_service: ThumbnailImageService = Depends()
 
     def setup_routes(self):
         super().setup_routes()
@@ -56,37 +56,29 @@ class ItemRouter(BaseRouter):
         result = await super().create_relation(data, session)
         return result
 
-    async def direct_import_data(self,
+    async def direct_import_data(self, data: FileUpload,
                                  session: AsyncSession = Depends(get_db),
-                                 image_service: ImageService = Depends()) -> DirectUploadSchema:
+                                 image_service: ThumbnailImageService = Depends()) -> dict:   # DirectUploadSchema:
         """
         Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
-        на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с
-        изображениями.
+        на сервере поместить файл data.json в директорию UPLOAD_DIR,
+        в ту же директорию разместить файлы с изображениями.
         - если в таблице есть зависимости они будут рекурсивно найдены в связанных таблицах (или добавлены при
-        отсутсвии), кроме того будет добавлено изображение по его имени (перед этим выполнить импорт изображений
-        /mongodb/images/direct.
+        отсутсвии), кроме того будет добавлено изображение по его имени
         операция длительная - наберитесь терпения
         """
-        file_name = 'data.json'
+        # добавление изображений  images={'number of images': 150, 'loaded images': 149}
+        _ = await image_service.direct_upload_image()
+        # имя json файла для импорта
+        file_name = data.filename
         result = await self.service.direct_upload(file_name, session, image_service)
-        """
-            {'total_input': n,
-             'count_of_added_records': n - len(error_list),
-             'error': error_list,
-             'error_nmbr': len(error_list)}
-        """
-        if result.get('error_nmbr'):
-            raise HTTPException(status_code=402,
-                                detail=f'незагружено {result.get('error_nmbr')} из '
-                                       f'{result.get('total_input')}')
         return result
 
     async def create_relation_image(self,
                                     data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
-                                    image_service: ImageService = Depends()
+                                    image_service: ThumbnailImageService = Depends()
                                     ) -> ItemCreateResponseSchema:
         """
         Создание одной записи с зависимостями - если в таблице есть зависимости
@@ -111,7 +103,7 @@ class ItemRouter(BaseRouter):
 
     async def direct_import_single_data(self, id: str,
                                         session: AsyncSession = Depends(get_db),
-                                        image_service: ImageService = Depends()) -> dict:
+                                        image_service: ThumbnailImageService = Depends()) -> dict:
         """
         Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
         на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с

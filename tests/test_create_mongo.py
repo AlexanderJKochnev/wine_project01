@@ -1,15 +1,17 @@
 # tests/test_create_mongo.py
 """
 проверка методов mongo+postgres
+переделать - см новый вариант для групповой вставки test_converter.py
 """
 
 import pytest
 from pydantic import TypeAdapter
 import json
-from app.core.utils.common_utils import jprint
+from app.core.utils.common_utils import jprint  # NOQA: F401
 pytestmark = pytest.mark.asyncio
 
 
+# @pytest.mark.skip
 async def test_new_data_generator_relation(authenticated_client_with_db, test_db_session, sample_image_paths):
     """ валидация генерируемых данных со связанными полями,
         присоедиенние реального рисунка из папки tests/test_images
@@ -26,6 +28,7 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
         schema = router.create_schema_relation
         adapter = TypeAdapter(schema)
         prefix = router.prefix
+        print(f'{prefix=}')
         # генератор тестовых данных для postgresql
         test_data = generate_test_data(
             schema, test_number,

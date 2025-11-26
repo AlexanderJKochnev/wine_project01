@@ -7,7 +7,7 @@ from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
                                                      DrinkVarietalRelationApi)
-from app.support.drink.drink_food_schema import DrinkFoodRelationApi
+from app.support.drink.drink_food_schema import DrinkFoodRelationApi, DrinkFoodRelation
 from app.support.food.schemas import FoodCreateRelation, FoodRead
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead, SubcategoryReadApiSchema
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead, SubregionReadApiSchema
@@ -93,6 +93,28 @@ class CustomCreateRelation(LangMixin):
     varietals: Optional[List[DrinkVarietalRelation]] = None
 
 
+class CustomReadRelation(LangMixin):
+    title: str
+    subcategory: SubcategoryCreateRelation
+    sweetness: Optional[SweetnessCreateRelation] = None
+    subregion: SubregionCreateRelation
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
+    age: Optional[str] = None
+    sparkling: Optional[bool] = False
+    varietal_associations: Optional[List[DrinkVarietalRelation]] = Field(exclude=True)
+    food_associations: Optional[List[DrinkFoodRelation]] = Field(exclude=True)
+
+    @property
+    def varietals(self):
+        return [{"varietal": assoc.varietal, "percentage": assoc.percentage}
+                for assoc in self.varietal_associations]
+
+    @property
+    def foods(self):
+        return [assoc.model_dump() for assoc in self.food_associations]
+
+
 class CustomReadSchema(LangMixin):
     subcategory: SubcategoryRead
     sweetness: Optional[SweetnessRead] = None
@@ -130,7 +152,7 @@ class DrinkRead(ReadNoNameSchema, CustomReadSchema):
     pass
 
 
-class DrinkReadRelation(DrinkRead):
+class DrinkReadRelation(ReadNoNameSchema, CustomReadRelation):
     pass
 
 

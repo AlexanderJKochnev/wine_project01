@@ -17,3 +17,4 @@ pytest tests/test_get.py \
        tests/test_mongodb.py \
        tests/test_delete.py
 pytest tests/test_create_mongo.py
+pytest tests/test_converter.py

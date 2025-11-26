@@ -14,6 +14,7 @@ from app.support.subregion.repository import SubregionRepository
 
 
 class SubregionService(Service):
+    default: list = ['name', 'region_id']
 
     @classmethod
     async def create_relation(cls, data: RegionCreateRelation, repository: type(SubregionRepository),

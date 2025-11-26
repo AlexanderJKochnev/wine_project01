@@ -12,6 +12,7 @@ from app.support.region.repository import RegionRepository
 
 class RegionService(Service):
     default: list = ['name', 'country_id']
+
     @classmethod
     async def create_relation(cls, data: RegionCreateRelation, repository: RegionRepository,
                               model: Region, session: AsyncSession) -> RegionRead:
