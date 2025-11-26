@@ -3,6 +3,7 @@
 git checkout main
 git pull origin main
 git merge tmp
+git push origin main
 
 ## удаление ветки после слияния
 удаление локальной ветки оставшейся после слияния (еслит слияние не прошло - ничего не удалится)

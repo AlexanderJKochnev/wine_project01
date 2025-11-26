@@ -65,8 +65,6 @@ class ItemService(Service):
                     raise Exception(f'{image_path=}======')
                 instance.image_id = image_id
                 data = instance.model_dump(exclude_unset=True, exclude_none=True)
-                # old_dict = instance.model_dump(exclude_unset=True)
-                # добавление instance базу данных
                 try:
                     new_instance, new = await cls.create_relation(instance, ItemRepository, Item, session)
                     new_instance = await cls.get_by_id(new_instance.id, ItemRepository, Item, session)

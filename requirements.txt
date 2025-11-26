@@ -22,6 +22,7 @@ python-dateutil
 # для считывания больших json кусками
 ijson
 # morphology
+setuptools<81
 pymorphy2
 pymorphy2-dicts-ru
 deepdiff
