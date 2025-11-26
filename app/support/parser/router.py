@@ -3,8 +3,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
-from app.support.parser.model import Code, Name, Image, Rawdata, Status
+from app.support.parser.model import Code, Name, Image, Rawdata, Status, Register
 from app.support.parser import schemas
+
+
+class RegisterRouter(BaseRouter):
+    def __init__(self):
+        super().__init__(
+            model=Register,
+            prefix="/registers",
+        )
+
+    async def create(self, data: schemas.RegisterCreate,
+                     session: AsyncSession = Depends(get_db)) -> schemas.RegisterCreateResponseSchema:
+        return await super().create(data, session)
+
+    async def patch(self, id: int,
+                    data: schemas.CodeUpdate,
+                    session: AsyncSession = Depends(get_db)) -> schemas.CodeCreateResponseSchema:
+        return await super().patch(id, data, session)
+
+    async def create_relation(self, data: schemas.CodeCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.CodeRead:
+        result = await super().create_relation(data, session)
+        return result
 
 
 class CodeRouter(BaseRouter):

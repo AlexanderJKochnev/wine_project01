@@ -30,6 +30,64 @@ class StatusReadRelation(StatusRead):
     pass
 
 
+class RegisterCreate(BaseModel):
+    shortname: str
+    url: str
+    base_path: Optional[str] = None
+    # HTML-тег и атрибут для извлечения ссылок
+    link_tag: Optional[str] = None
+    link_attr: Optional[str] = None
+    parent_selector: Optional[str] = None
+    timeout: Optional[int] = None
+    status_id: Optional[int] = 1
+
+
+class RegisterCreateRelation(BaseModel):
+    shortname: str
+    url: str
+    base_path: Optional[str] = None
+    # HTML-тег и атрибут для извлечения ссылок
+    link_tag: Optional[str] = None
+    link_attr: Optional[str] = None
+    parent_selector: Optional[str] = None
+    timeout: Optional[int] = None
+    status: StatusCreateRelation
+
+
+class RegisterCreateResponseSchema(RegisterCreate, CreateResponse):
+    pass
+
+
+class RegisterUpdate(BaseModel):
+    shortname: Optional[str] = None
+    url: Optional[str] = None
+    base_path: Optional[str] = None
+    # HTML-тег и атрибут для извлечения ссылок
+    link_tag: Optional[str] = None
+    link_attr: Optional[str] = None
+    parent_selector: Optional[str] = None
+    timeout: Optional[int] = None
+
+    status_id: Optional[int] = 1
+
+
+class RegisterRead(RegisterCreate, PkSchema, DateSchema):
+    pass
+
+
+class RegisterReadRelation(PkSchema, DateSchema):
+    shortname: str
+    url: str
+    base_path: Optional[str] = None
+    # HTML-тег и атрибут для извлечения ссылок
+    link_tag: Optional[str] = None
+    link_attr: Optional[str] = None
+    parent_selector: Optional[str] = None
+    timeout: Optional[int] = None
+    status: StatusRead
+
+
+# ------------------
 class CodeCreate(BaseModel):
     code: str
     url: str
@@ -40,6 +98,7 @@ class CodeCreateRelation(BaseModel):
     code: str
     url: str
     status: StatusCreateRelation
+    register: RegisterCreateRelation
 
 
 class CodeCreateResponseSchema(CodeCreate, CreateResponse):
@@ -60,6 +119,7 @@ class CodeReadRelation(PkSchema, DateSchema):
     code: str
     url: Optional[str] = None
     status: StatusRead
+    register: RegisterRead
 
 
 class NameCreate(BaseModel):

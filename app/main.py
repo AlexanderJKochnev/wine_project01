@@ -29,7 +29,8 @@ from app.support.superfood.router import SuperfoodRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
-from app.support.parser.router import StatusRouter, CodeRouter, NameRouter, ImageRouter, RawdataRouter
+from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter,
+                                       ImageRouter, RawdataRouter, RegisterRouter)
 # from app.support.warehouse.router import WarehouseRouter
 
 # from sqladmin import Admin

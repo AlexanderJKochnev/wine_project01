@@ -1,11 +1,30 @@
 # app/support/parser/model.py
 from typing import List, Optional
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models.base_model import Base, BaseAt
 from app.core.models.image_mixin import ImageMixin
+
+
+class Register(Base, BaseAt):
+    """ адреса баз данных и базовые настройки """
+    shortname: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    url: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
+    status: Mapped["Status"] = relationship("Status", back_populates="registers")
+    # базовый URL-префикс, которому должны соответствовать ссылки
+    base_path: Mapped[str] = mapped_column(String(255), unique=False, index=True)
+    # HTML-тег и атрибут для извлечения ссылок
+    link_tag: Mapped[str] = mapped_column(String(255), unique=False, index=True)
+    link_attr: Mapped[str] = mapped_column(String(255), unique=False, index=True)
+    parent_selector: Mapped[str] = mapped_column(String(255), unique=False, index=True)
+    timeout: Mapped[int] = mapped_column(Integer, unique=False, index=True)
+    codes: Mapped[List["Code"]] = relationship("Code", back_populates="register", cascade="all, delete-orphan")
+
+    def __str__(self):
+        return self.shortname or ""
 
 
 class Code(Base, BaseAt):
@@ -15,6 +34,8 @@ class Code(Base, BaseAt):
 
     status: Mapped["Status"] = relationship("Status", back_populates="codes")
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
+    register: Mapped["Register"] = relationship("Register", back_populates="codes")
+    register_id: Mapped[int] = mapped_column(ForeignKey("registers.id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
     names: Mapped[List["Name"]] = relationship("Name", back_populates="code", cascade="all, delete-orphan")
@@ -66,6 +87,7 @@ class Status(Base, BaseAt):
     codes: Mapped[List["Code"]] = relationship("Code", back_populates="status")
     names: Mapped[List["Name"]] = relationship("Name", back_populates="status")
     rawdatas: Mapped[List["Rawdata"]] = relationship("Rawdata", back_populates="status")
+    registers: Mapped[List["Register"]] = relationship("Register", back_populates="status")
 
     def __str__(self):
         return self.status or ""
