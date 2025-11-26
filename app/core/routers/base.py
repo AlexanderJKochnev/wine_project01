@@ -4,7 +4,7 @@ import logging
 from typing import Any, List, Type, TypeVar, Optional
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_active_user_or_internal
@@ -273,3 +273,26 @@ class BaseRouter:
         if search:
             kwargs['search_str'] = search
         return await self.service.search(self.repo, self.model, session, **kwargs)
+
+
+class LightRouter:
+    """
+        минимальный роутер с зависимостями
+    """
+    def __init__(self, prefix: str):
+        self.prefix = prefix
+        self.tags = [prefix.replace('/', '')]
+        self.router = APIRouter(prefix=prefix,
+                                tags=self.tags,
+                                dependencies=[Depends(get_active_user_or_internal)]
+                                )
+        self.session: AsyncSession = Depends(get_db)
+        self.setup_routes()
+
+    def setup_routes(self):
+        """ override it as follows """
+        self.router.add_api_route("", self.endpoints,
+                                  methods=["POST"], response_model=self.create_schema)
+
+    async def endpoint(self, request: Request):
+        """ override it """

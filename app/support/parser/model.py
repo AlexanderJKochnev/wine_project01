@@ -10,17 +10,18 @@ from app.core.models.image_mixin import ImageMixin
 
 class Register(Base, BaseAt):
     """ адреса баз данных и базовые настройки """
+    __tablename__ = 'registry'
     shortname: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     url: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
     status: Mapped["Status"] = relationship("Status", back_populates="registers")
     # базовый URL-префикс, которому должны соответствовать ссылки
-    base_path: Mapped[str] = mapped_column(String(255), unique=False, index=True)
+    base_path: Mapped[str] = mapped_column(String(255), unique=False, index=True, nullable=True)
     # HTML-тег и атрибут для извлечения ссылок
-    link_tag: Mapped[str] = mapped_column(String(255), unique=False, index=True)
-    link_attr: Mapped[str] = mapped_column(String(255), unique=False, index=True)
-    parent_selector: Mapped[str] = mapped_column(String(255), unique=False, index=True)
-    timeout: Mapped[int] = mapped_column(Integer, unique=False, index=True)
+    link_tag: Mapped[str] = mapped_column(String(255), unique=False, index=True, nullable=True)
+    link_attr: Mapped[str] = mapped_column(String(255), unique=False, index=True, nullable=True)
+    parent_selector: Mapped[str] = mapped_column(String(255), unique=False, index=True, nullable=True)
+    timeout: Mapped[int] = mapped_column(Integer, unique=False, index=True, nullable=True)
     codes: Mapped[List["Code"]] = relationship("Code", back_populates="register", cascade="all, delete-orphan")
 
     def __str__(self):

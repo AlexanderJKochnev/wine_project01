@@ -26,6 +26,9 @@ setuptools<81
 pymorphy2
 pymorphy2-dicts-ru
 deepdiff
+# for parsing
+beautifulsoup4
+requests
 # for testing purpose only
 Faker
 itsdangerous>=2.1.0

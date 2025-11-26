@@ -2,9 +2,27 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_async import get_db
-from app.core.routers.base import BaseRouter
+from app.core.routers.base import BaseRouter, LightRouter
 from app.support.parser.model import Code, Name, Image, Rawdata, Status, Register
 from app.support.parser import schemas
+from app.support.parser.orchestrator import ParserOrchestrator
+
+
+class OrchestratorRouter(LightRouter):
+    def __init__(self):
+        super().__init__(prefix='parser')
+
+    def setup_routes(self):
+        self.router.add_api_route(
+            "", self.endpoints, methods=["POST"])  # , response_model=self.create_schema)
+
+    async def endpoints(self, shortname: str = None, url: str = None):
+        orchestrator = ParserOrchestrator(self.session)
+        result = await orchestrator.run(shortname=shortname, url=url)
+        if result["status"] == "alreadycompleted":
+            # Тут можно вернуть 409 Conflict или предложить "force"
+            return {"detail": result["message"], "action": "Повторить обработку? Используйте ?force=true"}
+        return result
 
 
 class RegisterRouter(BaseRouter):
