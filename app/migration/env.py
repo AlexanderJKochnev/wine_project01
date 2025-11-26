@@ -29,7 +29,7 @@ from app.core.config.database.db_config import settings_db
 from app.support.drink.model import DrinkFood
 from app.support.subregion.model import Subregion
 from app.support.subcategory.model import Subcategory
-from app.support.parser.model import Name, Image, Code, Rawdata
+from app.support.parser.model import Name, Image, Code, Rawdata, Registry
 
 
 # this is the Alembic Config object, which provides

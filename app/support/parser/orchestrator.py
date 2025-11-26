@@ -8,8 +8,8 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 
-from app.support.parser.model import Register, Code, Status
-from app.support.parser.repository import RegisterRepository, CodeRepository, StatusRepository
+from app.support.parser.model import Registry, Code, Status
+from app.support.parser.repository import RegistryRepository, CodeRepository, StatusRepository
 # from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,15 +18,15 @@ class ParserOrchestrator:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_or_create_default_register(self) -> Register:
+    async def get_or_create_default_registry(self) -> Registry:
         """Создаёт или возвращает регистр по умолчанию."""
         default_url = "https://reestrinform.ru/federalnyi-reestr-alkogolnoi-produktcii.html"
         default_shortname = "reestrinform_default"
 
-        register = await RegisterRepository.get_by_fields(
-            {"url": default_url}, Register, self.session
+        registry = await RegistryRepository.get_by_fields(
+            {"url": default_url}, Registry, self.session
         )
-        if not register:
+        if not registry:
             # Получаем статус 'new'
             status_new = await StatusRepository.get_by_fields(
                 {"status": "new"}, Status, self.session
@@ -34,7 +34,7 @@ class ParserOrchestrator:
             if not status_new:
                 raise RuntimeError("Статус 'new' не найден в базе")
 
-            register = Register(
+            registry = Registry(
                 shortname=default_shortname,
                 url=default_url,
                 status_id=status_new.id,
@@ -44,8 +44,8 @@ class ParserOrchestrator:
                 parent_selector=None,
                 timeout=10,
             )
-            register = await RegisterRepository.create(register, Register, self.session)
-        return register
+            registry = await RegistryRepository.create(registry, Registry, self.session)
+        return registry
 
     async def fetch_html(self, url: str, timeout: int = 10) -> str:
         """Асинхронно загружает HTML."""
@@ -78,9 +78,9 @@ class ParserOrchestrator:
 
         return list(dict.fromkeys(links))  # dedup
 
-    async def parse_and_save_codes(self, register: Register) -> List[Code]:
+    async def parse_and_save_codes(self, registry: Registry) -> List[Code]:
         """Парсит ссылки и сохраняет в Code."""
-        html = await self.fetch_html(register.url, register.timeout or 10)
+        html = await self.fetch_html(registry.url, registry.timeout or 10)
 
         # Выполняем синхронный парсинг в потоке, чтобы не блокировать event loop
         loop = asyncio.get_event_loop()
@@ -88,11 +88,11 @@ class ParserOrchestrator:
             None,
             self.extract_links_sync,
             html,
-            register.url,
-            register.base_path or register.url,
-            register.link_tag or "a",
-            register.link_attr or "href",
-            register.parent_selector,
+            registry.url,
+            registry.base_path or registry.url,
+            registry.link_tag or "a",
+            registry.link_attr or "href",
+            registry.parent_selector,
         )
 
         # Получаем статус 'new'
@@ -118,7 +118,7 @@ class ParserOrchestrator:
             new_code = Code(
                 code=code,
                 url=url,
-                register_id=register.id,
+                registry_id=registry.id,
                 status_id=status_new.id,
             )
             new_code = await CodeRepository.create(new_code, Code, self.session)
@@ -127,63 +127,47 @@ class ParserOrchestrator:
         return saved_codes
 
     async def run(self, shortname: Optional[str] = None, url: Optional[str] = None) -> dict:
-        """
-        Основной метод запуска:
-        - если передан shortname или url — ищем Register
-        - если нет — берём первую незавершённую запись
-        - если таких нет — создаём дефолтную и парсим
-        """
-        # Гарантируем наличие статусов
         await self.ensure_statuses_exist(self.session)
-        register: Optional[Register] = None
+
+        # Получаем ID статуса "completed" для сравнения
+        status_completed = await StatusRepository.get_by_fields(
+            {"status": "completed"}, Status, self.session
+        )
+        completed_status_id = status_completed.id if status_completed else None
+
+        registry: Optional[Registry] = None
 
         if shortname:
-            register = await RegisterRepository.get_by_fields(
-                {"shortname": shortname}, Register, self.session
-            )
+            stmt = select(Registry).where(Registry.shortname == shortname)
+            result = await self.session.execute(stmt)
+            registry = result.scalar_one_or_none()
         elif url:
-            register = await RegisterRepository.get_by_fields(
-                {"url": url}, Register, self.session
-            )
+            stmt = select(Registry).where(Registry.url == url)
+            result = await self.session.execute(stmt)
+            registry = result.scalar_one_or_none()
 
-        if not register:
-            # Ищем первую запись со статусом != 'completed'
-            stmt = RegisterRepository.get_query(Register)
-            status_completed = await StatusRepository.get_by_fields(
-                {"status": "completed"}, Status, self.session
-            )
-            if status_completed:
-                stmt = stmt.where(Register.status_id != status_completed.id)
+        if not registry:
+            # Ищем первую запись, у которой status_id != completed_status_id
+            stmt = select(Registry)
+            if completed_status_id is not None:
+                stmt = stmt.where(Registry.status_id != completed_status_id)
             result = await self.session.execute(stmt.limit(1))
-            register = result.scalar_one_or_none()
+            registry = result.scalar_one_or_none()
 
-        if not register:
-            register = await self.get_or_create_default_register()
+        if not registry:
+            registry = await self.get_or_create_default_registry()
 
-        # Проверяем статус
-        if register.status and register.status.status == "completed":
-            return {
-                "status": "already_completed",
-                "message": f"Регистр '{register.shortname}' уже завершён.",
-                "register_id": register.id,
-                "action_required": True  # требует решения: повторить или отменить
-            }
+        # Проверка через status_id — безопасно и быстро
+        if registry.status_id == completed_status_id:
+            return {"status": "already_completed", "message": f"Регистр '{registry.shortname}' уже завершён.",
+                    "registry_id": registry.id, "action_required": True}
 
-        # Запускаем парсинг
         try:
-            codes = await self.parse_and_save_codes(register)
-            return {
-                "status": "success",
-                "message": f"Успешно добавлено {len(codes)} ссылок.",
-                "register_id": register.id,
-                "codes_added": len(codes)
-            }
+            codes = await self.parse_and_save_codes(registry)
+            return {"status": "success", "message": f"Успешно добавлено {len(codes)} ссылок.",
+                    "registry_id": registry.id, "codes_added": len(codes)}
         except Exception as e:
-            return {
-                "status": "error",
-                "message": f"Ошибка при парсинге: {str(e)}",
-                "register_id": register.id
-            }
+            return {"status": "error", "message": f"Ошибка при парсинге: {str(e)}", "registry_id": registry.id}
 
     REQUIRED_STATUSES = {"new", "in progress", "completed"}
 

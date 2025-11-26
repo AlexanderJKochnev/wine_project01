@@ -3,11 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.support.parser.model import Code, Name, Image, Rawdata, Status, Register
+from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
 
 
-class RegisterRepository(Repository):
-    model = Register
+class RegistryRepository(Repository):
+    model = Registry
 
     @classmethod
     def get_query(cls, model: ModelType):
@@ -19,8 +19,8 @@ class CodeRepository(Repository):
 
     @classmethod
     def get_query(cls, model: ModelType):
-        return select(model).options(selectinload(model.register)
-                                     .selectinload(Register.status),
+        return select(model).options(selectinload(model.registry)
+                                     .selectinload(Registry.status),
                                      selectinload(model.status))
 
 

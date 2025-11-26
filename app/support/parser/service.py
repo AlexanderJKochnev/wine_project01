@@ -7,23 +7,23 @@ from app.support.parser import repository as repo
 from app.support.parser import model as mode
 
 
-class RegisterService(Service):
+class RegistryService(Service):
     default = ['shortname', 'url']
 
     @classmethod
     async def create_relation(
-            cls, data: schemas.RegisterCreateRelation,
-            repository: repo.RegisterRepository,
-            model: mode.Register,
+            cls, data: schemas.RegistryCreateRelation,
+            repository: repo.RegistryRepository,
+            model: mode.Registry,
             session: AsyncSession
-    ) -> schemas.RegisterRead:
+    ) -> schemas.RegistryRead:
         # pydantic model -> dict
         data_dict: dict = data.model_dump(exclude={'status'}, exclude_unset=True)
         if data.status:
             result, _ = await StatusService.get_or_create(data.status, repo.StatusRepository,
                                                           mode.Status, session)
             data_dict['status_id'] = result.id
-        data_schema = schemas.RegisterCreate(**data_dict)
+        data_schema = schemas.RegistryCreate(**data_dict)
         result, _ = await cls.get_or_create(data_schema, repository, model, session)
         return result
 
@@ -44,10 +44,10 @@ class CodeService(Service):
             result, _ = await StatusService.get_or_create(data.status, repo.StatusRepository,
                                                           mode.Status, session)
             data_dict['status_id'] = result.id
-        if data.register:
-            result = await RegisterService.create_relation(data.register, repo.RegisterRepository,
-                                                           mode.Register, session)
-            data_dict['register_id'] = result.id
+        if data.registry:
+            result = await RegistryService.create_relation(data.registry, repo.RegistryRepository,
+                                                           mode.Registry, session)
+            data_dict['registry_id'] = result.id
 
         data_schema = schemas.CodeCreate(**data_dict)
         result, _ = await cls.get_or_create(data_schema, repository, model, session)

@@ -3,21 +3,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
-from app.support.parser.model import Code, Name, Image, Rawdata, Status, Register
+from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
 from app.support.parser import schemas
 from app.support.parser.orchestrator import ParserOrchestrator
 
 
 class OrchestratorRouter(LightRouter):
     def __init__(self):
-        super().__init__(prefix='parser')
+        super().__init__(prefix='/parser')
 
     def setup_routes(self):
         self.router.add_api_route(
             "", self.endpoints, methods=["POST"])  # , response_model=self.create_schema)
 
-    async def endpoints(self, shortname: str = None, url: str = None):
-        orchestrator = ParserOrchestrator(self.session)
+    async def endpoints(self, shortname: str = None, url: str = None,
+                        session: AsyncSession = Depends(get_db)):
+        orchestrator = ParserOrchestrator(session)
         result = await orchestrator.run(shortname=shortname, url=url)
         if result["status"] == "alreadycompleted":
             # Тут можно вернуть 409 Conflict или предложить "force"
@@ -25,15 +26,15 @@ class OrchestratorRouter(LightRouter):
         return result
 
 
-class RegisterRouter(BaseRouter):
+class RegistryRouter(BaseRouter):
     def __init__(self):
         super().__init__(
-            model=Register,
+            model=Registry,
             prefix="/registers",
         )
 
-    async def create(self, data: schemas.RegisterCreate,
-                     session: AsyncSession = Depends(get_db)) -> schemas.RegisterCreateResponseSchema:
+    async def create(self, data: schemas.RegistryCreate,
+                     session: AsyncSession = Depends(get_db)) -> schemas.RegistryCreateResponseSchema:
         return await super().create(data, session)
 
     async def patch(self, id: int,

@@ -286,7 +286,7 @@ class LightRouter:
                                 tags=self.tags,
                                 dependencies=[Depends(get_active_user_or_internal)]
                                 )
-        self.session: AsyncSession = Depends(get_db)
+        # self.session: AsyncSession = Depends(get_db)
         self.setup_routes()
 
     def setup_routes(self):

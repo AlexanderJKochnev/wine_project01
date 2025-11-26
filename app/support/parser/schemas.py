@@ -30,7 +30,7 @@ class StatusReadRelation(StatusRead):
     pass
 
 
-class RegisterCreate(BaseModel):
+class RegistryCreate(BaseModel):
     shortname: str
     url: str
     base_path: Optional[str] = None
@@ -42,7 +42,7 @@ class RegisterCreate(BaseModel):
     status_id: Optional[int] = 1
 
 
-class RegisterCreateRelation(BaseModel):
+class RegistryCreateRelation(BaseModel):
     shortname: str
     url: str
     base_path: Optional[str] = None
@@ -54,11 +54,11 @@ class RegisterCreateRelation(BaseModel):
     status: StatusCreateRelation
 
 
-class RegisterCreateResponseSchema(RegisterCreate, CreateResponse):
+class RegistryCreateResponseSchema(RegistryCreate, CreateResponse):
     pass
 
 
-class RegisterUpdate(BaseModel):
+class RegistryUpdate(BaseModel):
     shortname: Optional[str] = None
     url: Optional[str] = None
     base_path: Optional[str] = None
@@ -71,11 +71,11 @@ class RegisterUpdate(BaseModel):
     status_id: Optional[int] = 1
 
 
-class RegisterRead(RegisterCreate, PkSchema, DateSchema):
+class RegistryRead(RegistryCreate, PkSchema, DateSchema):
     pass
 
 
-class RegisterReadRelation(PkSchema, DateSchema):
+class RegistryReadRelation(PkSchema, DateSchema):
     shortname: str
     url: str
     base_path: Optional[str] = None
@@ -98,7 +98,7 @@ class CodeCreateRelation(BaseModel):
     code: str
     url: str
     status: StatusCreateRelation
-    register: RegisterCreateRelation
+    registry: RegistryCreateRelation
 
 
 class CodeCreateResponseSchema(CodeCreate, CreateResponse):
@@ -119,7 +119,7 @@ class CodeReadRelation(PkSchema, DateSchema):
     code: str
     url: Optional[str] = None
     status: StatusRead
-    register: RegisterRead
+    registry: RegistryRead
 
 
 class NameCreate(BaseModel):
