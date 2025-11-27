@@ -44,7 +44,8 @@ class Code(Base, BaseAt):
 
     code: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     url: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-    last_parsed_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    last_page: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=None)
+
     status: Mapped["Status"] = relationship("Status", back_populates="codes")
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"),
                                            nullable=True)

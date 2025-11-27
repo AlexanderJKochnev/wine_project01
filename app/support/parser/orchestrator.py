@@ -5,7 +5,7 @@ import random
 from sqlalchemy import select
 # from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qs
 
 import httpx
 from bs4 import BeautifulSoup
@@ -247,91 +247,72 @@ class ParserOrchestrator:
         status_in_progress = await StatusRepository.get_by_fields({"status": "in progress"}, Status, self.session)
         status_completed = await StatusRepository.get_by_fields({"status": "completed"}, Status, self.session)
 
-        # Начинаем с последнего сохранённого URL или с базового
-        start_url = code.last_parsed_url or code.url
-        to_visit = [start_url]
-        # visited = set()
-        visited: list = []
+        base_url = code.url
+        start_page = (code.last_page or 0) + 1  # следующая после последней обработанной
+        current_page = start_page
         total_saved = 0
         processed_pages = 0
+        has_next_page = True  # предполагаем, что есть следующая, пока не докажем обратное
 
         try:
-            while to_visit and (max_pages is None or processed_pages < max_pages):
-                current_url = to_visit.pop(0)
-                if current_url in visited:
-                    continue
-                visited.add(current_url)
+            while has_next_page and (max_pages is None or processed_pages < max_pages):
+                current_url = build_page_url(base_url, current_page)
 
-                # === 1. Загружаем и парсим страницу с retry ===
+                # === 1. Загружаем страницу с retry ===
                 try:
-                    html = await self._fetch_with_retry(
-                        current_url, timeout=registry.timeout or 10, max_retries=3, base_delay=1.0,
-                        max_delay=10.0
-                    )
+                    html = await self._fetch_with_retry(current_url, timeout=registry.timeout or 10)
                     soup = BeautifulSoup(html, 'html.parser')
                 except Exception as e:
-                    # Сохраняем прогресс ДО ошибки
                     code.status_id = status_in_progress.id
-                    code.last_parsed_url = list(visited)[-1] if visited else code.url
+                    code.last_page = current_page - 1  # предыдущая — последняя успешная
                     await self.session.commit()
-                    return {"status": "failed", "last_url": code.last_parsed_url, "saved": total_saved,
-                            "error": f"Fetch failed on {current_url}: {str(e)}"}
+                    return {"status": "fetch_failed", "last_page": current_page - 1, "error": str(e)}
 
-                # === 2. Извлекаем ссылки на продукты ===
+                # === 2. Парсим ссылки на продукты ===
                 product_links = self._extract_product_links_sync(soup, current_url, registry)
+                saved_on_page = 0
                 for url, name in product_links:
-                    # Проверяем уникальность по URL
                     existing = await self.session.execute(select(Name).where(Name.url == url))
                     if existing.scalar_one_or_none():
                         continue
-                    try:
-                        new_name = Name(
-                            url=url, name=name[:255], code_id=code.id, status_id=status_new.id
-                        )
-                        self.session.add(new_name)
-                        total_saved += 1
-                    except Exception as e:
-                        print(f"Skip duplicate or error on {url}: {e}")
+                    new_name = Name(url=url, name=name[:255], code_id=code.id, status_id=status_new.id)
+                    self.session.add(new_name)
+                    saved_on_page += 1
 
-                # === 3. Сохраняем прогресс: commit после каждой страницы ===
-                code.status_id = status_in_progress.id
-                code.last_parsed_url = current_url
-                await self.session.commit()
+                await self.session.commit()  # гарантируем сохранение данных
+                total_saved += saved_on_page
                 processed_pages += 1
 
-                # === 4. Извлекаем пагинацию ===
+                # === 3. Парсим пагинацию ===
                 pagination_urls = self._extract_pagination_urls_sync(soup, current_url, registry)
-                for url in pagination_urls:
-                    if url not in visited and url not in to_visit:
-                        to_visit.append(url)
+                next_page_links = [u for u in pagination_urls if get_page_number(u, base_url) == current_page + 1]
+                has_next_page = len(next_page_links) > 0
+
+                # === 4. Сохраняем прогресс ===
+                code.last_page = current_page
+                if has_next_page or (max_pages is not None and processed_pages < max_pages):
+                    code.status_id = status_in_progress.id
+                await self.session.commit()
+
+                current_page += 1
 
             # === Завершение ===
-            if max_pages is not None:
-                # Обработали лимит — остаёмся в "in progress"
-                code.status_id = status_in_progress.id
-                code.last_parsed_url = list(visited)[-1] if visited else code.url
+            if max_pages is None and not has_next_page:
+                # Обработали всё — ставим completed
+                code.status_id = status_completed.id
+                code.last_page = None  # сброс прогресса
             else:
-                # max_pages = None → обрабатываем всё
-                if not to_visit:
-                    # Больше страниц нет → завершаем
-                    code.status_id = status_completed.id
-                    code.last_parsed_url = None  # сброс прогресса
-                else:
-                    # Теоретически не должно быть, но на всякий
-                    code.status_id = status_in_progress.id
-                    code.last_parsed_url = list(visited)[-1] if visited else code.url
-
+                code.status_id = status_in_progress.id
             await self.session.commit()
 
-            return {"status": "completed" if (max_pages is None and not to_visit) else "partial", "saved": total_saved,
-                    "pages_processed": processed_pages, "last_url": code.last_parsed_url, }
+            return {"status": "completed" if (max_pages is None and not has_next_page) else "partial",
+                    "saved": total_saved, "pages_processed": processed_pages, "last_page": code.last_page, }
 
         except Exception as e:
-            # Общая ошибка — сохраняем прогресс
             code.status_id = status_in_progress.id
-            code.last_parsed_url = list(visited)[-1] if visited else code.url
+            code.last_page = current_page - 1
             await self.session.commit()
-            return {"status": "error", "last_url": code.last_parsed_url, "saved": total_saved, "error": str(e)}
+            return {"status": "error", "last_page": current_page - 1, "saved": total_saved, "error": str(e)}
 
     # --- Синхронные вспомогательные функции для run_in_executor ---
 
@@ -382,3 +363,37 @@ class ParserOrchestrator:
                 delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
                 await asyncio.sleep(delay)
         raise RuntimeError("Unreachable")
+
+
+from urllib.parse import urlparse, parse_qs
+
+
+def get_page_number(url: str, base_url: str) -> int:
+    """Определяет номер страницы по URL."""
+    if url == base_url:
+        return 1
+    parsed = urlparse(url)
+    base_parsed = urlparse(base_url)
+    if parsed.netloc != base_parsed.netloc or parsed.path != base_parsed.path:
+        raise ValueError("URL не относится к той же категории")
+    params = parse_qs(parsed.query)
+    p_vals = params.get("p")
+    if p_vals:
+        try:
+            return int(p_vals[0])
+        except (ValueError, TypeError):
+            pass
+    # Если параметра нет — это первая страница
+    return 1
+
+
+def build_page_url(base_url: str, page: int) -> str:
+    """Генерирует URL для заданного номера страницы."""
+    if page == 1:
+        return base_url
+    from urllib.parse import urlsplit, urlunsplit, parse_qs
+    scheme, netloc, path, query, fragment = urlsplit(base_url)
+    params = parse_qs(query)
+    params["p"] = [str(page)]
+    new_query = "&".join(f"{k}={v[0]}" for k, v in params.items())
+    return urlunsplit((scheme, netloc, path, new_query, fragment))
