@@ -61,6 +61,9 @@ class ParserOrchestrator:
         """Асинхронно загружает HTML."""
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.get(url)
+            print(f'{response.status_code}=')
+            if response.status_code != 200:
+                print(f'{response.text}')
             response.raise_for_status()
             return response.text
 
