@@ -1,8 +1,9 @@
 # app/support/parser/orchestrator.py
 
 import asyncio
+import random
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+# from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
 from urllib.parse import urljoin, urlparse
 
@@ -242,43 +243,42 @@ class ParserOrchestrator:
     async def parse_names_from_code(
             self, code: Code, registry: Registry, max_pages: Optional[int] = None
     ) -> dict:
-        """Возвращает dict с результатом: статус, кол-во сохранённых записей, последний URL и т.д."""
-
         status_new = await StatusRepository.get_by_fields({"status": "new"}, Status, self.session)
         status_in_progress = await StatusRepository.get_by_fields({"status": "in progress"}, Status, self.session)
         status_completed = await StatusRepository.get_by_fields({"status": "completed"}, Status, self.session)
 
-        # Начинаем с last_parsed_url или с базового URL
+        # Начинаем с последнего сохранённого URL или с базового
         start_url = code.last_parsed_url or code.url
         to_visit = [start_url]
-        visited = set()
+        # visited = set()
+        visited: list = []
         total_saved = 0
         processed_pages = 0
-        last_success_url = start_url
 
         try:
             while to_visit and (max_pages is None or processed_pages < max_pages):
-                current_url = to_visit.pop(0)  # BFS
+                current_url = to_visit.pop(0)
                 if current_url in visited:
                     continue
                 visited.add(current_url)
-                processed_pages += 1
 
+                # === 1. Загружаем и парсим страницу с retry ===
                 try:
-                    soup = await self._fetch_and_parse(current_url, timeout=registry.timeout or 10)
+                    html = await self._fetch_with_retry(
+                        current_url, timeout=registry.timeout or 10, max_retries=3, base_delay=1.0,
+                        max_delay=10.0
+                    )
+                    soup = BeautifulSoup(html, 'html.parser')
                 except Exception as e:
-                    print(f"Ошибка загрузки {current_url}: {e}")
-                    # Сохраняем последний УСПЕШНЫЙ URL
-                    code.last_parsed_url = last_success_url
+                    # Сохраняем прогресс ДО ошибки
                     code.status_id = status_in_progress.id
+                    code.last_parsed_url = list(visited)[-1] if visited else code.url
                     await self.session.commit()
-                    return {"status": "failed", "last_url": last_success_url, "saved": total_saved, "error": str(e)}
+                    return {"status": "failed", "last_url": code.last_parsed_url, "saved": total_saved,
+                            "error": f"Fetch failed on {current_url}: {str(e)}"}
 
-                # Парсим ссылки на продукты
-                product_links = await asyncio.get_event_loop().run_in_executor(
-                    None, self._extract_product_links_sync, soup, current_url, registry
-                )
-
+                # === 2. Извлекаем ссылки на продукты ===
+                product_links = self._extract_product_links_sync(soup, current_url, registry)
                 for url, name in product_links:
                     # Проверяем уникальность по URL
                     existing = await self.session.execute(select(Name).where(Name.url == url))
@@ -286,44 +286,52 @@ class ParserOrchestrator:
                         continue
                     try:
                         new_name = Name(
-                            url=url, name=name, code_id=code.id, status_id=status_new.id
+                            url=url, name=name[:255], code_id=code.id, status_id=status_new.id
                         )
                         self.session.add(new_name)
                         total_saved += 1
                     except Exception as e:
-                        print(f"Ошибка сохранения Name {url}: {e}")  # Продолжаем парсинг, но не падаем
+                        print(f"Skip duplicate or error on {url}: {e}")
 
-                await self.session.commit()  # сохраняем имена постранично
-                last_success_url = current_url
+                # === 3. Сохраняем прогресс: commit после каждой страницы ===
+                code.status_id = status_in_progress.id
+                code.last_parsed_url = current_url
+                await self.session.commit()
+                processed_pages += 1
 
-                # Извлекаем пагинацию
-                pagination_urls = await asyncio.get_event_loop().run_in_executor(
-                    None, self._extract_pagination_urls_sync, soup, current_url, registry
-                )
+                # === 4. Извлекаем пагинацию ===
+                pagination_urls = self._extract_pagination_urls_sync(soup, current_url, registry)
                 for url in pagination_urls:
                     if url not in visited and url not in to_visit:
                         to_visit.append(url)
 
-            # Завершение
-            if not to_visit or (max_pages is not None and processed_pages >= max_pages):
-                if max_pages is None or not to_visit:
-                    # Всё обработано
+            # === Завершение ===
+            if max_pages is not None:
+                # Обработали лимит — остаёмся в "in progress"
+                code.status_id = status_in_progress.id
+                code.last_parsed_url = list(visited)[-1] if visited else code.url
+            else:
+                # max_pages = None → обрабатываем всё
+                if not to_visit:
+                    # Больше страниц нет → завершаем
                     code.status_id = status_completed.id
-                    code.last_parsed_url = None  # сброс
+                    code.last_parsed_url = None  # сброс прогресса
                 else:
-                    # Достигли лимита страниц — оставляем "in progress"
+                    # Теоретически не должно быть, но на всякий
                     code.status_id = status_in_progress.id
-                    code.last_parsed_url = last_success_url
-                await self.session.commit()
+                    code.last_parsed_url = list(visited)[-1] if visited else code.url
 
-            return {"status": "completed" if (max_pages is None or not to_visit) else "partial", "saved": total_saved,
-                    "last_url": last_success_url, "pages_processed": processed_pages, "remaining_pages": len(to_visit)}
+            await self.session.commit()
+
+            return {"status": "completed" if (max_pages is None and not to_visit) else "partial", "saved": total_saved,
+                    "pages_processed": processed_pages, "last_url": code.last_parsed_url, }
 
         except Exception as e:
+            # Общая ошибка — сохраняем прогресс
             code.status_id = status_in_progress.id
-            code.last_parsed_url = last_success_url
+            code.last_parsed_url = list(visited)[-1] if visited else code.url
             await self.session.commit()
-            return {"status": "error", "last_url": last_success_url, "saved": total_saved, "error": str(e)}
+            return {"status": "error", "last_url": code.last_parsed_url, "saved": total_saved, "error": str(e)}
 
     # --- Синхронные вспомогательные функции для run_in_executor ---
 
@@ -358,3 +366,19 @@ class ParserOrchestrator:
                 if full not in urls:
                     urls.append(full)
         return urls
+
+    async def _fetch_with_retry(
+            self, url: str, timeout: int = 10, max_retries: int = 3, base_delay: float = 1.0,
+            max_delay: float = 10.0, ) -> str:
+        for attempt in range(max_retries + 1):
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(timeout)) as client:
+                    resp = await client.get(url)
+                    resp.raise_for_status()
+                    return resp.content.decode("windows-1251")
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as e:
+                if attempt == max_retries:
+                    raise e
+                delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+                await asyncio.sleep(delay)
+        raise RuntimeError("Unreachable")
