@@ -82,6 +82,7 @@ class Rawdata(Base, BaseAt):
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
 
     name: Mapped["Name"] = relationship("Name", back_populates="raw_data")
+    attachment_url: Mapped[Optional[str]] = mapped_column(String(512), nullable = True)
 
     def __str__(self):
         return str(self.name_id) or ""

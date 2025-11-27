@@ -10,7 +10,7 @@ from urllib.parse import urljoin, urlparse, parse_qs
 import httpx
 from bs4 import BeautifulSoup
 
-from app.support.parser.model import Registry, Code, Status, Name
+from app.support.parser.model import Registry, Code, Status, Name, Rawdata
 from app.support.parser.repository import RegistryRepository, CodeRepository, StatusRepository
 # from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,9 +61,9 @@ class ParserOrchestrator:
         """Асинхронно загружает HTML."""
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.get(url)
-            print(f'{response.status_code}=')
+            """print(f'{response.status_code}=')
             if response.status_code != 200:
-                print(f'{response.text}')
+                print(f'{response.text}')"""
             response.raise_for_status()
             return response.text
 
@@ -367,8 +367,63 @@ class ParserOrchestrator:
                 await asyncio.sleep(delay)
         raise RuntimeError("Unreachable")
 
+    async def parse_rawdata_from_name(self, name: Name) -> dict:
+        """Парсит детальную страницу продукта и сохраняет RawData."""
+        try:
+            # 1. Загружаем HTML
+            html = await self._fetch_with_retry(name.url, timeout=10)
+            soup = BeautifulSoup(html, 'html.parser')
 
-from urllib.parse import urlparse, parse_qs
+            # 2. Находим контейнер с данными
+            cont_txt = soup.select_one("div#cont_txt")
+            if not cont_txt:
+                return {"status": "error", "reason": "div#cont_txt not found"}
+
+            body_html = str(cont_txt)
+
+            # 3. Извлекаем ссылку на attachment (маркировка)
+            attachment_tag = cont_txt.select_one('a[href*="/download/"]')
+            attachment_url = attachment_tag.get("href") if attachment_tag else None
+
+            # 4. Получаем статус "completed"
+            status_completed = await StatusRepository.get_by_fields(
+                {"status": "completed"}, Status, self.session
+            )
+            if not status_completed:
+                return {"status": "error", "reason": "Status 'completed' not found"}
+
+            # 5. Проверяем/обновляем/создаём RawData
+            existing_raw_result = await self.session.execute(
+                select(Rawdata).where(Rawdata.name_id == name.id)
+            )
+            existing_raw = existing_raw_result.scalar_one_or_none()
+
+            if existing_raw:
+                # Обновляем
+                existing_raw.body_html = body_html
+                existing_raw.attachment_url = attachment_url
+                existing_raw.status_id = status_completed.id
+                await self.session.commit()
+                raw_id = existing_raw.id
+            else:
+                # Создаём новую запись
+                new_raw = Rawdata(
+                    name_id=name.id, body_html=body_html, attachment_url=attachment_url,
+                    status_id=status_completed.id
+                )
+                self.session.add(new_raw)
+                await self.session.commit()
+                await self.session.refresh(new_raw)
+                raw_id = new_raw.id
+
+            # 6. Обновляем статус Name
+            name.status_id = status_completed.id
+            await self.session.commit()
+
+            return {"status": "success", "rawdata_id": raw_id, "attachment_url": attachment_url}
+
+        except Exception as e:
+            return {"status": "error", "error": str(e), "name_id": name.id, "url": name.url}
 
 
 def get_page_number(url: str, base_url: str) -> int:

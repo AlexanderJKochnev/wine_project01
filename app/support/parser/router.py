@@ -19,6 +19,7 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route(
             "", self.endpoints, methods=["POST"])  # , response_model=self.create_schema)
         self.router.add_api_route("/name", self.parse_names_endpoint, methods=["POST"])
+        self.router.add_api_route("/raw", self.parse_raw_endpoint, mothods=["POST"])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
@@ -59,6 +60,33 @@ class OrchestratorRouter(LightRouter):
         result = await orchestrator.parse_names_from_code(code, registry, max_pages=max_pages)
 
         return {"code_id": code.id, "result": result}
+
+    async def parse_raw_endpoint(
+            name_id: Optional[int] = Query(
+                None, description="ID записи Name. Если не указан — обрабатывается первая незавершённая."
+            ), session: AsyncSession = Depends(get_db)
+    ):
+        if name_id is not None:
+            name = await session.get(Name, name_id)
+            if not name:
+                return {"error": "Name not found"}
+        else:
+            # Берём первую запись Name со статусом != completed
+            status_completed = await StatusRepository.get_by_fields(
+                {"status": "completed"}, Status, session
+            )
+            stmt = select(Name)
+            if status_completed:
+                stmt = stmt.where(Name.status_id != status_completed.id)
+            stmt = stmt.order_by(Name.id).limit(1)
+            result = await session.execute(stmt)
+            name = result.scalar_one_or_none()
+            if not name:
+                return {"error": "No unprocessed Name records found"}
+
+        orchestrator = ParserOrchestrator(session)
+        result = await orchestrator.parse_rawdata_from_name(name)
+        return result
 
 
 class RegistryRouter(BaseRouter):
