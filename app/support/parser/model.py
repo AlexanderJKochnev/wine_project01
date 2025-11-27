@@ -24,6 +24,18 @@ class Registry(Base, BaseAt):
     timeout: Mapped[int] = mapped_column(Integer, unique=False, index=True, nullable=True)
     codes: Mapped[List["Code"]] = relationship("Code", back_populates="registry", cascade="all, delete-orphan")
 
+    # Тег и атрибут для парсинга ссылок на продукты (Name)
+    name_link_tag: Mapped[str] = mapped_column(String(255), nullable=True, default="a")
+    name_link_attr: Mapped[str] = mapped_column(String(255), nullable=True, default="href")
+    name_link_parent_selector: Mapped[str] = mapped_column(String(255), nullable=True, default="div#cont_txt")
+
+    # Селектор для блока пагинации
+    pagination_selector: Mapped[str] = mapped_column(
+        String(255), nullable=True, default="div#cont_txt p:contains('Выберите страницу')"
+    )
+    pagination_link_tag: Mapped[str] = mapped_column(String(255), nullable=True, default="a")
+    pagination_link_attr: Mapped[str] = mapped_column(String(255), nullable=True, default="href")
+
     def __str__(self):
         return self.shortname or ""
 
@@ -32,9 +44,10 @@ class Code(Base, BaseAt):
 
     code: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     url: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-
+    last_parsed_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     status: Mapped["Status"] = relationship("Status", back_populates="codes")
-    status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
+    status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"),
+                                           nullable=True)
     registry: Mapped["Registry"] = relationship("Registry", back_populates="codes")
     registry_id: Mapped[int] = mapped_column(ForeignKey("registry.id", ondelete="SET NULL"), nullable=True)
 
@@ -48,7 +61,7 @@ class Code(Base, BaseAt):
 class Name(Base, BaseAt):
 
     code_id: Mapped[int] = mapped_column(ForeignKey("codes.id", ondelete="CASCADE"))
-    name: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     url: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     status: Mapped["Status"] = relationship("Status", back_populates="names")
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)

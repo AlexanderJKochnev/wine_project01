@@ -2,13 +2,14 @@
 
 import asyncio
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
 from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 
-from app.support.parser.model import Registry, Code, Status
+from app.support.parser.model import Registry, Code, Status, Name
 from app.support.parser.repository import RegistryRepository, CodeRepository, StatusRepository
 # from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,6 +44,14 @@ class ParserOrchestrator:
                 link_attr="href",
                 parent_selector=None,
                 timeout=10,
+                # --- новые поля ---
+                name_link_tag="a",
+                name_link_attr="href",
+                name_link_parent_selector="div#cont_txt",
+                pagination_selector=None,  # не используется напрямую
+                pagination_link_tag="a",
+                pagination_link_attr="href",
+
             )
             registry = await RegistryRepository.create(registry, Registry, self.session)
         return registry
@@ -183,3 +192,169 @@ class ParserOrchestrator:
                 new_status = Status(status=status_name)
                 session.add(new_status)
             await session.commit()
+
+    async def _fetch_and_parse(self, url: str, timeout: int = 10) -> BeautifulSoup:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            # Кодировка windows-1251 указана в meta!
+            html = resp.content.decode('windows-1251')
+            return BeautifulSoup(html, 'html.parser')
+
+    async def _extract_product_links(self, soup: BeautifulSoup, base_url: str, registry: Registry) -> List[
+            tuple[str, str]]:
+        container = soup.select_one(registry.name_link_parent_selector) if registry.name_link_parent_selector else soup
+        if not container:
+            return []
+
+        links = []
+        for tag in container.find_all(registry.name_link_tag or 'a'):
+            href = tag.get(registry.name_link_attr or 'href')
+            if not href:
+                continue
+            full_url = urljoin(base_url, href)
+            # Фильтруем только ссылки с `-obj` (по шаблону из примера)
+            if '-obj' not in full_url:
+                continue
+            name_text = (tag.get_text(strip=True) or "")[:255]
+            links.append((full_url, name_text))
+        return links
+
+    async def _extract_pagination_urls(self, soup: BeautifulSoup, current_page_url: str, registry: Registry) -> List[
+            str]:
+        # Ищем <p>, содержащий "Выберите страницу"
+        for p in soup.find_all('p'):
+            if 'Выберите страницу' in p.get_text():
+                pagination_block = p
+                break
+        else:
+            return []
+
+        urls = []
+        for a in pagination_block.find_all(registry.pagination_link_tag or 'a'):
+            href = a.get(registry.pagination_link_attr or 'href')
+            if href:
+                full = urljoin(current_page_url, href)
+                if full not in urls:
+                    urls.append(full)
+        return urls
+
+    async def parse_names_from_code(
+            self, code: Code, registry: Registry, max_pages: Optional[int] = None
+    ) -> dict:
+        """Возвращает dict с результатом: статус, кол-во сохранённых записей, последний URL и т.д."""
+
+        status_new = await StatusRepository.get_by_fields({"status": "new"}, Status, self.session)
+        status_in_progress = await StatusRepository.get_by_fields({"status": "in progress"}, Status, self.session)
+        status_completed = await StatusRepository.get_by_fields({"status": "completed"}, Status, self.session)
+
+        # Начинаем с last_parsed_url или с базового URL
+        start_url = code.last_parsed_url or code.url
+        to_visit = [start_url]
+        visited = set()
+        total_saved = 0
+        processed_pages = 0
+        last_success_url = start_url
+
+        try:
+            while to_visit and (max_pages is None or processed_pages < max_pages):
+                current_url = to_visit.pop(0)  # BFS
+                if current_url in visited:
+                    continue
+                visited.add(current_url)
+                processed_pages += 1
+
+                try:
+                    soup = await self._fetch_and_parse(current_url, timeout=registry.timeout or 10)
+                except Exception as e:
+                    print(f"Ошибка загрузки {current_url}: {e}")
+                    # Сохраняем последний УСПЕШНЫЙ URL
+                    code.last_parsed_url = last_success_url
+                    code.status_id = status_in_progress.id
+                    await self.session.commit()
+                    return {"status": "failed", "last_url": last_success_url, "saved": total_saved, "error": str(e)}
+
+                # Парсим ссылки на продукты
+                product_links = await asyncio.get_event_loop().run_in_executor(
+                    None, self._extract_product_links_sync, soup, current_url, registry
+                )
+
+                for url, name in product_links:
+                    # Проверяем уникальность по URL
+                    existing = await self.session.execute(select(Name).where(Name.url == url))
+                    if existing.scalar_one_or_none():
+                        continue
+                    try:
+                        new_name = Name(
+                            url=url, name=name, code_id=code.id, status_id=status_new.id
+                        )
+                        self.session.add(new_name)
+                        total_saved += 1
+                    except Exception as e:
+                        print(f"Ошибка сохранения Name {url}: {e}")  # Продолжаем парсинг, но не падаем
+
+                await self.session.commit()  # сохраняем имена постранично
+                last_success_url = current_url
+
+                # Извлекаем пагинацию
+                pagination_urls = await asyncio.get_event_loop().run_in_executor(
+                    None, self._extract_pagination_urls_sync, soup, current_url, registry
+                )
+                for url in pagination_urls:
+                    if url not in visited and url not in to_visit:
+                        to_visit.append(url)
+
+            # Завершение
+            if not to_visit or (max_pages is not None and processed_pages >= max_pages):
+                if max_pages is None or not to_visit:
+                    # Всё обработано
+                    code.status_id = status_completed.id
+                    code.last_parsed_url = None  # сброс
+                else:
+                    # Достигли лимита страниц — оставляем "in progress"
+                    code.status_id = status_in_progress.id
+                    code.last_parsed_url = last_success_url
+                await self.session.commit()
+
+            return {"status": "completed" if (max_pages is None or not to_visit) else "partial", "saved": total_saved,
+                    "last_url": last_success_url, "pages_processed": processed_pages, "remaining_pages": len(to_visit)}
+
+        except Exception as e:
+            code.status_id = status_in_progress.id
+            code.last_parsed_url = last_success_url
+            await self.session.commit()
+            return {"status": "error", "last_url": last_success_url, "saved": total_saved, "error": str(e)}
+
+    # --- Синхронные вспомогательные функции для run_in_executor ---
+
+    def _extract_product_links_sync(self, soup, base_url, registry):
+        container = soup.select_one(registry.name_link_parent_selector) if registry.name_link_parent_selector else soup
+        if not container:
+            return []
+        links = []
+        for tag in container.find_all(registry.name_link_tag or 'a'):
+            href = tag.get(registry.name_link_attr or 'href')
+            if not href:
+                continue
+            full_url = urljoin(base_url, href)
+            if '-obj' not in full_url:
+                continue
+            name_text = (tag.get_text(strip=True) or "")[:255]
+            links.append((full_url, name_text))
+        return links
+
+    def _extract_pagination_urls_sync(self, soup, current_page_url, registry):
+        for p in soup.find_all('p'):
+            if 'Выберите страницу' in p.get_text():
+                pagination_block = p
+                break
+        else:
+            return []
+        urls = []
+        for a in pagination_block.find_all(registry.pagination_link_tag or 'a'):
+            href = a.get(registry.pagination_link_attr or 'href')
+            if href:
+                full = urljoin(current_page_url, href)
+                if full not in urls:
+                    urls.append(full)
+        return urls
