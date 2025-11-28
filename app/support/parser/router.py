@@ -1,6 +1,7 @@
 # app/support/parser/router.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import asyncio
 from fastapi import Depends, Query
 from typing import Optional
 from app.core.config.database.db_async import get_db
@@ -9,6 +10,8 @@ from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registr
 from app.support.parser import schemas
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.repository import StatusRepository
+
+background_tasks = set()  # чтобы ссылка не удалилась
 
 
 class OrchestratorRouter(LightRouter):
@@ -19,7 +22,8 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route(
             "", self.endpoints, methods=["POST"])  # , response_model=self.create_schema)
         self.router.add_api_route("/name", self.parse_names_endpoint, methods=["POST"])
-        self.router.add_api_route("/raw", self.parse_raw_endpoint, mothods=["POST"])
+        self.router.add_api_route("/raw", self.parse_raw_endpoint, methods=["POST"])
+        self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
@@ -61,11 +65,13 @@ class OrchestratorRouter(LightRouter):
 
         return {"code_id": code.id, "result": result}
 
-    async def parse_raw_endpoint(
-            name_id: Optional[int] = Query(
-                None, description="ID записи Name. Если не указан — обрабатывается первая незавершённая."
-            ), session: AsyncSession = Depends(get_db)
-    ):
+    async def parse_raw_endpoint(self,
+                                 name_id: Optional[int] = Query(
+                                     None, description="ID записи Name. "
+                                                       "Если не указан — обрабатывается первая "
+                                                       "незавершённая."
+                                 ), session: AsyncSession = Depends(get_db)
+                                 ):
         if name_id is not None:
             name = await session.get(Name, name_id)
             if not name:
@@ -87,6 +93,22 @@ class OrchestratorRouter(LightRouter):
         orchestrator = ParserOrchestrator(session)
         result = await orchestrator.parse_rawdata_from_name(name)
         return result
+
+    async def start_background_parsing(self, session: AsyncSession = Depends(get_db)):
+        orchestrator = ParserOrchestrator(session)
+        """
+            Это не production-ready для долгих задач (при рестарте приложения задача прервётся).
+            Для продакшена — использовать Celery + Redis/RabbitMQ или arq.
+        """
+        async def run():
+            result = await orchestrator.process_all_names_in_background()
+            print("Background parsing finished:", result)
+
+        task = asyncio.create_task(run())
+        background_tasks.add(task)
+        task.add_done_callback(background_tasks.discard)
+
+        return {"message": "Background parsing started"}
 
 
 class RegistryRouter(BaseRouter):

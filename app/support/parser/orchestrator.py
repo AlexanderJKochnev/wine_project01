@@ -2,10 +2,11 @@
 
 import asyncio
 import random
-from sqlalchemy import select
+from sqlalchemy import select, func
 # from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
 from urllib.parse import urljoin, urlparse, parse_qs
+from app.core.config.project_config import settings
 
 import httpx
 from bs4 import BeautifulSoup
@@ -14,6 +15,8 @@ from app.support.parser.model import Registry, Code, Status, Name, Rawdata
 from app.support.parser.repository import RegistryRepository, CodeRepository, StatusRepository
 # from app.core.repositories.sqlalchemy_repository import Repository
 from sqlalchemy.ext.asyncio import AsyncSession
+
+BATCH_SIZE = settings.BATCH_SIZE
 
 
 class ParserOrchestrator:
@@ -425,7 +428,95 @@ class ParserOrchestrator:
         except Exception as e:
             return {"status": "error", "error": str(e), "name_id": name.id, "url": name.url}
 
+    async def process_all_names_in_background(self) -> dict:
+        status_completed = await StatusRepository.get_by_fields(
+            {"status": "completed"}, Status, self.session
+        )
+        if not status_completed:
+            return {"error": "Status 'completed' not found"}
 
+        total_processed = 0
+        total_errors = 0
+        offset = 0
+
+        try:
+            while True:
+                stmt = (select(Name).where(Name.status_id != status_completed.id).order_by(Name.id).offset(
+                    offset
+                ).limit(
+                    BATCH_SIZE
+                ))
+                result = await self.session.execute(stmt)
+                names = result.scalars().all()
+
+                if not names:
+                    break
+
+                success_count = 0
+                for name in names:
+                    if await self._fill_rawdata_for_name(name):
+                        success_count += 1
+                    else:
+                        total_errors += 1
+
+                total_processed += len(names)
+                offset += len(names)
+
+                # Единственный commit — после обработки батча
+                await self.session.commit()
+
+                print(f"Batch: {success_count}/{len(names)} succeeded")
+
+            return {"status": "finished", "total_processed": total_processed, "total_errors": total_errors}
+
+        except Exception as e:
+            await self.session.rollback()
+            return {"status": "failed", "error": str(e)}
+
+    async def _fill_rawdata_for_name(self, name: Name) -> bool:
+        """Заполняет RawData для Name, НЕ делая commit. Возвращает True при успехе."""
+        try:
+            html = await self._fetch_with_retry(name.url, timeout=10)
+            soup = BeautifulSoup(html, 'html.parser')
+            cont_txt = soup.select_one("div#cont_txt")
+            if not cont_txt:
+                return False
+
+            body_html = str(cont_txt)
+            attachment_tag = cont_txt.select_one('a[href*="/download/"]')
+            attachment_url = attachment_tag.get("href") if attachment_tag else None
+
+            status_completed = await StatusRepository.get_by_fields(
+                {"status": "completed"}, Status, self.session
+            )
+
+            # Создаём или обновляем RawData
+            existing_raw = await self.session.execute(
+                select(Rawdata).where(Rawdata.name_id == name.id)
+            )
+            existing_raw = existing_raw.scalar_one_or_none()
+
+            if existing_raw:
+                existing_raw.body_html = body_html
+                existing_raw.attachment_url = attachment_url
+                existing_raw.status_id = status_completed.id
+            else:
+                new_raw = Rawdata(
+                    name_id=name.id, body_html=body_html, attachment_url=attachment_url,
+                    status_id=status_completed.id
+                )
+                self.session.add(new_raw)
+
+            # Обновляем статус Name
+            name.status_id = status_completed.id
+            return True
+
+        except Exception as e:
+            print(f"Error parsing name_id={name.id}: {e}")
+            return False
+
+
+# -------------------
 def get_page_number(url: str, base_url: str) -> int:
     """Определяет номер страницы по URL."""
     if url == base_url:
