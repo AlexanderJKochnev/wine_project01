@@ -515,8 +515,15 @@ class ParserOrchestrator:
             print(f"Error parsing name_id={name.id}: {e}")
             return False
 
+    async def parse_rawdata_from_name_by_id(self, name_id: int) -> dict:
+        name = await self.session.get(Name, name_id)
+        if not name:
+            return {"status": "error", "reason": "Name not found"}
+        return await self._fill_rawdata_for_name(name)  # без commit!
 
 # -------------------
+
+
 def get_page_number(url: str, base_url: str) -> int:
     """Определяет номер страницы по URL."""
     if url == base_url:

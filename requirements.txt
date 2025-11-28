@@ -29,6 +29,8 @@ deepdiff
 # for parsing
 beautifulsoup4
 requests
+# arq
+arq>=0.25
 # for testing purpose only
 Faker
 itsdangerous>=2.1.0

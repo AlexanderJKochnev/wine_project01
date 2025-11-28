@@ -4,6 +4,8 @@ from sqlalchemy import select
 import asyncio
 from fastapi import Depends, Query
 from typing import Optional
+from arq import create_pool
+from app.worker import redis_settings
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
 from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
@@ -24,6 +26,8 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route("/name", self.parse_names_endpoint, methods=["POST"])
         self.router.add_api_route("/raw", self.parse_raw_endpoint, methods=["POST"])
         self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
+        self.router.add_api_route("/parser/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
+        self.router.add_api_route("/parser/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
@@ -109,6 +113,28 @@ class OrchestratorRouter(LightRouter):
         task.add_done_callback(background_tasks.discard)
 
         return {"message": "Background parsing started"}
+
+    async def enqueue_raw_parsing(self, name_id: int):
+        redis = await create_pool(redis_settings())
+        job = await redis.enqueue_job('parse_rawdata_task', name_id)
+        return {"job_id": job.job_id}
+
+    async def enqueue_all_raw_parsing(self):
+        from sqlalchemy import select
+        from app.support.parser.model import Name, Status
+        from app.core.config.database.db_async import AsyncSessionLocal
+
+        redis = await create_pool(redis_settings())
+        async with AsyncSessionLocal() as session:
+            status_completed = await session.execute(select(Status).where(Status.status == "completed"))
+            status_completed = status_completed.scalar_one_or_none()
+            query = select(Name.id)
+            if status_completed:
+                query = query.where(Name.status_id != status_completed.id)
+            names = await session.execute(query)
+            for (name_id,) in names:
+                await redis.enqueue_job('parse_rawdata_task', name_id)
+        return {"message": "All raw parsing jobs enqueued"}
 
 
 class RegistryRouter(BaseRouter):

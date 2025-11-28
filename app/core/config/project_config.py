@@ -135,6 +135,10 @@ class Settings(BaseSettings):
     REDUNDANT_FIELDS: str = 'uid, imageTimestamp, index, isHidden'
     # === настройки парсинга
     BATCH_SIZE: int = 20
+    # === ARQ+REDIS
+    # === настройки redis/arq
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
@@ -208,6 +212,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
 
 get_paging: dict = {'def': settings.PAGE_DEFAULT,
                     'min': settings.PAGE_MIN,

@@ -123,6 +123,53 @@ services:
           cpus: '0.5'
           memory: 512M
   
+  redis:
+    image: redis:7-alpine
+    container_name: ${REDIS_HOST}
+    restart: unless-stopped
+    expose:
+      - "${REDIS_PORT}"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+  
+  arq-worker:
+    build: .
+    container_name: arq-worker
+    working_dir: /app
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      BASE_URL: ${BASE_URL}
+      PYTHONPATH: /app         # ← путь к корню пакета
+    command: arq app.arq_worker.WorkerSettings
+    depends_on:
+      wine_host:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+  
   mongo-express:
     image: mongo-express
     container_name: ${MONGO_EXPRESS_CONTAINER_NAME}
