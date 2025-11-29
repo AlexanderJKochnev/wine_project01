@@ -206,7 +206,7 @@ def simple_router_list():
               VarietalRouter,
               FoodRouter,
               StatusRouter,
-              RegisterRouter,
+              RegistryRouter,
               CodeRouter,
               NameRouter,
               RawdataRouter,

@@ -196,8 +196,8 @@ class RegistryRouter(BaseRouter):
                     session: AsyncSession = Depends(get_db)) -> schemas.CodeCreateResponseSchema:
         return await super().patch(id, data, session)
 
-    async def create_relation(self, data: schemas.CodeCreateRelation,
-                              session: AsyncSession = Depends(get_db)) -> schemas.CodeRead:
+    async def create_relation(self, data: schemas.RegistryCreateRelation,
+                              session: AsyncSession = Depends(get_db)) -> schemas.RegistryRead:
         result = await super().create_relation(data, session)
         return result
 

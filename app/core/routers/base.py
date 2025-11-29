@@ -122,13 +122,14 @@ class BaseRouter:
         """
         Создание одной записи с зависимостями - если в таблице есть зависимости
         они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии)
+        переписать если есть зависимости
         """
         try:
-            # obj = await self.service.create(data, self.model, session)
             obj = await self.service.create_relation(data, self.repo, self.model, session)
             if isinstance(obj, tuple):
                 obj, _ = obj
-            return await self.service.get_by_id(obj.id, self.repo, self.model, session)
+            return obj
+            # return await self.service.get_by_id(obj.id, self.repo, self.model, session)
         except Exception as e:
             await session.rollback()
             logger.error(f"Unexpected error in create_item: {e}")
