@@ -121,6 +121,7 @@ class TaskLog(Base):
     error: Mapped[Optional[str]] = mapped_column(Text)
     started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    cancel_requested: Mapped[bool] = mapped_column(default=False)
 
     def __str__(self):
         return self.task_name or ""
