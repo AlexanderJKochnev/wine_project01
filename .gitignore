@@ -1,11 +1,10 @@
+```gitignore
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-TODO.md
-.DS_Store
 build/
 develop-eggs/
 dist/
@@ -13,28 +12,28 @@ downloads/
 eggs/
 .eggs/
 lib/
-!preact_front/src/lib/
 lib64/
 parts/
 sdist/
 var/
 wheels/
 *.egg-info/
-htmlcov/
 .installed.cfg
 *.egg
 MANIFEST
-pg_data/
-seaweed_data/
-migration_volume/
-mongodb_data/
-tests/test_images/
-frontend/node_modules
-preact_front/node_modules
 
-# Virtual environment
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+.coverage.xml
+.pytest_cache/
+
+# Environment
+.env
+.env.local
+.env.*
 .venv/
-env/
 venv/
 ENV/
 env.bak/
@@ -45,32 +44,9 @@ venv.bak/
 .idea/
 *.swp
 *.swo
+*.tmp
 
-# Docker
-docker-compose.override.yml
-requirements1.txt
-
-# Database
-*.db
-*.sqlite
-postgres-data/
-pg_dump/
-
-# Logs
-*.log
-logs/
-
-# Environment variables
-.env.local
-.env.development
-.env.test
-.env.production
-
-# Secrets
-secrets.yml
-secrets.yaml
-
-# FastAPI
-*.pyc
-/upload_volume/
-/tests/test_images/
+# OS
+.DS_Store
+Thumbs.db
+```
