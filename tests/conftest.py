@@ -194,7 +194,7 @@ def simple_router_list():
     from app.support.varietal.router import VarietalRouter
     from app.support.superfood.router import SuperfoodRouter   # noqa: F401
     from app.support.food.router import FoodRouter
-    from app.support.parser.router import (StatusRouter, CodeRouter, RegisterRouter,
+    from app.support.parser.router import (StatusRouter, CodeRouter, RegistryRouter,
                                            NameRouter, RawdataRouter, ImageRouter)
     # generator = TestDataGenerator()
     # template = remove_id(json_reader())
