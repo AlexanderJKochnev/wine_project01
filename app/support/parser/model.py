@@ -1,7 +1,8 @@
 # app/support/parser/model.py
+from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, Integer
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, Integer, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models.base_model import Base, BaseAt
@@ -82,7 +83,7 @@ class Rawdata(Base, BaseAt):
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
 
     name: Mapped["Name"] = relationship("Name", back_populates="raw_data")
-    attachment_url: Mapped[Optional[str]] = mapped_column(String(512), nullable = True)
+    attachment_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
 
     def __str__(self):
         return str(self.name_id) or ""
@@ -107,3 +108,19 @@ class Status(Base, BaseAt):
 
     def __str__(self):
         return self.status or ""
+
+
+class TaskLog(Base):
+    """
+    сохранение результатов arq
+    """
+    task_name: Mapped[str] = mapped_column(String(255), index=True)
+    task_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)  # arq job_id
+    status: Mapped[str] = mapped_column(String(50))  # started, success, failed
+    entity_id: Mapped[Optional[int]] = mapped_column(Integer, index=True)  # например, name_id
+    error: Mapped[Optional[str]] = mapped_column(Text)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    def __str__(self):
+        return self.task_name or ""

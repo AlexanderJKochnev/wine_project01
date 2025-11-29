@@ -1,7 +1,5 @@
 # app/arq_worker.py
 
-# app/arq_worker.py
-
 import asyncio
 from arq import create_pool
 from arq.connections import RedisSettings

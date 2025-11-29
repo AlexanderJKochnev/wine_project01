@@ -139,6 +139,8 @@ class Settings(BaseSettings):
     # === настройки redis/arq
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
+    ARQ_TASK_TIMEOUT: int = 300  # 5 минут на задачу по умолчанию
+    ARQ_MAX_TRIES: int = 3  # максимум 3 попытки
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
