@@ -8,7 +8,7 @@ from arq import create_pool
 from app.worker import redis_settings
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
-from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
+from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry, TaskLog
 from app.support.parser import schemas
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.repository import StatusRepository
@@ -28,9 +28,13 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
         self.router.add_api_route("/parser/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
         self.router.add_api_route("/parser/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
+        self.router.add_api_route("parser/logs", self.get_task_logs, methods=['GET'])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
+        """
+            получение кодов ФРАП
+        """
         orchestrator = ParserOrchestrator(session)
         result = await orchestrator.run(shortname=shortname, url=url)
         if result["status"] == "alreadycompleted":
@@ -44,6 +48,9 @@ class OrchestratorRouter(LightRouter):
                                          description="Макс. кол-во страниц для обработки (для тестов)"),
         code_id: Optional[int] = None, session: AsyncSession = Depends(get_db)
     ):
+        """
+            получение наименований продукции зарегистрированной в ФРАП
+        """
         # Если code_id не задан — берем первую запись со статусом != 'completed'
         if code_id is None:
             status_completed = await StatusRepository.get_by_fields({"status": "completed"}, Status, session)
@@ -76,6 +83,9 @@ class OrchestratorRouter(LightRouter):
                                                        "незавершённая."
                                  ), session: AsyncSession = Depends(get_db)
                                  ):
+        """
+        получение инфорации о продукции по id (не используется)
+        """
         if name_id is not None:
             name = await session.get(Name, name_id)
             if not name:
@@ -99,6 +109,7 @@ class OrchestratorRouter(LightRouter):
         return result
 
     async def start_background_parsing(self, session: AsyncSession = Depends(get_db)):
+
         orchestrator = ParserOrchestrator(session)
         """
             Это не production-ready для долгих задач (при рестарте приложения задача прервётся).
@@ -135,6 +146,18 @@ class OrchestratorRouter(LightRouter):
             for (name_id,) in names:
                 await redis.enqueue_job('parse_rawdata_task', name_id)
         return {"message": "All raw parsing jobs enqueued"}
+
+    async def get_task_logs(self,
+                            status: str = None, skip: int = 0, limit: int = 100, session: AsyncSession = Depends(get_db)
+                            ):
+        """
+        Просмотр arq логов (выполнение фоновых задач: старт, завершение, критические ошибки
+        """
+        stmt = select(TaskLog).order_by(TaskLog.started_at.desc()).offset(skip).limit(limit)
+        if status:
+            stmt = stmt.where(TaskLog.status == status)
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
 
 class RegistryRouter(BaseRouter):
