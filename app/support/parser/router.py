@@ -26,10 +26,10 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route("/name", self.parse_names_endpoint, methods=["POST"])
         self.router.add_api_route("/raw", self.parse_raw_endpoint, methods=["POST"])
         self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
-        self.router.add_api_route("/parser/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
-        self.router.add_api_route("/parser/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
-        self.router.add_api_route("parser/logs", self.get_task_logs, methods=['GET'])
-        self.router.add_api_route("parser/task/cancel", self.cancel_task, methods=['POST'])
+        self.router.add_api_route("/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
+        self.router.add_api_route("/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
+        self.router.add_api_route("/logs", self.get_task_logs, methods=['GET'])
+        self.router.add_api_route("/task/cancel", self.cancel_task, methods=['POST'])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
@@ -197,8 +197,9 @@ class RegistryRouter(BaseRouter):
         return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.RegistryCreateRelation,
-                              session: AsyncSession = Depends(get_db)) -> schemas.RegistryRead:
-        result = await super().create_relation(data, session)
+                              session: AsyncSession = Depends(get_db)):  #  -> schemas.RegistryCreateResponseSchema:
+        # result = await super().create_relation(data, session)
+        result = await self.create(data, session)
         return result
 
 
