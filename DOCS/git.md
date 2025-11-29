@@ -10,3 +10,8 @@ git push origin main
 git branch -d <имя_ветки>
 удаление удаленной (remote) ветки после локальной
 git push origin --delete <имя_ветки>
+
+## подключение удаленного repo
+git remote add qwen https://github.com/AlexanderJKochnev/qwen_project02.git
+git push -u qwen main 
+
