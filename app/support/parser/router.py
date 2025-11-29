@@ -29,6 +29,7 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route("/parser/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
         self.router.add_api_route("/parser/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
         self.router.add_api_route("parser/logs", self.get_task_logs, methods=['GET'])
+        self.router.add_api_route("parser/task/cancel", self.cancel_task, methods=['POST'])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
@@ -158,6 +159,25 @@ class OrchestratorRouter(LightRouter):
             stmt = stmt.where(TaskLog.status == status)
         result = await session.execute(stmt)
         return result.scalars().all()
+
+    async def cancel_task(self,
+                          task_id: str, session: AsyncSession = Depends(get_db)
+                          ):
+        """
+            отмена выполенния фоновых задач
+        """
+        stmt = select(TaskLog).where(TaskLog.task_id == task_id)
+        result = await session.execute(stmt)
+        task_log = result.scalar_one_or_none()
+        if not task_log:
+            return {"error": "Task not found"}
+
+        if task_log.status in ("success", "failed", "cancelled"):
+            return {"error": "Task already finished"}
+
+        task_log.cancel_requested = True
+        await session.commit()
+        return {"status": "cancel requested", "task_id": task_id}
 
 
 class RegistryRouter(BaseRouter):
