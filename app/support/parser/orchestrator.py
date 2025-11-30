@@ -2,7 +2,7 @@
 
 import asyncio
 import random
-from sqlalchemy import select, func
+from sqlalchemy import select
 # from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
 from urllib.parse import urljoin, urlparse, parse_qs
@@ -438,7 +438,8 @@ class ParserOrchestrator:
         total_processed = 0
         total_errors = 0
         offset = 0
-
+        min_delay = settings.ARQ_MIN_DELAY
+        max_delay = settings.ARQ_MAX_DELAY
         try:
             while True:
                 stmt = (select(Name).where(Name.status_id != status_completed.id).order_by(Name.id).offset(
@@ -458,6 +459,8 @@ class ParserOrchestrator:
                         success_count += 1
                     else:
                         total_errors += 1
+                    delay = random.uniform(min_delay, max_delay)
+                    await asyncio.sleep(delay)
 
                 total_processed += len(names)
                 offset += len(names)

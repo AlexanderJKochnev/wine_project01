@@ -1,8 +1,8 @@
 # app/support/parser/model.py
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, Integer, DateTime
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, Integer, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models.base_model import Base, BaseAt
@@ -119,8 +119,8 @@ class TaskLog(Base):
     status: Mapped[str] = mapped_column(String(50))  # started, success, failed
     entity_id: Mapped[Optional[int]] = mapped_column(Integer, index=True)  # например, name_id
     error: Mapped[Optional[str]] = mapped_column(Text)
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     cancel_requested: Mapped[bool] = mapped_column(default=False)
 
     def __str__(self):

@@ -1,7 +1,8 @@
 # app/arq_worker.py
 
 import asyncio
-from arq import create_pool
+# from arq import create_pool
+from random import uniform
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 import uuid
@@ -15,6 +16,8 @@ from app.support.parser.model import Name, TaskLog
 # Настройка БД
 engine = create_async_engine(settings_db.database_url, echo=False, pool_pre_ping=True)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+min_delay = settings.ARQ_MIN_DELAY
+max_delay = settings.ARQ_MIN_DELAY
 
 
 async def parse_rawdata_task(ctx, name_id: int):
@@ -36,17 +39,17 @@ async def parse_rawdata_task(ctx, name_id: int):
         task_log_id = task_log.id
 
     try:
-        async with asyncio.timeout(settings.ARCQ_TASK_TIMEOUT):
+        delay = uniform(min_delay, max_delay)
+        await asyncio.sleep(delay)
+        async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
                 # Проверка отмены перед началом
                 task_log = await session.get(TaskLog, task_log_id)
                 if task_log and task_log.cancel_requested:
                     raise asyncio.CancelledError("Task was cancelled by user")
-
                 name = await session.get(Name, name_id)
                 if not name:
                     raise ValueError("Name not found")
-
                 orchestrator = ParserOrchestrator(session)
                 success = await orchestrator._fill_rawdata_for_name(name)
                 if success:
@@ -85,7 +88,12 @@ async def parse_rawdata_task(ctx, name_id: int):
 # Класс настроек (согласно документации arq)
 class WorkerSettings:
     functions = [parse_rawdata_task]
-    redis_settings = RedisSettings(host='redis', port=6379)
+    host = settings.REDIS_HOST
+    port = settings.REDIS_PORT
+    redis_settings = RedisSettings(host=host, port=port)
+    conn_timeout = 10,  # таймаут подключения
+    conn_retries = 5,  # попытки переподключения
+    conn_retry_delay = 1,  # задержка между попытками
     on_startup = None
     on_shutdown = None
     max_tries = settings.ARQ_MAX_TRIES  # 3 попытки, потом — не повторять
