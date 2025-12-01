@@ -1,13 +1,13 @@
 # app/arq_worker.py
 
 import asyncio
+import os
 from requests.exceptions import HTTPError
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 import uuid
 from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
-from app.core.config.database.db_async import get_db
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.model import Name
 from app.support.parser.service import TaskLogService
@@ -20,6 +20,7 @@ engine = create_async_engine(settings_db.database_url, echo=False, pool_pre_ping
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 min_delay = settings.ARQ_MIN_DELAY
 max_delay = settings.ARQ_MIN_DELAY
+Y = 2
 
 
 async def parse_rawdata_task(ctx, name_id: int):
@@ -37,7 +38,6 @@ async def parse_rawdata_task(ctx, name_id: int):
             session=session
         )
         await session.commit()
-    
     await smooth_delay()
 
     try:
@@ -53,7 +53,7 @@ async def parse_rawdata_task(ctx, name_id: int):
                 else:
                     await session.rollback()
                     raise RuntimeError("Failed to fill rawdata")
-                
+
                 # Update task log on success
                 async with AsyncSessionLocal() as log_session:
                     await TaskLogService.update_with_session(
@@ -65,11 +65,11 @@ async def parse_rawdata_task(ctx, name_id: int):
         # Update task log on failure
         async with AsyncSessionLocal() as log_session:
             await TaskLogService.update_with_session(
-                task_log_id, 'failed', str(e), session=log_session
+                task_log_id, 'failed', str(e.response.status_code), session=log_session
             )
             await log_session.commit()
-        await send_error_notification(str(e))
-        raise
+        await send_error_notification(str(e.response.status_code))
+        os._exit(1)
     except RuntimeError as e:
         # Update task log on failure
         async with AsyncSessionLocal() as log_session:
@@ -78,7 +78,7 @@ async def parse_rawdata_task(ctx, name_id: int):
             )
             await log_session.commit()
         await send_error_notification(str(e))
-        raise
+        os._exit(1)
     except Exception as e:
         # Update task log on failure
         async with AsyncSessionLocal() as log_session:
@@ -87,7 +87,7 @@ async def parse_rawdata_task(ctx, name_id: int):
             )
             await log_session.commit()
         await send_error_notification(str(e))
-        raise
+        os._exit(1)
 
 
 # Класс настроек (согласно документации arq)
@@ -112,5 +112,5 @@ async def send_error_notification(error_message: str):
     to_email = settings.EMAIL_ADMIN  # Email address to send error notifications to
     subject = "Ошибка воркера ARQ"
     body = f"Произошла ошибка при выполнении задачи воркера ARQ:\n\n{error_message}"
-    
+
     await email_sender.send_email(to_email, subject, body)

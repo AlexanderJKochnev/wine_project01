@@ -34,3 +34,10 @@ htmlcov/
 .DS_Store
 Thumbs.db
 ```
+
+# databases and upload files
+TODO.md
+migration_volume/
+mongodb_data/
+pg_data/
+upload_volume/
