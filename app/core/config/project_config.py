@@ -150,6 +150,7 @@ class Settings(BaseSettings):
     EMAIL_USERNAME: str = ""
     EMAIL_PASSWORD: str = ""
     EMAIL_FROM: str = ""
+    EMAIL_ADMIN: str = "akochnev66@gmail.com"  # Email address to send error notifications to
     EMAIL_USE_TLS: bool = True
     EMAIL_USE_SSL: bool = False
 
