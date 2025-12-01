@@ -1,58 +1,29 @@
-```gitignore
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
-.coverage.xml
-.pytest_cache/
-
+```
 # Environment
 .env
 .env.local
-.env.*
-.venv/
-venv/
-ENV/
-env.bak/
-venv.bak/
+*.env.*
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs and temp files
+*.log
 *.tmp
 
-# OS
-.DS_Store
-Thumbs.db
+# Testing
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Distribution / packaging
+dist/
+build/
+*.egg
+*.egg-info/
 ```
-TODO.md
-migration_volume
-mongodb_data
-pg_data
-pg_dump
-upload_volume

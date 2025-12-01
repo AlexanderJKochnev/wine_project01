@@ -12,6 +12,7 @@ from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.model import Name
 from app.support.parser.service import TaskLogService
 from app.core.utils.loggers import smooth_delay
+from app.core.utils.email_sender import EmailSender
 
 
 # Настройка БД
@@ -49,16 +50,19 @@ async def parse_rawdata_task(ctx, name_id: int):
     except HTTPError as e:
         await TaskLogService.update(task_log_id, 'failed',
                                     e.response.status_code, session=get_db)
+        await send_error_notification(str(e))
         raise
     except RuntimeError as e:
         await TaskLogService.update(
             task_log_id, 'failed', str(e), session=get_db
         )
+        await send_error_notification(str(e))
         raise
     except Exception as e:
         await TaskLogService.update(
             task_log_id, 'failed', str(e), session=get_db
         )
+        await send_error_notification(str(e))
         raise
 
     else:
@@ -79,3 +83,15 @@ class WorkerSettings:
     on_startup = None
     on_shutdown = None
     max_tries = settings.ARQ_MAX_TRIES  # 3 попытки, потом — не повторять
+
+
+async def send_error_notification(error_message: str):
+    """
+    Отправляет уведомление об ошибке на email
+    """
+    email_sender = EmailSender()
+    to_email = settings.EMAIL_USERNAME  # В реальном приложении можно использовать отдельную переменную для email администратора
+    subject = "Ошибка воркера ARQ"
+    body = f"Произошла ошибка при выполнении задачи воркера ARQ:\n\n{error_message}"
+    
+    await email_sender.send_email(to_email, subject, body)
