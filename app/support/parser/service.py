@@ -1,10 +1,14 @@
 # app/support/parser/service.py
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy import delete
+from dateutil.relativedelta import relativedelta
+from datetime import datetime, timezone
 from app.core.services.service import Service
 from app.support.parser import schemas
 from app.support.parser import repository as repo
 from app.support.parser import model as mode
+from app.core.config.database.db_async import get_db
 
 
 class RegistryService(Service):
@@ -123,3 +127,37 @@ class RawdataService(Service):
 
 class StatusService(Service):
     default = ['status']
+
+
+class TaskLogService:
+    model = mode.TaskLog
+
+    @classmethod
+    async def add(cls, task_name: str, job_id: str,
+                  name_id: int, session: AsyncSession = Depends(get_db)) -> int:
+        task_log = cls.model(task_name=task_name,
+                             task_id=job_id, status="started", entity_id=name_id,
+                             started_at=datetime.now(timezone.utc))
+        session.add(task_log)
+        await session.commit()
+        return task_log.id
+
+    @classmethod
+    async def update(cls, task_log_id: str, task_log_status: str,
+                     task_log_error: str, session: AsyncSession = Depends(get_db)):
+        task_log = await session.get(cls.model, task_log_id)
+        if task_log:
+            task_log.status = task_log_status
+            task_log.error = task_log_error
+            task_log.finished_at = datetime.now(timezone.utc)
+            await session.commit()
+        return True
+
+    @classmethod
+    async def clear(cls, session: AsyncSession = Depends(get_db)):
+        cutoff_date = (datetime.now(timezone.utc) - relativedelta(days=2)).isoformat()
+        stmt = delete(cls.model).where((cls.model.created_at < cutoff_date) &
+                                       (cls.model.status == 'success'))
+        result = await session.execute(stmt)
+        await session.commit()
+        return result.rowcount

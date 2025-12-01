@@ -489,6 +489,10 @@ class ParserOrchestrator:
             attachment_tag = cont_txt.select_one('a[href*="/download/"]')
             attachment_url = attachment_tag.get("href") if attachment_tag else None
 
+            status_new = await StatusRepository.get_by_fields(
+                {"status": "new"}, Status, self.session
+            )
+
             status_completed = await StatusRepository.get_by_fields(
                 {"status": "completed"}, Status, self.session
             )
@@ -502,11 +506,11 @@ class ParserOrchestrator:
             if existing_raw:
                 existing_raw.body_html = body_html
                 existing_raw.attachment_url = attachment_url
-                existing_raw.status_id = status_completed.id
+                existing_raw.status_id = status_new.id
             else:
                 new_raw = Rawdata(
                     name_id=name.id, body_html=body_html, attachment_url=attachment_url,
-                    status_id=status_completed.id
+                    status_id=status_new.id
                 )
                 self.session.add(new_raw)
 

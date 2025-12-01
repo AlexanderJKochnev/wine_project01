@@ -1,16 +1,17 @@
 # app/arq_worker.py
 
 import asyncio
-# from arq import create_pool
-from random import uniform
+from requests.exceptions import HTTPError
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 import uuid
-from datetime import datetime, timezone
 from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
+from app.core.config.database.db_async import get_db
 from app.support.parser.orchestrator import ParserOrchestrator
-from app.support.parser.model import Name, TaskLog
+from app.support.parser.model import Name
+from app.support.parser.service import TaskLogService
+from app.core.utils.loggers import smooth_delay
 
 
 # Настройка БД
@@ -25,28 +26,16 @@ async def parse_rawdata_task(ctx, name_id: int):
     if not job_id:
         job_id = str(uuid.uuid4())
 
-    # Создаём запись о старте
-    async with AsyncSessionLocal() as session:
-        task_log = TaskLog(
-            task_name="parse_rawdata_task",
-            task_id=job_id,
-            status="started",
-            entity_id=name_id,
-            started_at=datetime.now(timezone.utc)
-        )
-        session.add(task_log)
-        await session.commit()
-        task_log_id = task_log.id
+    # Создаём запись о старте в TaskLog
+    task_log_id = await TaskLogService.add(task_name="parse_rawdata_task",
+                                           job_id=job_id,
+                                           name_id=name_id,
+                                           session=get_db)
+    await smooth_delay()
 
     try:
-        delay = uniform(min_delay, max_delay)
-        await asyncio.sleep(delay)
         async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
-                # Проверка отмены перед началом
-                task_log = await session.get(TaskLog, task_log_id)
-                if task_log and task_log.cancel_requested:
-                    raise asyncio.CancelledError("Task was cancelled by user")
                 name = await session.get(Name, name_id)
                 if not name:
                     raise ValueError("Name not found")
@@ -57,32 +46,25 @@ async def parse_rawdata_task(ctx, name_id: int):
                 else:
                     await session.rollback()
                     raise RuntimeError("Failed to fill rawdata")
-    except asyncio.CancelledError:
-        async with AsyncSessionLocal() as session:
-            task_log = await session.get(TaskLog, task_log_id)
-            if task_log:
-                task_log.status = "cancelled"
-                task_log.finished_at = datetime.now(timezone.utc)
-                await session.commit()
-        return {"status": "cancelled", "name_id": name_id}
+    except HTTPError as e:
+        await TaskLogService.update(task_log_id, 'failed',
+                                    e.response.status_code, session=get_db)
+        raise
+    except RuntimeError as e:
+        await TaskLogService.update(
+            task_log_id, 'failed', str(e), session=get_db
+        )
+        raise
     except Exception as e:
-        async with AsyncSessionLocal() as session:
-            task_log = await session.get(TaskLog, task_log_id)
-            if task_log:
-                task_log.status = "failed"
-                task_log.error = str(e)
-                task_log.finished_at = datetime.now(timezone.utc)
-                await session.commit()
+        await TaskLogService.update(
+            task_log_id, 'failed', str(e), session=get_db
+        )
         raise
 
     else:
-        async with AsyncSessionLocal() as session:
-            task_log = await session.get(TaskLog, task_log_id)
-            if task_log:
-                task_log.status = "success"
-                task_log.finished_at = datetime.now(timezone.utc)
-                await session.commit()
-        return {"status": "success", "name_id": name_id}
+        await TaskLogService.update(
+            task_log_id, 'success', None, session=get_db
+        )
 
 
 # Класс настроек (согласно документации arq)
