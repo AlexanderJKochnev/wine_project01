@@ -143,6 +143,15 @@ class Settings(BaseSettings):
     ARQ_MAX_TRIES: int = 3  # максимум 3 попытки
     ARQ_MIN_DELAY: int = 3
     ARQ_MAX_DELAY: int = 10
+    
+    # === EMAIL SETTINGS ===
+    EMAIL_HOST: str = "smtp.gmail.com"
+    EMAIL_PORT: int = 587
+    EMAIL_USERNAME: str = ""
+    EMAIL_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+    EMAIL_USE_TLS: bool = True
+    EMAIL_USE_SSL: bool = False
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
