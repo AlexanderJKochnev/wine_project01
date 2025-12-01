@@ -3,7 +3,6 @@ from typing import Optional
 from pydantic import BaseModel
 from arq import create_pool
 from arq.connections import RedisSettings
-from app.core.config.project_config import settings
 from app.arq_worker import parse_rawdata_task
 
 
@@ -20,6 +19,8 @@ async def start_parse_rawdata_task(task_request: TaskRequest):
     """
     Запускает задачу parse_rawdata_task воркера ARQ
     """
+    from app.core.config.project_config import settings
+    
     redis_settings = RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
     arq_pool = await create_pool(redis_settings)
     
@@ -41,6 +42,8 @@ async def worker_health():
     """
     Проверяет работоспособность воркера ARQ
     """
+    from app.core.config.project_config import settings
+    
     redis_settings = RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
     arq_pool = await create_pool(redis_settings)
     
