@@ -1,0 +1,5 @@
+sqlalchemy
+beautifulsoup4
+deepdiff
+pymongo
+bson
