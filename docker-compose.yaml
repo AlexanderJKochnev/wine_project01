@@ -169,6 +169,32 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
+
+  arq-worker-rawdata:
+    build: .
+    container_name: arq-worker-rawdata
+    working_dir: /app
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      BASE_URL: ${BASE_URL}
+      PYTHONPATH: /app         # ← путь к корню пакета
+    command: arq app.rawdata_arq_worker.RawdataWorkerSettings
+    depends_on:
+      wine_host:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
   
   mongo-express:
     image: mongo-express
