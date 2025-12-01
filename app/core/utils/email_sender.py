@@ -11,6 +11,8 @@ class EmailSender:
         self.username = settings.EMAIL_USERNAME
         self.password = settings.EMAIL_PASSWORD
         self.from_email = settings.EMAIL_FROM
+        self.use_tls = settings.EMAIL_USE_TLS
+        self.use_ssl = settings.EMAIL_USE_SSL
 
     async def send_email(self, to_email: str, subject: str, body: str):
         """
@@ -28,8 +30,12 @@ class EmailSender:
         msg.attach(MIMEText(body, 'plain'))
 
         try:
-            server = smtplib.SMTP(self.smtp_host, self.smtp_port)
-            server.starttls()
+            if self.use_ssl:
+                server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
+            else:
+                server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+                if self.use_tls:
+                    server.starttls()
             server.login(self.username, self.password)
             text = msg.as_string()
             server.sendmail(self.from_email, to_email, text)
