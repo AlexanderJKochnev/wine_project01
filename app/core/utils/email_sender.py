@@ -31,8 +31,10 @@ class EmailSender:
 
         try:
             if self.use_ssl:
+                # For SSL connections (like Yandex on port 465)
                 server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
             else:
+                # For TLS connections (like Gmail on port 587)
                 server = smtplib.SMTP(self.smtp_host, self.smtp_port)
                 if self.use_tls:
                     server.starttls()

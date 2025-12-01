@@ -90,7 +90,7 @@ async def send_error_notification(error_message: str):
     Отправляет уведомление об ошибке на email
     """
     email_sender = EmailSender()
-    to_email = settings.EMAIL_USERNAME  # В реальном приложении можно использовать отдельную переменную для email администратора
+    to_email = settings.EMAIL_ADMIN  # Email address to send error notifications to
     subject = "Ошибка воркера ARQ"
     body = f"Произошла ошибка при выполнении задачи воркера ARQ:\n\n{error_message}"
     
