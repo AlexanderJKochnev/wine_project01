@@ -79,6 +79,7 @@ class Rawdata(Base, BaseAt):
 
     name_id: Mapped[int] = mapped_column(ForeignKey("names.id", ondelete="CASCADE"), unique=True)
     body_html: Mapped[Optional[str]] = mapped_column(Text)
+    parsed_data: Mapped[Optional[str]] = mapped_column(Text)  # JSON or YAML formatted parsed data
     status: Mapped["Status"] = relationship("Status", back_populates="rawdatas")
     status_id: Mapped[int] = mapped_column(ForeignKey("status.id", ondelete="SET NULL"), nullable=True)
 
