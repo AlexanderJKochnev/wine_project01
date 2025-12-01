@@ -1,6 +1,5 @@
 import pytest
-from httpx import ASGITransport, AsyncClient
-from app.main import app
+from unittest.mock import AsyncMock, patch
 from app.core.utils.email_sender import EmailSender
 from app.core.config.project_config import settings
 
@@ -11,41 +10,37 @@ async def test_send_email_success():
     email_sender = EmailSender()
     
     # Проверяем, что настройки загружаются корректно
-    assert settings.EMAIL_HOST == "smtp.yandex.ru"
-    assert settings.EMAIL_PORT == 465
-    assert settings.EMAIL_USERNAME == "redmine1981"
-    assert settings.EMAIL_PASSWORD == "tytnpatsilleesly"
-    assert settings.EMAIL_FROM == "redmine1981@yandex.ru"
+    assert email_sender.smtp_host == settings.EMAIL_HOST
+    assert email_sender.smtp_port == settings.EMAIL_PORT
+    assert email_sender.username == settings.EMAIL_USERNAME
+    assert email_sender.password == settings.EMAIL_PASSWORD
+    assert email_sender.from_email == settings.EMAIL_FROM
     
-    # Тестируем создание объекта EmailSender
-    assert email_sender.smtp_host == "smtp.yandex.ru"
-    assert email_sender.smtp_port == 465
-    assert email_sender.username == "redmine1981"
-    assert email_sender.password == "tytnpatsilleesly"
-    assert email_sender.from_email == "redmine1981@yandex.ru"
-    assert email_sender.use_ssl == True
-    assert email_sender.use_tls == False
-
-
-@pytest.mark.asyncio
-async def test_send_email_integration(authenticated_client_with_db, test_db_session):
-    """Интеграционный тест отправки email через API"""
-    from app.core.utils.email_sender import EmailSender
-    
-    # Проверяем, что настройки корректно загружаются
-    email_sender = EmailSender()
-    
-    # Попытка отправить email (это может не сработать в тестовой среде, но код должен быть корректным)
-    try:
+    # Mock the SMTP connection to avoid actual email sending
+    with patch('aiosmtplib.send') as mock_send:
+        mock_send.return_value = AsyncMock()
+        
+        # Test sending an email
         await email_sender.send_email(
-            to_email="akochnev66@gmail.com",
+            to_email="test@example.com",
             subject="Тестовое уведомление",
             body="Тестовое сообщение для проверки работы email-уведомлений"
         )
-        # Если письмо отправилось успешно
-        assert True
-    except Exception as e:
-        # В тестовой среде могут быть ограничения на отправку email, 
-        # но сам код должен быть корректным
-        # Проверим, что это именно ошибка подключения/аутентификации, а не ошибка кода
-        assert "authentication" in str(e).lower() or "connection" in str(e).lower() or "timeout" in str(e).lower()
+        
+        # Verify that aiosmtplib.send was called
+        assert mock_send.called
+
+
+@pytest.mark.asyncio
+async def test_email_sender_configuration():
+    """Тест конфигурации EmailSender с реальными настройками"""
+    email_sender = EmailSender()
+    
+    # Проверяем, что настройки загружаются из конфигурации
+    assert email_sender.smtp_host == settings.EMAIL_HOST
+    assert email_sender.smtp_port == settings.EMAIL_PORT
+    assert email_sender.username == settings.EMAIL_USERNAME
+    assert email_sender.password == settings.EMAIL_PASSWORD
+    assert email_sender.from_email == settings.EMAIL_FROM
+    assert email_sender.use_ssl == settings.EMAIL_USE_SSL
+    assert email_sender.use_tls == settings.EMAIL_USE_TLS

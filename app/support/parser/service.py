@@ -143,6 +143,16 @@ class TaskLogService:
         return task_log.id
 
     @classmethod
+    async def add_with_session(cls, task_name: str, job_id: str,
+                               name_id: int, session: AsyncSession) -> int:
+        task_log = cls.model(task_name=task_name,
+                             task_id=job_id, status="started", entity_id=name_id,
+                             started_at=datetime.now(timezone.utc))
+        session.add(task_log)
+        # Don't commit here - let the caller handle it
+        return task_log.id
+
+    @classmethod
     async def update(cls, task_log_id: str, task_log_status: str,
                      task_log_error: str, session: AsyncSession = Depends(get_db)):
         task_log = await session.get(cls.model, task_log_id)
@@ -151,6 +161,17 @@ class TaskLogService:
             task_log.error = task_log_error
             task_log.finished_at = datetime.now(timezone.utc)
             await session.commit()
+        return True
+
+    @classmethod
+    async def update_with_session(cls, task_log_id: int, task_log_status: str,
+                                  task_log_error: str, session: AsyncSession):
+        task_log = await session.get(cls.model, task_log_id)
+        if task_log:
+            task_log.status = task_log_status
+            task_log.error = task_log_error
+            task_log.finished_at = datetime.now(timezone.utc)
+            # Don't commit here - let the caller handle it
         return True
 
     @classmethod
