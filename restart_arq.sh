@@ -13,9 +13,9 @@ set -e
 # docker-compose build --no-cache arq-worker
 
 echo "▶️ Запускаем arq-worker..."
-docker-compose up -d arq-worker
+docker compose up -d arq-worker
 
 echo "✅ arq-worker перезапущен!"
-docker-compose logs arq-worker
+docker compose logs arq-worker
 # запуск со слежением
 # docker-compose logs -f arq-worker

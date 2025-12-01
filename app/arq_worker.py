@@ -2,6 +2,8 @@
 
 import asyncio
 import os
+from asyncio import sleep
+from random import uniform
 from requests.exceptions import HTTPError
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -11,7 +13,6 @@ from app.core.config.project_config import settings
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.model import Name
 from app.support.parser.service import TaskLogService
-from app.core.utils.loggers import smooth_delay
 from app.core.utils.email_sender import EmailSender
 
 
@@ -20,7 +21,6 @@ engine = create_async_engine(settings_db.database_url, echo=False, pool_pre_ping
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 min_delay = settings.ARQ_MIN_DELAY
 max_delay = settings.ARQ_MIN_DELAY
-Y = 2
 
 
 async def parse_rawdata_task(ctx, name_id: int):
@@ -38,8 +38,8 @@ async def parse_rawdata_task(ctx, name_id: int):
             session=session
         )
         await session.commit()
-    await smooth_delay()
-
+    delay = uniform(min_delay, max_delay)
+    await sleep(delay)
     try:
         async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
