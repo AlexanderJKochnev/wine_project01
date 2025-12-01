@@ -31,6 +31,7 @@ from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
 from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter, OrchestratorRouter,
                                        ImageRouter, RawdataRouter, RegistryRouter)
+from app.arq_worker.remote_control import router as ArqWorkerRouter
 # from app.support.warehouse.router import WarehouseRouter
 
 # from sqladmin import Admin
@@ -84,6 +85,7 @@ app.include_router(OrchestratorRouter().router)
 # app.include_router(CustomerRouter().router)
 # app.include_router(WarehouseRouter().router)
 
+app.include_router(ArqWorkerRouter)
 app.include_router(auth_router)
 app.include_router(user_router)
 
