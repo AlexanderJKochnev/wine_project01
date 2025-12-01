@@ -3,8 +3,7 @@
 import asyncio
 import os
 from asyncio import sleep
-from random import uniform
-from requests.exceptions import HTTPError
+import random
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 import uuid
@@ -12,7 +11,6 @@ from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.model import Name
-from app.support.parser.service import TaskLogService
 from app.core.utils.email_sender import EmailSender
 
 
@@ -20,27 +18,22 @@ from app.core.utils.email_sender import EmailSender
 engine = create_async_engine(settings_db.database_url, echo=False, pool_pre_ping=True)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 min_delay = settings.ARQ_MIN_DELAY
-max_delay = settings.ARQ_MIN_DELAY
+max_delay = settings.ARQ_MAX_DELAY
+metrics = {
+    'completed_tasks': 0
+}
 
 
 async def parse_rawdata_task(ctx, name_id: int):
-    job_id = ctx.get("job_id")
-    if not job_id:
-        job_id = str(uuid.uuid4())
-
-    # Create session for logging the task start
-    async with AsyncSessionLocal() as session:
-        # Создаём запись о старте в TaskLog
-        task_log_id = await TaskLogService.add_with_session(
-            task_name="parse_rawdata_task",
-            job_id=job_id,
-            name_id=name_id,
-            session=session
-        )
-        await session.commit()
-    delay = uniform(min_delay, max_delay)
-    await sleep(delay)
     try:
+        random.seed()
+        delay = random.uniform(min_delay, max_delay)
+        print(f'{delay=}')
+        await sleep(delay)
+        job_id = ctx.get("job_id")
+        if not job_id:
+            job_id = str(uuid.uuid4())
+        # Create session for logging the task start
         async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
                 name = await session.get(Name, name_id)
@@ -53,55 +46,31 @@ async def parse_rawdata_task(ctx, name_id: int):
                 else:
                     await session.rollback()
                     raise RuntimeError("Failed to fill rawdata")
-
-                # Update task log on success
-                async with AsyncSessionLocal() as log_session:
-                    await TaskLogService.update_with_session(
-                        task_log_id, 'success', None, session=log_session
-                    )
-                    await log_session.commit()
-
-    except HTTPError as e:
-        # Update task log on failure
-        async with AsyncSessionLocal() as log_session:
-            await TaskLogService.update_with_session(
-                task_log_id, 'failed', str(e.response.status_code), session=log_session
-            )
-            await log_session.commit()
-        await send_error_notification(str(e.response.status_code))
-        os._exit(1)
-    except RuntimeError as e:
-        # Update task log on failure
-        async with AsyncSessionLocal() as log_session:
-            await TaskLogService.update_with_session(
-                task_log_id, 'failed', str(e), session=log_session
-            )
-            await log_session.commit()
-        await send_error_notification(str(e))
-        os._exit(1)
     except Exception as e:
-        # Update task log on failure
-        async with AsyncSessionLocal() as log_session:
-            await TaskLogService.update_with_session(
-                task_log_id, 'failed', str(e), session=log_session
-            )
-            await log_session.commit()
-        await send_error_notification(str(e))
+        count = ctx['metrics']['completed_tasks']
+        await send_error_notification(f'{str(e)}. Всего выполнено задач этим воркером: {count}')
         os._exit(1)
 
 
-# Класс настроек (согласно документации arq)
-class WorkerSettings:
-    functions = [parse_rawdata_task]
-    host = settings.REDIS_HOST
-    port = settings.REDIS_PORT
-    redis_settings = RedisSettings(host=host, port=port)
-    conn_timeout = 10,  # таймаут подключения
-    conn_retries = 5,  # попытки переподключения
-    conn_retry_delay = 1,  # задержка между попытками
-    on_startup = None
-    on_shutdown = None
-    max_tries = settings.ARQ_MAX_TRIES  # 3 попытки, потом — не повторять
+async def on_startup_handle(ctx):
+    ctx['metrics'] = metrics
+    print(f"Воркер запущен. Начальное количество задач: {ctx['metrics']['completed_tasks']}")
+
+
+async def on_job_post_run_handle(ctx):
+    # Увеличиваем счетчик
+    ctx['metrics']['completed_tasks'] += 1
+
+    # Выводим текущее значение счетчика в консоль
+    count = ctx['metrics']['completed_tasks']
+    print(f"[{ctx['job_id']}] Задача завершена. Всего выполнено задач этим воркером: {count}")
+
+
+# Хук вызывается при остановке процесса воркера
+async def on_shutdown_handle(ctx):
+    count = ctx['metrics']['completed_tasks']
+    print(f"Воркер остановлен. Всего выполнено задач: {count}")
+    await send_error_notification(f"Воркер остановлен. Всего выполнено задач: {count}")
 
 
 async def send_error_notification(error_message: str):
@@ -114,3 +83,18 @@ async def send_error_notification(error_message: str):
     body = f"Произошла ошибка при выполнении задачи воркера ARQ:\n\n{error_message}"
 
     await email_sender.send_email(to_email, subject, body)
+
+
+# Класс настроек (согласно документации arq)
+class WorkerSettings:
+    functions = [parse_rawdata_task]
+    host = settings.REDIS_HOST
+    port = settings.REDIS_PORT
+    redis_settings = RedisSettings(host=host, port=port)
+    conn_timeout = 10,  # таймаут подключения
+    conn_retries = 5,  # попытки переподключения
+    conn_retry_delay = 1,  # задержка между попытками
+    on_startup = on_startup_handle
+    on_shutdown = on_shutdown_handle
+    on_job_end = on_job_post_run_handle
+    max_tries = settings.ARQ_MAX_TRIES  # 3 попытки, потом — не повторять

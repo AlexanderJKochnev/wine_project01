@@ -519,8 +519,9 @@ class ParserOrchestrator:
             return True
 
         except Exception as e:
-            print(f"Error parsing name_id={name.id}: {e}")
-            return False
+            # print(f"Error parsing name_id={name.id}: {e}")
+            # return False
+            raise Exception(f"Error parsing name_id={name.id}: {e}")
 
     async def parse_rawdata_from_name_by_id(self, name_id: int) -> dict:
         name = await self.session.get(Name, name_id)
