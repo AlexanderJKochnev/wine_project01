@@ -12,6 +12,7 @@ from app.core.utils.converters import (drink_level, field_cast, get_subcategory,
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.support.item.schemas import DrinkCreateRelation, ItemCreateRelation
 
+
 filename = 'data.json'
 
 
