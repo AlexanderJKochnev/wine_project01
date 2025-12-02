@@ -15,3 +15,9 @@ git push origin --delete <имя_ветки>
 git remote add qwen https://github.com/AlexanderJKochnev/qwen_project02.git
 git push -u qwen main 
 
+TODO.md
+migration_volume/
+mongodb_data/
+pg_data/
+upload_volume/
+

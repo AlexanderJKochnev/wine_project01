@@ -1,5 +1,5 @@
 # app/support/parser/schemas.py
-from typing import Optional
+from typing import Optional, Any
 
 from app.core.schemas.base import (CreateResponse, DateSchema,
                                    BaseModel, PkSchema)
@@ -178,16 +178,19 @@ class RawdataUpdate(BaseModel):
     body_html: Optional[str] = None
     name_id: Optional[int] = None
     status_id: Optional[int] = 1
+    parsed_data: Optional[dict[str, Any]] = None
 
 
 class RawdataRead(RawdataCreate, PkSchema, DateSchema):
     pass
+    parsed_data: Optional[dict[str, Any]] = None
 
 
 class RawdataReadRelation(PkSchema, DateSchema):
     body_html: Optional[str]
     name: NameRead
     status: StatusRead
+    parsed_data: Optional[dict[str, Any]] = None
 
 
 class ImageCreate(BaseModel):
