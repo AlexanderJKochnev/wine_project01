@@ -28,6 +28,7 @@ class OrchestratorRouter(LightRouter):
         self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
         self.router.add_api_route("/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
         self.router.add_api_route("/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
+        self.router.add_api_route("/raw/enqueue-single", self.enqueue_single_rawdata_parsing, methods=['POST'])
         self.router.add_api_route("/logs", self.get_task_logs, methods=['GET'])
         self.router.add_api_route("/task/cancel", self.cancel_task, methods=['POST'])
 
@@ -150,6 +151,14 @@ class OrchestratorRouter(LightRouter):
             for (name_id,) in names:
                 await redis.enqueue_job('parse_rawdata_task', name_id)
         return {"message": "All raw parsing jobs enqueued"}
+
+    async def enqueue_single_rawdata_parsing(self):
+        """
+        Enqueue single rawdata parsing job for processing
+        """
+        redis = await create_pool(redis_settings())
+        job = await redis.enqueue_job('parse_all_rawdata_task')
+        return {"job_id": job.job_id, "message": "Single rawdata parsing job enqueued"}
 
     async def get_task_logs(self,
                             status: str = None, skip: int = 0, limit: int = 100, session: AsyncSession = Depends(get_db)

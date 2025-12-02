@@ -11,10 +11,11 @@ from sqlalchemy import select
 import uuid
 from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
-from app.support.parser.model import Rawdata
+from app.support.parser.model import Rawdata, Status
 from app.support.parser.utils.html_parser import parse_html_to_dict
 from app.support.field_keys.service import FieldKeyService
 from app.core.utils.email_sender import EmailSender
+from app.support.parser.repository import StatusRepository
 
 
 # Настройка БД
@@ -23,14 +24,16 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 metrics = {
     'completed_tasks': 0
 }
+status_completed_id = None  # Cache the completed status ID
 
 
 async def parse_all_rawdata_task(ctx):
     """
-    Parse all Rawdata records, extract key-value pairs, store in parsed_data field,
-    and update field keys in the field_keys table.
+    Parse one Rawdata record, extract key-value pairs, store in parsed_data field,
+    update field keys in the field_keys table, and set status to completed.
     """
-
+    global status_completed_id
+    
     try:
         job_id = ctx.get("job_id")
         if not job_id:
@@ -38,53 +41,72 @@ async def parse_all_rawdata_task(ctx):
 
         async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
-                # Get all Rawdata records that have body_html
-                stmt = select(Rawdata).where(Rawdata.body_html.isnot(None))
+                # Get one Rawdata record that has body_html (not processed yet)
+                stmt = select(Rawdata).where(
+                    Rawdata.body_html.isnot(None)
+                ).where(
+                    Rawdata.status_id != status_completed_id
+                ).order_by(Rawdata.id).limit(1)
                 result = await session.execute(stmt)
-                rawdata_records = result.scalars().all()
+                rawdata_record = result.scalar_one_or_none()
+                
+                if not rawdata_record:
+                    print("No Rawdata records to process")
+                    return {"status": "no_records"}
 
-                print(f"Found {len(rawdata_records)} Rawdata records to process")
+                print(f"Processing record with id {rawdata_record.id}")
 
-                for i, rawdata_record in enumerate(rawdata_records):
-                    print(f"Processing record {i + 1}/{len(rawdata_records)} with id {rawdata_record.id}")
+                # Parse the HTML content
+                parsed_dict, field_mapping = parse_html_to_dict(rawdata_record.body_html)
 
-                    # Parse the HTML content
-                    parsed_dict, field_mapping = parse_html_to_dict(rawdata_record.body_html)
+                # Store the parsed data as JSON in the parsed_data field
+                if parsed_dict:
+                    rawdata_record.parsed_data = json.dumps(parsed_dict, ensure_ascii=False, indent=2)
 
-                    # Store the parsed data as JSON in the parsed_data field
-                    if parsed_dict:
-                        rawdata_record.parsed_data = json.dumps(parsed_dict, ensure_ascii=False, indent=2)
+                # Process field keys and update the field_keys table
+                for short_name, full_name in field_mapping.items():
+                    # Truncate short_name to 25 characters if needed
+                    if len(short_name) > 25:
+                        short_name = short_name[:25]
 
-                    # Process field keys and update the field_keys table
-                    for short_name, full_name in field_mapping.items():
-                        # Truncate short_name to 25 characters if needed
-                        if len(short_name) > 25:
-                            short_name = short_name[:25]
+                    # Create or update field key
+                    field_key_service = FieldKeyService(session)
+                    await field_key_service.get_or_create_field_key(
+                        short_name=short_name,
+                        full_name=full_name
+                    )
+                
+                # Update status to completed
+                rawdata_record.status_id = status_completed_id
 
-                        # Create or update field key
-                        field_key_service = FieldKeyService(session)
-                        await field_key_service.get_or_create_field_key(
-                            short_name=short_name,
-                            full_name=full_name
-                        )
+                # Commit changes for this record
+                await session.commit()
 
-                    # Commit changes for this record
-                    await session.commit()
+                print(f"Successfully processed Rawdata record with id {rawdata_record.id}")
 
-                    # Small delay to prevent overwhelming the system
-                    await sleep(0.01)
-
-                print(f"Successfully processed {len(rawdata_records)} Rawdata records")
+                return {"status": "success", "record_id": rawdata_record.id}
 
     except Exception as e:
-        count = ctx['metrics']['completed_tasks']
-        await send_error_notification(f'{str(e)}. Всего выполнено задач воркером Rawdata processing: {count}')
-        os._exit(1)
+        print(f"Error processing Rawdata record: {str(e)}")
+        # Don't commit the changes if there was an error
+        # The record status will remain unchanged
+        await send_error_notification(f'Error processing Rawdata record: {str(e)}, job_id: {job_id}')
+        raise  # Re-raise the exception so ARQ can handle retries
 
 
 async def on_startup_handle(ctx):
+    global status_completed_id
     ctx['metrics'] = metrics
-    print(f"Rawdata processing воркер запущен. Начальное количество задач: {ctx['metrics']['completed_tasks']}")
+    
+    # Initialize the completed status ID at startup
+    async with AsyncSessionLocal() as session:
+        status_completed = await StatusRepository.get_by_fields({"status": "completed"}, Status, session)
+        if status_completed:
+            status_completed_id = status_completed.id
+        else:
+            print("Warning: 'completed' status not found in database")
+    
+    print(f"Rawdata processing воркер запущен. Начальное количество задач: {ctx['metrics']['completed_tasks']}, status_completed_id: {status_completed_id}")
 
 
 async def on_job_post_run_handle(ctx):
