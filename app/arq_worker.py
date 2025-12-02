@@ -3,6 +3,7 @@
 import asyncio
 import os
 from asyncio import sleep
+from fastapi import HTTPException
 import random
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -46,6 +47,13 @@ async def parse_rawdata_task(ctx, name_id: int):
                 else:
                     await session.rollback()
                     raise RuntimeError("Failed to fill rawdata")
+    except HTTPException as http_exc:
+        if http_exc.status_code in [503]:
+            await send_error_notification(f'{str(http_exc)}. '
+                                          f'Пропускаем запись, продолжаем работу',
+                                          'Уведомление - ошибка 503')
+        else:
+            raise http_exc
     except Exception as e:
         count = ctx['metrics']['completed_tasks']
         await send_error_notification(f'{str(e)}. Всего выполнено задач этим воркером: {count}')
@@ -73,7 +81,7 @@ async def on_shutdown_handle(ctx):
     await send_error_notification(f"Воркер остановлен. Всего выполнено задач: {count}")
 
 
-async def send_error_notification(error_message: str):
+async def send_error_notification(error_message: str, subject: str = "Ошибка воркера ARQ"):
     """
     Отправляет уведомление об ошибке на email
     """
