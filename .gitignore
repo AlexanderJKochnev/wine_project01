@@ -2,23 +2,20 @@
 # Compiled and build artifacts
 *.pyc
 __pycache__/
-*.o
-*.obj
+*.pyo
+*.pyd
 *.so
-*.dll
-*.exe
-*.out
+*.egg-info/
+build/
+dist/
+*.egg
 
 # Dependencies
 .venv/
 venv/
-node_modules/
-dist/
-build/
-target/
-.gradle/
-.mypy_cache/
-.pytest_cache/
+env/
+.env/
+requirements*.txt
 
 # Logs and temp files
 *.log
@@ -34,19 +31,20 @@ target/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Coverage
+# Coverage reports
+.coverage
 coverage/
 htmlcov/
-.coverage
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
 
 # System files
 .DS_Store
 Thumbs.db
-TODO.md
-migration_volume/
-mongodb_data/
-pg_data/
-upload_volume/
-
 ```
