@@ -79,7 +79,8 @@ async def parse_all_rawdata_task(ctx, rawdata_id: int, status_completed_id: int)
         print(f"Error processing Rawdata record: {str(e)}")
         # Don't commit the changes if there was an error
         # The record status will remain unchanged
-        await send_error_notification(f'Error processing Rawdata record: {str(e)}, job_id: {job_id}')
+        await send_error_notification("Rawdata processing воркер (№2) остановлен с ошибкой",
+                                      f'Error processing Rawdata record: {str(e)}, job_id: {job_id}')
         raise  # Re-raise the exception so ARQ can handle retries
 
 
@@ -113,16 +114,17 @@ async def on_job_post_run_handle(ctx):
 async def on_shutdown_handle(ctx):
     count = ctx['metrics']['completed_tasks']
     print(f"Rawdata processing воркер остановлен. Всего выполнено задач: {count}")
-    await send_error_notification(f"Rawdata processing воркер остановлен. Всего выполнено задач: {count}")
+    await send_error_notification("Rawdata processing воркер (№2) успешно завершил работу",
+                                  f"Rawdata processing воркер остановлен. Всего выполнено задач: {count}")
 
 
-async def send_error_notification(error_message: str):
+async def send_error_notification(subject: str, error_message: str):
     """
     Отправляет уведомление об ошибке на email
     """
     email_sender = EmailSender()
     to_email = settings.EMAIL_ADMIN  # Email address to send error notifications to
-    subject = "Ошибка воркера ARQ (Rawdata processing)"
+    # subject = "Ошибка воркера ARQ (Rawdata processing)"
     body = f"Произошла ошибка при выполнении задачи воркера ARQ (Rawdata processing):\n\n{error_message}"
 
     await email_sender.send_email(to_email, subject, body)

@@ -22,4 +22,12 @@ venv/
 # Editors
 .vscode/
 .idea/
+
+TODO.md
+migration_volume/
+mongodb_data/
+pg_data/
+upload_volume/
+.DS_Store
+
 ```
