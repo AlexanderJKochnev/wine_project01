@@ -132,6 +132,7 @@ async def send_error_notification(error_message: str):
 
 class RawdataWorkerSettings:
     functions = [parse_all_rawdata_task]
+    queue_name = 'parse_all_rawdata_queue'  # Separate queue for this worker
     host = settings.REDIS_HOST
     port = settings.REDIS_PORT
     redis_settings = RedisSettings(host=host, port=port)

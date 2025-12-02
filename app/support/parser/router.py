@@ -127,15 +127,21 @@ class OrchestratorRouter(LightRouter):
         return {"message": "Background parsing started"}
 
     async def enqueue_raw_parsing(self, name_id: int):
-        redis = await create_pool(redis_settings())
-        job = await redis.enqueue_job('parse_rawdata_task', name_id)
+        from arq import create_pool
+        from arq.connections import RedisSettings
+        from app.core.config.project_config import settings
+        redis = await create_pool(RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
+        job = await redis.enqueue_job('parse_rawdata_task', name_id, _queue_name='parse_rawdata_queue')
         return {"job_id": job.job_id}
 
     async def enqueue_all_raw_parsing(self):
         """
             парсинг данных ФРАП
         """
-        redis = await create_pool(redis_settings())
+        from arq import create_pool
+        from arq.connections import RedisSettings
+        from app.core.config.project_config import settings
+        redis = await create_pool(RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
         async with AsyncSessionLocal() as session:
             status_completed = await session.execute(select(Status).where(Status.status == "completed"))
             status_completed = status_completed.scalar_one_or_none()
@@ -144,25 +150,34 @@ class OrchestratorRouter(LightRouter):
                 query = query.where(Name.status_id != status_completed.id)
             names = await session.execute(query)
             for (name_id,) in names:
-                await redis.enqueue_job('parse_rawdata_task', name_id)
+                await redis.enqueue_job('parse_rawdata_task', name_id, _queue_name='parse_rawdata_queue')
         return {"message": "All raw parsing jobs enqueued"}
 
     async def enqueue_single_rawdata_parsing(self):
         """
             декдирование даннных ФРАП
         """
-        redis = await create_pool(redis_settings())
+        from arq import create_pool
+        from arq.connections import RedisSettings
+        from app.core.config.project_config import settings
+        redis = await create_pool(RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
         async with AsyncSessionLocal() as session:
+            # Get the completed status ID properly
             status_completed = await session.execute(select(Status).where(Status.status == "completed"))
             status_completed = status_completed.scalar_one_or_none()
-            query = select(Rawdata.id)
             if status_completed:
-                query = query.where(and_(Rawdata.status_id != status_completed.id,
-                                         Rawdata.body_html.isnot(None)))
+                status_completed_id = status_completed.id
+            else:
+                # If completed status doesn't exist, we can't proceed
+                return {"error": "Completed status not found in database"}
+            
+            query = select(Rawdata.id)
+            query = query.where(and_(Rawdata.status_id != status_completed_id,
+                                     Rawdata.body_html.isnot(None)))
             rawdata = await session.execute(query)
             for (rawdata_id,) in rawdata:
                 await redis.enqueue_job('parse_all_rawdata_task',
-                                        rawdata_id, status_completed)
+                                        rawdata_id, status_completed_id, _queue_name='parse_all_rawdata_queue')
         return {"message": "All raw decoding jobs enqueued"}
 
 

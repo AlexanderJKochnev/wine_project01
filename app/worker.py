@@ -34,3 +34,7 @@ functions = [parse_rawdata_task]
 
 def redis_settings():
     return RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+
+
+# Queue name for this worker's tasks
+queue_name = 'parse_rawdata_queue'

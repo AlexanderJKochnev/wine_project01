@@ -88,6 +88,7 @@ async def send_error_notification(error_message: str):
 # Класс настроек (согласно документации arq)
 class WorkerSettings:
     functions = [parse_rawdata_task]
+    queue_name = 'parse_rawdata_queue'  # Separate queue for this worker
     host = settings.REDIS_HOST
     port = settings.REDIS_PORT
     redis_settings = RedisSettings(host=host, port=port)
