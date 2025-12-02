@@ -33,7 +33,6 @@ def parse_html_to_dict(html_content: str) -> Tuple[Dict[str, Any], Dict[str, str
         field_mapping['product_name'] = 'Наименование продукта'
     
     # Find all div pairs with the specified classes
-    div_pairs = []
     two_sixth_divs = soup.find_all('div', class_='two_sixth first')
     three_fifth_divs = soup.find_all('div', class_='three_fifth')
     
@@ -53,34 +52,6 @@ def parse_html_to_dict(html_content: str) -> Tuple[Dict[str, Any], Dict[str, str
         
         result[short_name] = value
         field_mapping[short_name] = key
-    
-    # Handle cases where divs might not be in perfect pairs
-    # Look for the pattern of two divs in sequence
-    all_divs = soup.find_all('div')
-    
-    # Look for the specific pattern in the HTML
-    for i in range(len(all_divs) - 1):
-        current_div = all_divs[i]
-        next_div = all_divs[i + 1]
-        
-        if ('two_sixth' in current_div.get('class', []) and 'first' in current_div.get('class', [])) and \
-           ('three_fifth' in next_div.get('class', [])):
-            key = current_div.get_text(strip=True)
-            value = next_div.get_text(strip=True)
-            
-            if key and value and key not in field_mapping.values():
-                short_name = re.sub(r'[^\w\s-]', '', key[:25]).replace(' ', '_').replace('-', '_').lower()
-                short_name = re.sub(r'_+', '_', short_name)
-                
-                # Ensure uniqueness of the key
-                original_short_name = short_name
-                counter = 1
-                while short_name in result:
-                    short_name = f"{original_short_name}_{counter}"
-                    counter += 1
-                
-                result[short_name] = value
-                field_mapping[short_name] = key
     
     return result, field_mapping
 
@@ -110,6 +81,20 @@ def convert_to_json(data: Dict[str, Any]) -> str:
     except Exception as e:
         print(f"Error converting to JSON: {e}")
         return json.dumps({}, ensure_ascii=False)
+
+
+def parse_html_to_dict_simple(html_content: str) -> Dict[str, Any]:
+    """
+    Parse HTML content and extract key-value pairs, returning only the parsed dictionary.
+    
+    Args:
+        html_content: Raw HTML string to parse
+        
+    Returns:
+        Dictionary with extracted key-value pairs
+    """
+    parsed_dict, _ = parse_html_to_dict(html_content)
+    return parsed_dict
 
 
 def parse_rawdata_html(html_content: str) -> str:

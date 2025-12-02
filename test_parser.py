@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Test script to check the parse_html_to_dict function"""
+
+from app.support.parser.utils.html_parser import parse_html_to_dict
+
+# Test HTML from the user
+test_html = """<div id="cont_txt">
+<h1>Водка   «ПЕРМСКИЙ КРАЙ»</h1><h2>Федеральный реестр алкогольной продукции</h2><p style="background-color: #ffff99; font-size: 13px; padding: 0px;">Федеральная государственная информационная система «Федеральный реестр алкогольной продукции» (далее – ФРАП), выведена из эксплуатации приказом Росалкогольрегулирования от 29.10.2021 № 383.</p>
+<div style="width: 300px; padding-bottom: 30px; padding-top: 20px;"><form action="/federalnyi-reestr-alkogolnoi-produktcii/search.html" class="search" method="post"><input class="input" name="str" placeholder="Поиск в реестре" type="text"/><input class="submit" name="" type="submit" value=""/></form></div>
+<h4>Сведения из реестра:</h4>
+<p></p>
+<div style="padding: 10px; font-size: 13px;"><em>
+<div class="two_sixth first">Регистрационный номер (номер реестровой записи уведомления о начале оборота на территории Российской Федерации алкогольной продукции в системе)</div>
+<div class="three_fifth">02-00049390</div> <div class="two_sixth first">Уведомление (номер уведомления о начале оборота на территории Российской Федерации алкогольной продукции)</div>
+<div class="three_fifth">№ 77 от 28.09.2018</div> <div class="two_sixth first">Уведомитель (полное и сокращенное наименование организации представившей уведомление о начале оборота на территории Российской Федерации алкогольной продукции)</div>
+<div class="three_fifth">Акционерное общество "Пермалко"</div> <div class="two_sixth first">Производители (полное и сокращенное наименование производтеля алкогольной продукции)</div>
+<div class="three_fifth">РОССИЯ 5902181202/590201001 Акционерное общество "Пермалко"</div> <div class="two_sixth first">Наименование продукции (присвоенное производителем и предназначенное для обозначения алкогольной продукции слово или группа слов, под которыми она выпускается в оборот)</div>
+<div class="three_fifth">Водка   «ПЕРМСКИЙ КРАЙ»</div> <div class="two_sixth first">Наименование на языке производителя</div>
+<div class="three_fifth">Водка   «ПЕРМСКИЙ КРАЙ»</div> <div class="two_sixth first">Крепость от (минимальное содержание этилового спирта (процентов) в алкогольной продукции )</div>
+<div class="three_fifth">40</div> <div class="two_sixth first">Крепость до (максимальное содержание этилового спирта (процентов) в алкогольной продукции )</div>
+<div class="three_fifth">40</div> <div class="two_sixth first">Емкости (объем и наименование емкости в которую разлита алкогольная продкуция)</div>
+<div class="three_fifth">0.5000, стеклянная бутылка, коробка;0.5000, стеклянная бутылка</div> <div class="two_sixth first">Состав (перечень компонетов алкогольной продукции (для винных напитков, пива и пивных напитков - доли (проценты) используемых компонентов на момент производства алкогольной продукции))</div>
+<div class="three_fifth">добавка пищевая - регулятор кислотности гидрокарбонат натрия:  ароматный спирт листа черной смородины и шиповника:  ароматный спирт рябины черноплодной:  сахарный сироп:  спирт этиловый ректификованный «Альфа» из пищевого сырья:  вода питьевая исправленная: </div> <div class="two_sixth first">Срок годности (установленный производителем алкогольной продукции срок годности на данный вид алкогольной продукции)</div>
+<div class="three_fifth">не ограничен</div> <div class="two_sixth first">Идентификационный  документ (наименование) (наименование документа, в соответствии с которым произведена алкогольная продукция, в том числе национальных или международных стандартов и иной технической документации)</div>
+<div class="three_fifth">1. 021/2011;  2. 12712-2013</div> <div class="two_sixth first">Идентификационный документ (номер) (реквизиты документа, в соответствии с которым произведена алкогольная продукция)</div>
+<div class="three_fifth">1. ТР ТС «О безопасности пищевой продукции»; 2. ГОСТ ВОДКИ И ВОДКИ ОСОБЫЕ. Общие технические условия.</div> <div class="two_sixth first">Температура от (минимальная температура хранения алкогольной продукции (градусов Цельсия))</div>
+<div class="three_fifth">минус 15 градусов  С</div> <div class="two_sixth first">Температура до  (максимальная температура хранения алкогольной продукции (градусов Цельсия))</div>
+<div class="three_fifth">плюс 30 градусов С</div> <div class="two_sixth first">Влажность (относительная влажность (процентов) хранения алкогольной продукции)</div>
+<div class="three_fifth">не выше 85%.</div> <div class="two_sixth first">Категория алкогольной продукции</div>
+<div class="three_fifth">водка</div> <div class="two_sixth first">Код ОКПД2</div>
+<div class="three_fifth">11.01.10.111</div> <div class="two_sixth first">Код ТН ВЭД ТС</div>
+<div class="three_fifth">220860110</div> <div class="two_sixth first">Вид алкогольной продукции по 171 федеральному закону</div>
+<div class="three_fifth">200</div> <div class="two_sixth first">Декларация</div>
+<div class="three_fifth">ЕАЭС № RU Д-RU.АЯ41.В.00042/18</div> <div class="two_sixth first">Дата первой поставки</div>
+<div class="three_fifth">05.10.2018 00:00:00</div> <div class="two_sixth first">Сведения о товарном знаке</div>
+<div class="three_fifth">Свидетельство № 314119 до 20.09.2025</div> <div class="two_sixth first">Условия перевозки алкогольной продукции </div>
+<div class="three_fifth">Транспортировка транспортом всех видов в крытых транспортных средствах в соответствии с правилами перевозки грузов, действующим на транспорте данного вида, при температуре от минус 15 градусов С до плюс 30 градусов С</div> <div class="two_sixth first">Условия реализации алкогольной продукции</div>
+<div class="three_fifth">Реализация при соблюдении условий хранения и сроков годности, установленных изготовителем</div> <div class="two_sixth first">Условия утилизации алкогольной продукции</div>
+<div class="three_fifth">В соответствии со статьей 25Федерального закона от 2 января 2000 г. No 29-ФЗ «О качестве и безопасности пищевых продуктов», статьей 18 Технического регламента Таможенного Союза ТР ТС 021/2011«О безопасности пищевой продукции», утвержденного комиссией Таможенного Союза от 9 декабря 2011 г. No 880, а также пунктом 6 статьи 2 Федерального Закона от 10 января 2002 года No 7-ФЗ «Об охране окружающей среды».</div> <div class="two_sixth first">Другие отличительные характеристики</div>
+<div class="three_fifth">Внешний вид – прозрачная жидкость без посторонних включений и осадка.Цвет – бесцветная жидкость.Вкус – мягкий, присущий водке.Аромат – характерный водочный</div> <div class="two_sixth first">Примечание</div>
+<div class="three_fifth">Регистрационный номер лицензия № 59ПСН0006809</div> <div class="two_sixth first">Маркировка, фото, подробная информация</div>
+<div class="three_fifth"><a href="/federalnyi-reestr-alkogolnoi-produktcii/download/C148A5AF-DBAF-483E-B942-24B32C919D5B" title="Скачать файл маркировки алкогольной продукции">Скачать</a> </div></em></div>
+<div class="full_width clear"></div>
+<p> </p>
+<p></p>
+<div class="adfinity_block_9680"></div> </div>"""
+
+# Test the function
+parsed_dict, field_mapping = parse_html_to_dict(test_html)
+
+print("Parsed dictionary:")
+print(parsed_dict)
+print("\nField mapping:")
+print(field_mapping)
+
+# Check if the function returns proper dict[str, Any] structure
+print("\nType of parsed_dict:", type(parsed_dict))
+print("All keys are strings:", all(isinstance(k, str) for k in parsed_dict.keys()))
+print("All values are valid for dict[str, Any]:", all(v is None or isinstance(v, (str, int, float, bool, list, dict)) for v in parsed_dict.values()))
