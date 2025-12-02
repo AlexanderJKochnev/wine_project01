@@ -24,3 +24,11 @@ venv/
 # Docker
 .dockerenv
 ```
+
+# DO NOT DELETE BELLOW ITEMS
+.DS_Store
+TODO.md
+migration_volume/
+mongodb_data/
+pg_data/
+upload_volume/

@@ -137,6 +137,9 @@ class OrchestratorRouter(LightRouter):
         from app.core.config.database.db_async import AsyncSessionLocal
 
         redis = await create_pool(redis_settings())
+        """
+        парсинг данных ФРАП
+        """
         async with AsyncSessionLocal() as session:
             status_completed = await session.execute(select(Status).where(Status.status == "completed"))
             status_completed = status_completed.scalar_one_or_none()
@@ -197,7 +200,7 @@ class RegistryRouter(BaseRouter):
         return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.RegistryCreateRelation,
-                              session: AsyncSession = Depends(get_db)):  #  -> schemas.RegistryCreateResponseSchema:
+                              session: AsyncSession = Depends(get_db)):  # -> schemas.RegistryCreateResponseSchema:
         # result = await super().create_relation(data, session)
         result = await self.create(data, session)
         return result

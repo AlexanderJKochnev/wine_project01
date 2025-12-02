@@ -30,54 +30,55 @@ async def parse_all_rawdata_task(ctx):
     Parse all Rawdata records, extract key-value pairs, store in parsed_data field,
     and update field keys in the field_keys table.
     """
+
     try:
         job_id = ctx.get("job_id")
         if not job_id:
             job_id = str(uuid.uuid4())
-        
+
         async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
                 # Get all Rawdata records that have body_html
                 stmt = select(Rawdata).where(Rawdata.body_html.isnot(None))
                 result = await session.execute(stmt)
                 rawdata_records = result.scalars().all()
-                
+
                 print(f"Found {len(rawdata_records)} Rawdata records to process")
-                
+
                 for i, rawdata_record in enumerate(rawdata_records):
-                    print(f"Processing record {i+1}/{len(rawdata_records)} with id {rawdata_record.id}")
-                    
+                    print(f"Processing record {i + 1}/{len(rawdata_records)} with id {rawdata_record.id}")
+
                     # Parse the HTML content
                     parsed_dict, field_mapping = parse_html_to_dict(rawdata_record.body_html)
-                    
+
                     # Store the parsed data as JSON in the parsed_data field
                     if parsed_dict:
                         rawdata_record.parsed_data = json.dumps(parsed_dict, ensure_ascii=False, indent=2)
-                    
+
                     # Process field keys and update the field_keys table
                     for short_name, full_name in field_mapping.items():
                         # Truncate short_name to 25 characters if needed
                         if len(short_name) > 25:
                             short_name = short_name[:25]
-                        
+
                         # Create or update field key
                         field_key_service = FieldKeyService(session)
                         await field_key_service.get_or_create_field_key(
                             short_name=short_name,
                             full_name=full_name
                         )
-                    
+
                     # Commit changes for this record
                     await session.commit()
-                    
+
                     # Small delay to prevent overwhelming the system
                     await sleep(0.01)
-                
+
                 print(f"Successfully processed {len(rawdata_records)} Rawdata records")
-    
+
     except Exception as e:
         count = ctx['metrics']['completed_tasks']
-        await send_error_notification(f'{str(e)}. Всего выполнено задач этим воркером: {count}')
+        await send_error_notification(f'{str(e)}. Всего выполнено задач воркером Rawdata processing: {count}')
         os._exit(1)
 
 
@@ -92,7 +93,8 @@ async def on_job_post_run_handle(ctx):
 
     # Выводим текущее значение счетчика в консоль
     count = ctx['metrics']['completed_tasks']
-    print(f"[{ctx['job_id']}] Задача завершена. Всего выполнено задач этим воркером: {count}")
+    print(f"[{ctx['job_id']}] Задача завершена. Всего выполнено задач воркером Rawdata processing"
+          f" : {count}")
 
 
 # Хук вызывается при остановке процесса воркера
