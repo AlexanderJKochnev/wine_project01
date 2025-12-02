@@ -43,4 +43,10 @@ htmlcov/
 # System files
 .DS_Store
 Thumbs.db
+TODO.md
+migration_volume/
+mongodb_data/
+pg_data/
+upload_volume/
+
 ```

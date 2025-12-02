@@ -1,6 +1,6 @@
 # app/support/parser/router.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, and_
 import asyncio
 from fastapi import Depends, Query
 from typing import Optional
@@ -8,10 +8,11 @@ from arq import create_pool
 from app.worker import redis_settings
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
-from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry, TaskLog
+from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
 from app.support.parser import schemas
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.repository import StatusRepository
+from app.core.config.database.db_async import AsyncSessionLocal
 
 background_tasks = set()  # чтобы ссылка не удалилась
 
@@ -25,12 +26,10 @@ class OrchestratorRouter(LightRouter):
             "", self.endpoints, methods=["POST"])  # , response_model=self.create_schema)
         self.router.add_api_route("/name", self.parse_names_endpoint, methods=["POST"])
         self.router.add_api_route("/raw", self.parse_raw_endpoint, methods=["POST"])
-        self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
-        self.router.add_api_route("/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
-        self.router.add_api_route("/raw/enqueue-all", self.enqueue_all_raw_parsing, methods=['POST'])
-        self.router.add_api_route("/raw/enqueue-single", self.enqueue_single_rawdata_parsing, methods=['POST'])
-        self.router.add_api_route("/logs", self.get_task_logs, methods=['GET'])
-        self.router.add_api_route("/task/cancel", self.cancel_task, methods=['POST'])
+        # self.router.add_api_route("/raw/backgound", self.start_background_parsing, methods=["POST"])
+        # self.router.add_api_route("/raw/enqueue", self.enqueue_raw_parsing, methods=['POST'])
+        self.router.add_api_route("/raw/frap-parse", self.enqueue_all_raw_parsing, methods=['POST'])
+        self.router.add_api_route("/raw/frap-encoding", self.enqueue_single_rawdata_parsing, methods=['POST'])
 
     async def endpoints(self, shortname: str = None, url: str = None,
                         session: AsyncSession = Depends(get_db)):
@@ -133,14 +132,10 @@ class OrchestratorRouter(LightRouter):
         return {"job_id": job.job_id}
 
     async def enqueue_all_raw_parsing(self):
-        from sqlalchemy import select
-        from app.support.parser.model import Name, Status
-        from app.core.config.database.db_async import AsyncSessionLocal
-
+        """
+            парсинг данных ФРАП
+        """
         redis = await create_pool(redis_settings())
-        """
-        парсинг данных ФРАП
-        """
         async with AsyncSessionLocal() as session:
             status_completed = await session.execute(select(Status).where(Status.status == "completed"))
             status_completed = status_completed.scalar_one_or_none()
@@ -154,42 +149,21 @@ class OrchestratorRouter(LightRouter):
 
     async def enqueue_single_rawdata_parsing(self):
         """
-        Enqueue single rawdata parsing job for processing
+            декдирование даннных ФРАП
         """
         redis = await create_pool(redis_settings())
-        job = await redis.enqueue_job('parse_all_rawdata_task')
-        return {"job_id": job.job_id, "message": "Single rawdata parsing job enqueued"}
-
-    async def get_task_logs(self,
-                            status: str = None, skip: int = 0, limit: int = 100, session: AsyncSession = Depends(get_db)
-                            ):
-        """
-        Просмотр arq логов (выполнение фоновых задач: старт, завершение, критические ошибки
-        """
-        stmt = select(TaskLog).order_by(TaskLog.started_at.desc()).offset(skip).limit(limit)
-        if status:
-            stmt = stmt.where(TaskLog.status == status)
-        result = await session.execute(stmt)
-        return result.scalars().all()
-
-    async def cancel_task(self,
-                          task_id: str, session: AsyncSession = Depends(get_db)
-                          ):
-        """
-            отмена выполенния фоновых задач
-        """
-        stmt = select(TaskLog).where(TaskLog.task_id == task_id)
-        result = await session.execute(stmt)
-        task_log = result.scalar_one_or_none()
-        if not task_log:
-            return {"error": "Task not found"}
-
-        if task_log.status in ("success", "failed", "cancelled"):
-            return {"error": "Task already finished"}
-
-        task_log.cancel_requested = True
-        await session.commit()
-        return {"status": "cancel requested", "task_id": task_id}
+        async with AsyncSessionLocal() as session:
+            status_completed = await session.execute(select(Status).where(Status.status == "completed"))
+            status_completed = status_completed.scalar_one_or_none()
+            query = select(Rawdata.id)
+            if status_completed:
+                query = query.where(and_(Rawdata.status_id != status_completed.id,
+                                         Rawdata.body_html.isnot(None)))
+            rawdata = await session.execute(query)
+            for (rawdata_id,) in rawdata:
+                await redis.enqueue_job('parse_all_rawdata_task',
+                                        rawdata_id, status_completed)
+        return {"message": "All raw decoding jobs enqueued"}
 
 
 class RegistryRouter(BaseRouter):

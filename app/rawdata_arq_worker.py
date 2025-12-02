@@ -2,12 +2,10 @@
 # Separate worker for processing Rawdata records - parsing HTML and updating field keys
 
 import asyncio
-import os
-from asyncio import sleep
+
 import json
 from arq.connections import RedisSettings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy import select
 import uuid
 from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
@@ -27,13 +25,12 @@ metrics = {
 status_completed_id = None  # Cache the completed status ID
 
 
-async def parse_all_rawdata_task(ctx):
+async def parse_all_rawdata_task(ctx, rawdata_id: int, status_completed_id: int):
     """
     Parse one Rawdata record, extract key-value pairs, store in parsed_data field,
     update field keys in the field_keys table, and set status to completed.
     """
-    global status_completed_id
-    
+
     try:
         job_id = ctx.get("job_id")
         if not job_id:
@@ -42,18 +39,10 @@ async def parse_all_rawdata_task(ctx):
         async with asyncio.timeout(settings.ARQ_TASK_TIMEOUT):
             async with AsyncSessionLocal() as session:
                 # Get one Rawdata record that has body_html (not processed yet)
-                stmt = select(Rawdata).where(
-                    Rawdata.body_html.isnot(None)
-                ).where(
-                    Rawdata.status_id != status_completed_id
-                ).order_by(Rawdata.id).limit(1)
-                result = await session.execute(stmt)
-                rawdata_record = result.scalar_one_or_none()
-                
+                rawdata_record = await session.get(Rawdata, rawdata_id)
                 if not rawdata_record:
                     print("No Rawdata records to process")
                     return {"status": "no_records"}
-
                 print(f"Processing record with id {rawdata_record.id}")
 
                 # Parse the HTML content
@@ -75,7 +64,7 @@ async def parse_all_rawdata_task(ctx):
                         short_name=short_name,
                         full_name=full_name
                     )
-                
+
                 # Update status to completed
                 rawdata_record.status_id = status_completed_id
 
@@ -97,7 +86,7 @@ async def parse_all_rawdata_task(ctx):
 async def on_startup_handle(ctx):
     global status_completed_id
     ctx['metrics'] = metrics
-    
+
     # Initialize the completed status ID at startup
     async with AsyncSessionLocal() as session:
         status_completed = await StatusRepository.get_by_fields({"status": "completed"}, Status, session)
@@ -105,14 +94,15 @@ async def on_startup_handle(ctx):
             status_completed_id = status_completed.id
         else:
             print("Warning: 'completed' status not found in database")
-    
-    print(f"Rawdata processing воркер запущен. Начальное количество задач: {ctx['metrics']['completed_tasks']}, status_completed_id: {status_completed_id}")
+
+    print(
+        f"Rawdata processing воркер запущен. Начальное количество задач:"
+        f" {ctx['metrics']['completed_tasks']}, status_completed_id: {status_completed_id}")
 
 
 async def on_job_post_run_handle(ctx):
     # Увеличиваем счетчик
     ctx['metrics']['completed_tasks'] += 1
-
     # Выводим текущее значение счетчика в консоль
     count = ctx['metrics']['completed_tasks']
     print(f"[{ctx['job_id']}] Задача завершена. Всего выполнено задач воркером Rawdata processing"
@@ -137,8 +127,9 @@ async def send_error_notification(error_message: str):
 
     await email_sender.send_email(to_email, subject, body)
 
-
 # Класс настроек (согласно документации arq) для Rawdata processing worker
+
+
 class RawdataWorkerSettings:
     functions = [parse_all_rawdata_task]
     host = settings.REDIS_HOST
