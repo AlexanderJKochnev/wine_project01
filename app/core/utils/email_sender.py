@@ -1,3 +1,5 @@
+# app/core/utils/email_sender.py
+
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -17,7 +19,7 @@ class EmailSender:
     async def send_email(self, to_email: str, subject: str, body: str):
         """
         Отправляет электронное письмо
-        
+
         :param to_email: Адрес получателя
         :param subject: Тема письма
         :param body: Текст письма

@@ -48,7 +48,7 @@ async def parse_rawdata_task(ctx, name_id: int):
                     await session.rollback()
                     raise RuntimeError("Failed to fill rawdata")
     except HTTPException as http_exc:
-        if http_exc.status_code in [503]:
+        if http_exc.status_code in [503, 404]:
             await send_error_notification(f'{str(http_exc)}. '
                                           f'Пропускаем запись, продолжаем работу',
                                           'Уведомление - ошибка 503')
@@ -56,8 +56,14 @@ async def parse_rawdata_task(ctx, name_id: int):
             raise http_exc
     except Exception as e:
         count = ctx['metrics']['completed_tasks']
-        await send_error_notification(f'{str(e)}. Всего выполнено задач этим воркером: {count}')
-        os._exit(1)
+        if '503 Service' in str(e):
+            await send_error_notification(
+                f'{str(e)}. '
+                f'Пропускаем запись, продолжаем работу', 'Уведомление - ошибка 503'
+            )
+        else:
+            await send_error_notification(f'{str(e)}. Всего выполнено задач этим воркером: {count}')
+            os._exit(1)
 
 
 async def on_startup_handle(ctx):
