@@ -280,7 +280,6 @@ class Service(metaclass=ServiceMeta):
     async def get_detail_view(cls, lang: str, id: int, repository: Type[Repository],
                               model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """ Получение и обработка записи по ID """
-        # lang = '' if lang == 'en' else f'_{lang}'
         detail_fields = settings.DETAIL_VIEW
         obj = await repository.get_by_id(id, model, session)
         # return obj

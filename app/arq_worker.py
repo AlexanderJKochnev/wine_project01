@@ -12,7 +12,7 @@ from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.model import Name
-from app.core.utils.email_sender import EmailSender, send_notification, NotificationType
+from app.core.utils.email_sender import send_notification, NotificationType
 
 
 # Настройка БД
@@ -102,8 +102,6 @@ async def on_shutdown_handle(ctx):
     )
 
 
-
-
 # Класс настроек (согласно документации arq)
 class WorkerSettings:
     functions = [parse_rawdata_task]
@@ -112,9 +110,10 @@ class WorkerSettings:
     port = settings.REDIS_PORT
     redis_settings = RedisSettings(host=host, port=port)
     conn_timeout = 10,  # таймаут подключения
-    conn_retries = 5,  # попытки переподключения
-    conn_retry_delay = 1,  # задержка между попытками
+    conn_retries = 1,  # попытки переподключения
+    conn_retry_delay = 10,  # задержка между попытками
     on_startup = on_startup_handle
     on_shutdown = on_shutdown_handle
     on_job_end = on_job_post_run_handle
     max_tries = settings.ARQ_MAX_TRIES  # 3 попытки, потом — не повторять
+    burst = True
