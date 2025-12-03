@@ -12,7 +12,7 @@ from app.core.config.database.db_config import settings_db
 from app.core.config.project_config import settings
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.model import Name
-from app.core.utils.email_sender import EmailSender
+from app.core.utils.email_sender import EmailSender, send_notification, NotificationType
 
 
 # Настройка БД
@@ -49,20 +49,31 @@ async def parse_rawdata_task(ctx, name_id: int):
                     raise RuntimeError("Failed to fill rawdata")
     except HTTPException as http_exc:
         if http_exc.status_code in [503, 404]:
-            await send_error_notification(f'{str(http_exc)}. '
-                                          f'Пропускаем запись, продолжаем работу',
-                                          'Уведомление - ошибка 503')
+            # For 503 and 404 errors, send a warning notification but continue working
+            await send_notification(
+                f'HTTP ошибка {http_exc.status_code}: {str(http_exc.detail)}. '
+                f'Пропускаем запись, продолжаем работу',
+                notification_type=NotificationType.WARNING,
+                worker_name="ARQ Worker (Parse Rawdata)"
+            )
         else:
             raise http_exc
     except Exception as e:
         count = ctx['metrics']['completed_tasks']
         if '503 Service' in str(e):
-            await send_error_notification(
-                f'{str(e)}. '
-                f'Пропускаем запись, продолжаем работу', 'Уведомление - ошибка 503'
+            # For 503 service errors, send a warning notification but continue working
+            await send_notification(
+                f'{str(e)}. Пропускаем запись, продолжаем работу',
+                notification_type=NotificationType.WARNING,
+                worker_name="ARQ Worker (Parse Rawdata)"
             )
         else:
-            await send_error_notification(f'{str(e)}. Всего выполнено задач этим воркером: {count}')
+            # For other critical errors, send an error notification and exit
+            await send_notification(
+                f'{str(e)}. Всего выполнено задач этим воркером: {count}',
+                notification_type=NotificationType.ERROR,
+                worker_name="ARQ Worker (Parse Rawdata)"
+            )
             os._exit(1)
 
 
@@ -84,19 +95,13 @@ async def on_job_post_run_handle(ctx):
 async def on_shutdown_handle(ctx):
     count = ctx['metrics']['completed_tasks']
     print(f"Воркер остановлен. Всего выполнено задач: {count}")
-    await send_error_notification(f"Воркер остановлен. Всего выполнено задач: {count}")
+    await send_notification(
+        f"Воркер остановлен. Всего выполнено задач: {count}",
+        notification_type=NotificationType.SHUTDOWN,
+        worker_name="ARQ Worker (Parse Rawdata)"
+    )
 
 
-async def send_error_notification(error_message: str, subject: str = "Ошибка воркера ARQ"):
-    """
-    Отправляет уведомление об ошибке на email
-    """
-    email_sender = EmailSender()
-    to_email = settings.EMAIL_ADMIN  # Email address to send error notifications to
-    subject = "Ошибка воркера ARQ"
-    body = f"Произошла ошибка при выполнении задачи воркера ARQ:\n\n{error_message}"
-
-    await email_sender.send_email(to_email, subject, body)
 
 
 # Класс настроек (согласно документации arq)
