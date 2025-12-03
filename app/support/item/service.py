@@ -39,8 +39,8 @@ class ItemService(Service):
                 'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
                 'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
                 'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'].name_ru, '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'].name_fr, '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
             }
             
             # Применим функцию локализации
@@ -77,8 +77,8 @@ class ItemService(Service):
                 'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
                 'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
                 'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'].name_ru, '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'].name_fr, '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
             }
             
             # Применим функцию локализации
@@ -115,7 +115,7 @@ class ItemService(Service):
         localized_data = {
             'id': item['id'],
             'vol': item['vol'],
-            'alc': item['alc'],
+            'alc': str(item['alc']) if item['alc'] is not None else None,
             'age': item['age'],
             'image_id': item['image_id'],
             'title': item['drink'].title,
@@ -128,8 +128,8 @@ class ItemService(Service):
             'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
             'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
             'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'].name_ru, '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'].name_fr, '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
             'sweetness': getattr(item['sweetness'], 'name', '') if item['sweetness'] else '',
             'sweetness_ru': getattr(item['sweetness'], 'name_ru', '') if item['sweetness'] else '',
             'sweetness_fr': getattr(item['sweetness'], 'name_fr', '') if item['sweetness'] else '',
@@ -151,7 +151,7 @@ class ItemService(Service):
         # Добавим остальные поля
         localized_result['id'] = item['id']
         localized_result['vol'] = item['vol']
-        localized_result['alc'] = item['alc']
+        localized_result['alc'] = str(item['alc']) if item['alc'] is not None else None
         localized_result['age'] = item['age']
         localized_result['image_id'] = item['image_id']
         
