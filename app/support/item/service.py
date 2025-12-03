@@ -38,7 +38,7 @@ class ItemService(Service):
                 'country': item['country'].name if item['country'] else '',
                 'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
                 'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
-                'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
+                'subcategory': f"{item['subcategory'].category.name} {getattr(item['subcategory'], 'name', '')}",
                 'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
                 'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
             }
@@ -128,7 +128,7 @@ class ItemService(Service):
             'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
             'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
             'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', )) else '',
             'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
             'sweetness': getattr(item['sweetness'], 'name', '') if item['sweetness'] else '',
             'sweetness_ru': getattr(item['sweetness'], 'name_ru', '') if item['sweetness'] else '',

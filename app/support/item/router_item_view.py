@@ -78,4 +78,7 @@ class ItemViewRouter:
         if not item:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
-        return item
+        print(f'============================={type(item)=}')
+        item_model = ItemDetailView.validate(**item)
+        return item_model.model_dump(exclude_none=True, exclude_unset=True )
+        # return item
