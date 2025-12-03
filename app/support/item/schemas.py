@@ -1,8 +1,8 @@
 # app/support/item/schemas.py
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
-from pydantic import Field, model_validator, computed_field
+from pydantic import Field, model_validator, computed_field, field_serializer
 from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
@@ -200,6 +200,16 @@ class ItemListView(BaseModel):
     subcategory: str  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
     country: str  # Country.name or country.name_ru, or country.name_fr зависит от параметра lang в роуте
 
+    @model_validator(mode='after')
+    def clean_subcategory(self) -> 'ItemListView':
+        # Fix the issue where subcategory shows "Cognac None" instead of "Cognac"
+        if self.subcategory and "None" in self.subcategory:
+            # Replace "Cognac None" pattern with just the category part
+            parts = self.subcategory.split(" None")
+            if len(parts) > 0:
+                self.subcategory = parts[0]
+        return self
+
 
 class ItemDetailView(BaseModel):
     # поля не зависят от параметра lang в роуте
@@ -217,3 +227,18 @@ class ItemDetailView(BaseModel):
     sweetness: str  # Item.drink.sweetness.name (_ru, _fr)
     recommendation: Optional[str]   # Drink.recommendation (_ru, _fr)
     madeof: Optional[str]   # Drink.madeof (_ru, _fr)
+    description: Optional[str] = None  # Drink.description (_ru, _fr)
+    varietals: Optional[List[str]] = None  # From Drink.varietal_associations
+    pairing: Optional[List[str]] = None  # From Drink.food_associations
+
+    model_config = {'populate_by_name': True, 'str_strip_whitespace': True}
+
+    def model_dump(self, exclude_none=True, **kwargs):
+        # Override model_dump to exclude None and empty values
+        data = super().model_dump(exclude_none=True, **kwargs)
+        # Remove empty strings and empty lists
+        cleaned_data = {}
+        for key, value in data.items():
+            if value is not None and value != '' and value != []:
+                cleaned_data[key] = value
+        return cleaned_data
