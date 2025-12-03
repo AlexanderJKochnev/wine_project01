@@ -14,7 +14,8 @@ from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemCreate, ItemCreateRelation, DirectUploadSchema,
-                                      ItemCreateResponseSchema, ItemUpdate, FileUpload)
+                                      ItemCreateResponseSchema, ItemUpdate, FileUpload, ItemListView, ItemDetailView)
+from app.support.item.service import ItemService
 
 paging = get_paging
 
@@ -30,6 +31,34 @@ class ItemRouter(BaseRouter):
 
     def setup_routes(self):
         super().setup_routes()
+        # Добавляем маршруты для ListView и DetailView
+        self.router.add_api_route(
+            "/list/{lang}",
+            self.get_list_view,
+            methods=["GET"],
+            response_model=list[ItemListView],
+            tags=["items_view"],
+            summary="Получить список элементов с локализацией"
+        )
+        
+        self.router.add_api_route(
+            "/list_paginated/{lang}",
+            self.get_list_view_paginated,
+            methods=["GET"],
+            response_model=PaginatedResponse,
+            tags=["items_view"],
+            summary="Получить список элементов с пагинацией и локализацией"
+        )
+        
+        self.router.add_api_route(
+            "/detail/{lang}/{id}",
+            self.get_detail_view,
+            methods=["GET"],
+            response_model=ItemDetailView,
+            tags=["items_view"],
+            summary="Получить детальную информацию по элементу с локализацией"
+        )
+        
         self.router.add_api_route(
             "/full", self.create_relation_image, status_code=status.HTTP_200_OK, methods=["POST"],
             response_model=self.read_schema
@@ -42,6 +71,30 @@ class ItemRouter(BaseRouter):
             "/direct/{id}", self.direct_import_single_data, status_code=status.HTTP_200_OK, methods=["GET"],
             response_model=dict
         )
+
+    async def get_list_view(self, lang: str, session: AsyncSession = Depends(get_db)):
+        """Получить список элементов с локализацией"""
+        service = ItemService()
+        items = await service.get_list_view(lang, ItemRepository, Item, session)
+        return items
+
+    async def get_list_view_paginated(self, 
+                                      lang: str, 
+                                      page: int = Query(1, ge=1, description="Номер страницы"),
+                                      page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
+                                      session: AsyncSession = Depends(get_db)):
+        """Получить список элементов с пагинацией и локализацией"""
+        service = ItemService()
+        result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session)
+        return result
+
+    async def get_detail_view(self, lang: str, id: int, session: AsyncSession = Depends(get_db)):
+        """Получить детальную информацию по элементу с локализацией"""
+        service = ItemService()
+        item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
+        if not item:
+            raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
+        return item
 
     async def create(self, data: ItemCreate,
                      session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:

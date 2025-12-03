@@ -188,3 +188,32 @@ class DrinkPreactCreate:
     title: str
     title_ru: Optional[str]
     title_fr: Optional[str]
+
+
+class ItemListView(BaseModel):
+    # поля не зависят от параметра lang в роуте
+    id: int  # Item.id
+    vol: Optional[float] = None  # Item.vol
+    image_id: Optional[str] = None  # Item.image_id
+
+    title: str  # Item.drinks.title or Item.drinks.title_ru or Item.drinks.title_fr зависит от параметра lang в роуте
+    subcategory: str  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
+    country: str  # Country.name or country.name_ru, or country.name_fr зависит от параметра lang в роуте
+
+
+class ItemDetailView(BaseModel):
+    # поля не зависят от параметра lang в роуте
+    id: int  # Item.id
+    vol: Optional[float] = None  # Item.vol
+    alc: Optional[str] = None
+    age: Optional[str] = None
+    image_id: Optional[str] = None  # Item.image_id
+
+    # поля зависящие от параметра lang в роуте
+    title: str  # Item.drink.title or Item.drinks.title_ru or Item.drinks.title_fr
+    subtitle: str
+    country: str  # Country.name or country.name_ru, or country.name_fr зависит от параметра lang в роуте
+    subcategory: str  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
+    sweetness: str  # Item.drink.sweetness.name (_ru, _fr)
+    recommendation: Optional[str]   # Drink.recommendation (_ru, _fr)
+    madeof: Optional[str]   # Drink.madeof (_ru, _fr)

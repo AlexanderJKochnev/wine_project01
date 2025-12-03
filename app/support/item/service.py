@@ -5,7 +5,7 @@ from pydantic import ValidationError
 # from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead
 from app.core.services.service import Service
 from app.core.utils.alchemy_utils import JsonConverter
-from app.core.utils.common_utils import get_value, jprint  # noqa: F401
+from app.core.utils.common_utils import get_value, jprint, flatten_dict_with_localized_fields  # noqa: F401
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.core.utils.json_validator import validate_json_file
 from app.mongodb.service import ThumbnailImageService
@@ -14,12 +14,148 @@ from app.support.drink.repository import DrinkRepository
 from app.support.drink.service import DrinkService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation
+from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation, ItemListView, ItemDetailView
 from app.core.utils.converters import read_convert_json
 
 
 class ItemService(Service):
     default = ['vol', 'drink_id']
+
+    @classmethod
+    async def get_list_view(cls, lang: str, repository: ItemRepository, model: Item, session: AsyncSession):
+        """Получение списка элементов для ListView с локализацией"""
+        items = await repository.get_list_view(model, session)
+        result = []
+        for item in items:
+            # Подготовим данные для локализации
+            localized_data = {
+                'id': item['id'],
+                'vol': item['vol'],
+                'image_id': item['image_id'],
+                'title': item['drink'].title,
+                'title_ru': getattr(item['drink'], 'title_ru', ''),
+                'title_fr': getattr(item['drink'], 'title_fr', ''),
+                'country': item['country'].name if item['country'] else '',
+                'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
+                'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
+                'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
+                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'].name_ru, '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'].name_fr, '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+            }
+            
+            # Применим функцию локализации
+            localized_result = flatten_dict_with_localized_fields(
+                localized_data, 
+                ['title', 'country', 'subcategory'], 
+                lang
+            )
+            
+            # Добавим остальные поля
+            localized_result['id'] = item['id']
+            localized_result['vol'] = item['vol']
+            localized_result['image_id'] = item['image_id']
+            
+            result.append(localized_result)
+        return result
+
+    @classmethod
+    async def get_list_view_page(cls, page: int, page_size: int, repository: ItemRepository, model: Item, session: AsyncSession):
+        """Получение списка элементов для ListView с пагинацией и локализацией"""
+        skip = (page - 1) * page_size
+        items, total = await repository.get_list_view_page(skip, page_size, model, session)
+        result = []
+        for item in items:
+            # Подготовим данные для локализации
+            localized_data = {
+                'id': item['id'],
+                'vol': item['vol'],
+                'image_id': item['image_id'],
+                'title': item['drink'].title,
+                'title_ru': getattr(item['drink'], 'title_ru', ''),
+                'title_fr': getattr(item['drink'], 'title_fr', ''),
+                'country': item['country'].name if item['country'] else '',
+                'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
+                'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
+                'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
+                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'].name_ru, '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'].name_fr, '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+            }
+            
+            # Применим функцию локализации
+            localized_result = flatten_dict_with_localized_fields(
+                localized_data, 
+                ['title', 'country', 'subcategory'], 
+                'en'  # временно используем 'en', чтобы получить базовые значения
+            )
+            
+            # Добавим остальные поля
+            localized_result['id'] = item['id']
+            localized_result['vol'] = item['vol']
+            localized_result['image_id'] = item['image_id']
+            
+            result.append(localized_result)
+        
+        return {
+            "items": result,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": skip + len(items) < total,
+            "has_prev": page > 1
+        }
+
+    @classmethod
+    async def get_detail_view(cls, lang: str, id: int, repository: ItemRepository, model: Item, session: AsyncSession):
+        """Получение детального представления элемента с локализацией"""
+        item = await repository.get_detail_view(id, model, session)
+        if not item:
+            return None
+            
+        # Подготовим данные для локализации
+        localized_data = {
+            'id': item['id'],
+            'vol': item['vol'],
+            'alc': item['alc'],
+            'age': item['age'],
+            'image_id': item['image_id'],
+            'title': item['drink'].title,
+            'title_ru': getattr(item['drink'], 'title_ru', ''),
+            'title_fr': getattr(item['drink'], 'title_fr', ''),
+            'subtitle': getattr(item['drink'], 'subtitle', ''),
+            'subtitle_ru': getattr(item['drink'], 'subtitle_ru', ''),
+            'subtitle_fr': getattr(item['drink'], 'subtitle_fr', ''),
+            'country': item['country'].name if item['country'] else '',
+            'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
+            'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
+            'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
+            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'].name_ru, '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'].name_fr, '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+            'sweetness': getattr(item['sweetness'], 'name', '') if item['sweetness'] else '',
+            'sweetness_ru': getattr(item['sweetness'], 'name_ru', '') if item['sweetness'] else '',
+            'sweetness_fr': getattr(item['sweetness'], 'name_fr', '') if item['sweetness'] else '',
+            'recommendation': getattr(item['drink'], 'recommendation', ''),
+            'recommendation_ru': getattr(item['drink'], 'recommendation_ru', ''),
+            'recommendation_fr': getattr(item['drink'], 'recommendation_fr', ''),
+            'madeof': getattr(item['drink'], 'madeof', ''),
+            'madeof_ru': getattr(item['drink'], 'madeof_ru', ''),
+            'madeof_fr': getattr(item['drink'], 'madeof_fr', ''),
+        }
+        
+        # Применим функцию локализации
+        localized_result = flatten_dict_with_localized_fields(
+            localized_data, 
+            ['title', 'subtitle', 'country', 'subcategory', 'sweetness', 'recommendation', 'madeof'], 
+            lang
+        )
+        
+        # Добавим остальные поля
+        localized_result['id'] = item['id']
+        localized_result['vol'] = item['vol']
+        localized_result['alc'] = item['alc']
+        localized_result['age'] = item['age']
+        localized_result['image_id'] = item['image_id']
+        
+        return localized_result
 
     @classmethod
     async def create_relation(cls, data: ItemCreateRelation,

@@ -137,3 +137,113 @@ class ItemRepository(Repository):
             search_cond = create_search_conditions2(Drink, search_str)
             query = query.where(search_cond)
         return query
+
+    @classmethod
+    async def get_list_view(cls, model: ModelType, session: AsyncSession):
+        """Получение списка элементов с плоскими полями для ListView"""
+        query = select(Item).options(
+            selectinload(Item.drink).options(
+                selectinload(Drink.subregion).options(
+                    selectinload(Subregion.region).options(
+                        selectinload(Region.country)
+                    )
+                ),
+                selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness)
+            )
+        )
+        
+        result = await session.execute(query)
+        items = result.scalars().all()
+        
+        # Преобразуем в плоские словари
+        flat_items = []
+        for item in items:
+            flat_item = {
+                'id': item.id,
+                'vol': item.vol,
+                'image_id': item.image_id,
+                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
+                'drink': item.drink,
+                'subcategory': item.drink.subcategory,
+                'country': item.drink.subregion.region.country
+            }
+            flat_items.append(flat_item)
+        
+        return flat_items
+
+    @classmethod
+    async def get_detail_view(cls, id: int, model: ModelType, session: AsyncSession):
+        """Получение детального представления элемента для DetailView"""
+        query = select(Item).options(
+            selectinload(Item.drink).options(
+                selectinload(Drink.subregion).options(
+                    selectinload(Subregion.region).options(
+                        selectinload(Region.country)
+                    )
+                ),
+                selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness)
+            )
+        ).where(Item.id == id)
+        
+        result = await session.execute(query)
+        item = result.scalar_one_or_none()
+        
+        if not item:
+            return None
+            
+        # Преобразуем в плоский словарь для детального представления
+        flat_item = {
+            'id': item.id,
+            'vol': item.vol,
+            'alc': item.drink.alc,
+            'age': item.drink.age,
+            'image_id': item.image_id,
+            'title': item.drink.title,  # будет обработано в сервисе для нужного языка
+            'drink': item.drink,
+            'country': item.drink.subregion.region.country,
+            'subcategory': item.drink.subcategory,
+            'sweetness': item.drink.sweetness
+        }
+        
+        return flat_item
+
+    @classmethod
+    async def get_list_view_page(cls, skip: int, limit: int, model: ModelType, session: AsyncSession):
+        """Получение списка элементов с плоскими полями для ListView с пагинацией"""
+        query = select(Item).options(
+            selectinload(Item.drink).options(
+                selectinload(Drink.subregion).options(
+                    selectinload(Subregion.region).options(
+                        selectinload(Region.country)
+                    )
+                ),
+                selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness)
+            )
+        )
+        
+        count_query = select(func.count()).select_from(Item)
+        count_result = await session.execute(count_query)
+        total = count_result.scalar()
+        
+        query = query.offset(skip).limit(limit)
+        result = await session.execute(query)
+        items = result.scalars().all()
+        
+        # Преобразуем в плоские словари
+        flat_items = []
+        for item in items:
+            flat_item = {
+                'id': item.id,
+                'vol': item.vol,
+                'image_id': item.image_id,
+                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
+                'drink': item.drink,
+                'subcategory': item.drink.subcategory,
+                'country': item.drink.subregion.region.country
+            }
+            flat_items.append(flat_item)
+        
+        return flat_items, total
