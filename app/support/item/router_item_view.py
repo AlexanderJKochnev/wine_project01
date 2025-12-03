@@ -21,6 +21,7 @@ class ItemViewRouter:
         self.router = APIRouter()
         self.prefix = prefix
         self.tags = tags or ["items_view"]
+        self.paginated_response = PaginatedResponse[ItemListView]
         self.setup_routes()
 
     def setup_routes(self):
@@ -40,7 +41,7 @@ class ItemViewRouter:
             "/list_paginated/{lang}",
             self.get_list_paginated,
             methods=["GET"],
-            response_model=PaginatedResponse,
+            response_model=PaginatedResponse[self.paginated_response],
             tags=self.tags,
             summary="Получить список элементов с пагинацией и локализацией"
         )
