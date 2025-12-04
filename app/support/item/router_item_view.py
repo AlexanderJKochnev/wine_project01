@@ -69,7 +69,7 @@ class ItemViewRouter:
                                  session: AsyncSession = Depends(get_db)):
         """Получить список элементов с пагинацией и локализацией"""
         service = ItemService()
-        result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session)
+        result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
         return result
 
     async def get_detail(self, lang: str, id: int, session: AsyncSession = Depends(get_db)):
@@ -80,7 +80,21 @@ class ItemViewRouter:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
         print(f'{type(item)=}')
-        result = ItemDetailView(**item)
-        # result = {key: val for key, val in item.items() if val}
+        
+        # Remove empty fields (None, '', [], {}) from the result
+        def remove_empty_fields(d):
+            if isinstance(d, dict):
+                return {
+                    k: remove_empty_fields(v) 
+                    for k, v in d.items() 
+                    if v is not None and v != '' and v != [] and v != {}
+                }
+            elif isinstance(d, list):
+                return [remove_empty_fields(i) for i in d if i is not None and i != '' and i != [] and i != {}]
+            else:
+                return d
+        
+        cleaned_item = remove_empty_fields(item)
+        result = ItemDetailView(**cleaned_item)
 
         return result.model_dump(exclude_none=True, exclude_unset=True)
