@@ -85,12 +85,4 @@ class ItemViewRouter:
         result = ItemDetailView(**item)
 
         # Return the model dump with empty values removed
-        data = result.model_dump(exclude_none=True, exclude_unset=True)
-        
-        # Remove empty strings and empty lists
-        cleaned_data = {}
-        for key, value in data.items():
-            if value is not None and value != '' and value != []:
-                cleaned_data[key] = value
-        
-        return cleaned_data
+        return result.model_dump(exclude_none=True, exclude_unset=True)
