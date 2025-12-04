@@ -1,6 +1,13 @@
 # docker-compose.yaml
 services:
   wine_host: # this is the name of the service and name of the host (POSTGRES_HOST)
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     restart: unless-stopped
     container_name: ${POSTGRES_HOST}
     image: postgres:alpine
@@ -33,6 +40,13 @@ services:
           memory: 256M
   
   adminer:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     container_name: pg_admin
     image: adminer:4.8.1
     restart: unless-stopped
@@ -53,6 +67,13 @@ services:
           memory: 256M
   
   app:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     container_name: app
     build: .
     restart: unless-stopped
@@ -85,6 +106,13 @@ services:
           memory: 512M
   
   mongo:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     image: mongo:4.4.20
     container_name: ${MONGODB_CONTAINER_NAME}
     hostname: ${MONGO_HOSTNAME}
@@ -124,6 +152,13 @@ services:
           memory: 512M
   
   redis:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     image: redis:7-alpine
     container_name: ${REDIS_HOST}
     restart: unless-stopped
@@ -145,6 +180,13 @@ services:
           memory: 64M
   
   arq-worker:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     build: .
     container_name: arq-worker
     working_dir: /app
@@ -171,6 +213,13 @@ services:
           memory: 256M
 
   arq-worker-rawdata:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     build: .
     container_name: arq-worker-rawdata
     working_dir: /app
@@ -197,6 +246,13 @@ services:
           memory: 256M
   
   mongo-express:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     image: mongo-express
     container_name: ${MONGO_EXPRESS_CONTAINER_NAME}
     restart: unless-stopped
@@ -229,6 +285,13 @@ services:
           memory: 256M
   
   preact_front:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
     build:
       context: ./preact_front          # путь к папке с Preact
       dockerfile: Dockerfile.dev       # имя Dockerfile внутри ./preact_front
