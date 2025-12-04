@@ -22,77 +22,59 @@ class ItemService(Service):
     default = ['vol', 'drink_id']
 
     @classmethod
+    def _process_item_localization(cls, item, lang: str, fields_to_localize: list = None):
+        """Внутренний метод для обработки локализации одного элемента"""
+        if fields_to_localize is None:
+            fields_to_localize = ['title', 'country', 'subcategory']
+        
+        # Подготовим данные для локализации
+        localized_data = {
+            'id': item['id'],
+            'vol': item['vol'],
+            'image_id': item['image_id'],
+            'title': item['drink'].title,
+            'title_ru': getattr(item['drink'], 'title_ru', ''),
+            'title_fr': getattr(item['drink'], 'title_fr', ''),
+            'country': item['country'].name if item['country'] else '',
+            'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
+            'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
+            'subcategory': f"{item['subcategory'].category.name} {getattr(item['subcategory'], 'name', '')}",
+            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
+            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+        }
+        
+        # Применим функцию локализации
+        localized_result = flatten_dict_with_localized_fields(
+            localized_data, 
+            fields_to_localize, 
+            lang
+        )
+        
+        # Добавим остальные поля
+        localized_result['id'] = item['id']
+        localized_result['vol'] = item['vol']
+        localized_result['image_id'] = item['image_id']
+        
+        return localized_result
+
+    @classmethod
     async def get_list_view(cls, lang: str, repository: ItemRepository, model: Item, session: AsyncSession):
         """Получение списка элементов для ListView с локализацией"""
         items = await repository.get_list_view(model, session)
         result = []
         for item in items:
-            # Подготовим данные для локализации
-            localized_data = {
-                'id': item['id'],
-                'vol': item['vol'],
-                'image_id': item['image_id'],
-                'title': item['drink'].title,
-                'title_ru': getattr(item['drink'], 'title_ru', ''),
-                'title_fr': getattr(item['drink'], 'title_fr', ''),
-                'country': item['country'].name if item['country'] else '',
-                'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
-                'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
-                'subcategory': f"{item['subcategory'].category.name} {getattr(item['subcategory'], 'name', '')}",
-                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
-            }
-            
-            # Применим функцию локализации
-            localized_result = flatten_dict_with_localized_fields(
-                localized_data, 
-                ['title', 'country', 'subcategory'], 
-                lang
-            )
-            
-            # Добавим остальные поля
-            localized_result['id'] = item['id']
-            localized_result['vol'] = item['vol']
-            localized_result['image_id'] = item['image_id']
-            
+            localized_result = cls._process_item_localization(item, lang)
             result.append(localized_result)
         return result
 
     @classmethod
-    async def get_list_view_page(cls, page: int, page_size: int, repository: ItemRepository, model: Item, session: AsyncSession):
+    async def get_list_view_page(cls, page: int, page_size: int, repository: ItemRepository, model: Item, session: AsyncSession, lang: str = 'en'):
         """Получение списка элементов для ListView с пагинацией и локализацией"""
         skip = (page - 1) * page_size
         items, total = await repository.get_list_view_page(skip, page_size, model, session)
         result = []
         for item in items:
-            # Подготовим данные для локализации
-            localized_data = {
-                'id': item['id'],
-                'vol': item['vol'],
-                'image_id': item['image_id'],
-                'title': item['drink'].title,
-                'title_ru': getattr(item['drink'], 'title_ru', ''),
-                'title_fr': getattr(item['drink'], 'title_fr', ''),
-                'country': item['country'].name if item['country'] else '',
-                'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
-                'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
-                'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-                'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-                'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
-            }
-            
-            # Применим функцию локализации
-            localized_result = flatten_dict_with_localized_fields(
-                localized_data, 
-                ['title', 'country', 'subcategory'], 
-                'en'  # временно используем 'en', чтобы получить базовые значения
-            )
-            
-            # Добавим остальные поля
-            localized_result['id'] = item['id']
-            localized_result['vol'] = item['vol']
-            localized_result['image_id'] = item['image_id']
-            
+            localized_result = cls._process_item_localization(item, lang)
             result.append(localized_result)
         
         return {
@@ -128,7 +110,7 @@ class ItemService(Service):
             'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
             'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
             'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', )) else '',
+            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
             'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
             'sweetness': getattr(item['sweetness'], 'name', '') if item['sweetness'] else '',
             'sweetness_ru': getattr(item['sweetness'], 'name_ru', '') if item['sweetness'] else '',
