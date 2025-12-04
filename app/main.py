@@ -22,6 +22,7 @@ from app.support.country.router import CountryRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
+from app.support.item.router_item_view import ItemViewRouter
 from app.support.region.router import RegionRouter
 from app.support.subcategory.router import SubcategoryRouter
 from app.support.subregion.router import SubregionRouter
@@ -63,6 +64,7 @@ app.include_router(CreateRouter().router)
 app.include_router(GetRouter().router)
 app.include_router(DeleteRouter().router)
 app.include_router(PatchRouter().router)
+app.include_router(ItemViewRouter().router)
 app.include_router(ItemRouter().router)
 app.include_router(DrinkRouter().router)
 

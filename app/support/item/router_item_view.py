@@ -35,17 +35,17 @@ class ItemViewRouter:
             tags=self.tags,
             summary="Получить список элементов с локализацией"
         )
-        
+
         # Маршрут для получения списка элементов с пагинацией
         self.router.add_api_route(
             "/list_paginated/{lang}",
             self.get_list_paginated,
             methods=["GET"],
-            response_model=PaginatedResponse[self.paginated_response],
+            response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
             summary="Получить список элементов с пагинацией и локализацией"
         )
-        
+
         # Маршрут для получения одного элемента по id с локализацией
         self.router.add_api_route(
             "/detail/{lang}/{id}",
@@ -62,8 +62,8 @@ class ItemViewRouter:
         items = await service.get_list_view(lang, ItemRepository, Item, session)
         return items
 
-    async def get_list_paginated(self, 
-                                 lang: str, 
+    async def get_list_paginated(self,
+                                 lang: str,
                                  page: int = Query(1, ge=1, description="Номер страницы"),
                                  page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                  session: AsyncSession = Depends(get_db)):
@@ -79,7 +79,8 @@ class ItemViewRouter:
         if not item:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
-        print(f'============================={type(item)=}')
-        item_model = ItemDetailView.validate(**item)
-        return item_model.model_dump(exclude_none=True, exclude_unset=True )
-        # return item
+        print(f'{type(item)=}')
+        result = ItemDetailView(**item)
+        # result = {key: val for key, val in item.items() if val}
+
+        return result.model_dump(exclude_none=True, exclude_unset=True)

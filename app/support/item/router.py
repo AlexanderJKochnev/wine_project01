@@ -32,7 +32,7 @@ class ItemRouter(BaseRouter):
     def setup_routes(self):
         super().setup_routes()
         # Добавляем маршруты для ListView и DetailView
-        self.router.add_api_route(
+        """self.router.add_api_route(
             "/list/{lang}",
             self.get_list_view,
             methods=["GET"],
@@ -57,7 +57,7 @@ class ItemRouter(BaseRouter):
             response_model=ItemDetailView,
             tags=["items_view"],
             summary="Получить детальную информацию по элементу с локализацией"
-        )
+        )"""
         
         self.router.add_api_route(
             "/full", self.create_relation_image, status_code=status.HTTP_200_OK, methods=["POST"],
