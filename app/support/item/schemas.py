@@ -228,7 +228,7 @@ class ItemDetailView(BaseModel):
     recommendation: Optional[str] = None   # Drink.recommendation (_ru, _fr)
     madeof: Optional[str] = None  # Drink.madeof (_ru, _fr)
     description: Optional[str] = None  # Drink.description (_ru, _fr)
-    varietals: Optional[List[str]] = None  # From Drink.varietal_associations
+    varietal: Optional[List[str]] = None  # From Drink.varietal_associations
     pairing: Optional[List[str]] = None  # From Drink.food_associations
 
     model_config = {'populate_by_name': True, 'str_strip_whitespace': True}

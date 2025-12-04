@@ -126,8 +126,8 @@ class ItemService(Service):
         # Handle varietals and pairing with localization (similar to drink schemas)
         lang_suffix = '' if lang == 'en' else f'_{lang}'
         
-        # Get varietals with localization
-        varietals = []
+        # Get varietals with localization and percentages
+        varietal = []
         if hasattr(item['drink'], 'varietal_associations') and item['drink'].varietal_associations:
             for assoc in item['drink'].varietal_associations:
                 if hasattr(assoc.varietal, f'name{lang_suffix}'):
@@ -137,7 +137,11 @@ class ItemService(Service):
                 else:
                     continue
                 if name:
-                    varietals.append(name)
+                    # Add percentage if available
+                    if assoc.percentage is not None:
+                        varietal.append(f"{name} {int(round(assoc.percentage))}%")
+                    else:
+                        varietal.append(name)
         
         # Get pairing (foods) with localization
         pairing = []
@@ -159,9 +163,9 @@ class ItemService(Service):
             lang
         )
         
-        # Add varietals and pairing after localization
-        if varietals:
-            localized_result['varietals'] = varietals
+        # Add varietal (renamed from varietals) and pairing after localization
+        if varietal:
+            localized_result['varietal'] = varietal
         if pairing:
             localized_result['pairing'] = pairing
         
