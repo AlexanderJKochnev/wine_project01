@@ -48,4 +48,12 @@ pip-delete-this-directory.txt
 
 # MyPy
 .mypy_cache/
+
+.DS_Store
+TODO.md
+migration_volume/
+mongodb_data/
+pg_data/
+upload_volume/
+
 ```
