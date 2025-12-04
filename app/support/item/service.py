@@ -123,12 +123,47 @@ class ItemService(Service):
             'madeof_fr': getattr(item['drink'], 'madeof_fr', ''),
         }
         
+        # Handle varietals and pairing with localization (similar to drink schemas)
+        lang_suffix = '' if lang == 'en' else f'_{lang}'
+        
+        # Get varietals with localization
+        varietals = []
+        if hasattr(item['drink'], 'varietal_associations') and item['drink'].varietal_associations:
+            for assoc in item['drink'].varietal_associations:
+                if hasattr(assoc.varietal, f'name{lang_suffix}'):
+                    name = getattr(assoc.varietal, f'name{lang_suffix}')
+                elif hasattr(assoc.varietal, 'name'):
+                    name = assoc.varietal.name
+                else:
+                    continue
+                if name:
+                    varietals.append(name)
+        
+        # Get pairing (foods) with localization
+        pairing = []
+        if hasattr(item['drink'], 'food_associations') and item['drink'].food_associations:
+            for assoc in item['drink'].food_associations:
+                if hasattr(assoc.food, f'name{lang_suffix}'):
+                    name = getattr(assoc.food, f'name{lang_suffix}')
+                elif hasattr(assoc.food, 'name'):
+                    name = assoc.food.name
+                else:
+                    continue
+                if name:
+                    pairing.append(name)
+        
         # Применим функцию локализации
         localized_result = flatten_dict_with_localized_fields(
             localized_data, 
             ['title', 'subtitle', 'country', 'subcategory', 'sweetness', 'recommendation', 'madeof'], 
             lang
         )
+        
+        # Add varietals and pairing after localization
+        if varietals:
+            localized_result['varietals'] = varietals
+        if pairing:
+            localized_result['pairing'] = pairing
         
         # Добавим остальные поля
         localized_result['id'] = item['id']

@@ -183,7 +183,9 @@ class ItemRepository(Repository):
                     )
                 ),
                 selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness)
+                selectinload(Drink.sweetness),
+                selectinload(Drink.food_associations).joinedload(DrinkFood.food),
+                selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
             )
         ).where(Item.id == id)
         
