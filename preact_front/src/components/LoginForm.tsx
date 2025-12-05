@@ -36,31 +36,31 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-2xl font-bold text-center">Вход</h2>
-      {error && <p className="text-red-500 text-center">{error}</p>}
-      <div>
+      <h2 className="text-2xl font-bold text-center mb-4">Вход</h2>
+      {error && <div className="alert alert-error mb-4"><p className="text-center">{error}</p></div>}
+      <div className="form-control">
         <input
           type="text"
           placeholder="Логин"
           value={username}
           onChange={e => setUsername(e.currentTarget.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+          className="input input-bordered w-full"
         />
       </div>
-      <div>
+      <div className="form-control">
         <input
           type="password"
           placeholder="Пароль"
           value={password}
           onChange={e => setPassword(e.currentTarget.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+          className="input input-bordered w-full"
         />
       </div>
       <button 
         type="submit" 
-        className="w-full btn btn-primary"
+        className="btn btn-primary w-full mt-4"
       >
         Войти
       </button>
