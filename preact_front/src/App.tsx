@@ -27,7 +27,13 @@ export function App() {
   }, []);
 
   if (!isAuthenticated) {
-    return <LoginForm onLogin={() => setIsAuthenticated(true)} />;
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center">
+        <div className="card bg-base-100 w-full max-w-md p-6">
+          <LoginForm onLogin={() => setIsAuthenticated(true)} />
+        </div>
+      </div>
+    );
   }
 
   return (
