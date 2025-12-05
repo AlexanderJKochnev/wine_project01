@@ -28,8 +28,8 @@ export function App() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-base-100 flex items-center justify-center">
-        <div className="card bg-base-100 w-full max-w-md p-6">
+      <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
+        <div className="card bg-base-100 w-full max-w-md p-6 shadow-lg">
           <LoginForm onLogin={() => setIsAuthenticated(true)} />
         </div>
       </div>
@@ -37,9 +37,9 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 flex flex-col">
       <Header />
-      <main className="container mx-auto p-4">
+      <main className="container mx-auto p-4 flex-grow">
         <Router>
           <Route path="/" component={Home} />
           <Route path="/items" component={ItemListView} />

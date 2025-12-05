@@ -1,74 +1,110 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@tailwind variants;
+@layer base {
+  :root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
 
-:root {
-	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-	line-height: 1.5;
-	font-weight: 400;
+    color: #222;
+    background-color: #ffffff;
 
-	color: #222;
-	background-color: #ffffff;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
 
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	-webkit-text-size-adjust: 100%;
+  body {
+    margin: 0;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    display: flex;
+    justify-content: flex-end;
+    background-color: #673ab8;
+  }
+
+  header nav {
+    display: flex;
+  }
+
+  header a {
+    color: #fff;
+    padding: 0.75rem;
+    text-decoration: none;
+  }
+
+  header a.active {
+    background-color: #0005;
+  }
+
+  header a:hover {
+    background-color: #0008;
+  }
+
+  main {
+    flex: auto;
+    display: flex;
+    align-items: center;
+    max-width: 1280px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  @media (max-width: 639px) {
+    main {
+      margin: 2rem;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color: #ccc;
+      background-color: #1a1a1a;
+    }
+  }
 }
 
-body {
-	margin: 0;
-}
-
-#app {
-	display: flex;
-	flex-direction: column;
-	min-height: 100vh;
-}
-
-header {
-	display: flex;
-	justify-content: flex-end;
-	background-color: #673ab8;
-}
-
-header nav {
-	display: flex;
-}
-
-header a {
-	color: #fff;
-	padding: 0.75rem;
-	text-decoration: none;
-}
-
-header a.active {
-	background-color: #0005;
-}
-
-header a:hover {
-	background-color: #0008;
-}
-
-main {
-	flex: auto;
-	display: flex;
-	align-items: center;
-	max-width: 1280px;
-	margin: 0 auto;
-	text-align: center;
-}
-
-@media (max-width: 639px) {
-	main {
-		margin: 2rem;
-	}
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		color: #ccc;
-		background-color: #1a1a1a;
-	}
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-focus;
+  }
+  
+  .input {
+    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .input-bordered {
+    @apply border border-gray-300 focus:border-primary focus:ring-primary;
+  }
+  
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+  
+  .form-control {
+    @apply space-y-2;
+  }
+  
+  .alert {
+    @apply relative rounded-md border border-input bg-background px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7;
+  }
+  
+  .alert-error {
+    @apply border-red-500 text-red-500 bg-red-50;
+  }
 }
