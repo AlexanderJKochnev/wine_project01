@@ -1,0 +1,250 @@
+// src/pages/HandbookCreateForm.tsx
+import { h, useState } from 'preact/hooks';
+import { Link, useLocation, useRouter } from 'preact-iso';
+import { apiClient } from '../lib/apiClient';
+import { useNotification } from '../hooks/useNotification';
+
+export const HandbookCreateForm = () => {
+  const { path } = useLocation();
+  const type = path.split('/')[2];
+  const { route } = useRouter();
+  const { showNotification } = useNotification();
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    name_en: '',
+    name_ru: '',
+    name_fr: '',
+    description: '',
+    description_en: '',
+    description_ru: '',
+    description_fr: '',
+    code: '',
+    value: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: Event) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+    const { name, value } = target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Get the readable name for the handbook type
+  const getReadableName = (type: string) => {
+    const names: Record<string, string> = {
+      'categories': 'Category',
+      'countries': 'Country',
+      'subcategories': 'Subcategory',
+      'subregions': 'Subregion',
+      'sweetnesses': 'Sweetness',
+      'foods': 'Food',
+      'varietals': 'Varietal',
+    };
+    return names[type] || type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
+  // Determine the endpoint based on the handbook type
+  const getEndpoint = (type: string) => {
+    const endpoints: Record<string, string> = {
+      'categories': '/categories',
+      'countries': '/countries',
+      'subcategories': '/subcategories',
+      'subregions': '/subregions',
+      'sweetnesses': '/sweetnesses',
+      'foods': '/foods',
+      'varietals': '/varietals',
+    };
+    return endpoints[type] || `/handbooks/${type}`;
+  };
+
+  const handleSubmit = async (e: Event) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await apiClient(getEndpoint(type), {
+        method: 'POST',
+        body: formData
+      });
+      showNotification(`${getReadableName(type)} created successfully`, 'success');
+      route(`/handbooks/${type}`);
+    } catch (error) {
+      console.error(`Error creating ${type}:`, error);
+      showNotification(`Error creating ${getReadableName(type)}: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Create New {getReadableName(type)}</h1>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="card bg-base-100 shadow">
+          <div className="card-body">
+            <h2 className="card-title">Basic Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="label">
+                  <span className="label-text">Name</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Name"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Name (EN)</span>
+                </label>
+                <input
+                  type="text"
+                  name="name_en"
+                  value={formData.name_en}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="English name"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Name (RU)</span>
+                </label>
+                <input
+                  type="text"
+                  name="name_ru"
+                  value={formData.name_ru}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Russian name"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Name (FR)</span>
+                </label>
+                <input
+                  type="text"
+                  name="name_fr"
+                  value={formData.name_fr}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="French name"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Description</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onInput={handleChange}
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  placeholder="Description"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Description (EN)</span>
+                </label>
+                <textarea
+                  name="description_en"
+                  value={formData.description_en}
+                  onInput={handleChange}
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  placeholder="English description"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Description (RU)</span>
+                </label>
+                <textarea
+                  name="description_ru"
+                  value={formData.description_ru}
+                  onInput={handleChange}
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  placeholder="Russian description"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Description (FR)</span>
+                </label>
+                <textarea
+                  name="description_fr"
+                  value={formData.description_fr}
+                  onInput={handleChange}
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  placeholder="French description"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Code</span>
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Code (optional)"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Value</span>
+                </label>
+                <input
+                  type="text"
+                  name="value"
+                  value={formData.value}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Value (optional)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <button 
+            type="submit" 
+            className={`btn btn-primary ${loading ? 'loading' : ''}`}
+            disabled={loading}
+          >
+            {loading ? `Creating ${getReadableName(type)}...` : `Create ${getReadableName(type)}`}
+          </button>
+          <Link href={`/handbooks/${type}`} className="btn btn-ghost">
+            Cancel
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
+};

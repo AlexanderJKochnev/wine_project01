@@ -1,37 +1,50 @@
 ```
 # Dependencies
 node_modules/
+.pnpm-store/
+.yarn/
+yarn.lock
+package-lock.json
 
-# Build artifacts
+# Build outputs
 dist/
 build/
-*.js
-*.ts
-*.tsx
+out/
+public/build/
+*.bundle.js
+*.chunk.js
 
-# Environment
+# Development
 .env
 .env.local
-*.env.*
+.env.development
+.env.test
+.env.production
 
-# Editors
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage
+coverage/
+.nyc_output/
+istanbul/
+.jest/
+
+# Editor
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Logs
-*.log
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Temp files
-*.tmp
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Docker
+.dockerignore
+!Dockerfile*
 ```
