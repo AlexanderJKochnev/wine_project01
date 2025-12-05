@@ -50,9 +50,11 @@ async def parse_rawdata_task(ctx, name_id: int):
     except HTTPException as http_exc:
         if http_exc.status_code in [503, 404]:
             # For 503 and 404 errors, send a warning notification but continue working
+            print(f'HTTP ошибка {http_exc.status_code}: {str(http_exc.detail)}. '
+                  f'Пропускаем запись, продолжаем работу')
             await send_notification(
                 f'HTTP ошибка {http_exc.status_code}: {str(http_exc.detail)}. '
-                f'Пропускаем запись, продолжаем работу',
+                f'Пропускаем запись, продолжаем работу. FirstNotice',
                 notification_type=NotificationType.WARNING,
                 worker_name="ARQ Worker (Parse Rawdata)"
             )
@@ -63,9 +65,10 @@ async def parse_rawdata_task(ctx, name_id: int):
     except Exception as e:
         count = ctx['metrics']['completed_tasks']
         if '503 Service' in str(e) or '404' in str(e):
+            print(f'{str(e)}. Пропускаем запись, продолжаем работу. SecondNotice, {count} records')
             # For 503 and 404 service errors, send a warning notification but continue working
             await send_notification(
-                f'{str(e)}. Пропускаем запись, продолжаем работу',
+                f'{str(e)}. Пропускаем запись, продолжаем работу. SecondNotice',
                 notification_type=NotificationType.WARNING,
                 worker_name="ARQ Worker (Parse Rawdata)"
             )
@@ -115,7 +118,7 @@ class WorkerSettings:
     redis_settings = RedisSettings(host=host, port=port)
     conn_timeout = 10,  # таймаут подключения
     conn_retries = 1,  # попытки переподключения
-    conn_retry_delay = 10,  # задержка между попытками
+    conn_retry_delay = 20,  # задержка между попытками
     on_startup = on_startup_handle
     on_shutdown = on_shutdown_handle
     on_job_end = on_job_post_run_handle

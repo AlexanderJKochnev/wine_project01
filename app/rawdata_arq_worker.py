@@ -12,7 +12,7 @@ from app.core.config.project_config import settings
 from app.support.parser.model import Rawdata, Status
 from app.support.parser.utils.html_parser import parse_html_to_dict
 from app.support.field_keys.service import FieldKeyService
-from app.core.utils.email_sender import EmailSender, send_notification, NotificationType
+from app.core.utils.email_sender import send_notification, NotificationType
 from app.support.parser.repository import StatusRepository
 
 
@@ -80,7 +80,7 @@ async def parse_all_rawdata_task(ctx, rawdata_id: int, status_completed_id: int)
         # Don't commit the changes if there was an error
         # The record status will remain unchanged
         await send_notification(
-            f"Rawdata processing воркер (№2) остановлен с ошибкой",
+            "Rawdata processing воркер (№2) столкнулся с ошибкой",
             notification_type=NotificationType.ERROR,
             additional_info=f'Error processing Rawdata record: {str(e)}, job_id: {job_id}',
             worker_name="Rawdata Processing Worker"
@@ -117,11 +117,11 @@ async def on_job_post_run_handle(ctx):
 # Хук вызывается при остановке процесса воркера
 async def on_shutdown_handle(ctx):
     count = ctx['metrics']['completed_tasks']
-    print(f"Rawdata processing воркер остановлен. Всего выполнено задач: {count}")
+    print(f"Rawdata2 processing воркер остановлен. Всего выполнено задач: {count}")
     await send_notification(
-        f"Rawdata processing воркер (№2) успешно завершил работу",
+        f"Rawdata2 processing воркер (№2) успешно завершил работу. обработано {count} записей",
         notification_type=NotificationType.SHUTDOWN,
-        additional_info=f"Rawdata processing воркер остановлен. Всего выполнено задач: {count}",
+        additional_info=f"Rawdata2 processing воркер остановлен. Всего выполнено задач: {count}",
         worker_name="Rawdata Processing Worker"
     )
 
@@ -142,4 +142,4 @@ class RawdataWorkerSettings:
     on_shutdown = on_shutdown_handle
     on_job_end = on_job_post_run_handle
     max_tries = settings.ARQ_MAX_TRIES  # 3 попытки, потом — не повторять
-    burst = True
+    # burst = True
