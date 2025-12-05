@@ -56,17 +56,21 @@ async def parse_rawdata_task(ctx, name_id: int):
                 notification_type=NotificationType.WARNING,
                 worker_name="ARQ Worker (Parse Rawdata)"
             )
+            # Return early to indicate successful completion (job won't be retried)
+            return
         else:
             raise http_exc
     except Exception as e:
         count = ctx['metrics']['completed_tasks']
-        if '503 Service' in str(e):
-            # For 503 service errors, send a warning notification but continue working
+        if '503 Service' in str(e) or '404' in str(e):
+            # For 503 and 404 service errors, send a warning notification but continue working
             await send_notification(
                 f'{str(e)}. Пропускаем запись, продолжаем работу',
                 notification_type=NotificationType.WARNING,
                 worker_name="ARQ Worker (Parse Rawdata)"
             )
+            # Return early to indicate successful completion (job won't be retried)
+            return
         else:
             # For other critical errors, send an error notification and exit
             await send_notification(
