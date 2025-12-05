@@ -35,24 +35,35 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Вход</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <input
-        type="text"
-        placeholder="Логин"
-        value={username}
-        onChange={e => setUsername(e.currentTarget.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Пароль"
-        value={password}
-        onChange={e => setPassword(e.currentTarget.value)}
-        required
-      />
-      <button type="submit">Войти</button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-2xl font-bold text-center">Вход</h2>
+      {error && <p className="text-red-500 text-center">{error}</p>}
+      <div>
+        <input
+          type="text"
+          placeholder="Логин"
+          value={username}
+          onChange={e => setUsername(e.currentTarget.value)}
+          required
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+      <div>
+        <input
+          type="password"
+          placeholder="Пароль"
+          value={password}
+          onChange={e => setPassword(e.currentTarget.value)}
+          required
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+      <button 
+        type="submit" 
+        className="w-full btn btn-primary"
+      >
+        Войти
+      </button>
     </form>
   );
 };
