@@ -8,13 +8,12 @@ COPY package*.json ./
 
 # Устанавливаем зависимости
 RUN npm ci --silent
-RUN npm install @mui/material @emotion/react @emotion/styled
 
 # Копируем исходный код (в dev-режиме лучше монтировать через volume, но копируем на всякий случай)
 COPY . .
 
-# Открываем порт (обычно 8080 или 3000 — зависит от шаблона Preact)
-EXPOSE 8080
+# Открываем порт (Vite default port)
+EXPOSE 5173
 
 # Запускаем dev-сервер
 # Важно: убедитесь, что dev-сервер слушает 0.0.0.0
