@@ -17,7 +17,7 @@ import { Home } from './pages/Home';
 import { NotFound } from './pages/_404';
 
 function HomeRedirect() {
-  const [, setLocation] = useLocation();
+  const { setLocation } = useLocation();
   
   // Redirect to /items immediately
   setLocation('/items', { replace: true });
