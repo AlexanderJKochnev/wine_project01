@@ -45,14 +45,14 @@ export const ItemListView = () => {
 
   return (
     <div className="space-y-6 w-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-4">
         <h1 className="text-2xl font-bold">Items</h1>
         <Link href="/items/create" className="btn btn-primary">
           Create New Item
         </Link>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-2">
           <input
             type="text"

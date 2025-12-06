@@ -48,7 +48,7 @@ export function App() {
   return (
       <div className="min-h-screen bg-base-100 flex flex-col">
         <Header />
-        <main className="flex-grow p-4">
+        <main className="flex-grow p-0">
           <div className="w-full">
             <Router>
               <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />

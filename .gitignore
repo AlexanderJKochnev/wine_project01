@@ -1,4 +1,4 @@
-```gitignore
+```
 # Dependencies
 node_modules/
 
@@ -8,7 +8,11 @@ build/
 *.js
 *.ts
 *.tsx
-*.css
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
 
 # Environment
 .env
@@ -18,71 +22,18 @@ build/
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# Logs
-*.log
-
-# Temp files
-*.tmp
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Python
+# Python artifacts (if any Python in project)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.gitattributes
-.next
-out/
-.nyc_output
-coverage/
-*.lcov
-*.info
 
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnp
-.pnp.js
-.next
-out/
-.nuxt
-dist/
-build/
-.nyc_output
+# Coverage reports
 coverage/
-*.lcov
-*.info
+htmlcov/
+*.coverage
 
-# Preact/Vite specific
-dist/
-build/
-*.js
-*.ts
-*.tsx
-*.css
-*.map
-!src/**
+# Local configuration
+*.local
 ```
