@@ -76,8 +76,10 @@ class RegionCreateResponseSchema(RegionCreate, CreateResponse):
 
 
 class RegionDetailView(DetailView):
-    country: Optional[ListView] = None
+    # country: Optional[ListView] = None
+    pass
 
 
 class RegionListView(ListView):
-    country: Optional[ListView] = None
+    # country: Optional[ListView] = None
+    pass

@@ -46,8 +46,10 @@ class FoodCreateResponseSchema(FoodCreate, CreateResponse):
 
 
 class FoodDetailView(DetailView):
-    superfood: Optional[ListView] = None
+    # superfood: Optional[ListView] = None
+    pass
 
 
 class FoodListView(ListView):
-    superfood: Optional[ListView] = None
+    # superfood: Optional[ListView] = None
+    pass
