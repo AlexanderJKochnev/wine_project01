@@ -1,4 +1,5 @@
-import { createContext, h, useState, useContext, VNode } from 'preact';
+import { createContext, h, VNode } from 'preact';
+import { useContext, useState } from 'preact/hooks';
 import { useEffect } from 'preact/hooks';
 
 // Define the supported languages

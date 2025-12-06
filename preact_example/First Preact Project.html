@@ -8,10 +8,114 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="color-scheme" content="light dark">
 		<title>First Preact Project</title>
-	</head>
+	<style type="text/css" data-vite-dev-id="/app/src/style.css">@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+@layer base {
+  :root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color: #222;
+    background-color: #ffffff;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    display: flex;
+    justify-content: flex-end;
+    background-color: #673ab8;
+  }
+
+  header nav {
+    display: flex;
+  }
+
+  header a {
+    color: #fff;
+    padding: 0.75rem;
+    text-decoration: none;
+  }
+
+  header a.active {
+    background-color: #0005;
+  }
+
+  header a:hover {
+    background-color: #0008;
+  }
+
+  main {
+    flex: auto;
+    display: flex;
+    align-items: stretch;
+  }
+
+  @media (max-width: 639px) {
+    /* Removed margin constraint to allow full width */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color: #ccc;
+      background-color: #1a1a1a;
+    }
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-focus;
+  }
+  
+  .input {
+    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .input-bordered {
+    @apply border border-gray-300 focus:border-primary focus:ring-primary;
+  }
+  
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+  
+  .form-control {
+    @apply space-y-2;
+  }
+  
+  .alert {
+    @apply relative rounded-md border border-input bg-background px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7;
+  }
+  
+  .alert-error {
+    @apply border-red-500 text-red-500 bg-red-50;
+  }
+}</style></head>
 	<body>
-		<div id="app"></div>
-		<script type="module" src="First%20Preact%20Project_files/main.tsx"></script>
+		<div id="app"><div class="min-h-screen bg-base-100 flex flex-col"><header class="bg-primary text-primary-content shadow-md"><div class="navbar"><div class="navbar-start"><div class="dropdown"><label tabindex="0" class="btn btn-ghost lg:hidden"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg></label><ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"><li><a href="http://localhost:5555/">Home</a></li><li><a href="http://localhost:5555/items">Items</a></li><li><a href="http://localhost:5555/handbooks">Handbooks</a></li></ul></div><a href="http://localhost:5555/" class="btn btn-ghost normal-case text-xl">Wine App</a></div><div class="navbar-center hidden lg:flex"><ul class="menu menu-horizontal px-1"><li><a href="http://localhost:5555/" class="">Home</a></li><li><a href="http://localhost:5555/items" class="active">Items</a></li><li><a href="http://localhost:5555/handbooks" class="">Handbooks</a></li></ul></div><div class="navbar-end flex items-center gap-4"><div class="dropdown dropdown-end"><label tabindex="0" class="btn btn-sm btn-ghost">RU</label><ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-24"><li><button class="">EN</button></li><li><button class="active">RU</button></li><li><button class="">FR</button></li></ul></div><button class="btn btn-sm btn-error">Logout</button></div></div></header><main class="flex-grow p-0"><div class="w-full"><div class="space-y-6 w-full"><div class="flex flex-row justify-between items-center gap-4"><h1 class="text-2xl font-bold">Items</h1><a href="http://localhost:5555/items/create" class="btn btn-primary">Create New Item</a></div><div class="flex flex-row justify-between items-center gap-4"><div class="flex items-center gap-2"><input type="text" placeholder="Search items..." class="input input-bordered w-full max-w-xs"><button class="btn btn-active">Table</button><button class="btn ">Grid</button></div></div><div class="overflow-x-auto"><table class="table table-zebra"><thead><tr><th>Image</th><th>Title</th><th>Volume</th><th>Price</th><th>Country</th><th>Actions</th></tr></thead><tbody><tr><td><img src="First%20Preact%20Project_files/thumb_-Lymluc5yKRoLQyYLbJG.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.75 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-LymmshrtckRTovERsnP.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.75 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-LymseJXWXM8cdaKS6x6.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.7 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-Lymu3O9ziV9bhIt36am.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.7 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-Lymu3qCegSdTw1LiJZx.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.75 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-LymukEAemmEdJXiWIoY.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.5 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-LymvdWInXSaNmZ1Jx04.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.7 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-Lymvm4_ThSSpUZ-RzFJ.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.75 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-LymxxeuPj_mSk2rTLyP.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.75 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr><tr><td><img src="First%20Preact%20Project_files/thumb_-Lyn3fPXJtUnleVAwC_V.png" alt="Item" loading="lazy" style="width: 60px; height: 60px; object-fit: contain; border-radius: 4px; border: 1px solid rgb(221, 221, 221);"></td><td>No title</td><td>0.75 ml</td><td>N/A</td><td>N/A</td><td><div class="flex gap-2"><a href="http://localhost:5555/items/undefined" class="btn btn-xs btn-info">View</a><a href="http://localhost:5555/items/edit/undefined" class="btn btn-xs btn-warning">Edit</a></div></td></tr></tbody></table></div><div class="flex justify-center mt-6"><div class="join"><button class="join-item btn" disabled="disabled">«</button><button class="join-item btn" disabled="disabled">‹</button><button class="join-item btn btn-active">1 of 15</button><button class="join-item btn">›</button><button class="join-item btn">»</button></div></div></div></div></main></div></div>
+		<script type="module" src="First%20Preact%20Project_files/main.js"></script>
 	
 
 </body></html>
