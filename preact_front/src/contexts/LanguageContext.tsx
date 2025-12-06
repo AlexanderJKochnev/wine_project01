@@ -1,15 +1,17 @@
 import { createContext, h, VNode } from 'preact';
 import { useContext, useState } from 'preact/hooks';
 import { useEffect } from 'preact/hooks';
+import { API_BASE_URL } from '../config/api';
 
-// Define the supported languages
-export type Language = 'en' | 'ru';
+// Define the supported languages as a dynamic type
+export type Language = string;
 
 // Define the context type
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  availableLanguages: Language[];
 }
 
 // Create the context with default values
@@ -17,6 +19,7 @@ const LanguageContext = createContext<LanguageContextType>({
   language: 'en',
   setLanguage: () => {},
   t: (key: string) => key,
+  availableLanguages: ['en', 'ru', 'fr'],
 });
 
 // Translation dictionary
@@ -315,31 +318,77 @@ const translations = {
 
 // Provider component
 export const LanguageProvider = ({ children }: { children: VNode }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    // Check for saved language preference in localStorage
-    const savedLang = localStorage.getItem('language') as Language;
-    if (savedLang && ['en', 'ru'].includes(savedLang)) {
-      return savedLang;
-    }
-    
-    // Fallback to browser language or default to 'en'
-    const browserLang = navigator.language.startsWith('ru') ? 'ru' : 'en';
-    return browserLang as Language;
-  });
+  const [language, setLanguage] = useState<Language>('en'); // Initialize with default
+  const [availableLanguages, setAvailableLanguages] = useState<Language[]>(['en', 'ru']); // Initialize with defaults
+
+  useEffect(() => {
+    // Fetch available languages from the backend
+    const fetchAvailableLanguages = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/get/languages`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+            'Content-Type': 'application/json'
+          }
+        }); // Using the proper API endpoint
+        if (response.ok) {
+          const data = await response.json();
+          const langs = data.languages || ['en', 'ru', 'fr'];
+          setAvailableLanguages(langs);
+          
+          // Check for saved language preference in localStorage
+          const savedLang = localStorage.getItem('language') as Language;
+          if (savedLang && langs.includes(savedLang)) {
+            setLanguage(savedLang);
+          } else {
+            // Fallback to default language from backend or browser language
+            const defaultLang = data.default || 'en';
+            const browserLang = navigator.language.split('-')[0]; // Get base language code
+            const preferredLang = langs.includes(browserLang) ? browserLang : defaultLang;
+            setLanguage(preferredLang);
+          }
+        } else {
+          // Fallback to default languages if API call fails
+          const defaultLang = 'en';
+          const browserLang = navigator.language.split('-')[0];
+          const langs = ['en', 'ru', 'fr']; // Default fallback
+          setAvailableLanguages(langs);
+          const preferredLang = langs.includes(browserLang) ? browserLang : defaultLang;
+          setLanguage(preferredLang);
+        }
+      } catch (error) {
+        console.error('Error fetching available languages:', error);
+        // Fallback to default languages if API call fails
+        const defaultLang = 'en';
+        const browserLang = navigator.language.split('-')[0];
+        // Use the same defaults as in the project config
+        const langs = ['en', 'ru', 'fr']; // This should match the backend settings
+        setAvailableLanguages(langs);
+        const preferredLang = langs.includes(browserLang) ? browserLang : defaultLang;
+        setLanguage(preferredLang);
+      }
+    };
+
+    fetchAvailableLanguages();
+  }, []);
 
   // Save language preference to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('language', language);
+    if (language) {
+      localStorage.setItem('language', language);
+    }
   }, [language]);
 
   // Translation function
   const t = (key: string): string => {
-    const translation = translations[language][key];
+    // Use the current language for translation if available in the dictionary
+    const currentLangTranslations = (translations as Record<string, Record<string, string>>)[language];
+    const translation = currentLangTranslations?.[key];
     return translation || key; // Return the key itself if no translation found
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, availableLanguages }}>
       {children}
     </LanguageContext.Provider>
   );

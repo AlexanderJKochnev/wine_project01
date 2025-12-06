@@ -5,15 +5,15 @@ import { Link } from './Link';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export const Header = () => {
-  const { language: currentLang, setLanguage } = useLanguage();
+  const { language: currentLang, setLanguage, availableLanguages } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { url } = useLocation();
 
-  const languages = [
-    { code: 'en', name: 'EN' },
-    { code: 'ru', name: 'RU' },
-    { code: 'fr', name: 'FR' },
-  ];
+  // Map available languages to the format expected by the UI
+  const languages = availableLanguages.map(lang => ({
+    code: lang,
+    name: lang.toUpperCase()
+  }));
 
   const handleLangChange = (lang: string) => {
     setLanguage(lang);
