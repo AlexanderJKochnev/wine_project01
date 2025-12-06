@@ -7,7 +7,7 @@ import { useNotification } from '../hooks/useNotification';
 
 export const HandbookCreateForm = () => {
   const { path } = useLocation();
-  const type = path.split('/')[2];
+  const type = path.split('/')[2] || '';
   const { route } = useLocation();
   const { showNotification } = useNotification();
   
@@ -45,7 +45,7 @@ export const HandbookCreateForm = () => {
       'foods': 'Food',
       'varietals': 'Varietal',
     };
-    return names[type] || type.charAt(0).toUpperCase() + type.slice(1);
+    return names[type] || (type && type.charAt(0).toUpperCase() + type.slice(1)) || 'Unknown';
   };
 
   // Determine the endpoint based on the handbook type
