@@ -1,6 +1,6 @@
 // src/App.tsx
 import { h, useState, useEffect } from 'preact/hooks';
-import { Router, Route, Redirect } from 'preact-iso';
+import { Router, Route, useLocation } from 'preact-iso';
 import { getAuthToken } from './lib/apiClient';
 import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Header';
@@ -15,6 +15,15 @@ import { HandbookUpdateForm } from './pages/HandbookUpdateForm';
 import { HandbookTypeList } from './pages/HandbookTypeList';
 import { Home } from './pages/Home';
 import { NotFound } from './pages/_404';
+
+function HomeRedirect() {
+  const [, setLocation] = useLocation();
+  
+  // Redirect to /items immediately
+  setLocation('/items', { replace: true });
+  
+  return null; // Return null while redirecting
+}
 
 export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -41,7 +50,7 @@ export function App() {
         <Header />
         <main className="container mx-auto p-4 flex-grow">
           <Router>
-            <Route path="/" component={() => isAuthenticated ? <Redirect href="/items" /> : <Home />} />
+            <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
             <Route path="/items" component={ItemListView} />
             <Route path="/items/:id" component={ItemDetailView} />
             <Route path="/items/create" component={ItemCreateForm} />
