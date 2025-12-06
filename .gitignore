@@ -1,1 +1,61 @@
-Nothing should be ignored based on the provided file changes. The modified file 'preact_front/src/App.tsx' is a source code file that should be tracked in version control.
+```
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.js
+*.js.map
+*.min.js
+*.min.js.map
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Python (if applicable)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/refs/replace/
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+```
