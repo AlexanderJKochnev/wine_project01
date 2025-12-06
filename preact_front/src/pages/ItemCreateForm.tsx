@@ -1,11 +1,12 @@
 // src/pages/ItemCreateForm.tsx
 import { h, useState, useEffect } from 'preact/hooks';
-import { Link, useRouter } from 'preact-iso';
+import { Link } from '../components/Link';
+import { useLocation } from 'preact-iso';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
 
 export const ItemCreateForm = () => {
-  const { route } = useRouter();
+  const { route } = useLocation();
   const { showNotification } = useNotification();
   const [formData, setFormData] = useState({
     vol: 0,

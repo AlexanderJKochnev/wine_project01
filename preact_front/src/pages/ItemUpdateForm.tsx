@@ -1,6 +1,7 @@
 // src/pages/ItemUpdateForm.tsx
 import { h, useState, useEffect } from 'preact/hooks';
-import { Link, useLocation, useRouter } from 'preact-iso';
+import { useLocation } from 'preact-iso';
+import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
 import { apiClient } from '../lib/apiClient';
 import { ItemRead } from '../types/item';
@@ -9,7 +10,7 @@ import { useNotification } from '../hooks/useNotification';
 export const ItemUpdateForm = () => {
   const { path } = useLocation();
   const id = parseInt(path.split('/')[3]);
-  const { route } = useRouter();
+  const { route } = useLocation();
   const { showNotification } = useNotification();
   
   const { data, loading: loadingItem, error: errorItem } = useApi<ItemRead>(

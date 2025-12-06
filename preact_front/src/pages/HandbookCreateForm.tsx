@@ -1,13 +1,13 @@
 // src/pages/HandbookCreateForm.tsx
 import { h, useState } from 'preact/hooks';
-import { Link, useLocation, useRouter } from 'preact-iso';
+import { Link } from '../components/Link';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
 
 export const HandbookCreateForm = () => {
   const { path } = useLocation();
   const type = path.split('/')[2];
-  const { route } = useRouter();
+  const { route } = useLocation();
   const { showNotification } = useNotification();
   
   const [formData, setFormData] = useState({

@@ -1,6 +1,6 @@
 // src/pages/HandbookUpdateForm.tsx
 import { h, useState, useEffect } from 'preact/hooks';
-import { Link, useLocation, useRouter } from 'preact-iso';
+import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
@@ -10,7 +10,7 @@ export const HandbookUpdateForm = () => {
   const pathParts = path.split('/');
   const type = pathParts[2];
   const id = parseInt(pathParts[4]);
-  const { route } = useRouter();
+  const { route } = useLocation();
   const { showNotification } = useNotification();
   
   const { data, loading: loadingItem, error: errorItem } = useApi<any>(
