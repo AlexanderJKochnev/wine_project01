@@ -54,8 +54,6 @@
 
   main {
     flex: auto;
-    display: flex;
-    align-items: stretch;
   }
 
   @media (max-width: 639px) {
