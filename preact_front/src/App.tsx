@@ -1,6 +1,6 @@
 // src/App.tsx
 import { h, useState, useEffect } from 'preact/hooks';
-import { Router, Route, useLocation } from 'preact-iso';
+import { Router, Route, useLocation, useNavigate } from 'preact-iso';
 import { getAuthToken } from './lib/apiClient';
 import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Header';
@@ -17,10 +17,10 @@ import { Home } from './pages/Home';
 import { NotFound } from './pages/_404';
 
 function HomeRedirect() {
-  const { setLocation } = useLocation();
+  const navigate = useNavigate();
   
   // Redirect to /items immediately
-  setLocation('/items', { replace: true });
+  navigate('/items', { replace: true });
   
   return null; // Return null while redirecting
 }
