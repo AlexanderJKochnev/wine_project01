@@ -22,3 +22,40 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+
+# Build outputs
+build/
+.nuxt/
+.next/
+.vercel/
+output/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Icon?
+.DS_Store
+
+# IDE
+.vs/
+*.sublime-project
+*.sublime-workspace
+
+# TypeScript
+tsconfig.tsbuildinfo
