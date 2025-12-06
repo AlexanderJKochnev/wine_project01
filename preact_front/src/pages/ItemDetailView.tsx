@@ -10,9 +10,10 @@ import { useNotification } from '../hooks/useNotification';
 import { Notification } from '../components/Notification';
 
 export const ItemDetailView = () => {
-  const { path } = useLocation();
-  const pathParts = path.split('/');
-  const idParam = pathParts[2];
+  const { url } = useLocation();
+  // Extract ID from URL path - expecting format like /items/123
+  const pathParts = url.split('/');
+  const idParam = pathParts[pathParts.length - 1]; // Get the last part of the path
   const id = parseInt(idParam);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { showNotification } = useNotification();

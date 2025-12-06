@@ -48,22 +48,24 @@ export function App() {
   return (
       <div className="min-h-screen bg-base-100 flex flex-col">
         <Header />
-        <main className="container mx-auto p-4 flex-grow">
-          <Router>
-            <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
-            <Route path="/items" component={ItemListView} />
-            <Route path="/items/:id" component={ItemDetailView} />
-            <Route path="/items/create" component={ItemCreateForm} />
-            <Route path="/items/edit/:id" component={ItemUpdateForm} />
+        <main className="flex-grow p-4">
+          <div className="max-w-7xl mx-auto w-full">
+            <Router>
+              <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
+              <Route path="/items" component={ItemListView} />
+              <Route path="/items/:id" component={ItemDetailView} />
+              <Route path="/items/create" component={ItemCreateForm} />
+              <Route path="/items/edit/:id" component={ItemUpdateForm} />
 
-            <Route path="/handbooks" component={HandbookList} />
-            <Route path="/handbooks/:type" component={HandbookTypeList} />
-            <Route path="/handbooks/:type/:id" component={HandbookDetail} />
-            <Route path="/handbooks/:type/create" component={HandbookCreateForm} />
-            <Route path="/handbooks/:type/edit/:id" component={HandbookUpdateForm} />
+              <Route path="/handbooks" component={HandbookList} />
+              <Route path="/handbooks/:type" component={HandbookTypeList} />
+              <Route path="/handbooks/:type/:id" component={HandbookDetail} />
+              <Route path="/handbooks/:type/create" component={HandbookCreateForm} />
+              <Route path="/handbooks/:type/edit/:id" component={HandbookUpdateForm} />
 
-            <Route default component={NotFound} />
-          </Router>
+              <Route default component={NotFound} />
+            </Router>
+          </div>
         </main>
       </div>
   );
