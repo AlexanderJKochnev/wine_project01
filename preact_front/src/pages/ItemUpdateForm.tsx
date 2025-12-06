@@ -8,9 +8,10 @@ import { ItemRead } from '../types/item';
 import { useNotification } from '../hooks/useNotification';
 
 export const ItemUpdateForm = () => {
-  const { path } = useLocation();
-  const pathParts = path.split('/');
-  const idParam = pathParts[3];
+  const { url } = useLocation();
+  // Extract ID from URL path - expecting format like /items/edit/123
+  const pathParts = url.split('/');
+  const idParam = pathParts[pathParts.length - 1]; // Get the last part of the path
   const id = parseInt(idParam);
   const { route } = useLocation();
   const { showNotification } = useNotification();

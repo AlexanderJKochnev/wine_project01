@@ -1,12 +1,17 @@
 // src/hooks/useApi.ts
 import { useState, useEffect } from 'preact/hooks';
-import { apiClient } from '../lib/apiClient';
+import { apiClient, getCurrentLanguage } from '../lib/apiClient';
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 // Вспомогательная функция для построения URL с query-параметрами
 function buildUrl(endpoint: string, params?: Record<string, any>): string {
-  if (!params) return endpoint;
+  if (!params) {
+    // If no params, add lang as default
+    const lang = getCurrentLanguage();
+    return `${endpoint}?lang=${lang}`;
+  }
+  
   const url = new URL(endpoint, 'http://temp');
   Object.keys(params).forEach(key => {
     const value = params[key];
@@ -14,6 +19,12 @@ function buildUrl(endpoint: string, params?: Record<string, any>): string {
       url.searchParams.append(key, String(value));
     }
   });
+  
+  // Add language parameter if it's not already there
+  if (!url.searchParams.has('lang')) {
+    url.searchParams.append('lang', getCurrentLanguage());
+  }
+  
   return url.pathname + url.search;
 }
 
@@ -33,7 +44,7 @@ export function useApi<T>(
     setError(null);
     try {
       const url = buildUrl(endpoint, params);
-      const result = await apiClient<T>(url, { method, body });
+      const result = await apiClient<T>(url, { method, body }, false); // Don't include lang again since we built it into URL
       setData(result);
     } catch (err: any) {
       setError(err.message || 'Unknown error');

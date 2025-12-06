@@ -2,12 +2,15 @@
 import { render } from 'preact';
 import { LocationProvider } from 'preact-iso';
 import { App } from './App';
+import { LanguageProvider } from './contexts/LanguageContext';
 import './style.css'; // Подключаем стили
 
 //render(<App />, document.getElementById('app')!);
 render(
-  <LocationProvider>
-    <App />
-  </LocationProvider>,
+  <LanguageProvider>
+    <LocationProvider>
+      <App />
+    </LocationProvider>
+  </LanguageProvider>,
   document.getElementById('app')!
 );

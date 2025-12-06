@@ -4,15 +4,27 @@ import { API_BASE_URL } from '../config/api';
 
 export const IMAGE_BASE_URL = `${API_BASE_URL}`;
 
+// Function to get the current language from localStorage
+export const getCurrentLanguage = () => localStorage.getItem('selected_language') || 'en';
+
 export const getAuthToken = () => localStorage.getItem('auth_token');
 export const setAuthToken = (token: string) => localStorage.setItem('auth_token', token);
 export const clearAuthToken = () => localStorage.removeItem('auth_token');
 
 export async function apiClient<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  includeLang: boolean = true
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  // Build URL with language parameter if needed
+  let url = `${API_BASE_URL}${endpoint}`;
+  if (includeLang && !endpoint.includes('?') && !endpoint.includes('lang=')) {
+    const lang = getCurrentLanguage();
+    url += `?lang=${lang}`;
+  } else if (includeLang && endpoint.includes('?') && !endpoint.includes('lang=')) {
+    const lang = getCurrentLanguage();
+    url += `&lang=${lang}`;
+  }
 
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
@@ -45,7 +57,7 @@ export async function apiClient<T>(
 
 export async function deleteItem(endpoint: string): Promise<boolean> {
   try {
-    await apiClient(endpoint, { method: 'DELETE' });
+    await apiClient(endpoint, { method: 'DELETE' }, false); // Don't include language for delete operations
     return true;
   } catch (err) {
     console.error('Delete error:', err);

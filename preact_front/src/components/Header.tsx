@@ -2,9 +2,10 @@
 import { h, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { Link } from './Link';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const Header = () => {
-  const [currentLang, setCurrentLang] = useState('en');
+  const { currentLang, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { url } = useLocation();
 
@@ -15,9 +16,7 @@ export const Header = () => {
   ];
 
   const handleLangChange = (lang: string) => {
-    setCurrentLang(lang);
-    // In a real app, you would update the language in your app context
-    // and potentially add it to API requests as a parameter
+    setLanguage(lang);
   };
 
   return (
