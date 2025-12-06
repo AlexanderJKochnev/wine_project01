@@ -30,7 +30,7 @@ export const ItemDetailView = () => {
   }
   
   const { data, loading, error, refetch } = useApi<ItemRead>(
-    `/items/${id}`,
+    `/items_view/detail/${localStorage.getItem('language') || 'en'}/${id}`,
     'GET'
   );
 

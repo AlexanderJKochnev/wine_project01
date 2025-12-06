@@ -6,70 +6,23 @@ node_modules/
 dist/
 build/
 *.js
-*.ts
-
-# Cache directories
-.vite/
-.cache/
+*.js.map
+*.tsbuildinfo
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Logs
-*.log
-
-# Editor files
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# Logs
+*.log
+
+# Temp files
 *.tmp
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Python artifacts (if any Python files exist in project)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# MyPy cache
-.mypy_cache/
-
-# Pytest cache
-.pytest_cache/
-
-# Distribution / packaging
-.Python
-*.egg-info/
-.eggs/
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-nosetests.xml
-coverage.xml
-
-# Transpiled JavaScript
-lib/
-es/
-es5/
-
-# System Files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 ```

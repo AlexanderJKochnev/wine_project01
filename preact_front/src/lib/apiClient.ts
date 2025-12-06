@@ -25,6 +25,8 @@ export async function apiClient<T>(
     const lang = getCurrentLanguage();
     url += `&lang=${lang}`;
   }
+  
+  console.log(`Making API request to: ${url}`, { endpoint, options, includeLang });
 
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');

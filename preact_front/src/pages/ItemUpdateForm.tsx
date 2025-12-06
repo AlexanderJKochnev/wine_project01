@@ -28,7 +28,7 @@ export const ItemUpdateForm = () => {
   }
   
   const { data, loading: loadingItem, error: errorItem } = useApi<ItemRead>(
-    `/items/${id}`,
+    `/items_view/detail/${localStorage.getItem('language') || 'en'}/${id}`,
     'GET'
   );
   

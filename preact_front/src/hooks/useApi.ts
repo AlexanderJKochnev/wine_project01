@@ -44,6 +44,7 @@ export function useApi<T>(
     setError(null);
     try {
       const url = buildUrl(endpoint, params);
+      console.log(`useApi making request to: ${url}`, { endpoint, method, params });
       const result = await apiClient<T>(url, { method, body }, false); // Don't include lang again since we built it into URL
       setData(result);
     } catch (err: any) {
