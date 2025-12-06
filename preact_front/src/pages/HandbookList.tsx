@@ -1,6 +1,6 @@
 // src/pages/HandbookList.tsx
 import { h, useState } from 'preact/hooks';
-import { Link } from 'preact-iso';
+import { Link } from '../components/Link';
 import { apiClient } from '../lib/apiClient';
 
 export const HandbookList = () => {

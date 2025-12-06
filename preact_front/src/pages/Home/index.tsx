@@ -1,6 +1,6 @@
 // src/pages/Home.tsx
 import { h } from 'preact';
-import { Link } from 'preact-iso';
+import { Link } from '../../components/Link';
 
 export function Home() {
   return (

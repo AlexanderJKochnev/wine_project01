@@ -1,6 +1,7 @@
 // src/components/Header.tsx
 import { h, useState } from 'preact/hooks';
-import { Link, useLocation } from 'preact-iso';
+import { useLocation } from 'preact-iso';
+import { Link } from './Link';
 
 export const Header = () => {
   const [currentLang, setCurrentLang] = useState('en');
