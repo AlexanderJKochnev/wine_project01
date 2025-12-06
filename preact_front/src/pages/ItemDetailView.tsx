@@ -11,9 +11,22 @@ import { Notification } from '../components/Notification';
 
 export const ItemDetailView = () => {
   const { path } = useLocation();
-  const id = parseInt(path.split('/')[3]);
+  const pathParts = path.split('/');
+  const idParam = pathParts[2];
+  const id = parseInt(idParam);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { showNotification } = useNotification();
+  
+  // Check if ID is valid
+  if (isNaN(id)) {
+    return (
+      <div className="alert alert-error">
+        <div>
+          <span>Invalid item ID: {idParam}</span>
+        </div>
+      </div>
+    );
+  }
   
   const { data, loading, error, refetch } = useApi<ItemRead>(
     `/items/${id}`,

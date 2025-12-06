@@ -9,9 +9,21 @@ export const HandbookUpdateForm = () => {
   const { path } = useLocation();
   const pathParts = path.split('/');
   const type = pathParts[2];
-  const id = parseInt(pathParts[4]);
+  const idParam = pathParts[4];
+  const id = parseInt(idParam);
   const { route } = useLocation();
   const { showNotification } = useNotification();
+  
+  // Check if ID is valid
+  if (isNaN(id)) {
+    return (
+      <div className="alert alert-error">
+        <div>
+          <span>Invalid handbook ID: {idParam}</span>
+        </div>
+      </div>
+    );
+  }
   
   const { data, loading: loadingItem, error: errorItem } = useApi<any>(
     (() => {
