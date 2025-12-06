@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
 from app.core.utils.pydantic_utils import get_pyschema
+from app.core.config.project_config import settings
 
 
 class GetRouter(PreactRouter):
@@ -31,3 +32,14 @@ class GetRouter(PreactRouter):
         service = self.get_service(model)
         obj = await service.get_detail_view(lang, id, repo, model, session)
         return obj
+
+    def _setup_routes_(self):
+        # Add language endpoint first
+        self.router.add_api_route('/languages', self.get_languages, methods=['GET'], 
+                                  tags=['system'], summary='Get available languages')
+        # Then call parent method for other routes
+        super()._setup_routes_()
+
+    async def get_languages(self):
+        """Return available languages from settings"""
+        return {"languages": settings.LANGUAGES, "default": settings.DEFAULT_LANG}

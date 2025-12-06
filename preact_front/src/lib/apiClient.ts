@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config/api';
 export const IMAGE_BASE_URL = `${API_BASE_URL}`;
 
 // Function to get the current language from localStorage
-export const getCurrentLanguage = () => localStorage.getItem('selected_language') || 'en';
+export const getCurrentLanguage = () => localStorage.getItem('language') || 'en';
 
 export const getAuthToken = () => localStorage.getItem('auth_token');
 export const setAuthToken = (token: string) => localStorage.setItem('auth_token', token);
