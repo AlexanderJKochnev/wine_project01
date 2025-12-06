@@ -1,5 +1,6 @@
 // src/pages/HandbookCreateForm.tsx
 import { h, useState } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';

@@ -1,5 +1,6 @@
 // src/pages/HandbookTypeList.tsx
 import { h, useState } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
 

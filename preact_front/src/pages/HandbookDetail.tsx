@@ -1,5 +1,6 @@
 // src/pages/HandbookDetail.tsx
 import { h, useState, useEffect } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
 import { deleteItem } from '../lib/apiClient';

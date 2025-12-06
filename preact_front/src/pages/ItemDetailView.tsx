@@ -1,5 +1,6 @@
 // src/pages/ItemDetailView.tsx
 import { h, useState, useEffect } from 'preact/hooks';
+import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
 import { ItemRead } from '../types/item';
@@ -10,7 +11,7 @@ import { Notification } from '../components/Notification';
 
 export const ItemDetailView = () => {
   const { path } = useLocation();
-  const id = parseInt(path.split('/')[2]);
+  const id = parseInt(path.split('/')[3]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { showNotification } = useNotification();
   

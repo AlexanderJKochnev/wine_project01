@@ -40,9 +40,10 @@ export const Header = () => {
         </div>
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1">
-            <li><Link href="/" class={url == '/' && 'active'}>Home</Link></li>
-            <li><Link href="/items" class={url.startsWith('/items') && 'active'}>Items</Link></li>
-            <li><Link href="/handbooks" class={url.startsWith('/handbooks') && 'active'}>Handbooks</Link></li>
+            {/* ИСПРАВЛЕННЫЕ СТРОКИ: Добавлена проверка `url &&` */}
+            <li><Link href="/" class={url === '/' ? 'active' : ''}>Home</Link></li>
+            <li><Link href="/items" class={url && url.startsWith('/items') ? 'active' : ''}>Items</Link></li>
+            <li><Link href="/handbooks" class={url && url.startsWith('/handbooks') ? 'active' : ''}>Handbooks</Link></li>
           </ul>
         </div>
         <div className="navbar-end flex items-center gap-4">
