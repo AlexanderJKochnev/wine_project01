@@ -6,7 +6,10 @@ import { useApi } from '../hooks/useApi';
 
 export const HandbookTypeList = () => {
   const { path } = useLocation();
-  const type = path.split('/')[2];
+  // Extract handbook type from path: /handbooks/:type -> type is the 3rd segment
+  const pathSegments = path.split('/').filter(segment => segment.trim() !== '');
+  // Looking for pattern: ['handbooks', 'type'] -> type is at index 1
+  const type = pathSegments.length >= 2 && pathSegments[0] === 'handbooks' ? pathSegments[1] : undefined;
   const [search, setSearch] = useState('');
   
   // Determine the endpoint based on the handbook type
@@ -24,9 +27,23 @@ export const HandbookTypeList = () => {
   };
 
   const { data, loading, error, refetch } = useApi<any[]>(
-    getEndpoint(type),
-    'GET'
+    type ? getEndpoint(type) : '', // Don't make API call if type is empty
+    'GET',
+    undefined,
+    undefined,
+    !!type // Only auto-fetch if type is defined
   );
+
+  // Check if type is valid
+  if (!type) {
+    return (
+      <div className="alert alert-error">
+        <div>
+          <span>Error: Invalid handbook type. Please select a valid handbook from the menu.</span>
+        </div>
+      </div>
+    );
+  }
 
   // Get the readable name for the handbook type
   const getReadableName = (type: string) => {
