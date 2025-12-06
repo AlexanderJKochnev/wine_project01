@@ -13,10 +13,15 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    strictPort: true,
+    hmr: {
+      port: 5173,
+      host: '0.0.0.0',
+    },
     proxy: {
       '/proxy-api': {
         target: 'http://app:8091',
-        changeOrigin: false,
+        changeOrigin: true,
         rewrite: (path) => path.replace(/^\/proxy-api/, ''),
       },
     },
