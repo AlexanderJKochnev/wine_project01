@@ -5,7 +5,7 @@ import { Link } from './Link';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export const Header = () => {
-  const { currentLang, setLanguage } = useLanguage();
+  const { language: currentLang, setLanguage } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { url } = useLocation();
 
@@ -49,7 +49,7 @@ export const Header = () => {
           {/* Language Selector */}
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-sm btn-ghost">
-              {currentLang.toUpperCase()}
+              {currentLang ? currentLang.toUpperCase() : 'EN'}
             </label>
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-24">
               {languages.map(lang => (
