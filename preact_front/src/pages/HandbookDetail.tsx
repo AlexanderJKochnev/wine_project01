@@ -10,9 +10,21 @@ export const HandbookDetail = () => {
   const { path } = useLocation();
   const pathParts = path.split('/');
   const type = pathParts[2];
-  const id = parseInt(pathParts[3]);
+  const idParam = pathParts[3];
+  const id = parseInt(idParam);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { showNotification } = useNotification();
+  
+  // Check if ID is valid
+  if (isNaN(id)) {
+    return (
+      <div className="alert alert-error">
+        <div>
+          <span>Invalid handbook ID: {idParam}</span>
+        </div>
+      </div>
+    );
+  }
   
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {

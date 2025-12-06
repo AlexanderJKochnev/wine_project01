@@ -9,9 +9,22 @@ import { useNotification } from '../hooks/useNotification';
 
 export const ItemUpdateForm = () => {
   const { path } = useLocation();
-  const id = parseInt(path.split('/')[3]);
+  const pathParts = path.split('/');
+  const idParam = pathParts[3];
+  const id = parseInt(idParam);
   const { route } = useLocation();
   const { showNotification } = useNotification();
+
+  // Check if ID is valid
+  if (isNaN(id)) {
+    return (
+      <div className="alert alert-error">
+        <div>
+          <span>Invalid item ID: {idParam}</span>
+        </div>
+      </div>
+    );
+  }
   
   const { data, loading: loadingItem, error: errorItem } = useApi<ItemRead>(
     `/items/${id}`,
