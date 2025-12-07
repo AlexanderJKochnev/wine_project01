@@ -656,7 +656,7 @@ export const ItemCreateForm = () => {
           >
             {loading ? 'Creating...' : 'Create Item'}
           </button>
-          <Link href="/items" className="btn btn-ghost">
+          <Link href="/items" variant="ghost">
             Cancel
           </Link>
         </div>

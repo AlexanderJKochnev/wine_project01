@@ -245,7 +245,7 @@ export const HandbookCreateForm = () => {
           >
             {loading ? `Creating ${getReadableName(type)}...` : `Create ${getReadableName(type)}`}
           </button>
-          <Link href={`/handbooks/${type}`} className="btn btn-ghost">
+          <Link href={`/handbooks/${type}`} variant="ghost">
             Cancel
           </Link>
         </div>

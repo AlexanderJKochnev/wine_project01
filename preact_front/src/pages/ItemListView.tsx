@@ -50,7 +50,7 @@ export const ItemListView = () => {
     <div className="space-y-6 w-full">
       <div className="flex flex-row justify-between items-center gap-4">
         <h1 className="text-2xl font-bold">Items</h1>
-        <Link href="/items/create" className="btn btn-primary">
+        <Link href="/items/create" variant="primary">
           Create New Item
         </Link>
       </div>
@@ -110,10 +110,10 @@ export const ItemListView = () => {
                   <td>{item.country}</td>
                   <td>
                     <div className="flex gap-2">
-                      <Link href={`/items/${item.id}`} className="btn btn-xs btn-info">
+                      <Link href={`/items/${item.id}`} variant="info" size="xs">
                         View
                       </Link>
-                      <Link href={`/items/edit/${item.id}`} className="btn btn-xs btn-warning">
+                      <Link href={`/items/edit/${item.id}`} variant="warning" size="xs">
                         Edit
                       </Link>
                     </div>
@@ -138,10 +138,10 @@ export const ItemListView = () => {
                 <p>Price: {item.price ? `€${item.price}` : 'N/A'}</p>
                 <p>Country: {item.country || 'N/A'}</p>
                 <div className="card-actions justify-end">
-                  <Link href={`/items/${item.id}`} className="btn btn-info">
+                  <Link href={`/items/${item.id}`} variant="info">
                     View
                   </Link>
-                  <Link href={`/items/edit/${item.id}`} className="btn btn-warning">
+                  <Link href={`/items/edit/${item.id}`} variant="warning">
                     Edit
                   </Link>
                 </div>

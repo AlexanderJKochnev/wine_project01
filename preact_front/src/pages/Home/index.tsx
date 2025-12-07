@@ -12,10 +12,10 @@ export function Home() {
             Discover and manage wine items and reference data with our intuitive interface.
           </p>
           <div className="flex flex-col gap-4">
-            <Link href="/items" className="btn btn-primary">
+            <Link href="/items" variant="primary">
               Browse Items
             </Link>
-            <Link href="/handbooks" className="btn btn-secondary">
+            <Link href="/handbooks" variant="secondary">
               Manage Handbooks
             </Link>
           </div>

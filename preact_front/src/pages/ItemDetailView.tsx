@@ -113,7 +113,7 @@ export const ItemDetailView = () => {
           {data.title || 'Item Detail'}
         </h1>
         <div className="flex gap-2">
-          <Link href={`/items/edit/${id}`} className="btn btn-warning">
+          <Link href={`/items/edit/${id}`} variant="warning">
             Edit
           </Link>
           <button 
