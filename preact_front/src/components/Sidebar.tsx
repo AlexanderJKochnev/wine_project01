@@ -7,14 +7,14 @@ export const Sidebar = () => {
   const { url } = useLocation();
 
   return (
-    <aside className="w-64 bg-base-200 text-base-content h-full border-l">
-      <div className="p-4">
-        <h2 className="text-lg font-semibold mb-4">Navigation</h2>
-        <ul className="menu menu-compact">
-          <li><Link href="/" variant="ghost">Home</Link></li>
-          <li><Link href="/items" variant="ghost">Items</Link></li>
-          <li><Link href="/handbooks" variant="ghost">Handbooks</Link></li>
-          <li><Link href="/handbooks/types" variant="ghost">Handbook Types</Link></li>
+    <aside className="navbar">
+      <div>
+        <h2>Navigation</h2>
+        <ul className="nav-menu">
+          <li><Link href="/" className={url === '/' ? 'active' : ''}>Home</Link></li>
+          <li><Link href="/items" className={url === '/items' ? 'active' : ''}>Items</Link></li>
+          <li><Link href="/handbooks" className={url === '/handbooks' ? 'active' : ''}>Handbooks</Link></li>
+          <li><Link href="/handbooks/types" className={url === '/handbooks/types' ? 'active' : ''}>Handbook Types</Link></li>
         </ul>
       </div>
     </aside>

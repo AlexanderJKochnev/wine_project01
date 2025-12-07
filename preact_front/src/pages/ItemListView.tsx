@@ -73,13 +73,13 @@ export const ItemListView = () => {
           />
           <div className="flex gap-2">
             <button 
-              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 text-base px-4 py-2 ${viewMode === 'table' ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300'}`}
+              className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setViewMode('table')}
             >
               Table
             </button>
             <button 
-              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 text-base px-4 py-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300'}`}
+              className={`btn ${viewMode === 'grid' ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setViewMode('grid')}
             >
               Grid
@@ -108,35 +108,35 @@ export const ItemListView = () => {
 
       {viewMode === 'table' ? (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
-            <thead className="bg-gray-100">
+          <table className="table">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th>Image</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Volume</th>
+                <th>Price</th>
+                <th>Country</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {data?.items.map(item => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>
                     <ItemImage image_id={item.image_id} size="small" />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.title}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.subcategory}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.vol ? `${item.vol} ml` : 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price ? `€${item.price}` : 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.country}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td>{item.title}</td>
+                  <td>{item.subcategory}</td>
+                  <td>{item.vol ? `${item.vol} ml` : 'N/A'}</td>
+                  <td>{item.price ? `€${item.price}` : 'N/A'}</td>
+                  <td>{item.country}</td>
+                  <td>
                     <div className="flex gap-2">
-                      <Link href={`/items/${item.id}`} variant="info" size="xs">
+                      <Link href={`/items/${item.id}`} variant="link">
                         View
                       </Link>
-                      <Link href={`/items/edit/${item.id}`} variant="warning" size="xs">
+                      <Link href={`/items/edit/${item.id}`} variant="link">
                         Edit
                       </Link>
                     </div>
@@ -147,9 +147,9 @@ export const ItemListView = () => {
           </table>
         </div>
       ) : (
-        <div className={`grid gap-6 ${gridColumns === 1 ? 'grid-cols-1' : ''} ${gridColumns === 2 ? 'grid-cols-2' : ''} ${gridColumns === 3 ? 'grid-cols-3' : ''} ${gridColumns === 4 ? 'grid-cols-4' : ''} ${gridColumns === 5 ? 'grid-cols-5' : ''} ${gridColumns === 6 ? 'grid-cols-6' : ''}`}>
+        <div className={`card-grid grid-cols-${gridColumns}`}>
           {data?.items.map(item => (
-            <div key={item.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div key={item.id} className="card">
               <div className="h-48 flex items-center justify-center bg-gray-100">
                 <ItemImage image_id={item.image_id} size="large" />
               </div>
@@ -161,10 +161,10 @@ export const ItemListView = () => {
                 <p className="text-sm text-gray-600 mb-1">Price: {item.price ? `€${item.price}` : 'N/A'}</p>
                 <p className="text-sm text-gray-600 mb-4">Country: {item.country || 'N/A'}</p>
                 <div className="flex justify-end gap-2">
-                  <Link href={`/items/${item.id}`} variant="info">
+                  <Link href={`/items/${item.id}`} variant="link">
                     View
                   </Link>
-                  <Link href={`/items/edit/${item.id}`} variant="warning">
+                  <Link href={`/items/edit/${item.id}`} variant="link">
                     Edit
                   </Link>
                 </div>
@@ -179,31 +179,31 @@ export const ItemListView = () => {
         <div className="flex justify-center mt-6">
           <div className="flex space-x-1">
             <button
-              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
+              className={`btn ${page <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => setPage(1)}
               disabled={page <= 1}
             >
               «
             </button>
             <button
-              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
+              className={`btn ${page <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => setPage(prev => Math.max(1, prev - 1))}
               disabled={page <= 1}
             >
               ‹
             </button>
-            <button className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-blue-600 text-white border-blue-700 text-base px-4 py-2">
+            <button className="btn btn-primary">
               {page} of {Math.ceil((data.total || 0) / pageSize)}
             </button>
             <button
-              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page >= Math.ceil((data.total || 0) / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
+              className={`btn ${page >= Math.ceil((data.total || 0) / pageSize) ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => setPage(prev => Math.min(Math.ceil((data.total || 0) / pageSize), prev + 1))}
               disabled={page >= Math.ceil((data.total || 0) / pageSize)}
             >
               ›
             </button>
             <button
-              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page >= Math.ceil((data.total || 0) / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
+              className={`btn ${page >= Math.ceil((data.total || 0) / pageSize) ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => setPage(Math.ceil((data.total || 0) / pageSize))}
               disabled={page >= Math.ceil((data.total || 0) / pageSize)}
             >

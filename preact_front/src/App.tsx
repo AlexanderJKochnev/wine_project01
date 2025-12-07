@@ -48,36 +48,33 @@ export function App() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="app-container">
       <Header />
       
-      <div className="flex flex-1 min-h-[80vh] w-full">
-        <div className="flex w-full">
-          {/* Content area - takes up at least 80% of body width */}
-          <main className="flex-[4] min-w-[80%] p-4 md:p-6 bg-base-100 overflow-auto">
-            <div className="w-full">
-              <Router>
-                <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
-                <Route path="/items" component={ItemListView} />
-                <Route path="/items/:id" component={ItemDetailView} />
-                <Route path="/items/create" component={ItemCreateForm} />
-                <Route path="/items/edit/:id" component={ItemUpdateForm} />
+      <div className="main-body">
+        <div className="content-area">
+          <div className="w-full">
+            <Router>
+              <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
+              <Route path="/items" component={ItemListView} />
+              <Route path="/items/:id" component={ItemDetailView} />
+              <Route path="/items/create" component={ItemCreateForm} />
+              <Route path="/items/edit/:id" component={ItemUpdateForm} />
 
-                <Route path="/handbooks" component={HandbookList} />
-                <Route path="/handbooks/:type" component={HandbookTypeList} />
-                <Route path="/handbooks/:type/:id" component={HandbookDetail} />
-                <Route path="/handbooks/:type/create" component={HandbookCreateForm} />
-                <Route path="/handbooks/:type/edit/:id" component={HandbookUpdateForm} />
+              <Route path="/handbooks" component={HandbookList} />
+              <Route path="/handbooks/:type" component={HandbookTypeList} />
+              <Route path="/handbooks/:type/:id" component={HandbookDetail} />
+              <Route path="/handbooks/:type/create" component={HandbookCreateForm} />
+              <Route path="/handbooks/:type/edit/:id" component={HandbookUpdateForm} />
 
-                <Route default component={NotFound} />
-              </Router>
-            </div>
-          </main>
-          
-          {/* Navbar (Sidebar) - takes up max 20% of body width */}
-          <div className="flex-[1] max-w-[20%]">
-            <Sidebar />
+              <Route default component={NotFound} />
+            </Router>
           </div>
+        </div>
+        
+        {/* Navbar (Sidebar) - takes up max 20% of body width */}
+        <div className="navbar">
+          <Sidebar />
         </div>
       </div>
       
