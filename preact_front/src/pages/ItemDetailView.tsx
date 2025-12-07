@@ -75,24 +75,16 @@ export const ItemDetailView = () => {
 
   // Function to get field value, preferring non-null values
   const getFieldValue = (field: string, item: ItemRead) => {
-    const enValue = item.en?.[field as keyof typeof item.en];
-    const ruValue = item.ru?.[field as keyof typeof item.ru];
-    const frValue = item.fr?.[field as keyof typeof item.fr];
-    
-    return enValue || ruValue || frValue || null;
+    const Value = item?.[field as keyof typeof item];
+
+    return Value || null;
   };
 
   // Function to get all available fields for a property
   const getAllLangFields = (field: string, item: ItemRead) => {
     const fields: { lang: string; value: any }[] = [];
-    if (item.en?.[field as keyof typeof item.en]) {
-      fields.push({ lang: 'EN', value: item.en[field as keyof typeof item.en] });
-    }
-    if (item.ru?.[field as keyof typeof item.ru]) {
-      fields.push({ lang: 'RU', value: item.ru[field as keyof typeof item.ru] });
-    }
-    if (item.fr?.[field as keyof typeof item.fr]) {
-      fields.push({ lang: 'FR', value: item.fr[field as keyof typeof item.fr] });
+    if (item?.[field as keyof typeof item]) {
+      fields.push({ lang: '', value: item[field as keyof typeof item] });
     }
     return fields;
   };

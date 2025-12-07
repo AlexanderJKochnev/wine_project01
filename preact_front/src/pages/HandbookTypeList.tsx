@@ -23,6 +23,7 @@ export const HandbookTypeList = () => {
       'sweetness': `/handbooks/sweetness/${lang}`,
       'foods': `/handbooks/foods/${lang}`,
       'varietals': `/handbooks/varietals/${lang}`,
+      'superfoods': `/handbooks/superfoods/${lang}`,
     };
     return endpoints[type] || `/handbooks/${type}/${lang}`;
   };
@@ -56,6 +57,7 @@ export const HandbookTypeList = () => {
       'sweetness': 'Sweetnesses',
       'foods': 'Foods',
       'varietals': 'Varietals',
+      'superfoods': 'Superfoods',
     };
     return names[type] || type.charAt(0).toUpperCase() + type.slice(1) + 's';
   };
@@ -119,7 +121,6 @@ export const HandbookTypeList = () => {
             <tr>
               <th>ID</th>
               <th>Name</th>
-              <th>Description</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -128,10 +129,7 @@ export const HandbookTypeList = () => {
               <tr key={item.id}>
                 <td>{item.id}</td>
                 <td>
-                  {item.name || item.name_en || item.name_ru || item.name_fr || 'No name'}
-                </td>
-                <td>
-                  {item.description || item.description_en || item.description_ru || item.description_fr || 'N/A'}
+                  {item.name}
                 </td>
                 <td>
                   <div className="flex gap-2">

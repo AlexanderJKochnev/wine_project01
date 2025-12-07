@@ -78,11 +78,12 @@ export const ItemListView = () => {
 
       {viewMode === 'table' ? (
         <div className="overflow-x-auto">
-          <table className="table table-zebra">
+          <table className="table table-zebra w-full">
             <thead>
               <tr>
                 <th>Image</th>
                 <th>Title</th>
+                <th>Category</th>
                 <th>Volume</th>
                 <th>Price</th>
                 <th>Country</th>
@@ -96,11 +97,14 @@ export const ItemListView = () => {
                     <ItemImage image_id={item.image_id} size="small" />
                   </td>
                   <td>
-                    {item.en?.title || item.ru?.title || item.fr?.title || 'No title'}
+                    {item.title}
+                  </td>
+                  <td>
+                    {item.subcategory}
                   </td>
                   <td>{item.vol ? `${item.vol} ml` : 'N/A'}</td>
                   <td>{item.price ? `€${item.price}` : 'N/A'}</td>
-                  <td>{item.country || 'N/A'}</td>
+                  <td>{item.country}</td>
                   <td>
                     <div className="flex gap-2">
                       <Link href={`/items/${item.id}`} className="btn btn-xs btn-info">

@@ -104,3 +104,9 @@
     @apply border-red-500 text-red-500 bg-red-50;
   }
 }
+
+.table {
+  width: 80% !important;
+  min-width: 80% !important;
+  box-sizing: border-box !important;
+}
