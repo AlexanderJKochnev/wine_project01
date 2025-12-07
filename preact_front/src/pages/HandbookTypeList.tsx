@@ -41,7 +41,7 @@ export const HandbookTypeList = () => {
   // Check if type is valid
   if (!type) {
     return (
-      <div className="alert alert-error">
+      <div className="alert-error">
         <div>
           <span>Error: Invalid handbook type. Please select a valid handbook from the menu.</span>
         </div>
@@ -79,15 +79,15 @@ export const HandbookTypeList = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner loading-lg"></span>
+      <div className="flex-center h-64">
+        <span className="loading-spinner"></span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="alert alert-error">
+      <div className="alert-error">
         <div>
           <span>Error: {error}</span>
         </div>
@@ -108,7 +108,7 @@ export const HandbookTypeList = () => {
         <input
           type="text"
           placeholder={`Search ${getReadableName(type).toLowerCase()}...`}
-          className="input input-bordered w-full max-w-xs"
+          className="input-bordered w-full max-w-xs"
           value={search}
           onInput={(e) => {
             const target = e.target as HTMLInputElement;
@@ -118,7 +118,7 @@ export const HandbookTypeList = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="table table-zebra">
+        <table className="table">
           <thead>
             <tr>
               <th>ID</th>
@@ -135,10 +135,10 @@ export const HandbookTypeList = () => {
                 </td>
                 <td>
                   <div className="flex gap-2">
-                    <Link href={`/handbooks/${type}/${item.id}`} variant="info" size="xs">
+                    <Link href={`/handbooks/${type}/${item.id}`} variant="link">
                       View
                     </Link>
-                    <Link href={`/handbooks/${type}/edit/${item.id}`} variant="warning" size="xs">
+                    <Link href={`/handbooks/${type}/edit/${item.id}`} variant="link">
                       Edit
                     </Link>
                   </div>

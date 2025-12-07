@@ -43,7 +43,7 @@ export const ItemTable = () => {
     <div>
       <SearchAndFilter onSearch={setFilters} />
 
-      <table className="table table-zebra">
+      <table className="table">
         <thead>
           <tr>
             <th>Изображение</th>
@@ -71,7 +71,7 @@ export const ItemTable = () => {
               <td>
                 <button
                   onClick={() => setEditingId(item.id)}
-                  className="btn btn-primary btn-sm mr-2"
+                  className="btn btn-primary"
                 >
                   Редактировать
                 </button>
@@ -80,7 +80,7 @@ export const ItemTable = () => {
                     id: item.id,
                     name: item.en?.title || 'Без названия'
                   })}
-                  className="btn btn-error btn-sm"
+                  className="btn btn-secondary ml-2"
                 >
                   Удалить
                 </button>
@@ -94,14 +94,14 @@ export const ItemTable = () => {
           <button
             onClick={() => setPage(1)}
             disabled={page <= 1}
-            className="btn btn-outline"
+            className="btn btn-ghost"
           >
             Первая
           </button>
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="btn btn-outline"
+            className="btn btn-ghost"
           >
             Назад
           </button>
@@ -114,14 +114,14 @@ export const ItemTable = () => {
               return Math.min(last, p + 1);
             })}
             disabled={!data?.has_next}
-            className="btn btn-outline"
+            className="btn btn-ghost"
           >
             Вперёд
           </button>
           <button
             onClick={() => setPage(Math.ceil((data?.total || 0) / pageSize))}
             disabled={page >= Math.ceil((data?.total || 0) / pageSize)}
-            className="btn btn-outline"
+            className="btn btn-ghost"
           >
             Последняя
           </button>
