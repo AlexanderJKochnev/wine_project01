@@ -15,6 +15,7 @@ export const ItemCreateForm = () => {
     image_id: '',
     category: '',
     country: '',
+    region: '',
     en: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', alc: '', sugar: '', age: '', sparkling: false, pairing: [], varietal: [] },
     ru: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', alc: '', sugar: '', age: '', sparkling: false, pairing: [], varietal: [] },
     fr: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', alc: '', sugar: '', age: '', sparkling: false, pairing: [], varietal: [] }
@@ -23,9 +24,11 @@ export const ItemCreateForm = () => {
   const [handbooks, setHandbooks] = useState({
     categories: [],
     countries: [],
+    regions: [],
     subcategories: [],
     subregions: [],
     sweetnesses: [],
+    superfoods: [],
     foods: [],
     varietals: []
   });
@@ -37,26 +40,32 @@ export const ItemCreateForm = () => {
         const [
           categories,
           countries,
+          regions,
           subcategories,
           subregions,
           sweetnesses,
+          superfoods,
           foods,
           varietals
         ] = await Promise.all([
           apiClient<any[]>('/categories/all'),
           apiClient<any[]>('/countries/all'),
+          apiClient<any[]>('/regions/all'),
           apiClient<any[]>('/subcategories/all'),
           apiClient<any[]>('/subregions/all'),
           apiClient<any[]>('/sweetnesses/all'),
+          apiClient<any[]>('/superfoods/all'),
           apiClient<any[]>('/foods/all'),
           apiClient<any[]>('/varietals/all'),
         ]);
         setHandbooks({
           categories,
           countries,
+          regions,
           subcategories,
           subregions,
           sweetnesses,
+          superfoods,
           foods,
           varietals
         });
@@ -89,7 +98,7 @@ export const ItemCreateForm = () => {
           ...prev,
           [lang]: Number(value)
         }));
-      } else if (lang === 'image_id' || lang === 'category' || lang === 'country') {
+      } else if (lang === 'image_id' || lang === 'category' || lang === 'country' || lang === 'region') {
         setFormData(prev => ({
           ...prev,
           [lang]: value
@@ -227,6 +236,25 @@ export const ItemCreateForm = () => {
                     {handbooks.countries.map(country => (
                       <option key={country.id} value={country.id}>
                         {country.name || country.name_en || country.name_ru || country.name_fr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Region</span>
+                  </label>
+                  <select
+                    name="region"
+                    value={formData.region}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full"
+                  >
+                    <option value="">Select a region (optional)</option>
+                    {handbooks.regions.map(region => (
+                      <option key={region.id} value={region.id}>
+                        {region.name || region.name_en || region.name_ru || region.name_fr}
                       </option>
                     ))}
                   </select>
