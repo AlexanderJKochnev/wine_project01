@@ -4,6 +4,8 @@ import { Router, Route, useLocation } from 'preact-iso';
 import { getAuthToken } from './lib/apiClient';
 import { LoginForm } from './components/LoginForm';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
+import { Footer } from './components/Footer';
 import { ItemListView } from './pages/ItemListView';
 import { ItemDetailView } from './pages/ItemDetailView';
 import { ItemCreateForm } from './pages/ItemCreateForm';
@@ -46,9 +48,13 @@ export function App() {
   }
 
   return (
-      <div className="min-h-screen bg-base-100 flex flex-col">
-        <Header />
-        <main className="flex-grow p-0">
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      
+      <div className="flex flex-1 min-h-[80vh]">
+        <Sidebar />
+        
+        <main className="flex-1 p-4 md:p-6 bg-base-100 overflow-auto">
           <div className="w-full">
             <Router>
               <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
@@ -68,5 +74,8 @@ export function App() {
           </div>
         </main>
       </div>
+      
+      <Footer />
+    </div>
   );
 }

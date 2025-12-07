@@ -11,6 +11,7 @@ export const ItemListView = () => {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [gridColumns, setGridColumns] = useState(3); // Default to 3 columns
   const pageSize = 10;
   
   const { language } = useLanguage();
@@ -46,6 +47,12 @@ export const ItemListView = () => {
     setPage(1); // Reset to first page when searching
   };
 
+  // Function to handle grid column changes
+  const handleGridColumnsChange = (e: Event) => {
+    const target = e.target as HTMLSelectElement;
+    setGridColumns(parseInt(target.value));
+  };
+
   return (
     <div className="space-y-6 w-full">
       <div className="flex flex-row justify-between items-center gap-4">
@@ -55,8 +62,8 @@ export const ItemListView = () => {
         </Link>
       </div>
 
-      <div className="flex flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <input
             type="text"
             placeholder="Search items..."
@@ -64,19 +71,39 @@ export const ItemListView = () => {
             value={search}
             onInput={handleSearch}
           />
-          <button 
-            className={`btn ${viewMode === 'table' ? 'btn-active' : ''}`}
-            onClick={() => setViewMode('table')}
-          >
-            Table
-          </button>
-          <button 
-            className={`btn ${viewMode === 'grid' ? 'btn-active' : ''}`}
-            onClick={() => setViewMode('grid')}
-          >
-            Grid
-          </button>
+          <div className="flex gap-2">
+            <button 
+              className={`btn ${viewMode === 'table' ? 'btn-active' : ''}`}
+              onClick={() => setViewMode('table')}
+            >
+              Table
+            </button>
+            <button 
+              className={`btn ${viewMode === 'grid' ? 'btn-active' : ''}`}
+              onClick={() => setViewMode('grid')}
+            >
+              Grid
+            </button>
+          </div>
         </div>
+        
+        {viewMode === 'grid' && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm">Columns:</label>
+            <select 
+              className="select select-bordered select-sm" 
+              value={gridColumns} 
+              onChange={handleGridColumnsChange}
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+              <option value={5}>5</option>
+              <option value={6}>6</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {viewMode === 'table' ? (
@@ -124,7 +151,7 @@ export const ItemListView = () => {
           </table>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className={`grid gap-4 ${gridColumns === 1 ? 'grid-cols-1' : ''} ${gridColumns === 2 ? 'grid-cols-2' : ''} ${gridColumns === 3 ? 'grid-cols-3' : ''} ${gridColumns === 4 ? 'grid-cols-4' : ''} ${gridColumns === 5 ? 'grid-cols-5' : ''} ${gridColumns === 6 ? 'grid-cols-6' : ''}`}>
           {data?.items.map(item => (
             <div key={item.id} className="card bg-base-100 shadow-xl">
               <figure className="h-48">
