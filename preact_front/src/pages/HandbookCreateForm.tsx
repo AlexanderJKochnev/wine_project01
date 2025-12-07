@@ -39,9 +39,11 @@ export const HandbookCreateForm = () => {
     const names: Record<string, string> = {
       'categories': 'Category',
       'countries': 'Country',
+      'regions': 'Region',
       'subcategories': 'Subcategory',
       'subregions': 'Subregion',
       'sweetnesses': 'Sweetness',
+      'superfoods': 'Superfood',
       'foods': 'Food',
       'varietals': 'Varietal',
     };
@@ -53,9 +55,11 @@ export const HandbookCreateForm = () => {
     const endpoints: Record<string, string> = {
       'categories': '/create/categories',
       'countries': '/create/countries',
+      'regions': '/create/regions',
       'subcategories': '/create/subcategories',
       'subregions': '/create/subregions',
       'sweetnesses': '/create/sweetnesses',
+      'superfoods': '/create/superfoods',
       'foods': '/create/foods',
       'varietals': '/create/varietals',
     };

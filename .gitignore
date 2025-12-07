@@ -22,6 +22,17 @@ wheels/
 *.egg
 MANIFEST
 
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.js
+*.jsx
+*.ts
+*.tsx
+
 # Coverage
 .coverage
 .coverage.*
