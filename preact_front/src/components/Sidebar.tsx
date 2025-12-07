@@ -14,7 +14,6 @@ export const Sidebar = () => {
           <li><Link href="/" className={url === '/' ? 'active' : ''}>Home</Link></li>
           <li><Link href="/items" className={url === '/items' ? 'active' : ''}>Items</Link></li>
           <li><Link href="/handbooks" className={url === '/handbooks' ? 'active' : ''}>Handbooks</Link></li>
-          <li><Link href="/handbooks/types" className={url === '/handbooks/types' ? 'active' : ''}>Handbook Types</Link></li>
         </ul>
       </div>
     </aside>
