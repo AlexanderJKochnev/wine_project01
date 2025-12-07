@@ -70,4 +70,11 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+TODO.md
+migration_volume
+mongodb_data
+pg_data
+pg_dump
+upload_volume
+
 ```
