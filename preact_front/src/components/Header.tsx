@@ -43,7 +43,7 @@ export const Header = () => {
         
         {/* Center: Site Name */}
         <div className="navbar-center flex-1">
-          <Link href="/" className="text-xl font-bold normal-case">Wine App</Link>
+          <Link href="/" className="text-xl font-bold normal-case">THE VERY GOOD SITE</Link>
         </div>
         
         {/* Right: Auth Controls */}
@@ -52,7 +52,7 @@ export const Header = () => {
             <div className="flex items-center gap-2">
               <span className="hidden md:inline">Welcome, User</span>
               <button 
-                className="btn btn-secondary btn-sm"
+                className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-700 text-sm px-3 py-1.5"
                 onClick={handleLogout}
               >
                 Logout
@@ -64,32 +64,32 @@ export const Header = () => {
                 <input
                   type="text"
                   placeholder="Login"
-                  className="input input-bordered input-sm w-24 md:w-32 mr-1"
+                  className="border rounded px-3 py-1.5 text-sm w-24 md:w-32 mr-1 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="form-control">
                 <input
                   type="password"
                   placeholder="Password"
-                  className="input input-bordered input-sm w-24 md:w-32 mr-1"
+                  className="border rounded px-3 py-1.5 text-sm w-24 md:w-32 mr-1 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <button className="btn btn-primary btn-sm">
+              <button className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-blue-600 hover:bg-blue-700 text-white border-blue-700 text-sm px-3 py-1.5">
                 Login
               </button>
             </div>
           )}
           
           {/* Language Selector */}
-          <div className="dropdown dropdown-end ml-2">
-            <label tabIndex={0} className="btn btn-ghost btn-sm">
+          <div className="dropdown dropdown-end ml-2 relative">
+            <label tabIndex={0} className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-transparent hover:bg-gray-200 text-gray-700 border-transparent text-sm px-3 py-1.5">
               {currentLang ? currentLang.toUpperCase() : 'EN'}
             </label>
-            <ul tabIndex={0} className="dropdown-content z-[1] p-2 menu shadow bg-base-100 text-base-content rounded-box w-24">
+            <ul tabIndex={0} className="dropdown-content z-[1] p-2 bg-white shadow-lg rounded-md w-24 absolute mt-1 min-w-max">
               {languages.map(lang => (
                 <li key={lang.code}>
                   <button 
-                    className={currentLang === lang.code ? 'active' : ''}
+                    className={`block w-full text-left px-4 py-2 text-sm ${currentLang === lang.code ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
                     onClick={() => handleLangChange(lang.code)}
                   >
                     {lang.name}

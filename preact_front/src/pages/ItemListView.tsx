@@ -67,19 +67,19 @@ export const ItemListView = () => {
           <input
             type="text"
             placeholder="Search items..."
-            className="input input-bordered w-full max-w-xs"
+            className="border rounded px-3 py-1.5 w-full max-w-xs border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onInput={handleSearch}
           />
           <div className="flex gap-2">
             <button 
-              className={`btn ${viewMode === 'table' ? 'btn-active' : ''}`}
+              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 text-base px-4 py-2 ${viewMode === 'table' ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300'}`}
               onClick={() => setViewMode('table')}
             >
               Table
             </button>
             <button 
-              className={`btn ${viewMode === 'grid' ? 'btn-active' : ''}`}
+              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 text-base px-4 py-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white border-blue-700' : 'bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300'}`}
               onClick={() => setViewMode('grid')}
             >
               Grid
@@ -91,7 +91,7 @@ export const ItemListView = () => {
           <div className="flex items-center gap-2">
             <label className="text-sm">Columns:</label>
             <select 
-              className="select select-bordered select-sm" 
+              className="border rounded px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" 
               value={gridColumns} 
               onChange={handleGridColumnsChange}
             >
@@ -108,34 +108,30 @@ export const ItemListView = () => {
 
       {viewMode === 'table' ? (
         <div className="overflow-x-auto">
-          <table className="table table-zebra w-full">
-            <thead>
+          <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
+            <thead className="bg-gray-100">
               <tr>
-                <th>Image</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Volume</th>
-                <th>Price</th>
-                <th>Country</th>
-                <th>Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white divide-y divide-gray-200">
               {data?.items.map(item => (
-                <tr key={item.id}>
-                  <td>
+                <tr key={item.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <ItemImage image_id={item.image_id} size="small" />
                   </td>
-                  <td>
-                    {item.title}
-                  </td>
-                  <td>
-                    {item.subcategory}
-                  </td>
-                  <td>{item.vol ? `${item.vol} ml` : 'N/A'}</td>
-                  <td>{item.price ? `€${item.price}` : 'N/A'}</td>
-                  <td>{item.country}</td>
-                  <td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.subcategory}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.vol ? `${item.vol} ml` : 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price ? `€${item.price}` : 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.country}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
                       <Link href={`/items/${item.id}`} variant="info" size="xs">
                         View
@@ -151,20 +147,20 @@ export const ItemListView = () => {
           </table>
         </div>
       ) : (
-        <div className={`grid gap-4 ${gridColumns === 1 ? 'grid-cols-1' : ''} ${gridColumns === 2 ? 'grid-cols-2' : ''} ${gridColumns === 3 ? 'grid-cols-3' : ''} ${gridColumns === 4 ? 'grid-cols-4' : ''} ${gridColumns === 5 ? 'grid-cols-5' : ''} ${gridColumns === 6 ? 'grid-cols-6' : ''}`}>
+        <div className={`grid gap-6 ${gridColumns === 1 ? 'grid-cols-1' : ''} ${gridColumns === 2 ? 'grid-cols-2' : ''} ${gridColumns === 3 ? 'grid-cols-3' : ''} ${gridColumns === 4 ? 'grid-cols-4' : ''} ${gridColumns === 5 ? 'grid-cols-5' : ''} ${gridColumns === 6 ? 'grid-cols-6' : ''}`}>
           {data?.items.map(item => (
-            <div key={item.id} className="card bg-base-100 shadow-xl">
-              <figure className="h-48">
+            <div key={item.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+              <div className="h-48 flex items-center justify-center bg-gray-100">
                 <ItemImage image_id={item.image_id} size="large" />
-              </figure>
-              <div className="card-body">
-                <h2 className="card-title">
+              </div>
+              <div className="p-4">
+                <h2 className="text-lg font-semibold mb-2">
                   {item.en?.title || item.ru?.title || item.fr?.title || 'No title'}
                 </h2>
-                <p>Volume: {item.vol ? `${item.vol} ml` : 'N/A'}</p>
-                <p>Price: {item.price ? `€${item.price}` : 'N/A'}</p>
-                <p>Country: {item.country || 'N/A'}</p>
-                <div className="card-actions justify-end">
+                <p className="text-sm text-gray-600 mb-1">Volume: {item.vol ? `${item.vol} ml` : 'N/A'}</p>
+                <p className="text-sm text-gray-600 mb-1">Price: {item.price ? `€${item.price}` : 'N/A'}</p>
+                <p className="text-sm text-gray-600 mb-4">Country: {item.country || 'N/A'}</p>
+                <div className="flex justify-end gap-2">
                   <Link href={`/items/${item.id}`} variant="info">
                     View
                   </Link>
@@ -181,33 +177,33 @@ export const ItemListView = () => {
       {/* Pagination */}
       {data && data.total && data.total > pageSize && (
         <div className="flex justify-center mt-6">
-          <div className="join">
+          <div className="flex space-x-1">
             <button
-              className="join-item btn"
+              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
               onClick={() => setPage(1)}
               disabled={page <= 1}
             >
               «
             </button>
             <button
-              className="join-item btn"
+              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
               onClick={() => setPage(prev => Math.max(1, prev - 1))}
               disabled={page <= 1}
             >
               ‹
             </button>
-            <button className="join-item btn btn-active">
+            <button className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-blue-600 text-white border-blue-700 text-base px-4 py-2">
               {page} of {Math.ceil((data.total || 0) / pageSize)}
             </button>
             <button
-              className="join-item btn"
+              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page >= Math.ceil((data.total || 0) / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
               onClick={() => setPage(prev => Math.min(Math.ceil((data.total || 0) / pageSize), prev + 1))}
               disabled={page >= Math.ceil((data.total || 0) / pageSize)}
             >
               ›
             </button>
             <button
-              className="join-item btn"
+              className={`inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2 ${page >= Math.ceil((data.total || 0) / pageSize) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
               onClick={() => setPage(Math.ceil((data.total || 0) / pageSize))}
               disabled={page >= Math.ceil((data.total || 0) / pageSize)}
             >

@@ -117,7 +117,7 @@ export const ItemDetailView = () => {
             Edit
           </Link>
           <button 
-            className="btn btn-error"
+            className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 hover:bg-red-700 text-white border-red-700 text-base px-4 py-2"
             onClick={() => setShowConfirmDialog(true)}
           >
             Delete
@@ -127,7 +127,7 @@ export const ItemDetailView = () => {
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Image in top-left corner, min 20% width and min 50% of content area height */}
-        <div className="w-full lg:w-1/4 min-w-[20%]">
+        <div className="lg:w-1/5 min-w-[20%] w-full">
           <div className="card bg-base-100 shadow-xl">
             <figure className="min-h-[50vh]">
               <ItemImage image_id={data.image_id} size="large" />
@@ -136,7 +136,7 @@ export const ItemDetailView = () => {
         </div>
         
         {/* Text content fills remaining space */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-4 w-full">
           {nonEmptyFields.map(([key, value]) => {
             // Skip id and image_id as they are used elsewhere
             if (key === 'id' || key === 'image_id') return null;
@@ -177,13 +177,13 @@ export const ItemDetailView = () => {
             <p className="py-4">Are you sure you want to delete this item?</p>
             <div className="modal-action">
               <button 
-                className="btn btn-error"
+                className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 hover:bg-red-700 text-white border-red-700 text-base px-4 py-2"
                 onClick={handleDelete}
               >
                 Yes, Delete
               </button>
               <button 
-                className="btn"
+                className="inline-flex items-center justify-center border rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border-gray-300 text-base px-4 py-2"
                 onClick={() => setShowConfirmDialog(false)}
               >
                 Cancel

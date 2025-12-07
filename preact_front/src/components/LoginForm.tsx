@@ -37,7 +37,7 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-2xl font-bold text-center mb-6">Вход в систему</h2>
-      {error && <div className="alert alert-error mb-4"><p className="text-center">{error}</p></div>}
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"><p className="text-center">{error}</p></div>}
       <div className="form-control">
         <label className="label">
           <span className="label-text">Логин</span>
