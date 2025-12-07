@@ -34,7 +34,7 @@ export const HandbookUpdateForm = () => {
         'countries': `/get/countries/${lang}/${id}`,
         'subcategories': `/get/subcategories/${lang}/${id}`,
         'subregions': `/get/subregions/${lang}/${id}`,
-        'sweetnesses': `/get/sweetnesses/${lang}/${id}`,
+        'sweetness': `/get/sweetness/${lang}/${id}`,
         'foods': `/get/foods/${lang}/${id}`,
         'varietals': `/get/varietals/${lang}/${id}`,
       };
@@ -91,7 +91,7 @@ export const HandbookUpdateForm = () => {
       'countries': 'Country',
       'subcategories': 'Subcategory',
       'subregions': 'Subregion',
-      'sweetnesses': 'Sweetness',
+      'sweetness': 'Sweetness',
       'foods': 'Food',
       'varietals': 'Varietal',
     };
@@ -105,7 +105,7 @@ export const HandbookUpdateForm = () => {
       'countries': `/patch/countries/${id}`,
       'subcategories': `/patch/subcategories/${id}`,
       'subregions': `/patch/subregions/${id}`,
-      'sweetnesses': `/patch/sweetnesses/${id}`,
+      'sweetness': `/patch/sweetness/${id}`,
       'foods': `/patch/foods/${id}`,
       'varietals': `/patch/varietals/${id}`,
     };

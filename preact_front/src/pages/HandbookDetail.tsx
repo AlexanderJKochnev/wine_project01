@@ -34,7 +34,7 @@ export const HandbookDetail = () => {
       'countries': `/get/countries/${lang}/${id}`,
       'subcategories': `/get/subcategories/${lang}/${id}`,
       'subregions': `/get/subregions/${lang}/${id}`,
-      'sweetnesses': `/get/sweetnesses/${lang}/${id}`,
+      'sweetness': `/get/sweetness/${lang}/${id}`,
       'foods': `/get/foods/${lang}/${id}`,
       'varietals': `/get/varietals/${lang}/${id}`,
     };
@@ -94,7 +94,7 @@ export const HandbookDetail = () => {
       'countries': 'Country',
       'subcategories': 'Subcategory',
       'subregions': 'Subregion',
-      'sweetnesses': 'Sweetness',
+      'sweetness': 'Sweetness',
       'foods': 'Food',
       'varietals': 'Varietal',
     };

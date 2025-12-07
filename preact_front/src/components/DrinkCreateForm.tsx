@@ -6,7 +6,7 @@ import { getDrinkCreateSchema } from '../lib/schemaMapper';
 interface ReferenceData {
   subcategories: any[];
   subregions: any[];
-  sweetnesses: any[];
+  sweetness: any[];
   foods: any[];
   varietals: any[];
 }

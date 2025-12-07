@@ -20,7 +20,7 @@ export const HandbookTypeList = () => {
       'countries': `/handbooks/countries/${lang}`,
       'subcategories': `/handbooks/subcategories/${lang}`,
       'subregions': `/handbooks/subregions/${lang}`,
-      'sweetnesses': `/handbooks/sweetnesses/${lang}`,
+      'sweetness': `/handbooks/sweetness/${lang}`,
       'foods': `/handbooks/foods/${lang}`,
       'varietals': `/handbooks/varietals/${lang}`,
     };
@@ -53,7 +53,7 @@ export const HandbookTypeList = () => {
       'countries': 'Countries',
       'subcategories': 'Subcategories',
       'subregions': 'Subregions',
-      'sweetnesses': 'Sweetnesses',
+      'sweetness': 'Sweetnesses',
       'foods': 'Foods',
       'varietals': 'Varietals',
     };

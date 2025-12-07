@@ -27,7 +27,7 @@ export const ItemCreateForm = () => {
     regions: [],
     subcategories: [],
     subregions: [],
-    sweetnesses: [],
+    sweetness: [],
     superfoods: [],
     foods: [],
     varietals: []
@@ -43,7 +43,7 @@ export const ItemCreateForm = () => {
           regions,
           subcategories,
           subregions,
-          sweetnesses,
+          sweetness,
           superfoods,
           foods,
           varietals
@@ -53,7 +53,7 @@ export const ItemCreateForm = () => {
           apiClient<any[]>('/regions/all'),
           apiClient<any[]>('/subcategories/all'),
           apiClient<any[]>('/subregions/all'),
-          apiClient<any[]>('/sweetnesses/all'),
+          apiClient<any[]>('/sweetness/all'),
           apiClient<any[]>('/superfoods/all'),
           apiClient<any[]>('/foods/all'),
           apiClient<any[]>('/varietals/all'),
@@ -64,7 +64,7 @@ export const ItemCreateForm = () => {
           regions,
           subcategories,
           subregions,
-          sweetnesses,
+          sweetness,
           superfoods,
           foods,
           varietals

@@ -10,7 +10,7 @@ const FIELD_TO_ENDPOINT: Record<string, string> = {
   country_id: '/countries/all',
   region_id: '/regions/all',
   subregion_id: '/subregions/all',
-  sweetness_id: '/sweetnesses/all',
+  sweetness_id: '/sweetness/all',
 
   // Many-to-many списки
   foods: '/foods/all',
@@ -37,7 +37,7 @@ export const getDrinkCreateSchema = (): FieldConfig[] => [
   { name: 'title', label: 'Название', type: 'string', required: true },
   { name: 'subcategory_id', label: 'Подкатегория', type: 'select', required: true, optionsEndpoint: '/subcategories/all' },
   { name: 'subregion_id', label: 'Субрегион', type: 'select', required: true, optionsEndpoint: '/subregions/all' },
-  { name: 'sweetness_id', label: 'Сладость', type: 'select', optionsEndpoint: '/sweetnesses/all' },
+  { name: 'sweetness_id', label: 'Сладость', type: 'select', optionsEndpoint: '/sweetness/all' },
   { name: 'alc', label: 'Крепость (%)', type: 'number' },
   { name: 'sugar', label: 'Сахар (%)', type: 'number' },
   { name: 'age', label: 'Выдержка', type: 'string' },

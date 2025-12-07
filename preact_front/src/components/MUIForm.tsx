@@ -25,7 +25,7 @@ interface FieldConfig {
 interface ReferenceData {
   subcategories: any[];
   subregions: any[];
-  sweetnesses: any[];
+  sweetness: any[];
   foods: any[];
   varietals: any[];
 }
@@ -59,7 +59,7 @@ export const MUIForm = ({ schema, onSubmit, initialValues = {}, disabled = false
     switch (fieldName) {
       case 'subcategory_id': return references.subcategories;
       case 'subregion_id': return references.subregions;
-      case 'sweetness_id': return references.sweetnesses;
+      case 'sweetness_id': return references.sweetness;
       case 'foods': return references.foods;
       case 'varietals': return references.varietals;
       default: return [];
