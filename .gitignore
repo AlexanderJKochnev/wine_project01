@@ -1,58 +1,52 @@
-```gitignore
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+```
+# Dependencies
+node_modules/
 
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
-.coverage.xml
-.pytest_cache/
+# Build artifacts
+dist/
+build/
+*.js
+*.ts
+*.tsx
+*.css
 
 # Environment
 .env
 .env.local
-.env.*
-.venv/
-venv/
-ENV/
-env.bak/
-venv.bak/
+*.env.*
 
-# IDE
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*.tmp
 
-# OS
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+# Python (if present in project)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# System files
 .DS_Store
 Thumbs.db
 ```
-TODO.md
-migration_volume
-mongodb_data
-pg_data
-pg_dump
-upload_volume

@@ -321,7 +321,7 @@ export const HandbookUpdateForm = () => {
           >
             {loading ? `Updating ${getReadableName(type)}...` : `Update ${getReadableName(type)}`}
           </button>
-          <Link href={`/handbooks/${type}/${id}`} className="btn btn-ghost">
+          <Link href={`/handbooks/${type}/${id}`} variant="ghost">
             Cancel
           </Link>
         </div>

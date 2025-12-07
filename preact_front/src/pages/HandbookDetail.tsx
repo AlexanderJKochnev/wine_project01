@@ -114,7 +114,7 @@ export const HandbookDetail = () => {
           {getReadableName(type)} Detail: {getName(data)}
         </h1>
         <div className="flex gap-2">
-          <Link href={`/handbooks/${type}/edit/${id}`} className="btn btn-warning">
+          <Link href={`/handbooks/${type}/edit/${id}`} variant="warning">
             Edit
           </Link>
           <button 
@@ -211,7 +211,7 @@ export const HandbookDetail = () => {
       </div>
 
       <div className="flex gap-4">
-        <Link href={`/handbooks/${type}`} className="btn btn-ghost">
+        <Link href={`/handbooks/${type}`} variant="ghost">
           ← Back to {getReadableName(type)} List
         </Link>
       </div>

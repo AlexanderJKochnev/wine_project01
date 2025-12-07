@@ -99,7 +99,7 @@ export const HandbookTypeList = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">{getReadableName(type)}</h1>
-        <Link href={`/handbooks/${type}/create`} className="btn btn-primary">
+        <Link href={`/handbooks/${type}/create`} variant="primary">
           Create New {getReadableName(type).slice(0, -1)}
         </Link>
       </div>
@@ -135,10 +135,10 @@ export const HandbookTypeList = () => {
                 </td>
                 <td>
                   <div className="flex gap-2">
-                    <Link href={`/handbooks/${type}/${item.id}`} className="btn btn-xs btn-info">
+                    <Link href={`/handbooks/${type}/${item.id}`} variant="info" size="xs">
                       View
                     </Link>
-                    <Link href={`/handbooks/${type}/edit/${item.id}`} className="btn btn-xs btn-warning">
+                    <Link href={`/handbooks/${type}/edit/${item.id}`} variant="warning" size="xs">
                       Edit
                     </Link>
                   </div>

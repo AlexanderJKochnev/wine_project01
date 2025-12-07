@@ -765,7 +765,7 @@ export const ItemUpdateForm = () => {
           >
             {loading ? 'Updating...' : 'Update Item'}
           </button>
-          <Link href={`/items/${id}`} className="btn btn-ghost">
+          <Link href={`/items/${id}`} variant="ghost">
             Cancel
           </Link>
         </div>
