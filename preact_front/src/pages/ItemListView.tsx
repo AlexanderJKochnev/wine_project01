@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi';
 import { ItemRead } from '../types/item';
 import { ItemImage } from '../components/ItemImage';
 import { PaginatedResponse } from '../types/base';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const ItemListView = () => {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
@@ -12,8 +13,10 @@ export const ItemListView = () => {
   const [search, setSearch] = useState('');
   const pageSize = 10;
   
+  const { language } = useLanguage();
+  
   const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
-    `/list_paginated/${localStorage.getItem('language') || 'en'}`,
+    `/list_paginated/${language}`,
     'GET',
     undefined,
     { page, page_size: pageSize, search }

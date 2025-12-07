@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi';
 import { apiClient } from '../lib/apiClient';
 import { ItemRead } from '../types/item';
 import { useNotification } from '../hooks/useNotification';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const ItemUpdateForm = () => {
   const { url } = useLocation();
@@ -27,8 +28,10 @@ export const ItemUpdateForm = () => {
     );
   }
   
+  const { language } = useLanguage();
+  
   const { data, loading: loadingItem, error: errorItem } = useApi<ItemRead>(
-    `/items_view/detail/${localStorage.getItem('language') || 'en'}/${id}`,
+    `/items_view/detail/${language}/${id}`,
     'GET'
   );
   

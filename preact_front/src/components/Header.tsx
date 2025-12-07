@@ -16,7 +16,11 @@ export const Header = () => {
   }));
 
   const handleLangChange = (lang: string) => {
-    setLanguage(lang);
+    if (currentLang !== lang) {
+      setLanguage(lang);
+      // Reload the current page to fetch data with the new language
+      window.location.reload();
+    }
   };
 
   return (

@@ -2,6 +2,7 @@
 import { h, useState, useEffect } from 'preact/hooks';
 import { apiClient } from '../lib/apiClient';
 import { MUIForm } from './MUIForm';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface EditItemFormProps {
   id: number;
@@ -14,11 +15,12 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const { language } = useLanguage();
+  
   useEffect(() => {
     const fetchItem = async () => {
       try {
-        const lang = localStorage.getItem('language') || 'en';
-        const item = await apiClient<any>(`/items_view/detail/${lang}/${id}`);
+        const item = await apiClient<any>(`/items_view/detail/${language}/${id}`);
         const data = {
           drink_id: item.drink_id, // ← исправлено: не item.drink.id
           vol: item.vol || undefined,
@@ -31,7 +33,7 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
       }
     };
     fetchItem();
-  }, [id]);
+  }, [id, language]);
 
   const handleSubmit = async (data: Record<string, any>) => { // ← исправлено: добавлено имя "data"
     setLoading(true);

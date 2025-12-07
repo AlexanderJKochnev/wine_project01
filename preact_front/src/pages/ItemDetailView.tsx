@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi';
 import { ItemImage } from '../components/ItemImage';
 import { deleteItem } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Define the expected response type from backend according to requirements
 interface ItemDetailResponse {
@@ -47,8 +48,10 @@ export const ItemDetailView = () => {
     );
   }
   
+  const { language } = useLanguage();
+  
   const { data, loading, error, refetch } = useApi<ItemDetailResponse>(
-    `/detail/${localStorage.getItem('language') || 'en'}/${id}`,
+    `/detail/${language}/${id}`,
     'GET'
   );
 
