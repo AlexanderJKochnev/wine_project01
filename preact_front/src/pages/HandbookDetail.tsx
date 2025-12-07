@@ -28,16 +28,17 @@ export const HandbookDetail = () => {
   
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
+    const lang = localStorage.getItem('language') || 'en';
     const endpoints: Record<string, string> = {
-      'categories': `/categories/${id}`,
-      'countries': `/countries/${id}`,
-      'subcategories': `/subcategories/${id}`,
-      'subregions': `/subregions/${id}`,
-      'sweetnesses': `/sweetnesses/${id}`,
-      'foods': `/foods/${id}`,
-      'varietals': `/varietals/${id}`,
+      'categories': `/get/categories/${lang}/${id}`,
+      'countries': `/get/countries/${lang}/${id}`,
+      'subcategories': `/get/subcategories/${lang}/${id}`,
+      'subregions': `/get/subregions/${lang}/${id}`,
+      'sweetnesses': `/get/sweetnesses/${lang}/${id}`,
+      'foods': `/get/foods/${lang}/${id}`,
+      'varietals': `/get/varietals/${lang}/${id}`,
     };
-    return endpoints[type] || `/handbooks/${type}/${id}`;
+    return endpoints[type] || `/get/${type}/${lang}/${id}`;
   };
 
   const { data, loading, error, refetch } = useApi<any>(
@@ -46,7 +47,9 @@ export const HandbookDetail = () => {
   );
 
   const handleDelete = async () => {
-    const success = await deleteItem(getEndpoint(type));
+    const lang = localStorage.getItem('language') || 'en';
+    const deleteEndpoint = `/delete/${type}/${id}`;
+    const success = await deleteItem(deleteEndpoint);
     if (success) {
       showNotification('Item deleted successfully', 'success');
       window.location.href = `/handbooks/${type}`;

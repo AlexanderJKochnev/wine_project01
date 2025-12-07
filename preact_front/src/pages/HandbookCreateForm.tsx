@@ -51,15 +51,15 @@ export const HandbookCreateForm = () => {
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
     const endpoints: Record<string, string> = {
-      'categories': '/categories',
-      'countries': '/countries',
-      'subcategories': '/subcategories',
-      'subregions': '/subregions',
-      'sweetnesses': '/sweetnesses',
-      'foods': '/foods',
-      'varietals': '/varietals',
+      'categories': '/create/categories',
+      'countries': '/create/countries',
+      'subcategories': '/create/subcategories',
+      'subregions': '/create/subregions',
+      'sweetnesses': '/create/sweetnesses',
+      'foods': '/create/foods',
+      'varietals': '/create/varietals',
     };
-    return endpoints[type] || `/handbooks/${type}`;
+    return endpoints[type] || `/create/${type}`;
   };
 
   const handleSubmit = async (e: Event) => {
