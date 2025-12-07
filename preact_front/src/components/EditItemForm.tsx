@@ -17,7 +17,8 @@ export const EditItemForm = ({ id, onClose, onEdited }: EditItemFormProps) => {
   useEffect(() => {
     const fetchItem = async () => {
       try {
-        const item = await apiClient<any>(`/items/${id}`);
+        const lang = localStorage.getItem('language') || 'en';
+        const item = await apiClient<any>(`/items_view/detail/${lang}/${id}`);
         const data = {
           drink_id: item.drink_id, // ← исправлено: не item.drink.id
           vol: item.vol || undefined,
