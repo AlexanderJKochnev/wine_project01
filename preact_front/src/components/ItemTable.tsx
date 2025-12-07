@@ -43,7 +43,7 @@ export const ItemTable = () => {
     <div>
       <SearchAndFilter onSearch={setFilters} />
 
-      <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className="table table-zebra">
         <thead>
           <tr>
             <th>Изображение</th>
@@ -71,7 +71,7 @@ export const ItemTable = () => {
               <td>
                 <button
                   onClick={() => setEditingId(item.id)}
-                  style={{ padding: '4px 8px', backgroundColor: '#007bff', color: 'white', border: 'none', marginRight: '8px' }}
+                  className="btn btn-primary btn-sm mr-2"
                 >
                   Редактировать
                 </button>
@@ -80,7 +80,7 @@ export const ItemTable = () => {
                     id: item.id,
                     name: item.en?.title || 'Без названия'
                   })}
-                  style={{ padding: '4px 8px', backgroundColor: '#dc3545', color: 'white', border: 'none' }}
+                  className="btn btn-error btn-sm"
                 >
                   Удалить
                 </button>
@@ -90,22 +90,22 @@ export const ItemTable = () => {
         </tbody>
       </table>
 
-      <div style={{ marginTop: '16px', textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+      <div className="mt-4 text-center flex justify-center gap-2">
           <button
             onClick={() => setPage(1)}
             disabled={page <= 1}
-            style={{ padding: '6px 12px' }}
+            className="btn btn-outline"
           >
             Первая
           </button>
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            style={{ padding: '6px 12px' }}
+            className="btn btn-outline"
           >
             Назад
           </button>
-          <span style={{ margin: '0 16px', alignSelf: 'center' }}>
+          <span className="m-0 p-3 self-center">
             Страница {page} из {Math.ceil((data?.total || 0) / pageSize)}
           </span>
           <button
@@ -114,14 +114,14 @@ export const ItemTable = () => {
               return Math.min(last, p + 1);
             })}
             disabled={!data?.has_next}
-            style={{ padding: '6px 12px' }}
+            className="btn btn-outline"
           >
             Вперёд
           </button>
           <button
             onClick={() => setPage(Math.ceil((data?.total || 0) / pageSize))}
             disabled={page >= Math.ceil((data?.total || 0) / pageSize)}
-            style={{ padding: '6px 12px' }}
+            className="btn btn-outline"
           >
             Последняя
           </button>

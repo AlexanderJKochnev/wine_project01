@@ -25,7 +25,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="bg-primary text-primary-content shadow-md">
+    <header className="bg-primary text-primary-content shadow-md z-50">
       <div className="navbar">
         <div className="navbar-start">
           <div className="dropdown">

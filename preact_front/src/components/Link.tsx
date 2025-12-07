@@ -35,7 +35,7 @@ export const Link = ({ href, children, className, class: classProp, onClick, var
   // If className contains btn classes, don't override them
   const btnClass = className?.includes('btn') 
     ? className 
-    : `btn ${variantClasses[variant]} ${sizeClasses[size]} ${className || ''}`;
+    : `btn ${variantClasses[variant]} ${sizeClasses[size]} ${className || classProp || ''}`;
 
   return (
     <a 
