@@ -40,42 +40,9 @@
   }
 }
 
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:pointer-events-none;
-  }
-  
-  .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-focus;
-  }
-  
-  .input {
-    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  }
-  
-  .input-bordered {
-    @apply border border-gray-300 focus:border-primary focus:ring-primary;
-  }
-  
-  .card {
-    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
-  }
-  
-  .form-control {
-    @apply space-y-2;
-  }
-  
-  .alert {
-    @apply relative rounded-md border border-input bg-background px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7;
-  }
-  
-  .alert-error {
-    @apply border-red-500 text-red-500 bg-red-50;
-  }
-}
+/* Удаляем конфликты с daisyUI - используем только Tailwind базовые стили */
 
+/* Стили для таблицы */
 .table {
-  width: 80% !important;
-  min-width: 80% !important;
-  box-sizing: border-box !important;
+  @apply w-4/5 min-w-4/5 box-border;
 }

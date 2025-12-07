@@ -6,9 +6,9 @@ node_modules/
 dist/
 build/
 *.js
-*.ts
-*.tsx
+*.js.map
 *.css
+*.css.map
 
 # Environment
 .env
@@ -18,28 +18,18 @@ build/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*.tmp
 
 # Logs
 *.log
 
-# Temporary files
-*.tmp
-*.swp
-
-# Python (if present in project)
+# Python (if present)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Compiled files
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
 
 # Coverage
 coverage/
