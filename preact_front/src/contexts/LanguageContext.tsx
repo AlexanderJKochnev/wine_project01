@@ -318,7 +318,9 @@ const translations = {
 
 // Provider component
 export const LanguageProvider = ({ children }: { children: VNode }) => {
-  const [language, setLanguage] = useState<Language>('en'); // Initialize with default
+  // Initialize with language from localStorage or default
+  const initialLanguage = localStorage.getItem('language') as Language || 'en';
+  const [language, setLanguage] = useState<Language>(initialLanguage);
   const [availableLanguages, setAvailableLanguages] = useState<Language[]>(['en', 'ru']); // Initialize with defaults
 
   useEffect(() => {
