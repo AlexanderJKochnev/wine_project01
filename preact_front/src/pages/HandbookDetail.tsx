@@ -5,6 +5,7 @@ import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
 import { deleteItem } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const HandbookDetail = () => {
   const { path } = useLocation();
@@ -26,19 +27,20 @@ export const HandbookDetail = () => {
     );
   }
   
+  const { language } = useLanguage();
+  
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
-    const lang = localStorage.getItem('language') || 'en';
     const endpoints: Record<string, string> = {
-      'categories': `/get/categories/${lang}/${id}`,
-      'countries': `/get/countries/${lang}/${id}`,
-      'subcategories': `/get/subcategories/${lang}/${id}`,
-      'subregions': `/get/subregions/${lang}/${id}`,
-      'sweetness': `/get/sweetness/${lang}/${id}`,
-      'foods': `/get/foods/${lang}/${id}`,
-      'varietals': `/get/varietals/${lang}/${id}`,
+      'categories': `/get/categories/${language}/${id}`,
+      'countries': `/get/countries/${language}/${id}`,
+      'subcategories': `/get/subcategories/${language}/${id}`,
+      'subregions': `/get/subregions/${language}/${id}`,
+      'sweetness': `/get/sweetness/${language}/${id}`,
+      'foods': `/get/foods/${language}/${id}`,
+      'varietals': `/get/varietals/${language}/${id}`,
     };
-    return endpoints[type] || `/get/${type}/${lang}/${id}`;
+    return endpoints[type] || `/get/${type}/${language}/${id}`;
   };
 
   const { data, loading, error, refetch } = useApi<any>(

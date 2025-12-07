@@ -3,6 +3,7 @@ import { h, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const HandbookTypeList = () => {
   const { path } = useLocation();
@@ -12,20 +13,21 @@ export const HandbookTypeList = () => {
   const type = pathSegments.length >= 2 && pathSegments[0] === 'handbooks' ? pathSegments[1] : undefined;
   const [search, setSearch] = useState('');
   
+  const { language } = useLanguage();
+  
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
-    const lang = localStorage.getItem('language') || 'en';
     const endpoints: Record<string, string> = {
-      'categories': `/handbooks/categories/${lang}`,
-      'countries': `/handbooks/countries/${lang}`,
-      'subcategories': `/handbooks/subcategories/${lang}`,
-      'subregions': `/handbooks/subregions/${lang}`,
-      'sweetness': `/handbooks/sweetness/${lang}`,
-      'foods': `/handbooks/foods/${lang}`,
-      'varietals': `/handbooks/varietals/${lang}`,
-      'superfoods': `/handbooks/superfoods/${lang}`,
+      'categories': `/handbooks/categories/${language}`,
+      'countries': `/handbooks/countries/${language}`,
+      'subcategories': `/handbooks/subcategories/${language}`,
+      'subregions': `/handbooks/subregions/${language}`,
+      'sweetness': `/handbooks/sweetness/${language}`,
+      'foods': `/handbooks/foods/${language}`,
+      'varietals': `/handbooks/varietals/${language}`,
+      'superfoods': `/handbooks/superfoods/${language}`,
     };
-    return endpoints[type] || `/handbooks/${type}/${lang}`;
+    return endpoints[type] || `/handbooks/${type}/${language}`;
   };
 
   const { data, loading, error, refetch } = useApi<any[]>(
