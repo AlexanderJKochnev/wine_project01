@@ -49,7 +49,6 @@ export const HandbookDetail = () => {
   );
 
   const handleDelete = async () => {
-    const lang = localStorage.getItem('language') || 'en';
     const deleteEndpoint = `/delete/${type}/${id}`;
     const success = await deleteItem(deleteEndpoint);
     if (success) {

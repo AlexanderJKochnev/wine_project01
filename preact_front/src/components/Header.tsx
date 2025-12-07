@@ -17,6 +17,7 @@ export const Header = () => {
 
   const handleLangChange = (lang: string) => {
     if (currentLang !== lang) {
+      // Update the language in context, which will trigger saving to localStorage
       setLanguage(lang);
       // Reload the current page to fetch data with the new language
       window.location.reload();
