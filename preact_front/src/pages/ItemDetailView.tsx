@@ -3,11 +3,29 @@ import { h, useState, useEffect } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
 import { useApi } from '../hooks/useApi';
-import { ItemRead } from '../types/item';
 import { ItemImage } from '../components/ItemImage';
 import { deleteItem } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
-import { Notification } from '../components/Notification';
+
+// Define the expected response type from backend according to requirements
+interface ItemDetailResponse {
+  id: number;
+  vol: number;
+  alc: string;
+  age: string;
+  image_id: string;
+  title: string;
+  subtitle: string;
+  country: string;
+  subcategory: string;
+  sweetness: string;
+  recommendation: string;
+  madeof: string;
+  description: string;
+  varietal: string[];
+  pairing: string[];
+  [key: string]: any; // Allow for additional fields
+}
 
 export const ItemDetailView = () => {
   const { url } = useLocation();
@@ -29,7 +47,7 @@ export const ItemDetailView = () => {
     );
   }
   
-  const { data, loading, error, refetch } = useApi<ItemRead>(
+  const { data, loading, error, refetch } = useApi<ItemDetailResponse>(
     `/detail/${localStorage.getItem('language') || 'en'}/${id}`,
     'GET'
   );
@@ -73,27 +91,23 @@ export const ItemDetailView = () => {
     );
   }
 
-  // Function to get field value, preferring non-null values
-  const getFieldValue = (field: string, item: ItemRead) => {
-    const Value = item?.[field as keyof typeof item];
-
-    return Value || null;
+  // Helper function to check if a value is empty (null, undefined, empty string, NaN)
+  const isEmpty = (value: any): boolean => {
+    if (value === null || value === undefined) return true;
+    if (typeof value === 'string' && value.trim() === '') return true;
+    if (typeof value === 'number' && isNaN(value)) return true;
+    if (Array.isArray(value) && value.length === 0) return true;
+    return false;
   };
 
-  // Function to get all available fields for a property
-  const getAllLangFields = (field: string, item: ItemRead) => {
-    const fields: { lang: string; value: any }[] = [];
-    if (item?.[field as keyof typeof item]) {
-      fields.push({ lang: '', value: item[field as keyof typeof item] });
-    }
-    return fields;
-  };
+  // Get all fields from the data object that are not empty
+  const nonEmptyFields = Object.entries(data).filter(([key, value]) => !isEmpty(value));
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">
-          {getFieldValue('title', data) || 'Item Detail'}
+          {data.title || 'Item Detail'}
         </h1>
         <div className="flex gap-2">
           <Link href={`/items/edit/${id}`} className="btn btn-warning">
@@ -116,153 +130,35 @@ export const ItemDetailView = () => {
         </div>
         
         <div className="space-y-4">
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <h2 className="card-title">Basic Information</h2>
-              <div className="space-y-2">
-                <div className="flex">
-                  <span className="font-semibold w-32">Volume:</span>
-                  <span>{data.vol ? `${data.vol} ml` : 'N/A'}</span>
+          {nonEmptyFields.map(([key, value]) => {
+            // Skip id and image_id as they are used elsewhere
+            if (key === 'id' || key === 'image_id') return null;
+            
+            // Format the field name for display
+            const displayName = key
+              .split('_')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
+            return (
+              <div key={key} className="card bg-base-100 shadow">
+                <div className="card-body">
+                  <h2 className="card-title">{displayName}</h2>
+                  <div>
+                    {Array.isArray(value) ? (
+                      <ul className="list-disc pl-5">
+                        {value.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>{value}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex">
-                  <span className="font-semibold w-32">Price:</span>
-                  <span>{data.price ? `€${data.price}` : 'N/A'}</span>
-                </div>
-                <div className="flex">
-                  <span className="font-semibold w-32">Count:</span>
-                  <span>{data.count || 'N/A'}</span>
-                </div>
-                <div className="flex">
-                  <span className="font-semibold w-32">Category:</span>
-                  <span>{data.category || 'N/A'}</span>
-                </div>
-                <div className="flex">
-                  <span className="font-semibold w-32">Country:</span>
-                  <span>{data.country || 'N/A'}</span>
-                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Title fields */}
-          {getAllLangFields('title', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Title</h2>
-                {getAllLangFields('title', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Description fields */}
-          {getAllLangFields('description', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Description</h2>
-                {getAllLangFields('description', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Subtitle fields */}
-          {getAllLangFields('subtitle', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Subtitle</h2>
-                {getAllLangFields('subtitle', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Recommendation fields */}
-          {getAllLangFields('recommendation', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Recommendation</h2>
-                {getAllLangFields('recommendation', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Made of fields */}
-          {getAllLangFields('madeof', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Made Of</h2>
-                {getAllLangFields('madeof', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Alcohol fields */}
-          {getAllLangFields('alc', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Alcohol</h2>
-                {getAllLangFields('alc', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sugar fields */}
-          {getAllLangFields('sugar', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Sugar</h2>
-                {getAllLangFields('sugar', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Age fields */}
-          {getAllLangFields('age', data).length > 0 && (
-            <div className="card bg-base-100 shadow">
-              <div className="card-body">
-                <h2 className="card-title">Age</h2>
-                {getAllLangFields('age', data).map(({ lang, value }) => (
-                  <div key={lang} className="flex">
-                    <span className="font-semibold w-16">{lang}:</span>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
 
