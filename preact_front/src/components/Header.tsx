@@ -37,7 +37,7 @@ export const Header = () => {
           </div>
           <Link href="/" className="btn btn-ghost normal-case text-xl">Wine App</Link>
         </div>
-        <div className="navbar-center hidden lg:flex">
+        <div className="navbar-center hidden md:flex">
           <ul className="menu menu-horizontal px-1">
             {/* ИСПРАВЛЕННЫЕ СТРОКИ: Добавлена проверка `url &&` */}
             <li><Link href="/" class={url === '/' ? 'active' : ''}>Home</Link></li>

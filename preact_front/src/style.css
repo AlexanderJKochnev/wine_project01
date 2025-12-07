@@ -32,6 +32,9 @@
     display: flex;
     justify-content: flex-end;
     background-color: #673ab8;
+    height: auto; /* Позволяем содержимому определять высоту по умолчанию */
+    max-height: 25vh; /* Ограничиваем максимальную высоту 15% от высоты окна просмотра */
+
   }
 
   header nav {

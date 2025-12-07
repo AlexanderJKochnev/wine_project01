@@ -13,7 +13,7 @@ export const ItemListView = () => {
   const pageSize = 10;
   
   const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
-    `/items_view/list_paginated/${localStorage.getItem('language') || 'en'}`,
+    `/list_paginated/${localStorage.getItem('language') || 'en'}`,
     'GET',
     undefined,
     { page, page_size: pageSize, search }
