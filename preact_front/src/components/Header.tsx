@@ -32,7 +32,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="bg-primary text-primary-content shadow-md z-50 h-[15vh] min-h-[80px]">
+    <header className="bg-primary text-primary-content shadow-md z-50 h-[15vh] min-h-[80px] max-h-[135px]">
       <div className="navbar h-full px-4">
         {/* Left: Logo */}
         <div className="navbar-start flex-1">

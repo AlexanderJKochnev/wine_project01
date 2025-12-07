@@ -126,17 +126,17 @@ export const ItemDetailView = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Image on left (top on mobile), min 20% width and min 50% of content area height */}
-        <div className="lg:w-1/3 flex-shrink-0">
-          <div className="card bg-base-100 shadow-xl h-full">
-            <figure className="h-80">
+        {/* Image in top-left corner, min 20% width and min 50% of content area height */}
+        <div className="w-full lg:w-1/4 min-w-[20%]">
+          <div className="card bg-base-100 shadow-xl">
+            <figure className="min-h-[50vh]">
               <ItemImage image_id={data.image_id} size="large" />
             </figure>
           </div>
         </div>
         
         {/* Text content fills remaining space */}
-        <div className="lg:w-2/3 space-y-4">
+        <div className="flex-1 space-y-4">
           {nonEmptyFields.map(([key, value]) => {
             // Skip id and image_id as they are used elsewhere
             if (key === 'id' || key === 'image_id') return null;

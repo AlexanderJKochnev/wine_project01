@@ -52,8 +52,6 @@ export function App() {
       <Header />
       
       <div className="flex flex-1 min-h-[80vh]">
-        <Sidebar />
-        
         <main className="flex-1 p-4 md:p-6 bg-base-100 overflow-auto">
           <div className="w-full">
             <Router>
@@ -73,6 +71,8 @@ export function App() {
             </Router>
           </div>
         </main>
+        
+        <Sidebar />
       </div>
       
       <Footer />
