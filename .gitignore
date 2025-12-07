@@ -2,13 +2,13 @@
 # Dependencies
 node_modules/
 
-# Build artifacts
+# Build outputs
 dist/
 build/
 *.js
+*.jsx
 *.ts
 *.tsx
-*.jsx
 
 # Logs and temp files
 *.log
@@ -23,34 +23,18 @@ build/
 .vscode/
 .idea/
 
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
-coverage/
-htmlcov/
-*.coverage
-
-# Python specific
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-*.so
-*.egg-info/
-.eggs/
 
-# Node.js specific
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
-# TypeScript/JavaScript specific
-*.map
-*.d.ts
-
-# Preact/Vite specific
-.vite/
+# OS
+.DS_Store
+Thumbs.db
 ```

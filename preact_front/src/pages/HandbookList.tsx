@@ -7,9 +7,11 @@ export const HandbookList = () => {
   const [handbooks, setHandbooks] = useState([
     { id: 'categories', name: 'Categories', endpoint: '/categories/all' },
     { id: 'countries', name: 'Countries', endpoint: '/countries/all' },
+    { id: 'regions', name: 'Regions', endpoint: '/regions/all' },
     { id: 'subcategories', name: 'Subcategories', endpoint: '/subcategories/all' },
     { id: 'subregions', name: 'Subregions', endpoint: '/subregions/all' },
     { id: 'sweetnesses', name: 'Sweetnesses', endpoint: '/sweetnesses/all' },
+    { id: 'superfoods', name: 'Superfoods', endpoint: '/superfoods/all' },
     { id: 'foods', name: 'Foods', endpoint: '/foods/all' },
     { id: 'varietals', name: 'Varietals', endpoint: '/varietals/all' },
   ]);
