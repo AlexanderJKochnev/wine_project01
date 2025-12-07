@@ -35,13 +35,16 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-2xl font-bold text-center mb-4">Вход</h2>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <h2 className="text-2xl font-bold text-center mb-6">Вход в систему</h2>
       {error && <div className="alert alert-error mb-4"><p className="text-center">{error}</p></div>}
       <div className="form-control">
+        <label className="label">
+          <span className="label-text">Логин</span>
+        </label>
         <input
           type="text"
-          placeholder="Логин"
+          placeholder="Введите логин"
           value={username}
           onChange={e => setUsername(e.currentTarget.value)}
           required
@@ -49,9 +52,12 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
         />
       </div>
       <div className="form-control">
+        <label className="label">
+          <span className="label-text">Пароль</span>
+        </label>
         <input
           type="password"
-          placeholder="Пароль"
+          placeholder="Введите пароль"
           value={password}
           onChange={e => setPassword(e.currentTarget.value)}
           required
@@ -60,10 +66,13 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
       </div>
       <button 
         type="submit" 
-        className="btn btn-primary w-full mt-4"
+        className="btn btn-primary w-full mt-6"
       >
         Войти
       </button>
+      <div className="text-center mt-4">
+        <p className="text-sm text-gray-500">Введите свои учетные данные для входа в систему</p>
+      </div>
     </form>
   );
 };
