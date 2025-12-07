@@ -14,16 +14,17 @@ export const HandbookTypeList = () => {
   
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
+    const lang = localStorage.getItem('language') || 'en';
     const endpoints: Record<string, string> = {
-      'categories': '/categories/all',
-      'countries': '/countries/all',
-      'subcategories': '/subcategories/all',
-      'subregions': '/subregions/all',
-      'sweetnesses': '/sweetnesses/all',
-      'foods': '/foods/all',
-      'varietals': '/varietals/all',
+      'categories': `/handbooks/categories/${lang}`,
+      'countries': `/handbooks/countries/${lang}`,
+      'subcategories': `/handbooks/subcategories/${lang}`,
+      'subregions': `/handbooks/subregions/${lang}`,
+      'sweetnesses': `/handbooks/sweetnesses/${lang}`,
+      'foods': `/handbooks/foods/${lang}`,
+      'varietals': `/handbooks/varietals/${lang}`,
     };
-    return endpoints[type] || `/handbooks/${type}/all`;
+    return endpoints[type] || `/handbooks/${type}/${lang}`;
   };
 
   const { data, loading, error, refetch } = useApi<any[]>(

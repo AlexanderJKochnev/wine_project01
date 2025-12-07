@@ -7,9 +7,7 @@ type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 // Вспомогательная функция для построения URL с query-параметрами
 function buildUrl(endpoint: string, params?: Record<string, any>): string {
   if (!params) {
-    // If no params, add lang as default
-    const lang = getCurrentLanguage();
-    return `${endpoint}?lang=${lang}`;
+    return endpoint;
   }
   
   const url = new URL(endpoint, 'http://temp');
@@ -19,11 +17,6 @@ function buildUrl(endpoint: string, params?: Record<string, any>): string {
       url.searchParams.append(key, String(value));
     }
   });
-  
-  // Add language parameter if it's not already there
-  if (!url.searchParams.has('lang')) {
-    url.searchParams.append('lang', getCurrentLanguage());
-  }
   
   return url.pathname + url.search;
 }

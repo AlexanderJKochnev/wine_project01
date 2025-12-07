@@ -28,16 +28,17 @@ export const HandbookUpdateForm = () => {
   
   const { data, loading: loadingItem, error: errorItem } = useApi<any>(
     (() => {
+      const lang = localStorage.getItem('language') || 'en';
       const endpoints: Record<string, string> = {
-        'categories': `/categories/${id}`,
-        'countries': `/countries/${id}`,
-        'subcategories': `/subcategories/${id}`,
-        'subregions': `/subregions/${id}`,
-        'sweetnesses': `/sweetnesses/${id}`,
-        'foods': `/foods/${id}`,
-        'varietals': `/varietals/${id}`,
+        'categories': `/get/categories/${lang}/${id}`,
+        'countries': `/get/countries/${lang}/${id}`,
+        'subcategories': `/get/subcategories/${lang}/${id}`,
+        'subregions': `/get/subregions/${lang}/${id}`,
+        'sweetnesses': `/get/sweetnesses/${lang}/${id}`,
+        'foods': `/get/foods/${lang}/${id}`,
+        'varietals': `/get/varietals/${lang}/${id}`,
       };
-      return endpoints[type] || `/handbooks/${type}/${id}`;
+      return endpoints[type] || `/get/${type}/${lang}/${id}`;
     })(),
     'GET'
   );
@@ -100,15 +101,15 @@ export const HandbookUpdateForm = () => {
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
     const endpoints: Record<string, string> = {
-      'categories': `/categories/${id}`,
-      'countries': `/countries/${id}`,
-      'subcategories': `/subcategories/${id}`,
-      'subregions': `/subregions/${id}`,
-      'sweetnesses': `/sweetnesses/${id}`,
-      'foods': `/foods/${id}`,
-      'varietals': `/varietals/${id}`,
+      'categories': `/patch/categories/${id}`,
+      'countries': `/patch/countries/${id}`,
+      'subcategories': `/patch/subcategories/${id}`,
+      'subregions': `/patch/subregions/${id}`,
+      'sweetnesses': `/patch/sweetnesses/${id}`,
+      'foods': `/patch/foods/${id}`,
+      'varietals': `/patch/varietals/${id}`,
     };
-    return endpoints[type] || `/handbooks/${type}/${id}`;
+    return endpoints[type] || `/patch/${type}/${id}`;
   };
 
   const handleSubmit = async (e: Event) => {

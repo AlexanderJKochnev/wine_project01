@@ -14,17 +14,10 @@ export const clearAuthToken = () => localStorage.removeItem('auth_token');
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {},
-  includeLang: boolean = true
+  includeLang: boolean = false
 ): Promise<T> {
-  // Build URL with language parameter if needed
-  let url = `${API_BASE_URL}${endpoint}`;
-  if (includeLang && !endpoint.includes('?') && !endpoint.includes('lang=')) {
-    const lang = getCurrentLanguage();
-    url += `?lang=${lang}`;
-  } else if (includeLang && endpoint.includes('?') && !endpoint.includes('lang=')) {
-    const lang = getCurrentLanguage();
-    url += `&lang=${lang}`;
-  }
+  // Build URL without language parameter
+  const url = `${API_BASE_URL}${endpoint}`;
   
   console.log(`Making API request to: ${url}`, { endpoint, options, includeLang });
 
