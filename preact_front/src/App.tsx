@@ -72,7 +72,7 @@ export function App() {
           </div>
         </div>
         
-        {/* Navbar (Sidebar) - takes up max 20% of body width */}
+        {/* Navbar (Sidebar) */}
         <div className="navbar">
           <Sidebar />
         </div>

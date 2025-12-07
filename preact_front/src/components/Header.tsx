@@ -76,11 +76,19 @@ export const Header = () => {
             </div>
           )}
           
-          {/* Language Selector - simplified for pure CSS */}
+          {/* Language Selector - dropdown */}
           <div className="relative">
-            <button className="btn btn-ghost">
-              {currentLang ? currentLang.toUpperCase() : 'EN'}
-            </button>
+            <select 
+              value={currentLang} 
+              onChange={(e) => handleLangChange(e.target.value)}
+              className="btn btn-ghost bg-transparent border-none"
+            >
+              {languages.map(lang => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
