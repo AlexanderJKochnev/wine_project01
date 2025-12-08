@@ -25,7 +25,7 @@ export const Link = ({ href, children, className, class: classProp, onClick, var
       linkClass += 'btn-ghost ';
       break;
     case 'link':
-      linkClass += 'btn-ghost text-blue-600 hover:underline ';
+      linkClass += 'btn-link ';
       break;
     default:
       linkClass += 'btn-primary ';
