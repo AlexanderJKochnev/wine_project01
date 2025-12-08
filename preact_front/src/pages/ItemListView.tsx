@@ -8,7 +8,10 @@ import { PaginatedResponse } from '../types/base';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export const ItemListView = () => {
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
+    const savedViewMode = localStorage.getItem('itemListViewMode');
+    return savedViewMode === 'table' || savedViewMode === 'grid' ? savedViewMode : 'table';
+  });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [gridColumns, setGridColumns] = useState(3); // Default to 3 columns
@@ -22,6 +25,10 @@ export const ItemListView = () => {
     undefined,
     { page, page_size: pageSize, search }
   );
+
+  useEffect(() => {
+    localStorage.setItem('itemListViewMode', viewMode);
+  }, [viewMode]);
 
   if (loading) {
     return (
@@ -88,7 +95,7 @@ export const ItemListView = () => {
         </div>
         
         {viewMode === 'grid' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 hidden">
             <label className="text-sm">Columns:</label>
             <select 
               className="border rounded px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" 
