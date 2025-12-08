@@ -6,6 +6,8 @@ import { ItemRead } from '../types/item';
 import { ItemImage } from '../components/ItemImage';
 import { PaginatedResponse } from '../types/base';
 import { useLanguage } from '../contexts/LanguageContext';
+import { deleteItem } from '../lib/apiClient';
+import { useNotification } from '../hooks/useNotification';
 
 export const ItemListView = () => {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
@@ -15,9 +17,12 @@ export const ItemListView = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [gridColumns, setGridColumns] = useState(3); // Default to 3 columns
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const pageSize = 12;
   
   const { language } = useLanguage();
+  const { showNotification } = useNotification();
   
   const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
     `/list_paginated/${language}`,
@@ -29,6 +34,30 @@ export const ItemListView = () => {
   useEffect(() => {
     localStorage.setItem('itemListViewMode', viewMode);
   }, [viewMode]);
+
+  const handleDeleteClick = (itemId: number) => {
+    setItemToDelete(itemId);
+    setShowConfirmDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (itemToDelete !== null) {
+      const success = await deleteItem(`/delete/items/${itemToDelete}`);
+      if (success) {
+        showNotification('Item deleted successfully', 'success');
+        refetch(); // Refresh the list
+      } else {
+        showNotification('Failed to delete item', 'error');
+      }
+      setShowConfirmDialog(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowConfirmDialog(false);
+    setItemToDelete(null);
+  };
 
   if (loading) {
     return (
@@ -115,16 +144,23 @@ export const ItemListView = () => {
                   <td>
                     <ItemImage image_id={item.image_id} size="small" />
                   </td>
-                  <td>{item.title}</td>
+                  <td>
+                    <Link href={`/items/${item.id}`} variant="link">
+                      {item.title}
+                    </Link>
+                  </td>
                   <td>{item.subcategory}</td>
                   <td>{item.vol ? `${item.vol} ml` : 'N/A'}</td>
                   <td>{item.price ? `€${item.price}` : 'N/A'}</td>
                   <td>{item.country}</td>
                   <td>
                     <div className="flex gap-2">
-                      <Link href={`/items/${item.id}`} variant="link">
-                        View
-                      </Link>
+                      <button 
+                        className="btn btn-error btn-sm"
+                        onClick={() => handleDeleteClick(item.id)}
+                      >
+                        Delete
+                      </button>
                       <Link href={`/items/edit/${item.id}`} variant="link">
                         Edit
                       </Link>
@@ -140,19 +176,26 @@ export const ItemListView = () => {
           {data?.items.map(item => (
             <div key={item.id} className="card">
               <div className="h-48 flex items-center justify-center bg-gray-100">
-                <ItemImage image_id={item.image_id} size="large" />
+                <Link href={`/items/${item.id}`}>
+                  <ItemImage image_id={item.image_id} size="large" />
+                </Link>
               </div>
               <div className="p-4">
                 <h2 className="text-lg font-semibold mb-2">
-                  {item?.title || 'No title'}
+                  <Link href={`/items/${item.id}`} variant="link">
+                    {item?.title || 'No title'}
+                  </Link>
                 </h2>
                 <p className="text-sm text-gray-600 mb-1">Volume: {item.vol ? `${item.vol} ml` : 'N/A'}</p>
                 <p className="text-sm text-gray-600 mb-1">Price: {item.price ? `€${item.price}` : 'N/A'}</p>
                 <p className="text-sm text-gray-600 mb-4">Country: {item.country || 'N/A'}</p>
                 <div className="flex justify-end gap-2">
-                  <Link href={`/items/${item.id}`} variant="link">
-                    View
-                  </Link>
+                  <button 
+                    className="btn btn-error btn-sm"
+                    onClick={() => handleDeleteClick(item.id)}
+                  >
+                    Delete
+                  </button>
                   <Link href={`/items/edit/${item.id}`} variant="link">
                     Edit
                   </Link>
@@ -198,6 +241,30 @@ export const ItemListView = () => {
             >
               »
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Confirm Delete</h3>
+            <p className="py-4">Are you sure you want to delete this item?</p>
+            <div className="modal-action">
+              <button 
+                className="btn btn-error"
+                onClick={handleDeleteConfirm}
+              >
+                Yes, Delete
+              </button>
+              <button 
+                className="btn btn-ghost"
+                onClick={handleDeleteCancel}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
