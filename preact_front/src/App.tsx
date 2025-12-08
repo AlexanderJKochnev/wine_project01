@@ -17,6 +17,7 @@ import { HandbookUpdateForm } from './pages/HandbookUpdateForm';
 import { HandbookTypeList } from './pages/HandbookTypeList';
 import { Home } from './pages/Home';
 import { NotFound } from './pages/_404';
+import './styles/tailwind-to-css.css';
 
 function HomeRedirect() {
   const { route } = useLocation();
