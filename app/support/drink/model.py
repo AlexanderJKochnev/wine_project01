@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import (CheckConstraint, Column, DDL, event, ForeignKey, Integer, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DECIMAL
 
@@ -42,9 +42,6 @@ class Lang:
 
 
 class Drink(Base, BaseAt, Lang):
-    __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
-                      CheckConstraint('sugar >= 0 AND sugar <= 100.00', name='sugar_range_check'),
-                      UniqueConstraint('title', 'subtitle', name='uq_title_subtitle_unique'),)
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'drink'
@@ -97,9 +94,42 @@ class Drink(Base, BaseAt, Lang):
                              lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
 
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
+    _table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
+                     UniqueConstraint('title', 'subtitle', name='uq_title_subtitle_unique'))
 
     def __str__(self):
         return f"{self.title}"
+
+
+create_gin_index_sql = DDL("""
+    CREATE INDEX drink_trigram_idx_combined ON drinks
+        USING gin (
+            (coalesce(title, '') || ' ' ||
+             coalesce(title_ru, '') || ' ' ||
+             coalesce(title_fr, '') || ' ' ||
+             coalesce(subtitle, '') || ' ' ||
+             coalesce(subtitle_ru, '') || ' ' ||
+             coalesce(subtitle_fr, '') || ' ' ||
+             coalesce(description, '') || ' ' ||
+             coalesce(description_ru, '') || ' ' ||
+             coalesce(description_fr, '') || ' ' ||
+             coalesce(recommendation, '') || ' ' ||
+             coalesce(recommendation_ru, '') || ' ' ||
+             coalesce(recommendation_fr, '') || ' ' ||
+             coalesce(madeof, '') || ' ' ||
+             coalesce(madeof_ru, '') || ' ' ||
+             coalesce(madeof_fr, ''))
+            gin_trgm_ops
+        );
+    """)
+
+# Привязываем этот DDL к событию создания таблицы Drink
+# Это гарантирует, что индекс будет создан сразу после создания таблицы
+event.listen(
+    Drink.__table__,
+    'after_create',
+    create_gin_index_sql
+)
 
 
 class DrinkFood(Base):
