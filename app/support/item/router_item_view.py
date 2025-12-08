@@ -55,6 +55,16 @@ class ItemViewRouter:
             tags=self.tags,
             summary="Получить детальную информацию по элементу с локализацией"
         )
+        
+        # Маршрут для поиска элементов по полям title* и subtitle* связанной модели Drink
+        self.router.add_api_route(
+            "/search_by_drink/{lang}",
+            self.search_by_drink_title_subtitle,
+            methods=["GET"],
+            response_model=List[ItemListView],
+            tags=self.tags,
+            summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
+        )
 
     async def get_list(self, lang: str, session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
@@ -86,3 +96,19 @@ class ItemViewRouter:
 
         # Return the model dump with empty values removed
         return result.model_dump(exclude_none=True, exclude_unset=True)
+
+    async def search_by_drink_title_subtitle(self, 
+                                           lang: str, 
+                                           search: str = Query(..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
+                                           page: int = Query(1, ge=1, description="Номер страницы"),
+                                           page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
+                                           session: AsyncSession = Depends(get_db)):
+        """Поиск элементов по полям title* и subtitle* связанной модели Drink"""
+        service = ItemService()
+        skip = (page - 1) * page_size
+        limit = page_size
+        items, total = await service.search_by_drink_title_subtitle(
+            search, lang, ItemRepository, Item, session, skip, limit
+        )
+        
+        return items
