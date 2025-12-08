@@ -362,7 +362,7 @@ body {
     justify-content: center;
     width: 100%;
   }
-  
+
   .auth-controls {
     flex-wrap: wrap;
     justify-content: center;
@@ -445,3 +445,12 @@ body {
     background-color: #374151;
   }
 }
+
+  .logo-image {
+    /* Задаем нужную высоту */
+    height: 100px;
+    /* Автоматически подстраиваем ширину, чтобы не растянуть изображение */
+    width: auto;
+    /* Гарантируем, что изображение впишется, если оно очень большое */
+    object-fit: contain;
+  }

@@ -4,6 +4,7 @@ import { useLocation } from 'preact-iso';
 import { Link } from './Link';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getAuthToken, removeAuthToken } from '../lib/apiClient';
+import Logo from '../logo.png';
 
 export const Header = () => {
   const { language: currentLang, setLanguage, availableLanguages } = useLanguage();
@@ -37,7 +38,8 @@ export const Header = () => {
         {/* Left: Logo */}
         <div className="header-left">
           <div className="flex items-center">
-            <div className="text-xl font-bold">🍷</div>
+                <img src={Logo} alt="Логотип"
+                 className="logo-image"/>
           </div>
         </div>
         
