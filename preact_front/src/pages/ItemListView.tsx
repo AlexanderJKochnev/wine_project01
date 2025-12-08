@@ -93,24 +93,6 @@ export const ItemListView = () => {
             </button>
           </div>
         </div>
-        
-        {viewMode === 'grid' && (
-          <div className="flex items-center gap-2 hidden">
-            <label className="text-sm">Columns:</label>
-            <select 
-              className="border rounded px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              value={gridColumns} 
-              onChange={handleGridColumnsChange}
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>5</option>
-              <option value={6}>6</option>
-            </select>
-          </div>
-        )}
       </div>
 
       {viewMode === 'table' ? (
