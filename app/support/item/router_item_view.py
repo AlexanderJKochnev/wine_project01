@@ -65,6 +65,16 @@ class ItemViewRouter:
             tags=self.tags,
             summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
         )
+        
+        # Маршрут для поиска элементов по полям title* и subtitle* связанной модели Drink с пагинацией
+        self.router.add_api_route(
+            "/search_by_drink_paginated/{lang}",
+            self.search_by_drink_title_subtitle_paginated,
+            methods=["GET"],
+            response_model=PaginatedResponse[ItemListView],
+            tags=self.tags,
+            summary="Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией"
+        )
 
     async def get_list(self, lang: str, session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
@@ -112,3 +122,26 @@ class ItemViewRouter:
         )
         
         return items
+
+    async def search_by_drink_title_subtitle_paginated(self, 
+                                           lang: str, 
+                                           search: str = Query(..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
+                                           page: int = Query(1, ge=1, description="Номер страницы"),
+                                           page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
+                                           session: AsyncSession = Depends(get_db)):
+        """Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией"""
+        service = ItemService()
+        skip = (page - 1) * page_size
+        limit = page_size
+        items, total = await service.search_by_drink_title_subtitle(
+            search, lang, ItemRepository, Item, session, skip, limit
+        )
+        
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": skip + len(items) < total,
+            "has_prev": page > 1
+        }
