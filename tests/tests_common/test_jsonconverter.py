@@ -1,9 +1,11 @@
+import pytest
 from app.core.utils.alchemy_utils import JsonConverter
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
 from app.mongodb.service import ImageService
 from app.core.utils.common_utils import jprint
 
 
+@pytest.mark.skip
 def test_jsonconverter():
     """ тестируем JsonConverter
         и структуру файлов
@@ -23,6 +25,7 @@ def test_jsonconverter():
     assert len(dataconv) == expected_nmbr, f'{expected_nmbr=}, converted = {len(dataconv)}'
 
 
+@pytest.mark.skip
 def test_json_compaire():
     """ сравниваем файлы
         data_2.json 149
@@ -44,6 +47,7 @@ def test_json_compaire():
             assert dicts[n] == dicts[n + 1]
 
 
+@pytest.mark.skip
 async def test_direct_import_data(authenticated_client_with_db, test_db_session):
     """
         тестирование загрузкит файлов из

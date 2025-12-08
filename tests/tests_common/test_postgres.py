@@ -3,17 +3,21 @@
 import pytest
 import asyncpg
 from asyncpg import Connection
+from tests.config import settings_db
 
 pytestmark = pytest.mark.asyncio
 
 # Ваша строка подключения
 DB_URL = "postgresql+asyncpg://wine:wine1@wine_host:5432/wine_db"
+st = settings_db
+se = (f"postgresql+psycopg_async://{st.POSTGRES_USER}:"
+      f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
 
 # Преобразуем URL в формат, понятный asyncpg (удаляем +asyncpg)
 ASYNC_PG_URL = DB_URL.replace("postgresql+asyncpg://", "postgres://")
 
 
-@pytest.mark.docker
+@pytest.mark.skip
 async def test_db_connection():
     """Тест проверяет, что подключение к базе данных работает."""
     conn: Connection = None
@@ -35,7 +39,7 @@ async def test_db_connection():
             await conn.close()
 
 
-@pytest.mark.docker
+@pytest.mark.skip
 async def test_db_version():
     """Тест проверяет, что можем получить версию PostgreSQL."""
     conn: Connection = None

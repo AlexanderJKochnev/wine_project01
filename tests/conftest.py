@@ -474,6 +474,7 @@ async def mock_engine(mock_db_url):
         await conn.execute(text("DROP SCHEMA public CASCADE;"))
         await conn.execute(text("CREATE SCHEMA public;"))
         await conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     await engine.dispose()
@@ -510,6 +511,7 @@ async def create_test_user(test_db_session, test_user_data):
         hashed_password=hashed_password
     )
     test_db_session.add(db_user)
+    # await test_db_session.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
     await test_db_session.commit()
     await test_db_session.refresh(db_user)
     return db_user
