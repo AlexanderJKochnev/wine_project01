@@ -16,6 +16,7 @@ export const ItemListView = () => {
   });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Separate state for search term
   const [gridColumns, setGridColumns] = useState(3); // Default to 3 columns
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
@@ -25,10 +26,10 @@ export const ItemListView = () => {
   const { showNotification } = useNotification();
   
   const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
-    `/list_paginated/${language}`,
+    searchQuery ? `/items_view/search_by_drink_paginated/${language}` : `/items_view/list_paginated/${language}`,
     'GET',
     undefined,
-    { page, page_size: pageSize, search }
+    searchQuery ? { search: searchQuery, page, page_size: pageSize } : { page, page_size: pageSize }
   );
 
   useEffect(() => {
@@ -77,9 +78,19 @@ export const ItemListView = () => {
     );
   }
 
-  const handleSearch = (e: Event) => {
+  const handleSearchChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
     setSearch(target.value);
+  };
+  
+  const handleSearchSubmit = (e: Event) => {
+    e.preventDefault();
+    if (search.trim() === '') {
+      // If search is empty, clear the search query to show all items
+      setSearchQuery('');
+    } else {
+      setSearchQuery(search);
+    }
     setPage(1); // Reset to first page when searching
   };
 
@@ -100,13 +111,24 @@ export const ItemListView = () => {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <input
-            type="text"
-            placeholder="Search items..."
-            className="border rounded px-3 py-1.5 w-full max-w-xs border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={search}
-            onInput={handleSearch}
-          />
+          <form onSubmit={handleSearchSubmit} className="flex">
+            <input
+              type="text"
+              placeholder="Search items..."
+              className="border rounded-l px-3 py-1.5 w-full max-w-xs border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={search}
+              onInput={handleSearchChange}
+            />
+            <button
+              type="submit"
+              className="btn btn-primary rounded-l-none -ml-1"
+              aria-label="Search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </form>
           <div className="flex gap-2">
             <button 
               className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-ghost'}`}
