@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Type, Tuple, Union
-from sqlalchemy import func, select, Select
+from sqlalchemy import func, select, Select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
