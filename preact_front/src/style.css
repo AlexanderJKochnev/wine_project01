@@ -1,4 +1,8 @@
 /* Pure CSS styles for THE VERY GOOD SITE */
+*, *::before, *::after {
+  box-sizing: border-box; /* ВСЕГДА включать padding и border в указанную ширину */
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -168,7 +172,7 @@ body {
   height: auto;
   background-color: #f3f4f6;
   border-left: 1px solid #e5e7eb;
-  padding: 1rem;
+  padding: 0.1rem;
   overflow-x: hidden; /* Remove horizontal scrollbar */
   overflow-y: hidden;
   transition: transform 0.3s ease;
@@ -204,10 +208,16 @@ body {
   transition: background-color 0.2s;
   word-break: break-word; /* Allow text to wrap if needed */
   min-height: 2rem; /* Ensure minimum height */
+  width: 90%; /* Гарантируем, что ссылка занимает всю доступную ширину li */
+
+  /* Это важно для flexbox внутри контейнера с фиксированной шириной */
+  min-width: 0;
+  /* Также можно добавить */
+  box-sizing: border-box;
 }
 
 .nav-menu a:not(.active) {
-  color: #6b7280; /* More visible color for inactive links in light mode */
+  color: #fff; /* More visible color for inactive links in light mode */
 }
 
 .nav-menu a:hover,

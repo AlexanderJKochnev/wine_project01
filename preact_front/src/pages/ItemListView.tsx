@@ -144,7 +144,7 @@ export const ItemListView = () => {
               </div>
               <div className="p-4">
                 <h2 className="text-lg font-semibold mb-2">
-                  {item.en?.title || item.ru?.title || item.fr?.title || 'No title'}
+                  {item?.title || 'No title'}
                 </h2>
                 <p className="text-sm text-gray-600 mb-1">Volume: {item.vol ? `${item.vol} ml` : 'N/A'}</p>
                 <p className="text-sm text-gray-600 mb-1">Price: {item.price ? `€${item.price}` : 'N/A'}</p>
