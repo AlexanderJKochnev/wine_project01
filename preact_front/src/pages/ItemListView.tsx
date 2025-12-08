@@ -176,9 +176,7 @@ export const ItemListView = () => {
           {data?.items.map(item => (
             <div key={item.id} className="card">
               <div className="h-48 flex items-center justify-center bg-gray-100">
-                <Link href={`/items/${item.id}`}>
-                  <ItemImage image_id={item.image_id} size="large" />
-                </Link>
+                <ItemImage image_id={item.image_id} size="large" />
               </div>
               <div className="p-4">
                 <h2 className="text-lg font-semibold mb-2">
@@ -187,7 +185,7 @@ export const ItemListView = () => {
                   </Link>
                 </h2>
                 <p className="text-sm text-gray-600 mb-1">Volume: {item.vol ? `${item.vol} ml` : 'N/A'}</p>
-                <p className="text-sm text-gray-600 mb-1">Price: {item.price ? `€${item.price}` : 'N/A'}</p>
+                <p className="text-sm text-red-600 mb-1">Price: {item.price ? `€${item.price}` : 'N/A'}</p>
                 <p className="text-sm text-gray-600 mb-4">Country: {item.country || 'N/A'}</p>
                 <div className="flex justify-end gap-2">
                   <button 
