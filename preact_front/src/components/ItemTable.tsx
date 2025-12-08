@@ -16,7 +16,7 @@ export const ItemTable = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const pageSize = 5;
+  const pageSize = 12;
 
   const endpoint = filters.search ? '/items/search' : '/items';
   const params = { ...filters, page, page_size: pageSize };

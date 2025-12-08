@@ -12,7 +12,7 @@ export const ItemListView = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [gridColumns, setGridColumns] = useState(3); // Default to 3 columns
-  const pageSize = 10;
+  const pageSize = 12;
   
   const { language } = useLanguage();
   

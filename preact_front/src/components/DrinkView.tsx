@@ -22,7 +22,7 @@ export const DrinkView = ({ references, onEdit }: DrinkViewProps) => {
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table'); // ← новое состояние
-  const pageSize = 20;
+  const pageSize = 12;
 
   const endpoint = filters.search ? '/drinks/search' : '/drinks';
   const params = { ...filters, page, page_size: pageSize };
