@@ -26,7 +26,7 @@ class ItemViewRouter:
 
     def setup_routes(self):
         """Настройка маршрутов для ListView и DetailView"""
-        # Маршрут для получения списка элементов с пагинацией
+        # Маршрут для получения списка элементов без пагинации
         self.router.add_api_route(
             "/list/{lang}",
             self.get_list,
