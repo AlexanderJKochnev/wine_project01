@@ -100,7 +100,7 @@ class ItemRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         return await super().create(data, session)
 
-    async def patch(self, id: int = Path(..., description="ID элемента"), data: ItemUpdate,
+    async def patch(self, id: int, data: ItemUpdate,
                     session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         return await super().patch(id, data, session)
 

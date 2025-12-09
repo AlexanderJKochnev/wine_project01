@@ -66,16 +66,6 @@ class ItemViewRouter:
             summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
         )
 
-        # Маршрут для поиска элементов по полям title* и subtitle* связанной модели Drink с пагинацией
-        self.router.add_api_route(
-            "/search_by_drink_paginated/{lang}",
-            self.search_by_drink_trigramm,
-            methods=["GET"],
-            response_model=PaginatedResponse[ItemListView],
-            tags=self.tags,
-            summary="Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией"
-        )
-        
         # Маршрут для поиска элементов с использованием триграммного индекса
         self.router.add_api_route(
             "/search_trigram/{lang}",

@@ -4,7 +4,7 @@ import logging
 from typing import Any, List, Type, TypeVar, Optional
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_active_user_or_internal
@@ -149,7 +149,7 @@ class BaseRouter:
             print(detail)
             raise HTTPException(status_code=405, detail=detail)
 
-    async def patch(self, id: int = Path(..., description="ID элемента"),
+    async def patch(self, id: int,
                     data: TUpdateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """
         Изменение одной записи по id
@@ -174,7 +174,7 @@ class BaseRouter:
 
         return result['data']
 
-    async def delete(self, id: int = Path(..., description="ID элемента"),
+    async def delete(self, id: int,
                      session: AsyncSession = Depends(get_db)) -> DeleteResponse:
         """
             Удаление одной записи по id
@@ -196,7 +196,7 @@ class BaseRouter:
         return DeleteResponse(**result)
 
     async def get_one(self,
-                      id: int = Path(..., description="ID элемента"),
+                      id: int,
                       session: AsyncSession = Depends(get_db)):
         """
             Получение одной записи по ID

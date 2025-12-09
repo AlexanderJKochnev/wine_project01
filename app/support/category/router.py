@@ -1,5 +1,5 @@
 # app/support/category/router.py
-from fastapi import Depends, Path
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
@@ -22,7 +22,7 @@ class CategoryRouter(BaseRouter):  # [CategoryCreate, CategoryUpdate, CategoryRe
                      session: AsyncSession = Depends(get_db)) -> CategoryCreateResponseSchema:
         return await super().create(data, session)
 
-    async def patch(self, id: int = Path(..., description="ID элемента"), data: CategoryUpdate,
+    async def patch(self, id: int, data: CategoryUpdate,
                     session: AsyncSession = Depends(get_db)) -> CategoryCreateResponseSchema:
         return await super().patch(id, data, session)
 
