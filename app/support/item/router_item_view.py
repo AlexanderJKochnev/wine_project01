@@ -75,6 +75,16 @@ class ItemViewRouter:
             tags=self.tags,
             summary="Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией"
         )
+        
+        # Маршрут для поиска элементов с использованием триграммного индекса
+        self.router.add_api_route(
+            "/search_trigram/{lang}",
+            self.search_by_trigram_index,
+            methods=["GET"],
+            response_model=PaginatedResponse[ItemListView],
+            tags=self.tags,
+            summary="Поиск элементов по триграммному индексу в связанной модели Drink"
+        )
 
     async def get_list(self, lang: str, session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
@@ -139,11 +149,41 @@ class ItemViewRouter:
             по триграм-индексу
         """
         service = ItemService()
-        result = await service.search_items_orm_paginated_async(search,
-                                                                lang,
-                                                                ItemRepository,
-                                                                Item,
-                                                                session,
-                                                                page, page_size
-                                                                )
-        return result
+        skip = (page - 1) * page_size
+        limit = page_size
+        items, total = await service.search_by_drink_title_subtitle(
+            search, lang, ItemRepository, Item, session, skip, limit
+        )
+        
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": skip + len(items) < total,
+            "has_prev": page > 1
+        }
+
+    async def search_by_trigram_index(self, 
+                                      search_str: str = Query(None, description="Строка для поиска в триграммном индексе модели Drink"),
+                                      lang: str = Query('en', description="Язык локализации"),
+                                      page: int = Query(1, ge=1, description="Номер страницы"),
+                                      page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
+                                      session: AsyncSession = Depends(get_db)):
+        """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
+        service = ItemService()
+        skip = (page - 1) * page_size
+        limit = page_size
+        
+        items, total = await service.search_by_trigram_index(
+            search_str, lang, ItemRepository, Item, session, skip, limit
+        )
+        
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": skip + len(items) < total,
+            "has_prev": page > 1
+        }

@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 from typing import Optional, List, Type, Tuple, Union
 from sqlalchemy import func, select, Select, or_, Row
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.types import String
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.drink.repository import DrinkRepository, get_drink_search_expression
@@ -350,65 +351,77 @@ class ItemRepository(Repository):
         return flat_items, total
 
     @classmethod
-    async def search_items_orm_paginated_async(cls,
-                                               query_string: str,
-                                               session: AsyncSession,
-                                               page_size: int,
-                                               page: int  # Номер страницы (начиная с 1)
-                                               ) -> Tuple[List[Item], int]:
-        """
-        Асинхронный поиск с пагинацией OFFSET и общим количеством записей.
-        Возвращает: (список_Item, общее_количество_найденных_записей)
-        """
-
-        # 1. Формирование базовых условий
-        combined_search_expression = get_drink_search_expression(Drink)
-        search_pattern = f"%{query_string}%"
-
-        # Базовый объект WHERE clause, который будет использоваться дважды
-        search_condition = combined_search_expression.ilike(search_pattern)
-
-        # 2. Расчет OFFSET для пагинации
-        offset = (page - 1) * page_size
-
-        # 3. Запрос данных с LIMIT/OFFSET
-        # Мы выбираем Item И общее количество результатов с помощью оконной функции
-        stmt = (select(Item,
-                       func.count().over().label("total_count_alias"))
-                .join(Item.drink).where(search_condition))
-        # Загрузка связанных данных
-        stmt = stmt.options(cls.get_query_for_list_view())
-
-        # Обязательная сортировка для консистентного OFFSET
-        stmt = stmt.order_by(Item.id.asc())
-
-        # Применяем пагинацию
-        stmt = stmt.limit(page_size).offset(offset)
-
-        # 4. Выполнение асинхронного запроса
-        result = await session.execute(stmt)
-
-        # Извлекаем данные и общее количество
-        # Мы получаем строки, состоящие из (Item object, total_count_int)
-        records = result.mappings().all()
-
-        total_count = records[0]['total_count_alias'] if records else 0
-        return [val['Item'] for val in records], total_count
-
-        # Возвращаем список словарей (или RowMapping объектов)
-        return records, total_count
-
-
-        records: List[Row] = result.all()
-
-        # 5. Обработка результатов
-        items_list: List[Item] = []
-        total_count: int = 0
-
-        if records:
-            # Общее количество одинаково для всех строк, берем из первой
-            total_count = records[0].total_count_alias
-            # Извлекаем только объекты Item
-            items_list = [row[0] for row in records]
-
-        return items_list, total_count
+    async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession, 
+                                      skip: int = None, limit: int = None):
+        """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
+        from sqlalchemy import func, text
+        
+        if search_str is None or search_str.strip() == '':
+            # Если search_str пустой, возвращаем все записи с пагинацией
+            return await cls.get_list_view_page(skip, limit, model, session)
+        
+        # Создаем строку для поиска с использованием триграммного индекса
+        # Используем ту же логику, что и в индексе drink_trigram_idx_combined
+        search_expr = func.coalesce(Drink.title, '') + ' ' + \
+                      func.coalesce(Drink.title_ru, '') + ' ' + \
+                      func.coalesce(Drink.title_fr, '') + ' ' + \
+                      func.coalesce(Drink.subtitle, '') + ' ' + \
+                      func.coalesce(Drink.subtitle_ru, '') + ' ' + \
+                      func.coalesce(Drink.subtitle_fr, '') + ' ' + \
+                      func.coalesce(Drink.description, '') + ' ' + \
+                      func.coalesce(Drink.description_ru, '') + ' ' + \
+                      func.coalesce(Drink.description_fr, '') + ' ' + \
+                      func.coalesce(Drink.recommendation, '') + ' ' + \
+                      func.coalesce(Drink.recommendation_ru, '') + ' ' + \
+                      func.coalesce(Drink.recommendation_fr, '') + ' ' + \
+                      func.coalesce(Drink.madeof, '') + ' ' + \
+                      func.coalesce(Drink.madeof_ru, '') + ' ' + \
+                      func.coalesce(Drink.madeof_fr, '')
+        
+        # Формируем запрос с использованием триграммного поиска
+        # Используем оператор % который работает с индексом gin_trgm_ops
+        query = select(Item).options(
+            selectinload(Item.drink).options(
+                selectinload(Drink.subregion).options(
+                    selectinload(Subregion.region).options(
+                        selectinload(Region.country)
+                    )
+                ),
+                selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness)
+            )
+        ).join(Item.drink).where(
+            text(f"({search_expr.cast(String)} % :search_str)")
+        ).params(search_str=search_str)
+        
+        # Получаем общее количество записей
+        count_query = select(func.count(Item.id)).join(Item.drink).where(
+            text(f"({search_expr.cast(String)} % :search_str)")
+        ).params(search_str=search_str)
+        count_result = await session.execute(count_query)
+        total = count_result.scalar()
+        
+        # Добавляем пагинацию
+        if skip is not None:
+            query = query.offset(skip)
+        if limit is not None:
+            query = query.limit(limit)
+        
+        result = await session.execute(query)
+        items = result.scalars().all()
+        
+        # Преобразуем в плоские словари
+        flat_items = []
+        for item in items:
+            flat_item = {
+                'id': item.id,
+                'vol': item.vol,
+                'image_id': item.image_id,
+                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
+                'drink': item.drink,
+                'subcategory': item.drink.subcategory,
+                'country': item.drink.subregion.region.country
+            }
+            flat_items.append(flat_item)
+        
+        return flat_items, total
