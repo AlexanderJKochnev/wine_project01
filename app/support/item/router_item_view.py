@@ -55,21 +55,21 @@ class ItemViewRouter:
             tags=self.tags,
             summary="Получить детальную информацию по элементу с локализацией"
         )
-        
+
         # Маршрут для поиска элементов по полям title* и subtitle* связанной модели Drink
         self.router.add_api_route(
             "/search_by_drink/{lang}",
             self.search_by_drink_title_subtitle,
             methods=["GET"],
-            response_model=List[ItemListView],
+            response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
             summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
         )
-        
+
         # Маршрут для поиска элементов по полям title* и subtitle* связанной модели Drink с пагинацией
         self.router.add_api_route(
             "/search_by_drink_paginated/{lang}",
-            self.search_by_drink_title_subtitle_paginated,
+            self.search_by_drink_trigramm,
             methods=["GET"],
             response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
@@ -110,7 +110,7 @@ class ItemViewRouter:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
         print(f'{type(item)=}')
-        
+
         # Create ItemDetailView instance
         result = ItemDetailView(**item)
 
@@ -130,7 +130,7 @@ class ItemViewRouter:
         items, total = await service.search_by_drink_title_subtitle(
             search, lang, ItemRepository, Item, session, skip, limit
         )
-        
+
         return items
 
     async def search_by_drink_title_subtitle_paginated(self, 
