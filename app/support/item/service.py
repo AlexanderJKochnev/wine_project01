@@ -1,34 +1,34 @@
 # app.support.item.service.py
-from sqlalchemy.ext.asyncio import AsyncSession
 from deepdiff import DeepDiff
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
+
 # from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead
 from app.core.services.service import Service
-from app.core.utils.alchemy_utils import JsonConverter
-from app.core.utils.common_utils import get_value, jprint, flatten_dict_with_localized_fields  # noqa: F401
-from app.core.utils.io_utils import get_filepath_from_dir_by_name
-from app.core.utils.json_validator import validate_json_file
+from app.core.utils.common_utils import flatten_dict_with_localized_fields, get_value, jprint  # noqa: F401
+from app.core.utils.converters import read_convert_json
 from app.mongodb.service import ThumbnailImageService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.service import DrinkService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation, ItemListView, ItemDetailView
-from app.core.utils.converters import read_convert_json
+from app.support.item.schemas import (ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation)
 
 
 class ItemService(Service):
     default = ['vol', 'drink_id']
 
     @classmethod
-    def _process_item_localization(cls, item, lang: str, fields_to_localize: list = None):
-        """Внутренний метод для обработки локализации одного элемента"""
+    def _process_item_localization(cls, item: dict, lang: str, fields_to_localize: list = None):
+        """
+            Внутренний метод для обработки локализации одного элемента
+            на входе dict в котором один из элементов Drink
+        """
         if fields_to_localize is None:
             fields_to_localize = ['title', 'country', 'subcategory']
-        
         # Подготовим данные для локализации
-        localized_data = {
+        """localized_data = {
             'id': item['id'],
             'vol': item['vol'],
             'image_id': item['image_id'],
@@ -41,20 +41,20 @@ class ItemService(Service):
             'subcategory': f"{item['subcategory'].category.name} {getattr(item['subcategory'], 'name', '')}",
             'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
             'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
-        }
-        
+        }"""
+
         # Применим функцию локализации
         localized_result = flatten_dict_with_localized_fields(
-            localized_data, 
-            fields_to_localize, 
+            item,  # localized_data,
+            fields_to_localize,
             lang
         )
-        
+
         # Добавим остальные поля
         localized_result['id'] = item['id']
         localized_result['vol'] = item['vol']
         localized_result['image_id'] = item['image_id']
-        
+
         return localized_result
 
     @classmethod
@@ -76,7 +76,7 @@ class ItemService(Service):
         for item in items:
             localized_result = cls._process_item_localization(item, lang)
             result.append(localized_result)
-        
+
         return {
             "items": result,
             "total": total,
@@ -92,7 +92,7 @@ class ItemService(Service):
         item = await repository.get_detail_view(id, model, session)
         if not item:
             return None
-            
+
         # Подготовим данные для локализации
         localized_data = {
             'id': item['id'],
@@ -122,10 +122,10 @@ class ItemService(Service):
             'madeof_ru': getattr(item['drink'], 'madeof_ru', ''),
             'madeof_fr': getattr(item['drink'], 'madeof_fr', ''),
         }
-        
+
         # Handle varietals and pairing with localization (similar to drink schemas)
         lang_suffix = '' if lang == 'en' else f'_{lang}'
-        
+
         # Get varietals with localization and percentages
         varietal = []
         if hasattr(item['drink'], 'varietal_associations') and item['drink'].varietal_associations:
@@ -142,7 +142,7 @@ class ItemService(Service):
                         varietal.append(f"{name} {int(round(assoc.percentage))}%")
                     else:
                         varietal.append(name)
-        
+
         # Get pairing (foods) with localization
         pairing = []
         if hasattr(item['drink'], 'food_associations') and item['drink'].food_associations:
@@ -155,27 +155,27 @@ class ItemService(Service):
                     continue
                 if name:
                     pairing.append(name)
-        
+
         # Применим функцию локализации
         localized_result = flatten_dict_with_localized_fields(
-            localized_data, 
-            ['title', 'subtitle', 'country', 'subcategory', 'sweetness', 'recommendation', 'madeof'], 
+            localized_data,
+            ['title', 'subtitle', 'country', 'subcategory', 'sweetness', 'recommendation', 'madeof'],
             lang
         )
-        
+
         # Add varietal (renamed from varietals) and pairing after localization
         if varietal:
             localized_result['varietal'] = varietal
         if pairing:
             localized_result['pairing'] = pairing
-        
+
         # Добавим остальные поля
         localized_result['id'] = item['id']
         localized_result['vol'] = item['vol']
         localized_result['alc'] = str(item['alc']) if item['alc'] is not None else None
         localized_result['age'] = item['age']
         localized_result['image_id'] = item['image_id']
-        
+
         return localized_result
 
     @classmethod
@@ -204,10 +204,15 @@ class ItemService(Service):
             raise Exception(f'itemservice.create_relation. {e}')
 
     @classmethod
-    async def search_by_drink_title_subtitle(cls, search_str: str, lang: str, repository: ItemRepository, model: Item, session: AsyncSession, 
-                                           skip: int = None, limit: int = None):
+    async def search_by_drink_title_subtitle(cls, search_str: str, lang: str,
+                                             repository: ItemRepository, model: Item,
+                                             session: AsyncSession,
+                                             skip: int = None, limit: int = None):
         """Поиск элементов по полям title* и subtitle* связанной модели Drink с локализацией"""
-        items, total = await repository.search_by_drink_title_subtitle(search_str, model, session, skip, limit)
+        items, total = await repository.search_by_drink_title_subtitle(search_str,
+                                                                       session,
+                                                                       skip,
+                                                                       limit)
         result = []
         for item in items:
             localized_result = cls._process_item_localization(item, lang)
@@ -270,3 +275,38 @@ class ItemService(Service):
             return result
         except Exception as exc:
             print(f'{exc=}')
+
+    @classmethod
+    async def search_items_orm_paginated_async(cls, query_str: str, lang: str,
+                                               repository: ItemRepository,
+                                               model: Item,
+                                               session: AsyncSession,
+                                               page: int = 1,
+                                               page_size: int = 20
+                                               ):
+        """ Получение списка элементов для ListView с пагинацией и локализацией
+            session: AsyncSession,
+            query_string: str,
+            page_size: int,
+            page: int  # Номер страницы (начиная с 1)
+        """
+        items, total = await repository.search_items_orm_paginated_async(query_str, session,
+                                                                         page_size, page)
+        result = []
+        for item in items:
+            print(f'{type(item)=} , {item}')
+            tmp = item.to_dict()
+            for key, val in tmp.items():
+                print(f'{key}: {val}')
+            localized_result = cls._process_item_localization(tmp, lang)
+            print('========================')
+            for key, val in localized_result.items():
+                print(f'{key}:  {val}')
+            result.append(localized_result)
+        skip = (page - 1) * page_size
+        return {"items": result,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "has_next": skip + len(items) < total,
+                "has_prev": page > 1}

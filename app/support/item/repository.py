@@ -2,11 +2,11 @@
 
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Type, Tuple, Union
-from sqlalchemy import func, select, Select, or_
+from sqlalchemy import func, select, Select, or_, Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
-from app.support.drink.repository import DrinkRepository
+from app.support.drink.repository import DrinkRepository, get_drink_search_expression
 from app.support.item.model import Item
 from app.support.country.model import Country
 from app.support.region.model import Region
@@ -57,6 +57,19 @@ class ItemRepository(Repository):
                 selectinload(Drink.food_associations).joinedload(DrinkFood.food), selectinload(Drink.varietals),
                 selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
             ),
+        )
+
+    @classmethod
+    def get_query_for_list_view(cls):
+        """ get_query для запроса lit_view """
+        return selectinload(Item.drink).options(
+            selectinload(Drink.subregion).options(
+                selectinload(Subregion.region).options(
+                    selectinload(Region.country)
+                )
+            ),
+            selectinload(Drink.subcategory).selectinload(Subcategory.category),
+            selectinload(Drink.sweetness)
         )
 
     @classmethod
@@ -152,10 +165,10 @@ class ItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         )
-        
+
         result = await session.execute(query)
         items = result.scalars().all()
-        
+
         # Преобразуем в плоские словари
         flat_items = []
         for item in items:
@@ -169,7 +182,7 @@ class ItemRepository(Repository):
                 'country': item.drink.subregion.region.country
             }
             flat_items.append(flat_item)
-        
+
         return flat_items
 
     @classmethod
@@ -188,13 +201,13 @@ class ItemRepository(Repository):
                 selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
             )
         ).where(Item.id == id)
-        
+
         result = await session.execute(query)
         item = result.scalar_one_or_none()
-        
+
         if not item:
             return None
-            
+
         # Преобразуем в плоский словарь для детального представления
         flat_item = {
             'id': item.id,
@@ -208,7 +221,7 @@ class ItemRepository(Repository):
             'subcategory': item.drink.subcategory,
             'sweetness': item.drink.sweetness
         }
-        
+
         return flat_item
 
     @classmethod
@@ -225,15 +238,15 @@ class ItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         )
-        
+
         count_query = select(func.count()).select_from(Item)
         count_result = await session.execute(count_query)
         total = count_result.scalar()
-        
+
         query = query.offset(skip).limit(limit)
         result = await session.execute(query)
         items = result.scalars().all()
-        
+
         # Преобразуем в плоские словари
         flat_items = []
         for item in items:
@@ -247,23 +260,26 @@ class ItemRepository(Repository):
                 'country': item.drink.subregion.region.country
             }
             flat_items.append(flat_item)
-        
+
         return flat_items, total
 
     @classmethod
-    async def search_by_drink_title_subtitle(cls, search_str: str, model: ModelType, session: AsyncSession, 
-                                           skip: int = None, limit: int = None):
+    async def search_by_drink_title_subtitle(cls, search_str: str,
+                                             session: AsyncSession,
+                                             skip: int = None,
+                                             limit: int = None
+                                             ):
         """Поиск элементов по полям title* и subtitle* связанной модели Drink"""
         from app.core.config.project_config import settings
         from app.core.utils.alchemy_utils import build_search_condition, SearchType
-        
+
         # Получаем список языков из настроек
         langs = settings.LANGUAGES
-        
+
         # Создаем список полей для поиска
         title_fields = []
         subtitle_fields = []
-        
+
         for lang in langs:
             if lang == 'en':
                 title_fields.append(getattr(Drink, 'title'))
@@ -271,25 +287,25 @@ class ItemRepository(Repository):
             else:
                 title_fields.append(getattr(Drink, f'title_{lang}', None))
                 subtitle_fields.append(getattr(Drink, f'subtitle_{lang}', None))
-        
+
         # Убираем None значения из списка
         title_fields = [field for field in title_fields if field is not None]
         subtitle_fields = [field for field in subtitle_fields if field is not None]
-        
+
         # Создаем условия поиска
         search_conditions = []
-        
+
         for field in title_fields + subtitle_fields:
             condition = build_search_condition(field, search_str, search_type=SearchType.LIKE)
             search_conditions.append(condition)
-        
+
         # Объединяем все условия с помощью OR
         if search_conditions:
             search_condition = or_(*search_conditions)
         else:
             # Если нет подходящих полей для поиска, возвращаем пустой результат
             return [], 0
-        
+
         # Формируем запрос с JOIN на Drink
         query = select(Item).options(
             selectinload(Item.drink).options(
@@ -302,21 +318,21 @@ class ItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         ).join(Item.drink).where(search_condition)
-        
+
         # Получаем общее количество записей
         count_query = select(func.count(Item.id)).join(Item.drink).where(search_condition)
         count_result = await session.execute(count_query)
         total = count_result.scalar()
-        
+
         # Добавляем пагинацию
         if skip is not None:
             query = query.offset(skip)
         if limit is not None:
             query = query.limit(limit)
-        
+
         result = await session.execute(query)
         items = result.scalars().all()
-        
+
         # Преобразуем в плоские словари
         flat_items = []
         for item in items:
@@ -330,5 +346,69 @@ class ItemRepository(Repository):
                 'country': item.drink.subregion.region.country
             }
             flat_items.append(flat_item)
-        
+
         return flat_items, total
+
+    @classmethod
+    async def search_items_orm_paginated_async(cls,
+                                               query_string: str,
+                                               session: AsyncSession,
+                                               page_size: int,
+                                               page: int  # Номер страницы (начиная с 1)
+                                               ) -> Tuple[List[Item], int]:
+        """
+        Асинхронный поиск с пагинацией OFFSET и общим количеством записей.
+        Возвращает: (список_Item, общее_количество_найденных_записей)
+        """
+
+        # 1. Формирование базовых условий
+        combined_search_expression = get_drink_search_expression(Drink)
+        search_pattern = f"%{query_string}%"
+
+        # Базовый объект WHERE clause, который будет использоваться дважды
+        search_condition = combined_search_expression.ilike(search_pattern)
+
+        # 2. Расчет OFFSET для пагинации
+        offset = (page - 1) * page_size
+
+        # 3. Запрос данных с LIMIT/OFFSET
+        # Мы выбираем Item И общее количество результатов с помощью оконной функции
+        stmt = (select(Item,
+                       func.count().over().label("total_count_alias"))
+                .join(Item.drink).where(search_condition))
+        # Загрузка связанных данных
+        stmt = stmt.options(cls.get_query_for_list_view())
+
+        # Обязательная сортировка для консистентного OFFSET
+        stmt = stmt.order_by(Item.id.asc())
+
+        # Применяем пагинацию
+        stmt = stmt.limit(page_size).offset(offset)
+
+        # 4. Выполнение асинхронного запроса
+        result = await session.execute(stmt)
+
+        # Извлекаем данные и общее количество
+        # Мы получаем строки, состоящие из (Item object, total_count_int)
+        records = result.mappings().all()
+
+        total_count = records[0]['total_count_alias'] if records else 0
+        return [val['Item'] for val in records], total_count
+
+        # Возвращаем список словарей (или RowMapping объектов)
+        return records, total_count
+
+
+        records: List[Row] = result.all()
+
+        # 5. Обработка результатов
+        items_list: List[Item] = []
+        total_count: int = 0
+
+        if records:
+            # Общее количество одинаково для всех строк, берем из первой
+            total_count = records[0].total_count_alias
+            # Извлекаем только объекты Item
+            items_list = [row[0] for row in records]
+
+        return items_list, total_count

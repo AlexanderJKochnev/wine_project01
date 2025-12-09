@@ -77,3 +77,25 @@ class DrinkRepository(Repository):
         except Exception as e:
             logger.error(f'ошибка search_in_main_table: {e}')
             print(f'search_in_main_table.error: {e}')
+
+
+def get_drink_search_expression(cls):
+    """
+        для поиска по триграммному индексу
+
+    """
+    return (func.coalesce(cls.title, '') + ' ' + func.coalesce(cls.title_ru, '') + ' ' + func.coalesce(
+            cls.title_fr, ''
+            ) + ' ' + func.coalesce(cls.subtitle, '') + ' ' + func.coalesce(cls.subtitle_ru, '') + ' ' + func.coalesce(
+            cls.subtitle_fr, ''
+            ) + ' ' + func.coalesce(cls.description, '') + ' ' + func.coalesce(
+            cls.description_ru, ''
+            ) + ' ' + func.coalesce(
+            cls.description_fr, ''
+            ) + ' ' + func.coalesce(cls.recommendation, '') + ' ' + func.coalesce(
+            cls.recommendation_ru, ''
+            ) + ' ' + func.coalesce(
+            cls.recommendation_fr, ''
+            ) + ' ' + func.coalesce(cls.madeof, '') + ' ' + func.coalesce(cls.madeof_ru, '') + ' ' + func.coalesce(
+            cls.madeof_fr, ''
+            ))
