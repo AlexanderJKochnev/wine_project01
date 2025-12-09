@@ -215,6 +215,17 @@ class ItemService(Service):
         return result, total
 
     @classmethod
+    async def search_by_trigram_index(cls, search_str: str, lang: str, repository: ItemRepository, model: Item, session: AsyncSession, 
+                                      skip: int = None, limit: int = None):
+        """Поиск элементов с использованием триграммного индекса в связанной модели Drink с локализацией"""
+        items, total = await repository.search_by_trigram_index(search_str, model, session, skip, limit)
+        result = []
+        for item in items:
+            localized_result = cls._process_item_localization(item, lang)
+            result.append(localized_result)
+        return result, total
+
+    @classmethod
     async def direct_upload(cls, file_name: dict, session: AsyncSession, image_service: ThumbnailImageService) -> dict:
         try:
             # получаем список кортежей (image_name, image_id)

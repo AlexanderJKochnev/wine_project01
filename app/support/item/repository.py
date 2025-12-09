@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 from typing import Optional, List, Type, Tuple, Union
 from sqlalchemy import func, select, Select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.types import String
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.drink.repository import DrinkRepository
@@ -305,6 +306,82 @@ class ItemRepository(Repository):
         
         # Получаем общее количество записей
         count_query = select(func.count(Item.id)).join(Item.drink).where(search_condition)
+        count_result = await session.execute(count_query)
+        total = count_result.scalar()
+        
+        # Добавляем пагинацию
+        if skip is not None:
+            query = query.offset(skip)
+        if limit is not None:
+            query = query.limit(limit)
+        
+        result = await session.execute(query)
+        items = result.scalars().all()
+        
+        # Преобразуем в плоские словари
+        flat_items = []
+        for item in items:
+            flat_item = {
+                'id': item.id,
+                'vol': item.vol,
+                'image_id': item.image_id,
+                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
+                'drink': item.drink,
+                'subcategory': item.drink.subcategory,
+                'country': item.drink.subregion.region.country
+            }
+            flat_items.append(flat_item)
+        
+        return flat_items, total
+
+    @classmethod
+    async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession, 
+                                      skip: int = None, limit: int = None):
+        """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
+        from sqlalchemy import func, text
+        
+        if search_str is None or search_str.strip() == '':
+            # Если search_str пустой, возвращаем все записи с пагинацией
+            return await cls.get_list_view_page(skip, limit, model, session)
+        
+        # Создаем строку для поиска с использованием триграммного индекса
+        # Используем ту же логику, что и в индексе drink_trigram_idx_combined
+        search_expr = func.coalesce(Drink.title, '') + ' ' + \
+                      func.coalesce(Drink.title_ru, '') + ' ' + \
+                      func.coalesce(Drink.title_fr, '') + ' ' + \
+                      func.coalesce(Drink.subtitle, '') + ' ' + \
+                      func.coalesce(Drink.subtitle_ru, '') + ' ' + \
+                      func.coalesce(Drink.subtitle_fr, '') + ' ' + \
+                      func.coalesce(Drink.description, '') + ' ' + \
+                      func.coalesce(Drink.description_ru, '') + ' ' + \
+                      func.coalesce(Drink.description_fr, '') + ' ' + \
+                      func.coalesce(Drink.recommendation, '') + ' ' + \
+                      func.coalesce(Drink.recommendation_ru, '') + ' ' + \
+                      func.coalesce(Drink.recommendation_fr, '') + ' ' + \
+                      func.coalesce(Drink.madeof, '') + ' ' + \
+                      func.coalesce(Drink.madeof_ru, '') + ' ' + \
+                      func.coalesce(Drink.madeof_fr, '')
+        
+        # Формируем запрос с использованием триграммного поиска
+        # Используем оператор % который работает с индексом gin_trgm_ops
+        query = select(Item).options(
+            selectinload(Item.drink).options(
+                selectinload(Drink.subregion).options(
+                    selectinload(Subregion.region).options(
+                        selectinload(Region.country)
+                    )
+                ),
+                selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness)
+            )
+        ).join(Item.drink).where(
+            text(f"({search_expr.cast(String)} % :search_str)")
+        ).params(search_str=search_str)
+        
+        # Получаем общее количество записей
+        count_query = select(func.count(Item.id)).join(Item.drink).where(
+            text(f"({search_expr.cast(String)} % :search_str)")
+        ).params(search_str=search_str)
         count_result = await session.execute(count_query)
         total = count_result.scalar()
         
