@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Type, Tuple, Union
-from sqlalchemy import func, select, Select, or_, Row
+from sqlalchemy import func, select, Select, or_, Row, literal_column
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
 from app.core.repositories.sqlalchemy_repository import Repository
@@ -165,7 +165,7 @@ class ItemRepository(Repository):
                 selectinload(Drink.subcategory).selectinload(Subcategory.category),
                 selectinload(Drink.sweetness)
             )
-        )
+        ).order_by(Item.id.asc())
 
         result = await session.execute(query)
         items = result.scalars().all()
@@ -240,6 +240,7 @@ class ItemRepository(Repository):
             )
         )
 
+        query = query.order_by(Item.id.asc())
         count_query = select(func.count()).select_from(Item)
         count_result = await session.execute(count_query)
         total = count_result.scalar()
@@ -319,7 +320,7 @@ class ItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         ).join(Item.drink).where(search_condition)
-
+        query = query.order_by(Item.id.asc())
         # Получаем общее количество записей
         count_query = select(func.count(Item.id)).join(Item.drink).where(search_condition)
         count_result = await session.execute(count_query)
@@ -415,21 +416,29 @@ class ItemRepository(Repository):
 
 def get_drink_search_expression(cls):
     """
-        для поиска по триграммному индексу
-
+        для поиска по триграммному индексу с использованием литералов
     """
-    return (func.coalesce(cls.title, '') + ' ' + func.coalesce(cls.title_ru, '') + ' ' + func.coalesce(
-            cls.title_fr, ''
-            ) + ' ' + func.coalesce(cls.subtitle, '') + ' ' + func.coalesce(cls.subtitle_ru, '') + ' ' + func.coalesce(
-            cls.subtitle_fr, ''
-            ) + ' ' + func.coalesce(cls.description, '') + ' ' + func.coalesce(
-            cls.description_ru, ''
-            ) + ' ' + func.coalesce(
-            cls.description_fr, ''
-            ) + ' ' + func.coalesce(cls.recommendation, '') + ' ' + func.coalesce(
-            cls.recommendation_ru, ''
-            ) + ' ' + func.coalesce(
-            cls.recommendation_fr, ''
-            ) + ' ' + func.coalesce(cls.madeof, '') + ' ' + func.coalesce(cls.madeof_ru, '') + ' ' + func.coalesce(
-            cls.madeof_fr, ''
-            ))
+
+    # Определяем литералы для пустой строки и пробела
+    EMPTY_STRING = literal_column("''")
+    SPACE = literal_column("' '")
+
+    return (func.coalesce(cls.title, EMPTY_STRING) + SPACE + func.coalesce(
+        cls.title_ru, EMPTY_STRING
+    ) + SPACE + func.coalesce(cls.title_fr, EMPTY_STRING) + SPACE + func.coalesce(
+        cls.subtitle, EMPTY_STRING
+    ) + SPACE + func.coalesce(
+        cls.subtitle_ru, EMPTY_STRING
+    ) + SPACE + func.coalesce(cls.subtitle_fr, EMPTY_STRING) + SPACE + func.coalesce(
+        cls.description, EMPTY_STRING
+    ) + SPACE + func.coalesce(
+        cls.description_ru, EMPTY_STRING
+    ) + SPACE + func.coalesce(cls.description_fr, EMPTY_STRING) + SPACE + func.coalesce(
+        cls.recommendation, EMPTY_STRING
+    ) + SPACE + func.coalesce(
+        cls.recommendation_ru, EMPTY_STRING
+    ) + SPACE + func.coalesce(cls.recommendation_fr, EMPTY_STRING) + SPACE + func.coalesce(
+        cls.madeof, EMPTY_STRING
+    ) + SPACE + func.coalesce(
+        cls.madeof_ru, EMPTY_STRING
+    ) + SPACE + func.coalesce(cls.madeof_fr, EMPTY_STRING))
