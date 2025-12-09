@@ -2,7 +2,7 @@
 import json
 from typing import Optional
 
-from fastapi import Depends, File, Form, HTTPException, Query, status, UploadFile
+from fastapi import Depends, File, Form, HTTPException, Query, Path, status, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,14 +72,14 @@ class ItemRouter(BaseRouter):
             response_model=dict
         )
 
-    async def get_list_view(self, lang: str, session: AsyncSession = Depends(get_db)):
+    async def get_list_view(self, lang: str = Path(..., description="Язык локализации"), session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
         service = ItemService()
         items = await service.get_list_view(lang, ItemRepository, Item, session)
         return items
 
     async def get_list_view_paginated(self, 
-                                      lang: str, 
+                                      lang: str = Path(..., description="Язык локализации"), 
                                       page: int = Query(1, ge=1, description="Номер страницы"),
                                       page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
@@ -88,7 +88,7 @@ class ItemRouter(BaseRouter):
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session)
         return result
 
-    async def get_detail_view(self, lang: str, id: int, session: AsyncSession = Depends(get_db)):
+    async def get_detail_view(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
         service = ItemService()
         item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
@@ -100,7 +100,7 @@ class ItemRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: ItemUpdate,
+    async def patch(self, id: int = Path(..., description="ID элемента"), data: ItemUpdate,
                     session: AsyncSession = Depends(get_db)) -> ItemCreateResponseSchema:
         return await super().patch(id, data, session)
 
@@ -154,7 +154,7 @@ class ItemRouter(BaseRouter):
         result = await super().create_relation(item_data, session)
         return result
 
-    async def direct_import_single_data(self, id: str,
+    async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),
                                         session: AsyncSession = Depends(get_db),
                                         image_service: ThumbnailImageService = Depends()) -> dict:
         """
