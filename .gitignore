@@ -38,8 +38,46 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
 
-# IDE
+# Dependencies
+.venv/
+venv/
+env/
+.env
+.env.*
+node_modules/
+dist/
+build/
+target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment specific
+.env.local
+.env.*
+
+# Editors
 .vscode/
 .idea/
 *.swp
