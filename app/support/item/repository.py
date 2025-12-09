@@ -351,33 +351,19 @@ class ItemRepository(Repository):
         return flat_items, total
 
     @classmethod
-    async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession, 
+    async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession,
                                       skip: int = None, limit: int = None):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
         from sqlalchemy import func, text
-        
+
         if search_str is None or search_str.strip() == '':
             # Если search_str пустой, возвращаем все записи с пагинацией
             return await cls.get_list_view_page(skip, limit, model, session)
-        
+
         # Создаем строку для поиска с использованием триграммного индекса
         # Используем ту же логику, что и в индексе drink_trigram_idx_combined
-        search_expr = func.coalesce(Drink.title, '') + ' ' + \
-                      func.coalesce(Drink.title_ru, '') + ' ' + \
-                      func.coalesce(Drink.title_fr, '') + ' ' + \
-                      func.coalesce(Drink.subtitle, '') + ' ' + \
-                      func.coalesce(Drink.subtitle_ru, '') + ' ' + \
-                      func.coalesce(Drink.subtitle_fr, '') + ' ' + \
-                      func.coalesce(Drink.description, '') + ' ' + \
-                      func.coalesce(Drink.description_ru, '') + ' ' + \
-                      func.coalesce(Drink.description_fr, '') + ' ' + \
-                      func.coalesce(Drink.recommendation, '') + ' ' + \
-                      func.coalesce(Drink.recommendation_ru, '') + ' ' + \
-                      func.coalesce(Drink.recommendation_fr, '') + ' ' + \
-                      func.coalesce(Drink.madeof, '') + ' ' + \
-                      func.coalesce(Drink.madeof_ru, '') + ' ' + \
-                      func.coalesce(Drink.madeof_fr, '')
-        
+        search_expr = get_drink_search_expression(Drink)
+
         # Формируем запрос с использованием триграммного поиска
         # Используем оператор % который работает с индексом gin_trgm_ops
         query = select(Item).options(
@@ -393,23 +379,23 @@ class ItemRepository(Repository):
         ).join(Item.drink).where(
             text(f"({search_expr.cast(String)} % :search_str)")
         ).params(search_str=search_str)
-        
+
         # Получаем общее количество записей
         count_query = select(func.count(Item.id)).join(Item.drink).where(
             text(f"({search_expr.cast(String)} % :search_str)")
         ).params(search_str=search_str)
         count_result = await session.execute(count_query)
         total = count_result.scalar()
-        
+
         # Добавляем пагинацию
         if skip is not None:
             query = query.offset(skip)
         if limit is not None:
             query = query.limit(limit)
-        
+
         result = await session.execute(query)
         items = result.scalars().all()
-        
+
         # Преобразуем в плоские словари
         flat_items = []
         for item in items:
@@ -423,5 +409,27 @@ class ItemRepository(Repository):
                 'country': item.drink.subregion.region.country
             }
             flat_items.append(flat_item)
-        
+
         return flat_items, total
+
+
+def get_drink_search_expression(cls):
+    """
+        для поиска по триграммному индексу
+
+    """
+    return (func.coalesce(cls.title, '') + ' ' + func.coalesce(cls.title_ru, '') + ' ' + func.coalesce(
+            cls.title_fr, ''
+            ) + ' ' + func.coalesce(cls.subtitle, '') + ' ' + func.coalesce(cls.subtitle_ru, '') + ' ' + func.coalesce(
+            cls.subtitle_fr, ''
+            ) + ' ' + func.coalesce(cls.description, '') + ' ' + func.coalesce(
+            cls.description_ru, ''
+            ) + ' ' + func.coalesce(
+            cls.description_fr, ''
+            ) + ' ' + func.coalesce(cls.recommendation, '') + ' ' + func.coalesce(
+            cls.recommendation_ru, ''
+            ) + ' ' + func.coalesce(
+            cls.recommendation_fr, ''
+            ) + ' ' + func.coalesce(cls.madeof, '') + ' ' + func.coalesce(cls.madeof_ru, '') + ' ' + func.coalesce(
+            cls.madeof_fr, ''
+            ))
