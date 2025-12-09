@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
 from dateutil.relativedelta import relativedelta
-from fastapi import Depends, Query
+from fastapi import Depends, Query, Path
 from app.core.utils.common_utils import back_to_the_future
 from app.core.config.project_config import settings
 from app.mongodb import router as mongorouter
@@ -87,13 +87,13 @@ class ApiRouter(ItemRouter):
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    async def download_image(self, file_id: str, image_service: ImageService = Depends()):
+    async def download_image(self, file_id: str = Path(..., description="ID файла"), image_service: ImageService = Depends()):
         """
             Получение одного изображения по _id
         """
         return await mongorouter.download_image(file_id, image_service)
 
-    async def download_file(self, filename: str, image_service: ImageService = Depends()):
+    async def download_file(self, filename: str = Path(..., description="Имя файла"), image_service: ImageService = Depends()):
         """
             Получение одного изображения по имени файла
         """

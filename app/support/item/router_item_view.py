@@ -5,7 +5,7 @@
     по языкам
 """
 from typing import List
-from fastapi import Request, Depends, Query
+from fastapi import Request, Depends, Query, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import PaginatedResponse
@@ -86,14 +86,14 @@ class ItemViewRouter:
             summary="Поиск элементов по триграммному индексу в связанной модели Drink"
         )
 
-    async def get_list(self, lang: str, session: AsyncSession = Depends(get_db)):
+    async def get_list(self, lang: str = Path(..., description="Язык локализации"), session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
         service = ItemService()
         items = await service.get_list_view(lang, ItemRepository, Item, session)
         return items
 
     async def get_list_paginated(self,
-                                 lang: str,
+                                 lang: str = Path(..., description="Язык локализации"),
                                  page: int = Query(1, ge=1, description="Номер страницы"),
                                  page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                  session: AsyncSession = Depends(get_db)):
@@ -102,7 +102,7 @@ class ItemViewRouter:
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
         return result
 
-    async def get_detail(self, lang: str, id: int, session: AsyncSession = Depends(get_db)):
+    async def get_detail(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
         service = ItemService()
         item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
@@ -118,7 +118,7 @@ class ItemViewRouter:
         return result.model_dump(exclude_none=True, exclude_unset=True)
 
     async def search_by_drink_title_subtitle(self, 
-                                           lang: str, 
+                                           lang: str = Path(..., description="Язык локализации"),
                                            search: str = Query(..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
                                            page: int = Query(1, ge=1, description="Номер страницы"),
                                            page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
@@ -134,7 +134,7 @@ class ItemViewRouter:
         return items
 
     async def search_by_drink_title_subtitle_paginated(self, 
-                                           lang: str, 
+                                           lang: str = Path(..., description="Язык локализации"), 
                                            search: str = Query(..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
                                            page: int = Query(1, ge=1, description="Номер страницы"),
                                            page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
@@ -157,8 +157,8 @@ class ItemViewRouter:
         }
 
     async def search_by_trigram_index(self, 
+                                      lang: str = Path(..., description="Язык локализации"),
                                       search_str: str = Query(None, description="Строка для поиска в триграммном индексе модели Drink"),
-                                      lang: str = Query('en', description="Язык локализации"),
                                       page: int = Query(1, ge=1, description="Номер страницы"),
                                       page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
