@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
-from app.support.drink.repository import DrinkRepository, get_drink_search_expression
+from app.support.drink.repository import DrinkRepository  # , get_drink_search_expression
 from app.support.item.model import Item
 from app.support.country.model import Country
 from app.support.region.model import Region
@@ -169,7 +169,6 @@ class ItemRepository(Repository):
 
         result = await session.execute(query)
         items = result.scalars().all()
-
         # Преобразуем в плоские словари
         flat_items = []
         for item in items:

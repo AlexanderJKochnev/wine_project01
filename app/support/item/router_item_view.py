@@ -31,7 +31,7 @@ class ItemViewRouter:
             "/list/{lang}",
             self.get_list,
             methods=["GET"],
-            response_model=List[ItemListView],
+            # response_model=List[ItemListView],
             tags=self.tags,
             summary="Получить список элементов с локализацией"
         )
@@ -41,7 +41,7 @@ class ItemViewRouter:
             "/list_paginated/{lang}",
             self.get_list_paginated,
             methods=["GET"],
-            response_model=PaginatedResponse[ItemListView],
+            # response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
             summary="Получить список элементов с пагинацией и локализацией"
         )
@@ -89,8 +89,9 @@ class ItemViewRouter:
     async def get_list(self, lang: str = Path(..., description="Язык локализации"), session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
         service = ItemService()
-        items = await service.get_list_view(lang, ItemRepository, Item, session)
-        return items
+        result = await service.get_list_view(lang, ItemRepository, Item, session)
+
+        return result
 
     async def get_list_paginated(self,
                                  lang: str = Path(..., description="Язык локализации"),
@@ -100,6 +101,8 @@ class ItemViewRouter:
         """Получить список элементов с пагинацией и локализацией"""
         service = ItemService()
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
+        # self.paginated_response
+
         return result
 
     async def get_detail(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
@@ -117,12 +120,13 @@ class ItemViewRouter:
         # Return the model dump with empty values removed
         return result.model_dump(exclude_none=True, exclude_unset=True)
 
-    async def search_by_drink_title_subtitle(self, 
-                                           lang: str = Path(..., description="Язык локализации"),
-                                           search: str = Query(..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
-                                           page: int = Query(1, ge=1, description="Номер страницы"),
-                                           page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
-                                           session: AsyncSession = Depends(get_db)):
+    async def search_by_drink_title_subtitle(self,
+                                             lang: str = Path(..., description="Язык локализации"),
+                                             search: str = Query(...,
+                                                                 description="Строка для поиска в полях title* и subtitle* модели Drink"),
+                                             page: int = Query(1, ge=1, description="Номер страницы"),
+                                             page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
+                                             session: AsyncSession = Depends(get_db)):
         """Поиск элементов по полям title* и subtitle* связанной модели Drink"""
         service = ItemService()
         skip = (page - 1) * page_size
@@ -133,12 +137,14 @@ class ItemViewRouter:
 
         return items
 
-    async def search_by_drink_title_subtitle_paginated(self, 
-                                           lang: str = Path(..., description="Язык локализации"), 
-                                           search: str = Query(..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
-                                           page: int = Query(1, ge=1, description="Номер страницы"),
-                                           page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
-                                           session: AsyncSession = Depends(get_db)):
+    async def search_by_drink_title_subtitle_paginated(self,
+                                                       lang: str = Path(..., description="Язык локализации"),
+                                                       search: str = Query(
+                                                           ..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
+                                                       page: int = Query(1, ge=1, description="Номер страницы"),
+                                                       page_size: int = Query(
+                                                           20, ge=1, le=100, description="Размер страницы"),
+                                                       session: AsyncSession = Depends(get_db)):
         """Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией"""
         service = ItemService()
         skip = (page - 1) * page_size
@@ -146,7 +152,7 @@ class ItemViewRouter:
         items, total = await service.search_by_drink_title_subtitle(
             search, lang, ItemRepository, Item, session, skip, limit
         )
-        
+
         return {
             "items": items,
             "total": total,
@@ -156,9 +162,10 @@ class ItemViewRouter:
             "has_prev": page > 1
         }
 
-    async def search_by_trigram_index(self, 
+    async def search_by_trigram_index(self,
                                       lang: str = Path(..., description="Язык локализации"),
-                                      search_str: str = Query(None, description="Строка для поиска в триграммном индексе модели Drink"),
+                                      search_str: str = Query(
+                                          None, description="Строка для поиска в триграммном индексе модели Drink"),
                                       page: int = Query(1, ge=1, description="Номер страницы"),
                                       page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
@@ -166,11 +173,11 @@ class ItemViewRouter:
         service = ItemService()
         skip = (page - 1) * page_size
         limit = page_size
-        
+
         items, total = await service.search_by_trigram_index(
             search_str, lang, ItemRepository, Item, session, skip, limit
         )
-        
+
         return {
             "items": items,
             "total": total,
