@@ -30,6 +30,7 @@ function HomeRedirect() {
 
 export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -50,9 +51,16 @@ export function App() {
 
   return (
     <div className="app-container">
-      <Header />
+      <Header 
+        sidebarVisible={sidebarVisible} 
+        setSidebarVisible={setSidebarVisible} 
+      />
       
       <div className="main-body">
+        <div className={`navbar ${sidebarVisible ? '' : 'hidden'}`}>
+          <Sidebar onClose={() => setSidebarVisible(false)} />
+        </div>
+        
         <div className="content-area">
           <div className="w-full">
             <Router>
@@ -71,11 +79,6 @@ export function App() {
               <Route default component={NotFound} />
             </Router>
           </div>
-        </div>
-        
-        {/* Navbar (Sidebar) */}
-        <div className="navbar">
-          <Sidebar />
         </div>
       </div>
       

@@ -6,7 +6,12 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getAuthToken, removeAuthToken } from '../lib/apiClient';
 import Logo from '../logo.png';
 
-export const Header = () => {
+interface HeaderProps {
+  sidebarVisible: boolean;
+  setSidebarVisible: (visible: boolean) => void;
+}
+
+export const Header = ({ sidebarVisible, setSidebarVisible }: HeaderProps) => {
   const { language: currentLang, setLanguage, availableLanguages } = useLanguage();
   const { url } = useLocation();
   const token = getAuthToken();
@@ -32,14 +37,28 @@ export const Header = () => {
     window.location.reload();
   };
 
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
+
   return (
     <header className="header">
       <div className="header-content">
-        {/* Left: Logo */}
+        {/* Left: Hamburger menu and Logo */}
         <div className="header-left">
           <div className="flex items-center">
-                <img src={Logo} alt="Логотип"
-                 className="logo-image"/>
+            {/* Hamburger menu button - only visible on mobile */}
+            <button 
+              className="hamburger-menu mr-4 lg:hidden"
+              onClick={toggleSidebar}
+              aria-label="Toggle navigation menu"
+            >
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </button>
+            <img src={Logo} alt="Логотип"
+             className="logo-image"/>
           </div>
         </div>
         

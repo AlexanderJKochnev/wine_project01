@@ -165,6 +165,13 @@ body {
   flex-direction: row-reverse; /* Put navbar on the right */
 }
 
+/* On mobile, when navbar is hidden, content should take full width */
+@media (max-width: 768px) {
+  .main-body {
+    flex-direction: column;
+  }
+}
+
 /* Navbar (Sidebar) styles */
 .navbar {
   width: 180px; /* Fixed width to ensure buttons fit properly */
@@ -180,13 +187,38 @@ body {
 }
 
 .navbar.hidden {
-  transform: translateX(100%);
+  display: none;
 }
 
 .navbar h2 {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.close-sidebar-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.close-sidebar-btn:hover {
+  background-color: #e5e7eb;
 }
 
 .nav-menu {
@@ -330,6 +362,10 @@ body {
   flex-direction: column;
 }
 
+.detail-content-layout {
+  width: 100%;
+}
+
 .detail-image {
   width: 100%;
   max-width: 20%;
@@ -340,6 +376,140 @@ body {
 
 .detail-content {
   flex: 1;
+}
+
+/* Parameter table styles */
+.parameter-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.parameter-table td {
+  padding: 0.75rem;
+  vertical-align: top;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.parameter-table .param-label {
+  font-weight: bold;
+  text-align: left;
+  width: 30%;
+  vertical-align: top;
+}
+
+.parameter-table .param-value {
+  text-align: justify;
+  width: 70%;
+  vertical-align: top;
+}
+
+.param-label-mobile {
+  font-weight: bold;
+  text-align: left;
+}
+
+.param-value-mobile {
+  text-align: justify;
+}
+
+/* Hamburger menu styles */
+.hamburger-menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.hamburger-menu:focus {
+  outline: none;
+}
+
+.hamburger-line {
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 10px;
+  transition: all 0.3s linear;
+  position: relative;
+  transform-origin: center;
+}
+
+/* Navbar visibility */
+.navbar.hidden {
+  display: none;
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    height: auto;
+    padding: 0.5rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .header-left,
+  .header-center,
+  .header-right {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .auth-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .auth-input {
+    width: 8rem;
+  }
+  
+  .main-body {
+    flex-direction: column;
+  }
+  
+  .navbar {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .content-area {
+    min-width: 100%;
+  }
+  
+  .detail-view {
+    flex-direction: column;
+  }
+  
+  .detail-image {
+    max-width: 100%;
+    min-height: auto;
+  }
+  
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-content {
+    flex-direction: column;
+  }
+  
+  .footer-links {
+    margin-top: 0.5rem;
+  }
 }
 
 /* Responsive styles for laptop 1440x900 */
