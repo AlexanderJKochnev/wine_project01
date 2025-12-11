@@ -138,7 +138,7 @@ class ItemViewRouter:
     async def search_by_trigram_index(self,
                                       lang: str = Path(..., description="Язык локализации"),
                                       search_str: str = Query(
-                                          None, description="Строка для поиска в триграммном индексе модели Drink"),
+                                          None, description="Поисковый запрос (при отсутствии значения - выдает все записи)"),
                                       page: int = Query(1, ge=1, description="Номер страницы"),
                                       page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
@@ -156,6 +156,6 @@ class ItemViewRouter:
             "total": total,
             "page": page,
             "page_size": page_size,
-            "has_next": skip + len(items) < total,
-            "has_prev": page > 1
+            "has_next": 1 if skip + len(items) < total else 0,
+            "has_prev": 1 if page > 1 else 0
         }
