@@ -26,10 +26,10 @@ export const ItemListView = () => {
   const { showNotification } = useNotification();
   
   const { data, loading, error, refetch } = useApi<PaginatedResponse<ItemRead>>(
-    searchQuery ? `/items_view/search_by_drink_paginated/${language}` : `/items_view/list_paginated/${language}`,
+    `/search_trigram/${language}`,
     'GET',
     undefined,
-    searchQuery ? { search: searchQuery, page, page_size: pageSize } : { page, page_size: pageSize }
+    searchQuery ? { search_str: searchQuery, page, page_size: pageSize } : { page, page_size: pageSize }
   );
 
   useEffect(() => {
