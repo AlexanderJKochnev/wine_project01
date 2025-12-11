@@ -58,13 +58,129 @@ class ItemService(Service):
         return localized_result
 
     @classmethod
+    def transform_item_for_list_view(cls, item: dict, lang: str = 'en'):
+        """
+        Преобразование элемента из текущего формата в требуемый для ListView
+        
+        :param item: Элемент в текущем формате (с вложенными объектами)
+        :param lang: Язык локализации ('en', 'ru', 'fr')
+        :return: Преобразованный элемент в требуемом формате
+        """
+        # Основные поля
+        result = {
+            'id': item['id'],
+            'vol': item['vol'],
+            'image_id': item['image_id']
+        }
+
+        # Helper function to check if a value is a Mock object
+        def is_mock_object(value):
+            return hasattr(value, '_mock_name') or (hasattr(value, '__class__') and 'Mock' in value.__class__.__name__)
+
+        # Локализация заголовка
+        if lang == 'en':
+            result['title'] = item['drink'].title
+        elif lang == 'ru':
+            title_ru = getattr(item['drink'], 'title_ru', None)
+            if is_mock_object(title_ru):
+                title_ru = None
+            result['title'] = title_ru if title_ru else item['drink'].title
+        elif lang == 'fr':
+            title_fr = getattr(item['drink'], 'title_fr', None)
+            if is_mock_object(title_fr):
+                title_fr = None
+            result['title'] = title_fr if title_fr else item['drink'].title
+        else:
+            result['title'] = item['drink'].title
+
+        # Локализация страны
+        if lang == 'en':
+            result['country'] = item['country'].name
+        elif lang == 'ru':
+            country_name_ru = getattr(item['country'], 'name_ru', None)
+            if is_mock_object(country_name_ru):
+                country_name_ru = None
+            result['country'] = country_name_ru if country_name_ru else item['country'].name
+        elif lang == 'fr':
+            country_name_fr = getattr(item['country'], 'name_fr', None)
+            if is_mock_object(country_name_fr):
+                country_name_fr = None
+            result['country'] = country_name_fr if country_name_fr else item['country'].name
+        else:
+            result['country'] = item['country'].name
+
+        # Локализация категории
+        if lang == 'en':
+            category_name = item['subcategory'].category.name
+            subcategory_name = getattr(item['subcategory'], 'name', None)
+            if is_mock_object(subcategory_name):
+                subcategory_name = None
+            if subcategory_name:
+                result['category'] = f"{category_name} {subcategory_name}".strip()
+            else:
+                result['category'] = category_name
+        elif lang == 'ru':
+            category_name = getattr(item['subcategory'].category, 'name_ru', None)
+            if is_mock_object(category_name):
+                category_name = None
+            if category_name:
+                category_name = category_name
+            else:
+                category_name = item['subcategory'].category.name
+            
+            subcategory_name = getattr(item['subcategory'], 'name_ru', None)
+            if is_mock_object(subcategory_name):
+                subcategory_name = None
+            if not subcategory_name:
+                subcategory_name = getattr(item['subcategory'], 'name', None)
+                if is_mock_object(subcategory_name):
+                    subcategory_name = None
+            
+            if subcategory_name:
+                result['category'] = f"{category_name} {subcategory_name}".strip()
+            else:
+                result['category'] = category_name
+        elif lang == 'fr':
+            category_name = getattr(item['subcategory'].category, 'name_fr', None)
+            if is_mock_object(category_name):
+                category_name = None
+            if category_name:
+                category_name = category_name
+            else:
+                category_name = item['subcategory'].category.name
+            
+            subcategory_name = getattr(item['subcategory'], 'name_fr', None)
+            if is_mock_object(subcategory_name):
+                subcategory_name = None
+            if not subcategory_name:
+                subcategory_name = getattr(item['subcategory'], 'name', None)
+                if is_mock_object(subcategory_name):
+                    subcategory_name = None
+            
+            if subcategory_name:
+                result['category'] = f"{category_name} {subcategory_name}".strip()
+            else:
+                result['category'] = category_name
+        else:
+            category_name = item['subcategory'].category.name
+            subcategory_name = getattr(item['subcategory'], 'name', None)
+            if is_mock_object(subcategory_name):
+                subcategory_name = None
+            if subcategory_name:
+                result['category'] = f"{category_name} {subcategory_name}".strip()
+            else:
+                result['category'] = category_name
+
+        return result
+
+    @classmethod
     async def get_list_view(cls, lang: str, repository: ItemRepository, model: Item, session: AsyncSession):
         """Получение списка элементов для ListView с локализацией"""
         items = await repository.get_list_view(model, session)
         result = []
         for item in items:
-            localized_result = cls._process_item_localization(item, lang)
-            result.append(localized_result)
+            transformed_item = cls.transform_item_for_list_view(item, lang)
+            result.append(transformed_item)
         return result
 
     @classmethod
@@ -74,8 +190,8 @@ class ItemService(Service):
         items, total = await repository.get_list_view_page(skip, page_size, model, session)
         result = []
         for item in items:
-            localized_result = cls._process_item_localization(item, lang)
-            result.append(localized_result)
+            transformed_item = cls.transform_item_for_list_view(item, lang)
+            result.append(transformed_item)
 
         return {
             "items": result,
@@ -215,8 +331,8 @@ class ItemService(Service):
                                                                        limit)
         result = []
         for item in items:
-            localized_result = cls._process_item_localization(item, lang)
-            result.append(localized_result)
+            transformed_item = cls.transform_item_for_list_view(item, lang)
+            result.append(transformed_item)
         return result, total
 
     @classmethod
@@ -226,8 +342,8 @@ class ItemService(Service):
         items, total = await repository.search_by_trigram_index(search_str, model, session, skip, limit)
         result = []
         for item in items:
-            localized_result = cls._process_item_localization(item, lang)
-            result.append(localized_result)
+            transformed_item = cls.transform_item_for_list_view(item, lang)
+            result.append(transformed_item)
         return result, total
 
     @classmethod

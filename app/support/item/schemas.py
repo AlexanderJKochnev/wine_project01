@@ -197,18 +197,8 @@ class ItemListView(BaseModel):
     image_id: Optional[str] = None  # Item.image_id
 
     title: str  # Item.drinks.title or Item.drinks.title_ru or Item.drinks.title_fr зависит от параметра lang в роуте
-    subcategory: str  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
+    category: str  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
     country: str  # Country.name or country.name_ru, or country.name_fr зависит от параметра lang в роуте
-
-    @model_validator(mode='after')
-    def clean_subcategory(self) -> 'ItemListView':
-        # Fix the issue where subcategory shows "Cognac None" instead of "Cognac"
-        if self.subcategory and "None" in self.subcategory:
-            # Replace "Cognac None" pattern with just the category part
-            parts = self.subcategory.split(" None")
-            if len(parts) > 0:
-                self.subcategory = parts[0]
-        return self
 
 
 class ItemDetailView(BaseModel):
