@@ -377,13 +377,18 @@ class ItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         ).join(Item.drink).where(
-            text(f"({search_expr.cast(String)} % :search_str)")
-        ).params(search_str=search_str)
+            search_expr.cast(String).ilike(f'%{search_str}%')
+        )
+        print('=============')
+        from sqlalchemy.dialects import postgresql
+        compiled = query.compile(dialect = postgresql.dialect())
+        print("SQL:", compiled.string)
+        # print("Params:", compiled.params)
 
         # Получаем общее количество записей
         count_query = select(func.count(Item.id)).join(Item.drink).where(
-            text(f"({search_expr.cast(String)} % :search_str)")
-        ).params(search_str=search_str)
+            search_expr.cast(String).ilike(f'%{search_str}%')
+        )  # .params(search_str=search_str)
         count_result = await session.execute(count_query)
         total = count_result.scalar()
 
