@@ -213,7 +213,7 @@ class ItemDetailView(BaseModel):
     title: str  # Item.drink.title or Item.drinks.title_ru or Item.drinks.title_fr
     subtitle: Optional[str] = None
     country: str  # Country.name or country.name_ru, or country.name_fr зависит от параметра lang в роуте
-    subcategory: Optional[str] = None  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
+    category: Optional[str] = None  # Item.drink.subcategoory.category.name + Item.drink.subcategoory.name
     sweetness: Optional[str] = None  # Item.drink.sweetness.name (_ru, _fr)
     recommendation: Optional[str] = None   # Drink.recommendation (_ru, _fr)
     madeof: Optional[str] = None  # Drink.madeof (_ru, _fr)

@@ -102,8 +102,6 @@ class ItemViewRouter:
         if not item:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
-        print(f'{type(item)=}')
-
         # Create ItemDetailView instance
         result = ItemDetailView(**item)
 

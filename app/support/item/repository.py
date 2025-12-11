@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Type, Tuple, Union
-from sqlalchemy import func, select, Select, or_, Row, literal_column
+from sqlalchemy import func, select, Select, or_, Row, literal_column, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
 from app.core.repositories.sqlalchemy_repository import Repository
@@ -16,6 +16,7 @@ from app.support.subcategory.model import Subcategory
 from app.support.category.model import Category
 from app.core.utils.alchemy_utils import ModelType, create_enum_conditions, create_search_conditions2
 from app.core.services.logger import logger
+
 
 # from app.core.config.database.db_noclass import get_db
 
@@ -217,6 +218,7 @@ class ItemRepository(Repository):
             'image_id': item.image_id,
             'title': item.drink.title,  # будет обработано в сервисе для нужного языка
             'drink': item.drink,
+            'description': item.drink.description,
             'country': item.drink.subregion.region.country,
             'subcategory': item.drink.subcategory,
             'sweetness': item.drink.sweetness
@@ -354,7 +356,7 @@ class ItemRepository(Repository):
     async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession,
                                       skip: int = None, limit: int = None):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        from sqlalchemy import func, text
+        # from sqlalchemy import func, text
 
         if search_str is None or search_str.strip() == '':
             # Если search_str пустой, возвращаем все записи с пагинацией
@@ -381,7 +383,7 @@ class ItemRepository(Repository):
         )
         print('=============')
         from sqlalchemy.dialects import postgresql
-        compiled = query.compile(dialect = postgresql.dialect())
+        compiled = query.compile(dialect=postgresql.dialect())
         print("SQL:", compiled.string)
         # print("Params:", compiled.params)
 

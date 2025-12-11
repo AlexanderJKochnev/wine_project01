@@ -61,7 +61,7 @@ class ItemService(Service):
     def transform_item_for_list_view(cls, item: dict, lang: str = 'en'):
         """
         Преобразование элемента из текущего формата в требуемый для ListView
-        
+
         :param item: Элемент в текущем формате (с вложенными объектами)
         :param lang: Язык локализации ('en', 'ru', 'fr')
         :return: Преобразованный элемент в требуемом формате
@@ -127,7 +127,7 @@ class ItemService(Service):
                 category_name = category_name
             else:
                 category_name = item['subcategory'].category.name
-            
+
             subcategory_name = getattr(item['subcategory'], 'name_ru', None)
             if is_mock_object(subcategory_name):
                 subcategory_name = None
@@ -135,7 +135,7 @@ class ItemService(Service):
                 subcategory_name = getattr(item['subcategory'], 'name', None)
                 if is_mock_object(subcategory_name):
                     subcategory_name = None
-            
+
             if subcategory_name:
                 result['category'] = f"{category_name} {subcategory_name}".strip()
             else:
@@ -148,7 +148,7 @@ class ItemService(Service):
                 category_name = category_name
             else:
                 category_name = item['subcategory'].category.name
-            
+
             subcategory_name = getattr(item['subcategory'], 'name_fr', None)
             if is_mock_object(subcategory_name):
                 subcategory_name = None
@@ -156,7 +156,7 @@ class ItemService(Service):
                 subcategory_name = getattr(item['subcategory'], 'name', None)
                 if is_mock_object(subcategory_name):
                     subcategory_name = None
-            
+
             if subcategory_name:
                 result['category'] = f"{category_name} {subcategory_name}".strip()
             else:
@@ -184,7 +184,8 @@ class ItemService(Service):
         return result
 
     @classmethod
-    async def get_list_view_page(cls, page: int, page_size: int, repository: ItemRepository, model: Item, session: AsyncSession, lang: str = 'en'):
+    async def get_list_view_page(cls, page: int, page_size: int, repository: ItemRepository, model: Item, session: AsyncSession,
+                                 lang: str = 'en'):
         """Получение списка элементов для ListView с пагинацией и локализацией"""
         skip = (page - 1) * page_size
         items, total = await repository.get_list_view_page(skip, page_size, model, session)
@@ -237,6 +238,9 @@ class ItemService(Service):
             'madeof': getattr(item['drink'], 'madeof', ''),
             'madeof_ru': getattr(item['drink'], 'madeof_ru', ''),
             'madeof_fr': getattr(item['drink'], 'madeof_fr', ''),
+            'description': getattr(item['drink'], 'description', ''),
+            'description_ru': getattr(item['drink'], 'description_ru', ''),
+            'description_fr': getattr(item['drink'], 'description_fr', ''),
         }
 
         # Handle varietals and pairing with localization (similar to drink schemas)
@@ -275,10 +279,11 @@ class ItemService(Service):
         # Применим функцию локализации
         localized_result = flatten_dict_with_localized_fields(
             localized_data,
-            ['title', 'subtitle', 'country', 'subcategory', 'sweetness', 'recommendation', 'madeof'],
+            ['title', 'subtitle', 'country', 'subcategory', 'description',
+             'sweetness', 'recommendation', 'madeof'],
             lang
         )
-
+        localized_result['category'] = localized_result.pop('subcategory', '')
         # Add varietal (renamed from varietals) and pairing after localization
         if varietal:
             localized_result['varietal'] = varietal
@@ -336,7 +341,7 @@ class ItemService(Service):
         return result, total
 
     @classmethod
-    async def search_by_trigram_index(cls, search_str: str, lang: str, repository: ItemRepository, model: Item, session: AsyncSession, 
+    async def search_by_trigram_index(cls, search_str: str, lang: str, repository: ItemRepository, model: Item, session: AsyncSession,
                                       skip: int = None, limit: int = None):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink с локализацией"""
         items, total = await repository.search_by_trigram_index(search_str, model, session, skip, limit)

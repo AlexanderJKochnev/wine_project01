@@ -18,7 +18,7 @@ interface ItemDetailResponse {
   title: string;
   subtitle: string;
   country: string;
-  subcategory: string;
+  category: string;
   sweetness: string;
   recommendation: string;
   madeof: string;

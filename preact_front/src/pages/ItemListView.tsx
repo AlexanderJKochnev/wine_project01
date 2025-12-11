@@ -172,7 +172,7 @@ export const ItemListView = () => {
                       {item.title}
                     </Link>
                   </td>
-                  <td>{item.subcategory}</td>
+                  <td>{item.category}</td>
                   <td>{item.vol ? `${item.vol} ml` : 'N/A'}</td>
                   <td>{item.price ? `€${item.price}` : 'N/A'}</td>
                   <td>{item.country}</td>
