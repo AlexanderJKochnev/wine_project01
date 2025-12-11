@@ -125,9 +125,9 @@ export const ItemDetailView = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Image in top-left corner, min 20% width and min 50% of content area height */}
-        <div className="lg:w-1/5 min-w-[20%] w-full">
+      <div className="flex flex-col lg:flex-row gap-6 detail-content-layout">
+        {/* Image section */}
+        <div className="lg:w-1/3 w-full">
           <div className="card bg-base-100 shadow-xl">
             <figure className="min-h-[50vh]">
               <ItemImage image_id={data.image_id} size="large" />
@@ -135,8 +135,47 @@ export const ItemDetailView = () => {
           </div>
         </div>
         
-        {/* Text content fills remaining space */}
-        <div className="flex-1 space-y-4 w-full">
+        {/* Parameters table section - only for large screens */}
+        <div className="lg:w-2/3 w-full hidden lg:block">
+          <div className="card bg-base-100 shadow">
+            <div className="card-body">
+              <table className="parameter-table">
+                <tbody>
+                  {nonEmptyFields.map(([key, value]) => {
+                    // Skip id and image_id as they are used elsewhere
+                    if (key === 'id' || key === 'image_id') return null;
+                    
+                    // Format the field name for display
+                    const displayName = key
+                      .split('_')
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ');
+
+                    return (
+                      <tr key={key}>
+                        <td className="param-label">{displayName}</td>
+                        <td className="param-value">
+                          {Array.isArray(value) ? (
+                            <ul className="list-disc pl-5">
+                              {value.map((item, index) => (
+                                <li key={index}>{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span>{value}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        {/* Parameters card section - only for mobile screens */}
+        <div className="w-full lg:hidden">
           {nonEmptyFields.map(([key, value]) => {
             // Skip id and image_id as they are used elsewhere
             if (key === 'id' || key === 'image_id') return null;
@@ -148,10 +187,10 @@ export const ItemDetailView = () => {
               .join(' ');
 
             return (
-              <div key={key} className="card bg-base-100 shadow">
+              <div key={key} className="card bg-base-100 shadow mb-4">
                 <div className="card-body">
-                  <h2 className="card-title">{displayName}</h2>
-                  <div>
+                  <h2 className="card-title param-label-mobile">{displayName}</h2>
+                  <div className="param-value-mobile">
                     {Array.isArray(value) ? (
                       <ul className="list-disc pl-5">
                         {value.map((item, index) => (
