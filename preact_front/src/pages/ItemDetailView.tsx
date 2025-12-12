@@ -109,9 +109,17 @@ export const ItemDetailView = () => {
   return (
     <div className="detail-view">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">
-          {data.title || 'Item Detail'}
-        </h1>
+        <div className="flex gap-2">
+          <button 
+            className="btn btn-outline"
+            onClick={() => window.history.back()}
+          >
+            Back
+          </button>
+          <h1 className="text-2xl font-bold">
+            {data.title || 'Item Detail'}
+          </h1>
+        </div>
         <div className="flex gap-2">
           <Link href={`/items/edit/${id}`} variant="link">
             Edit
@@ -126,17 +134,8 @@ export const ItemDetailView = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 detail-content-layout">
-        {/* Image section */}
-        <div className="lg:w-1/3 w-full">
-          <div className="card bg-base-100 shadow-xl">
-            <figure className="min-h-[50vh]">
-              <ItemImage image_id={data.image_id} size="large" />
-            </figure>
-          </div>
-        </div>
-        
         {/* Parameters table section - only for large screens */}
-        <div className="lg:w-2/3 w-full hidden lg:block">
+        <div className="lg:w-2/3 w-full lg:block">
           <div className="card bg-base-100 shadow">
             <div className="card-body">
               <table className="parameter-table">
@@ -171,6 +170,15 @@ export const ItemDetailView = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+        
+        {/* Image section */}
+        <div className="lg:w-1/3 w-full">
+          <div className="card bg-base-100 shadow-xl">
+            <figure className="min-h-[50vh]">
+              <ItemImage image_id={data.image_id} size="large" />
+            </figure>
           </div>
         </div>
         
