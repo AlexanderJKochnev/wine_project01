@@ -6,6 +6,7 @@ from fastapi import Depends, Query
 from typing import Optional
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
+from app.core.schemas.base import PaginatedResponse
 from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
 from app.support.parser import schemas
 from app.support.parser.service import RawdataService
@@ -270,17 +271,19 @@ class NameRouter(BaseRouter):
 
 
 class RawdataRouter(BaseRouter):
+
     def __init__(self):
         super().__init__(
             model=Rawdata,
             prefix="/rawdatas",
         )
+        self.paginated_response = PaginatedResponse[schemas.RawdataRead]
 
     def setup_routes(self):
-        super().setup_routes()
         self.router.add_api_route(
-            "/searchtfs", self.search_fts, methods=["GET"]
+            "/searchtfs", self.search_fts, methods=["GET"], response_model=self.paginated_response
         )
+        super().setup_routes()
 
     async def create(self, data: schemas.RawdataCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.RawdataCreateResponseSchema:

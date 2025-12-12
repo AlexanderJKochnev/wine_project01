@@ -1,48 +1,58 @@
-```
-# Compiled and build artifacts
-*.pyc
+```gitignore
+# Python
 __pycache__/
-*.o
-*.obj
-*.out
+*.py[cod]
+*$py.class
 *.so
-*.dll
-*.exe
-*.class
-*.a
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Dependencies
-.venv/
-venv/
-node_modules/
-.mypy_cache/
-.pytest_cache/
+# Coverage
 .coverage
-coverage/
+.coverage.*
 htmlcov/
-
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
+.coverage.xml
+.pytest_cache/
 
 # Environment
 .env
 .env.local
-*.env.*
+.env.*
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Editors
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*.tmp
 
-# Distribution / packaging
-dist/
-build/
-target/
-.gradle/
-
-# System files
+# OS
 .DS_Store
 Thumbs.db
 ```
+TODO.md
+migration_volume
+mongodb_data
+pg_data
+pg_dump
+upload_volume

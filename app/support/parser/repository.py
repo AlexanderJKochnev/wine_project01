@@ -1,6 +1,5 @@
 # app/support/parser/repository.py
-from typing import List, Optional
-from sqlalchemy.dialects import postgresql
+
 from sqlalchemy import func, select
 from sqlalchemy.sql.functions import count
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -93,11 +92,15 @@ class RawdataRepository(Repository):
         stmt = stmt.offset(skip).limit(limit)
 
         # ----- отладка -------
-        compiled_sql = stmt.compile(dialect=postgresql)
-        print("--- Сгенерированный SQL (без параметров) ---")
-        print(compiled_sql)
-        print("\n--- Сгенерированный SQL (с подставленными параметрами) ---")
-        print(compiled_sql.string)
+        try:
+            compiled = stmt.compile(
+                    dialect=postgresql.dialect(), compile_kwargs={"literal_binds": False}
+                    # чтобы подставить параметры как литералы
+                    )
+            print("--- Сгенерированный SQL с подставленными параметрами ---")
+            print(compiled)
+        except Exception as e:
+            print(f'отладка - ошибка компиляции {e}')
         #  ----- end -----
         count_stmt = select(count(model.id)).where(search_condition)
         total_count_result = await session.execute(count_stmt)
