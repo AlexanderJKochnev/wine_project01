@@ -310,7 +310,8 @@ class RawdataRouter(BaseRouter):
         skip = (page - 1) * page_size
         limit = page_size
         items, total = await RawdataService.search_fts(search_str, RawdataRepository, self.model, session, skip, limit)
-        return {
+        
+        result = {
             "items": items,
             "total": total,
             "page": page,
@@ -318,6 +319,9 @@ class RawdataRouter(BaseRouter):
             "has_next": 1 if skip + len(items) < total else 0,
             "has_prev": 1 if page > 1 else 0
         }
+        # Create proper PaginatedResponse with the correct schema
+        paginated_response = self.paginated_response(**result)
+        return paginated_response
 
 
 class ImageRouter(BaseRouter):

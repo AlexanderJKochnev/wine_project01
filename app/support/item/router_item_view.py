@@ -91,9 +91,9 @@ class ItemViewRouter:
         """Получить список элементов с пагинацией и локализацией"""
         service = ItemService()
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
-        # self.paginated_response
-
-        return result
+        # Create proper PaginatedResponse with ItemListView as generic type
+        paginated_response = self.paginated_response(**result)
+        return paginated_response
 
     async def get_detail(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
@@ -127,7 +127,7 @@ class ItemViewRouter:
             search, lang, ItemRepository, Item, session, skip, limit
         )
 
-        return {
+        result = {
             "items": items,
             "total": total,
             "page": page,
@@ -135,6 +135,9 @@ class ItemViewRouter:
             "has_next": skip + len(items) < total,
             "has_prev": page > 1
         }
+        # Create proper PaginatedResponse with ItemListView as generic type
+        paginated_response = self.paginated_response(**result)
+        return paginated_response
 
     async def search_by_trigram_index(self,
                                       lang: str = Path(..., description="Язык локализации"),
@@ -153,7 +156,7 @@ class ItemViewRouter:
             search_str, lang, ItemRepository, Item, session, skip, limit
         )
 
-        return {
+        result = {
             "items": items,
             "total": total,
             "page": page,
@@ -161,3 +164,6 @@ class ItemViewRouter:
             "has_next": 1 if skip + len(items) < total else 0,
             "has_prev": 1 if page > 1 else 0
         }
+        # Create proper PaginatedResponse with ItemListView as generic type
+        paginated_response = self.paginated_response(**result)
+        return paginated_response
