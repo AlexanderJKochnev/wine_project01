@@ -363,7 +363,12 @@ body {
 }
 
 .detail-content-layout {
+  display: flex;
+  /*grid-template-columns: 1fr min-content;*/
+  flex-direction: row;
   width: 100%;
+  gap: 24px;
+  /*flex-wrap: wrap;*/
 }
 
 .detail-image {
@@ -374,8 +379,29 @@ body {
   margin-bottom: 1rem;
 }
 
-.detail-content {
-  flex: 1;
+.flexible-block {
+    order: 2;
+    flex-grow: 1; /* Этот блок займет все оставшееся пространство */
+    /* Важно: минимальная ширина по умолчанию flex-элементов равна 0,
+       поэтому дополнительная настройка обычно не требуется. */
+}
+
+.fixed-block {
+    /* Ширина этого блока будет определяться его содержимым (изображением)
+       благодаря flex-basis: auto (по умолчанию). */
+    /* Можно добавить min-width, если содержимое может стать слишком маленьким */
+    order: 1;
+    min-width: 250px; /* Пример: минимальная ширина 200px */
+}
+
+.fixed-block figure {
+    margin: 0; /* Это гарантирует, что figure не добавит лишних отступов */
+}
+
+.fixed-block img {
+    max-width: 100%; /* Гарантирует, что изображение не вылезет за пределы fixed-block */
+    height: auto;    /* Сохраняет пропорции изображения при сжатии */
+    display: block;  /* Убирает возможные "паразитные" отступы снизу */
 }
 
 /* Parameter table styles */
@@ -522,6 +548,14 @@ body {
   .detail-image {
     max-width: 20%;
   }
+  .detail-content-layout {
+        grid-template-columns: 1fr;
+        /* flex-direction: row; /* Блоки располагаются вертикально на мобильных */
+    }
+   .fixed-block, .flexible-block {
+        width: 100%; /* Занимают всю ширину */
+    }
+
 }
 
 /* Responsive styles for mobile */
