@@ -871,3 +871,16 @@ def coalesce(*args):
     for x in args:
         if x is not None:
             return x
+
+
+def search_local(query_string: str) -> int:
+    """
+        определение языка текста
+        1 -  русский (кириллица)
+        2 - латиница
+    """
+
+    if re.search('[а-яА-Я]', query_string):
+        return 1
+    else:
+        return 2

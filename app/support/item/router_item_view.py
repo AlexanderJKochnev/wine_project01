@@ -116,7 +116,10 @@ class ItemViewRouter:
                                                        page_size: int = Query(
                                                            20, ge=1, le=100, description="Размер страницы"),
                                                        session: AsyncSession = Depends(get_db)):
-        """Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией"""
+        """
+            Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией
+            оатсется для совместимости (сравнить скорость поиска обычного (этого) и триграмм/FTS
+        """
         service = ItemService()
         skip = (page - 1) * page_size
         limit = page_size
@@ -136,7 +139,8 @@ class ItemViewRouter:
     async def search_by_trigram_index(self,
                                       lang: str = Path(..., description="Язык локализации"),
                                       search_str: str = Query(
-                                          None, description="Поисковый запрос (при отсутствии значения - выдает все записи)"),
+                                          None, description="Поисковый запрос "
+                                                            "(при отсутствии значения - выдает все записи)"),
                                       page: int = Query(1, ge=1, description="Номер страницы"),
                                       page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):

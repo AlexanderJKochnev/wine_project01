@@ -27,22 +27,6 @@ class ItemService(Service):
         """
         if fields_to_localize is None:
             fields_to_localize = ['title', 'country', 'subcategory']
-        # Подготовим данные для локализации
-        """localized_data = {
-            'id': item['id'],
-            'vol': item['vol'],
-            'image_id': item['image_id'],
-            'title': item['drink'].title,
-            'title_ru': getattr(item['drink'], 'title_ru', ''),
-            'title_fr': getattr(item['drink'], 'title_fr', ''),
-            'country': item['country'].name if item['country'] else '',
-            'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
-            'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
-            'subcategory': f"{item['subcategory'].category.name} {getattr(item['subcategory'], 'name', '')}",
-            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
-        }"""
-
         # Применим функцию локализации
         localized_result = flatten_dict_with_localized_fields(
             item,  # localized_data,
@@ -184,7 +168,8 @@ class ItemService(Service):
         return result
 
     @classmethod
-    async def get_list_view_page(cls, page: int, page_size: int, repository: ItemRepository, model: Item, session: AsyncSession,
+    async def get_list_view_page(cls, page: int, page_size: int,
+                                 repository: ItemRepository, model: Item, session: AsyncSession,
                                  lang: str = 'en'):
         """Получение списка элементов для ListView с пагинацией и локализацией"""
         skip = (page - 1) * page_size
@@ -341,7 +326,8 @@ class ItemService(Service):
         return result, total
 
     @classmethod
-    async def search_by_trigram_index(cls, search_str: str, lang: str, repository: ItemRepository, model: Item, session: AsyncSession,
+    async def search_by_trigram_index(cls, search_str: str, lang: str, repository: ItemRepository,
+                                      model: Item, session: AsyncSession,
                                       skip: int = None, limit: int = None):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink с локализацией"""
         items, total = await repository.search_by_trigram_index(search_str, model, session, skip, limit)
@@ -431,7 +417,6 @@ class ItemService(Service):
             for key, val in tmp.items():
                 print(f'{key}: {val}')
             localized_result = cls._process_item_localization(tmp, lang)
-            print('========================')
             for key, val in localized_result.items():
                 print(f'{key}:  {val}')
             result.append(localized_result)

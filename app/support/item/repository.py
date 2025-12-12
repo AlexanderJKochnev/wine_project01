@@ -381,13 +381,6 @@ class ItemRepository(Repository):
         ).join(Item.drink).where(
             search_expr.cast(String).ilike(f'%{search_str}%')
         )
-        print('=============')
-        from sqlalchemy.dialects import postgresql
-        compiled = query.compile(dialect=postgresql.dialect())
-        print("SQL:", compiled.string)
-        # print("Params:", compiled.params)
-
-        # Получаем общее количество записей
         count_query = select(func.count(Item.id)).join(Item.drink).where(
             search_expr.cast(String).ilike(f'%{search_str}%')
         )  # .params(search_str=search_str)

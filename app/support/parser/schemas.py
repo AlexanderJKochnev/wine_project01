@@ -1,6 +1,6 @@
 # app/support/parser/schemas.py
 from typing import Optional, Any, Dict
-from pydantic import Json
+from pydantic import Json, Field
 from app.core.schemas.base import (CreateResponse, DateSchema,
                                    BaseModel, PkSchema)
 # from app.core.schemas.image_mixin import ImageUrlMixin
@@ -178,20 +178,20 @@ class RawdataUpdate(BaseModel):
     # body_html: Optional[str] = None
     name_id: Optional[int] = None
     status_id: Optional[int] = 1
-    parsed_data: Optional[Json[Dict[str, Any]]] = None
+    metadata_json: Optional[Dict[str, Any]] = Field(default=None)
 
 
 class RawdataRead(PkSchema, DateSchema):
     name_id: int
     status_id: Optional[int] = 1
-    parsed_data: Optional[Json[Dict[str, Any]]] = None
+    metadata_json: Optional[Dict[str, Any]] = Field(default=None)
 
 
 class RawdataReadRelation(PkSchema, DateSchema):
     # body_html: Optional[str]
     name: NameRead
     status: StatusRead
-    parsed_data: Optional[Json[Dict[str, Any]]] = None
+    metadata_json: Optional[Dict[str, Any]] = Field(default=None)
 
 
 class ImageCreate(BaseModel):
