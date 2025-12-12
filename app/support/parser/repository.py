@@ -66,29 +66,30 @@ class RawdataRepository(Repository):
 
     @classmethod
     async def search_fts(cls, search_str: str, model: ModelType, session: AsyncSession,
-                         skip: int = None, limit: int = None) -> Optional[List[ModelType]]:
+                         skip: int = None, limit: int = None):
         """
              полнотекстовый поиск с постарничным выводом
         """
         if search_str is None or search_str.strip() == '':
             # Если search_str пустой, возвращаем все записи с пагинацией
-            return await cls.get_all(delta, skip, limit, model, session)
+            items, total = await cls.get_all(delta, skip, limit, model, session)
+            return items, total
         # определяем язык запроса
         lang = search_local(search_str)
         # строим поискковую строку
         match lang:
             case 1:
                 language = 'russian'
-                fts_column = Rawdata.fts_russian
+                fts_column = model.fts_russian
             case 2:
                 language = 'english'
-                fts_column = Rawdata.fts_english
+                fts_column = model.fts_english
             case _:
                 language = 'english'
-                fts_column = Rawdata.fts_english
+                fts_column = model.fts_english
         ts_query = func.to_tsquery(language, search_str)
         search_condition = fts_column.op('@@')(ts_query)
-        stmt = select(Rawdata).where(search_condition).order_by(Rawdata.id)
+        stmt = select(model).where(search_condition).order_by(model.id)
         stmt = stmt.offset(skip).limit(limit)
 
         # ----- отладка -------
@@ -98,11 +99,13 @@ class RawdataRepository(Repository):
         print("\n--- Сгенерированный SQL (с подставленными параметрами) ---")
         print(compiled_sql.string)
         #  ----- end -----
-        count_stmt = select(count(Rawdata.id)).where(search_condition)
-        total_count = session.execute(count_stmt).scalar() or 0
+        count_stmt = select(count(model.id)).where(search_condition)
+        total_count_result = await session.execute(count_stmt)
+        total_count = total_count_result.scalar() or 0
         if total_count == 0:
-            return [], 0
-        result = session.execute(stmt).scalars().all()
+            return [], total_count
+        result_result = await session.execute(stmt)
+        result = result_result.scalars().all()
         return result, total_count
 
 

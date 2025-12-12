@@ -304,11 +304,9 @@ class RawdataRouter(BaseRouter):
                          page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
                          session: AsyncSession = Depends(get_db)):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        service = RawdataService
-        repository = RawdataRepository
         skip = (page - 1) * page_size
         limit = page_size
-        items, total = await service.search_fts(search_str, repository, self.model, session, skip, limit)
+        items, total = await RawdataService.search_fts(search_str, RawdataRepository, self.model, session, skip, limit)
         return {
             "items": items,
             "total": total,
