@@ -1,7 +1,7 @@
 # app/core/routers/base.py
 
 import logging
-from typing import Any, List, Type, TypeVar, Optional
+from typing import Any, List, Type, TypeVar
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
@@ -241,8 +241,9 @@ class BaseRouter:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail="Internal server error")
 
-    async def search(self,
-                     search: Optional[str] = None,
+    async def search(self, search: str = Query(None, description="Поисковый запрос. "
+                                               "В случае пустого запроса будут "
+                                               "выведены все данные "),
                      page: int = Query(1, ge=1),
                      page_size: int = Query(paging.get('def', 20),
                                             ge=paging.get('min', 1),
@@ -252,23 +253,19 @@ class BaseRouter:
         """
             Поиск по всем текстовым полям основной таблицы
             с постраничным выводом результата
-            все аргументы кроме paging убрать в kwargs
         """
         kwargs: str = {'page': page, 'page_size': page_size}
         if search:
             kwargs['search_str'] = search
         return await self.service.search(self.repo, self.model, session, **kwargs)
-        # else:
-        #     return await self.get(after_date=datetime.now(timezone.utc) - relativedelta(years=2),
-        #                           page=page, page_size=page_size,
-        #                           session=session)
 
     async def search_all(self,
-                         search: str = Query(None),
+                         search: str = Query(None, description="Поисковый запрос. "
+                                             "В случае пустого запроса будут "
+                                             "выведены все данные "),
                          session: AsyncSession = Depends(get_db)) -> List[TReadSchema]:
         """
-            Поиск по всем текстовым полям основной таблицы
-            с постраничным выводом результата
+            Поиск по всем текстовым полям основной таблицы БЕЗ пагинации
         """
         kwargs: dict = {}
         if search:
@@ -280,6 +277,7 @@ class LightRouter:
     """
         минимальный роутер с зависимостями
     """
+
     def __init__(self, prefix: str):
         self.prefix = prefix
         self.tags = [prefix.replace('/', '')]

@@ -4,14 +4,13 @@ from sqlalchemy import select, and_
 import asyncio
 from fastapi import Depends, Query
 from typing import Optional
-from arq import create_pool
-from app.worker import redis_settings
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
 from app.support.parser.model import Code, Name, Image, Rawdata, Status, Registry
 from app.support.parser import schemas
+from app.support.parser.service import RawdataService
 from app.support.parser.orchestrator import ParserOrchestrator
-from app.support.parser.repository import StatusRepository
+from app.support.parser.repository import StatusRepository, RawdataRepository
 from app.core.config.database.db_async import AsyncSessionLocal
 
 background_tasks = set()  # чтобы ссылка не удалилась
@@ -170,7 +169,7 @@ class OrchestratorRouter(LightRouter):
             else:
                 # If completed status doesn't exist, we can't proceed
                 return {"error": "Completed status not found in database"}
-            
+
             query = select(Rawdata.id)
             query = query.where(and_(Rawdata.status_id != status_completed_id,
                                      Rawdata.body_html.isnot(None)))
@@ -277,6 +276,12 @@ class RawdataRouter(BaseRouter):
             prefix="/rawdatas",
         )
 
+    def setup_routes(self):
+        super().setup_routes()
+        self.router.add_api_route(
+            "/searchtfs", self.search_fts, methods=["GET"]
+        )
+
     async def create(self, data: schemas.RawdataCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.RawdataCreateResponseSchema:
         return await super().create(data, session)
@@ -289,8 +294,29 @@ class RawdataRouter(BaseRouter):
     async def create_relation(self, data: schemas.RawdataCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.RawdataRead:
         result = await super().create_relation(data, session)
-        print('=================', result)
         return result
+
+    async def search_fts(self,
+                         search_str: str = Query(
+                             None, description="Поисковый запрос "
+                             "(при отсутствии значения - выдает все записи)"),
+                         page: int = Query(1, ge=1, description="Номер страницы"),
+                         page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
+                         session: AsyncSession = Depends(get_db)):
+        """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
+        service = RawdataService
+        repository = RawdataRepository
+        skip = (page - 1) * page_size
+        limit = page_size
+        items, total = await service.search_fts(search_str, repository, self.model, session, skip, limit)
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": 1 if skip + len(items) < total else 0,
+            "has_prev": 1 if page > 1 else 0
+        }
 
 
 class ImageRouter(BaseRouter):

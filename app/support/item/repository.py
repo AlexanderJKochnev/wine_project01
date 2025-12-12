@@ -356,8 +356,6 @@ class ItemRepository(Repository):
     async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession,
                                       skip: int = None, limit: int = None):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        # from sqlalchemy import func, text
-
         if search_str is None or search_str.strip() == '':
             # Если search_str пустой, возвращаем все записи с пагинацией
             return await cls.get_list_view_page(skip, limit, model, session)

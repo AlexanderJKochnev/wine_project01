@@ -1,15 +1,17 @@
 # app.core.service/service.py
 from abc import ABCMeta
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Type, Tuple
+from typing import List, Optional, Tuple, Type
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.core.utils.alchemy_utils import get_models, parse_unique_violation2
-from app.service_registry import register_service
+
 from app.core.config.project_config import settings
+from app.core.repositories.sqlalchemy_repository import ModelType, Repository
+from app.core.utils.alchemy_utils import get_models
 from app.core.utils.common_utils import flatten_dict_with_localized_fields
+from app.service_registry import register_service
 
 joint = '. '
 
@@ -221,6 +223,9 @@ class Service(metaclass=ServiceMeta):
                      model: ModelType,
                      session: AsyncSession,
                      **kwargs) -> List[ModelType]:
+        """
+            базовый поиск
+        """
         paging = False
         if not kwargs:
             kwargs: dict = {}
@@ -230,9 +235,8 @@ class Service(metaclass=ServiceMeta):
                 skip = (kwargs.pop('page') - 1) * limit
                 kwargs['limit'], kwargs['skip'] = limit, skip
                 paging = True
-        items, total = await repository.search(model, session, **kwargs)
-        # items, total = await repository.search_in_main_table(filter, model, session, skip, page_size)
         if paging:
+            items, total = await repository.search(model, session, **kwargs)
             result = {"items": items,
                       "total": total,
                       "page": skip,
@@ -240,18 +244,8 @@ class Service(metaclass=ServiceMeta):
                       "has_next": skip + len(items) < total,
                       "has_prev": skip > 1}
         else:
-            result = items
+            result = await repository.search(model, session, **kwargs)
         return result
-
-    @classmethod
-    async def search_all(cls,
-                         filter: str,
-                         repository: Type[Repository],
-                         model: ModelType,
-                         session: AsyncSession,
-                         **kwargs) -> List[ModelType]:
-        items, _ = await repository.search(model, session, **kwargs)
-        return items
 
     @classmethod
     async def get_list_view_page(cls, page: int, page_size: int,

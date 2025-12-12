@@ -124,6 +124,18 @@ class RawdataService(Service):
 
         return result
 
+    @classmethod
+    async def search_fts(
+            cls, search_str: str, repository: repo.RawdataRepository,
+            model: mode.Rawdata, session: AsyncSession,
+            skip: int = None, limit: int = None
+    ):
+        """
+            Поиск элементов с использованием полнотекстового индекса
+        """
+        items, total = await repository.search_fts(search_str, model, session, skip, limit)
+        return items, total
+
 
 class StatusService(Service):
     default = ['status']
