@@ -1,29 +1,3 @@
-```gitignore
-# Dependencies
-node_modules/
+```ts
 
-# Build outputs
-dist/
-build/
-*.js
-*.ts
-*.tsx
-*.css
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment variables
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# OS generated files
-.DS_Store
-Thumbs.db
 ```

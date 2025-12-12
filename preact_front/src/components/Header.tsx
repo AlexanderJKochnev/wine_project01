@@ -38,7 +38,11 @@ export const Header = ({ sidebarVisible, setSidebarVisible }: HeaderProps) => {
   };
 
   const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
+    if (typeof setSidebarVisible === 'function') {
+      setSidebarVisible(!sidebarVisible);
+    } else {
+      console.error('setSidebarVisible is not a function:', typeof setSidebarVisible);
+    }
   };
 
   return (
