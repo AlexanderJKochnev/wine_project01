@@ -92,7 +92,6 @@ class Rawdata(Base, BaseAt):
     # 1. Вычисляемый столбец для русского FTS
     # Используем sa.Computed() с прямым SQL выражением
 
-    """
     fts_russian: Mapped[str] = mapped_column(TSVECTOR,
                                              Computed(
                                                  text("jsonb_to_tsvector('russian', metadata_json, '[\"string\"]')"),
@@ -115,7 +114,6 @@ class Rawdata(Base, BaseAt):
     ), Index(
         'idx_products_fts_english', fts_english, postgresql_using='gin'
     ),)
-    """
 
     def __str__(self):
         return str(self.name_id) or ""
