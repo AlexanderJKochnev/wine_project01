@@ -8,14 +8,14 @@ import { useNotification } from '../hooks/useNotification';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export const HandbookDetail = () => {
-  const { path } = useLocation();
+  const { path, route } = useLocation();
   const pathParts = path.split('/');
   const type = pathParts[2];
   const idParam = pathParts[3];
   const id = parseInt(idParam);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { showNotification } = useNotification();
-  
+
   // Check if ID is valid
   if (isNaN(id)) {
     return (
@@ -26,9 +26,9 @@ export const HandbookDetail = () => {
       </div>
     );
   }
-  
+
   const { language } = useLanguage();
-  
+
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
     const endpoints: Record<string, string> = {
@@ -117,11 +117,17 @@ export const HandbookDetail = () => {
           <Link href={`/handbooks/${type}/edit/${id}`} variant="warning">
             Edit
           </Link>
-          <button 
+          <button
             className="btn btn-error"
             onClick={() => setShowConfirmDialog(true)}
           >
             Delete
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => route(`/handbooks/${type}`)}
+          >
+            Back
           </button>
         </div>
       </div>
@@ -134,7 +140,7 @@ export const HandbookDetail = () => {
               <span className="font-semibold w-32">ID:</span>
               <span>{data.id}</span>
             </div>
-            
+
             {/* Try to display name in different languages if available */}
             {data.name && (
               <div className="flex">
@@ -142,56 +148,56 @@ export const HandbookDetail = () => {
                 <span>{data.name}</span>
               </div>
             )}
-            
+
             {data.name_en && (
               <div className="flex">
                 <span className="font-semibold w-32">Name (EN):</span>
                 <span>{data.name_en}</span>
               </div>
             )}
-            
+
             {data.name_ru && (
               <div className="flex">
                 <span className="font-semibold w-32">Name (RU):</span>
                 <span>{data.name_ru}</span>
               </div>
             )}
-            
+
             {data.name_fr && (
               <div className="flex">
                 <span className="font-semibold w-32">Name (FR):</span>
                 <span>{data.name_fr}</span>
               </div>
             )}
-            
+
             {data.description && (
               <div className="flex">
                 <span className="font-semibold w-32">Description:</span>
                 <span>{data.description}</span>
               </div>
             )}
-            
+
             {data.description_en && (
               <div className="flex">
                 <span className="font-semibold w-32">Description (EN):</span>
                 <span>{data.description_en}</span>
               </div>
             )}
-            
+
             {data.description_ru && (
               <div className="flex">
                 <span className="font-semibold w-32">Description (RU):</span>
                 <span>{data.description_ru}</span>
               </div>
             )}
-            
+
             {data.description_fr && (
               <div className="flex">
                 <span className="font-semibold w-32">Description (FR):</span>
                 <span>{data.description_fr}</span>
               </div>
             )}
-            
+
             {/* Add any other common fields */}
             {data.code && (
               <div className="flex">
@@ -199,7 +205,7 @@ export const HandbookDetail = () => {
                 <span>{data.code}</span>
               </div>
             )}
-            
+
             {data.value && (
               <div className="flex">
                 <span className="font-semibold w-32">Value:</span>
@@ -210,12 +216,6 @@ export const HandbookDetail = () => {
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <Link href={`/handbooks/${type}`} variant="ghost">
-          ← Back to {getReadableName(type)} List
-        </Link>
-      </div>
-
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="modal modal-open">
@@ -223,13 +223,13 @@ export const HandbookDetail = () => {
             <h3 className="font-bold text-lg">Confirm Delete</h3>
             <p className="py-4">Are you sure you want to delete this {getReadableName(type).toLowerCase()}?</p>
             <div className="modal-action">
-              <button 
+              <button
                 className="btn btn-error"
                 onClick={handleDelete}
               >
                 Yes, Delete
               </button>
-              <button 
+              <button
                 className="btn"
                 onClick={() => setShowConfirmDialog(false)}
               >
