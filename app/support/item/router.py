@@ -86,7 +86,9 @@ class ItemRouter(BaseRouter):
         """Получить список элементов с пагинацией и локализацией"""
         service = ItemService()
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session)
-        return result
+        # Create proper PaginatedResponse with ItemListView as generic type
+        paginated_response = PaginatedResponse[ItemListView](**result)
+        return paginated_response
 
     async def get_detail_view(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
@@ -183,7 +185,7 @@ class ItemRouter(BaseRouter):
                      page_size: int = Query(paging.get('def', 20),
                                             ge=paging.get('min', 1),
                                             le=paging.get('max', 1000)),
-                     session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+                     session: AsyncSession = Depends(get_db)):
         """
             Поиск по всем текстовым полям основной таблицы
             с постраничным выводом результата
@@ -195,14 +197,17 @@ class ItemRouter(BaseRouter):
             kwargs['country_enum'] = country_enum
         if category_enum:
             kwargs['category_enum'] = category_enum
-        return await self.service.search(self.repo, self.model, session,
+        result = await self.service.search(self.repo, self.model, session,
                                          **kwargs)
+        # Create proper PaginatedResponse with the correct schema
+        paginated_response = self.paginated_response(**result)
+        return paginated_response
 
     async def search_all(self,
                          search: Optional[str] = None,
                          country_enum: Optional[str] = None,
                          category_enum: Optional[str] = None,
-                         session: AsyncSession = Depends(get_db)) -> PaginatedResponse:
+                         session: AsyncSession = Depends(get_db)):
         """
             Поиск по всем текстовым полям основной таблицы
             с постраничным выводом результата
@@ -214,5 +219,8 @@ class ItemRouter(BaseRouter):
             kwargs['country_enum'] = country_enum
         if category_enum:
             kwargs['category_enum'] = category_enum
-        return await self.service.search(self.repo, self.model, session,
+        result = await self.service.search(self.repo, self.model, session,
                                          **kwargs)
+        # Create proper PaginatedResponse with the correct schema
+        paginated_response = self.paginated_response(**result)
+        return paginated_response
