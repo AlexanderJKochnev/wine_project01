@@ -3,7 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.sql.functions import count
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from app.core.routers.base import delta
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.support.parser.model import Code, Image, Name, Rawdata, Registry, Status
@@ -54,6 +54,7 @@ class ImageRepository(Repository):
 class RawdataRepository(Repository):
     model = Rawdata
 
+    """
     @classmethod
     def get_query(cls, model: ModelType):
         # Добавляем загрузку связи с relationships
@@ -61,7 +62,8 @@ class RawdataRepository(Repository):
                                      .options(selectinload(Name.status),
                                               selectinload(Name.code)
                                               .selectinload(Code.status)),
-                                     selectinload(Rawdata.status))  # Свой статус
+                                     joinedload(Rawdata.status))  # Свой статус
+    """
 
     @classmethod
     async def search_fts(cls, search_str: str, model: ModelType, session: AsyncSession,

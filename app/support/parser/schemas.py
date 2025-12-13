@@ -187,11 +187,13 @@ class RawdataRead(PkSchema, DateSchema):
     metadata_json: Optional[Dict[str, Any]] = Field(default=None)
 
 
+"""
 class RawdataReadRelation(PkSchema, DateSchema):
     # body_html: Optional[str]
     name: NameRead
     status: StatusRead
     metadata_json: Optional[Dict[str, Any]] = Field(default=None)
+"""
 
 
 class ImageCreate(BaseModel):
