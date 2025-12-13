@@ -92,18 +92,20 @@ class Rawdata(Base, BaseAt):
     # 1. Вычисляемый столбец для русского FTS
     # Используем sa.Computed() с прямым SQL выражением
     fts_russian: Mapped[str] = mapped_column(TSVECTOR,
-        Computed(
-            text("jsonb_to_tsvector('russian', metadata_json, '[\"string\"]')"), persisted=True
-            # Важно: сохраняет (STORED) результат в БД, а не вычисляет на лету
-        )
-    )
+                                             Computed(
+                                                 text("jsonb_to_tsvector('russian', metadata_json, '[\"string\"]')"),
+                                                 persisted=True
+                                                 # Важно: сохраняет (STORED) результат в БД, а не вычисляет на лету
+                                             ), nullable=True
+                                             )
 
     # 2. Вычисляемый столбец для английского FTS
     fts_english: Mapped[str] = mapped_column(TSVECTOR,
-        Computed(
-            text("jsonb_to_tsvector('english', metadata_json, '[\"string\"]')"), persisted=True
-        )
-    )
+                                             Computed(
+                                                 text("jsonb_to_tsvector('english', metadata_json, '[\"string\"]')"),
+                                                 persisted=True
+                                             ), nullable=True
+                                             )
 
     # 3. Создание GIN-индексов прямо в модели через __table_args__
     __table_args__ = (Index(

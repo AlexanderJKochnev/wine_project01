@@ -90,18 +90,6 @@ class RawdataRepository(Repository):
         search_condition = fts_column.op('@@')(ts_query)
         stmt = select(model).where(search_condition).order_by(model.id)
         stmt = stmt.offset(skip).limit(limit)
-
-        # ----- отладка -------
-        try:
-            compiled = stmt.compile(
-                    dialect=postgresql.dialect(), compile_kwargs={"literal_binds": False}
-                    # чтобы подставить параметры как литералы
-                    )
-            print("--- Сгенерированный SQL с подставленными параметрами ---")
-            print(compiled)
-        except Exception as e:
-            print(f'отладка - ошибка компиляции {e}')
-        #  ----- end -----
         count_stmt = select(count(model.id)).where(search_condition)
         total_count_result = await session.execute(count_stmt)
         total_count = total_count_result.scalar() or 0
