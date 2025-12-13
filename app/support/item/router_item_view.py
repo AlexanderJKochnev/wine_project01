@@ -31,7 +31,7 @@ class ItemViewRouter:
             "/list/{lang}",
             self.get_list,
             methods=["GET"],
-            # response_model=List[ItemListView],
+            response_model=List[ItemListView],
             tags=self.tags,
             summary="Получить список элементов с локализацией"
         )
@@ -41,7 +41,7 @@ class ItemViewRouter:
             "/list_paginated/{lang}",
             self.get_list_paginated,
             methods=["GET"],
-            # response_model=PaginatedResponse[ItemListView],
+            response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
             summary="Получить список элементов с пагинацией и локализацией"
         )
@@ -61,7 +61,7 @@ class ItemViewRouter:
             "/search_by_drink/{lang}",
             self.search_by_drink_title_subtitle_paginated,
             methods=["GET"],
-            # response_model=PaginatedResponse[ItemListView],
+            response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
             summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
         )
@@ -121,20 +121,10 @@ class ItemViewRouter:
             оатсется для совместимости (сравнить скорость поиска обычного (этого) и триграмм/FTS
         """
         service = ItemService()
-        skip = (page - 1) * page_size
-        limit = page_size
-        items, total = await service.search_by_drink_title_subtitle(
-            search, lang, ItemRepository, Item, session, skip, limit
+        result = await service.search_by_drink_title_subtitle(
+            search, lang, ItemRepository, Item, session, page, page_size
         )
-
-        return {
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "has_next": skip + len(items) < total,
-            "has_prev": page > 1
-        }
+        return result
 
     async def search_by_trigram_index(self,
                                       lang: str = Path(..., description="Язык локализации"),
@@ -146,18 +136,8 @@ class ItemViewRouter:
                                       session: AsyncSession = Depends(get_db)):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
         service = ItemService()
-        skip = (page - 1) * page_size
-        limit = page_size
-
-        items, total = await service.search_by_trigram_index(
-            search_str, lang, ItemRepository, Item, session, skip, limit
+        result = await service.search_by_trigram_index(
+            search_str, lang, ItemRepository, Item, session, page, page_size
         )
 
-        return {
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "has_next": 1 if skip + len(items) < total else 0,
-            "has_prev": 1 if page > 1 else 0
-        }
+        return result

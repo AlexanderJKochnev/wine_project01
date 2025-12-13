@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.services.service import Service
 from app.core.utils.common_utils import flatten_dict_with_localized_fields, get_value, jprint  # noqa: F401
 from app.core.utils.converters import read_convert_json
+from app.core.utils.pydantic_utils import make_paginated_response
 from app.mongodb.service import ThumbnailImageService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
@@ -178,15 +179,7 @@ class ItemService(Service):
         for item in items:
             transformed_item = cls.transform_item_for_list_view(item, lang)
             result.append(transformed_item)
-
-        return {
-            "items": result,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "has_next": skip + len(items) < total,
-            "has_prev": page > 1
-        }
+        return make_paginated_response(result, total, page, page_size)
 
     @classmethod
     async def get_detail_view(cls, lang: str, id: int, repository: ItemRepository, model: Item, session: AsyncSession):
@@ -212,8 +205,8 @@ class ItemService(Service):
             'country_ru': getattr(item['country'], 'name_ru', '') if item['country'] else '',
             'country_fr': getattr(item['country'], 'name_fr', '') if item['country'] else '',
             'subcategory': f"{item['subcategory'].category.name} {item['subcategory'].name}",
-            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',
-            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',
+            'subcategory_ru': f"{getattr(item['subcategory'].category, 'name_ru', '')} {getattr(item['subcategory'], 'name_ru', '')}" if (getattr(item['subcategory'].category, 'name_ru', None) and getattr(item['subcategory'], 'name_ru', None)) else '',  # NOQA: E501
+            'subcategory_fr': f"{getattr(item['subcategory'].category, 'name_fr', '')} {getattr(item['subcategory'], 'name_fr', '')}" if (getattr(item['subcategory'].category, 'name_fr', None) and getattr(item['subcategory'], 'name_fr', None)) else '',  # NOQA: E501
             'sweetness': getattr(item['sweetness'], 'name', '') if item['sweetness'] else '',
             'sweetness_ru': getattr(item['sweetness'], 'name_ru', '') if item['sweetness'] else '',
             'sweetness_fr': getattr(item['sweetness'], 'name_fr', '') if item['sweetness'] else '',
@@ -313,29 +306,31 @@ class ItemService(Service):
     async def search_by_drink_title_subtitle(cls, search_str: str, lang: str,
                                              repository: ItemRepository, model: Item,
                                              session: AsyncSession,
-                                             skip: int = None, limit: int = None):
+                                             page: int = None, page_size: int = None):
         """Поиск элементов по полям title* и subtitle* связанной модели Drink с локализацией"""
+        skip = (page - 1) * page_size
         items, total = await repository.search_by_drink_title_subtitle(search_str,
                                                                        session,
                                                                        skip,
-                                                                       limit)
+                                                                       page_size)
         result = []
         for item in items:
             transformed_item = cls.transform_item_for_list_view(item, lang)
             result.append(transformed_item)
-        return result, total
+        return make_paginated_response(result, total, page, page_size)
 
     @classmethod
     async def search_by_trigram_index(cls, search_str: str, lang: str, repository: ItemRepository,
                                       model: Item, session: AsyncSession,
-                                      skip: int = None, limit: int = None):
+                                      page: int = None, page_size: int = None):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink с локализацией"""
-        items, total = await repository.search_by_trigram_index(search_str, model, session, skip, limit)
+        skip = (page - 1) * page_size
+        items, total = await repository.search_by_trigram_index(search_str, model, session, skip, page_size)
         result = []
         for item in items:
             transformed_item = cls.transform_item_for_list_view(item, lang)
             result.append(transformed_item)
-        return result, total
+        return make_paginated_response(result, total, page, page_size)
 
     @classmethod
     async def direct_upload(cls, file_name: dict, session: AsyncSession, image_service: ThumbnailImageService) -> dict:
@@ -420,10 +415,4 @@ class ItemService(Service):
             for key, val in localized_result.items():
                 print(f'{key}:  {val}')
             result.append(localized_result)
-        skip = (page - 1) * page_size
-        return {"items": result,
-                "total": total,
-                "page": page,
-                "page_size": page_size,
-                "has_next": skip + len(items) < total,
-                "has_prev": page > 1}
+        return make_paginated_response(result, total, page, page_size)
