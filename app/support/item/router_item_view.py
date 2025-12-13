@@ -41,7 +41,7 @@ class ItemViewRouter:
             "/list_paginated/{lang}",
             self.get_list_paginated,
             methods=["GET"],
-            # response_model=PaginatedResponse[ItemListView],
+            response_model=self.paginated_response,
             tags=self.tags,
             summary="Получить список элементов с пагинацией и локализацией"
         )
@@ -61,7 +61,7 @@ class ItemViewRouter:
             "/search_by_drink/{lang}",
             self.search_by_drink_title_subtitle_paginated,
             methods=["GET"],
-            # response_model=PaginatedResponse[ItemListView],
+            response_model=self.paginated_response,
             tags=self.tags,
             summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
         )
@@ -91,9 +91,9 @@ class ItemViewRouter:
         """Получить список элементов с пагинацией и локализацией"""
         service = ItemService()
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
-        # self.paginated_response
-
-        return result
+        paginated_result = self.paginated_response(**result)
+        
+        return paginated_result
 
     async def get_detail(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
@@ -127,7 +127,7 @@ class ItemViewRouter:
             search, lang, ItemRepository, Item, session, skip, limit
         )
 
-        return {
+        result = {
             "items": items,
             "total": total,
             "page": page,
@@ -135,6 +135,9 @@ class ItemViewRouter:
             "has_next": skip + len(items) < total,
             "has_prev": page > 1
         }
+        paginated_result = self.paginated_response(**result)
+        
+        return paginated_result
 
     async def search_by_trigram_index(self,
                                       lang: str = Path(..., description="Язык локализации"),
@@ -153,11 +156,14 @@ class ItemViewRouter:
             search_str, lang, ItemRepository, Item, session, skip, limit
         )
 
-        return {
+        result = {
             "items": items,
             "total": total,
             "page": page,
             "page_size": page_size,
-            "has_next": 1 if skip + len(items) < total else 0,
-            "has_prev": 1 if page > 1 else 0
+            "has_next": skip + len(items) < total,
+            "has_prev": page > 1
         }
+        paginated_result = self.paginated_response(**result)
+        
+        return paginated_result
