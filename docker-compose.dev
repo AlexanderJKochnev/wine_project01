@@ -151,6 +151,100 @@ services:
           cpus: '0.5'
           memory: 512M
   
+  redis:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
+    image: redis:7-alpine
+    container_name: ${REDIS_HOST}
+    restart: unless-stopped
+    expose:
+      - "${REDIS_PORT}"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+  
+  arq-worker:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
+    build: .
+    container_name: arq-worker
+    working_dir: /app
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      BASE_URL: ${BASE_URL}
+      PYTHONPATH: /app         # ← путь к корню пакета
+    # command: arq app.arq_worker.WorkerSettings
+    depends_on:
+      wine_host:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  arq-worker-rawdata:
+    # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Максимальный размер файла лога: 10 МБ
+        max-file: "3"     # Количество хранимых файлов ротации: 3
+    # -----------------------------
+    build: .
+    container_name: arq-worker-rawdata
+    working_dir: /app
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      BASE_URL: ${BASE_URL}
+      PYTHONPATH: /app         # ← путь к корню пакета
+    # command: arq app.rawdata_arq_worker.RawdataWorkerSettings
+    depends_on:
+      wine_host:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    restart: no
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+  
   mongo-express:
     # --- НАСТРОЙКИ ЛОГИРОВАНИЯ ---
     logging:

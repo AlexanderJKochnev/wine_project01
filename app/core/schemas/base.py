@@ -167,6 +167,7 @@ class CreateResponse(PkSchema, DateSchema):
 class PaginatedResponse(BaseOrigin, Generic[T]):
     """
     использовать в endpoints - вместо Generic[T] подствлять <model>Read
+    
     """
     items: List[T]
     total: Optional[int] = None

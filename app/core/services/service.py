@@ -11,6 +11,7 @@ from app.core.config.project_config import settings
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models
 from app.core.utils.common_utils import flatten_dict_with_localized_fields
+from app.core.utils.pydantic_utils import make_paginated_response
 from app.service_registry import register_service
 
 joint = '. '
@@ -139,12 +140,15 @@ class Service(metaclass=ServiceMeta):
         # Запрос с загрузкой связей и пагинацией
         skip = (page - 1) * page_size
         items, total = await repository.get_all(ater_date, skip, page_size, model, session)
-        result = {"items": items,
+        """
+            result = {"items": items,
                   "total": total,
                   "page": page,
                   "page_size": page_size,
                   "has_next": skip + len(items) < total,
                   "has_prev": page > 1}
+        """
+        result = make_paginated_response(items, total, page, page_size)
         return result
 
     @classmethod

@@ -1,7 +1,7 @@
 # app/core/utils/pydantic_utils.py
 # from pydantic import create_model, BaseModel
 from decimal import Decimal
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Type, Union, Dict, Any
 
 from pydantic import BaseModel, create_model
 from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
@@ -134,6 +134,22 @@ def _get_python_type(sql_type: TypeEngine) -> type:
 
     # По умолчанию - str (на случай неизвестных типов)
     return str
+
+
+def make_paginated_response(items: List[Any], total: int,
+                            page: int, page_size: int) -> Dict[str, Any]:
+    """
+        make paginated response based of PaginatedResponse & Read Schema
+        see app.core.schemas.base.PaginatedResponse
+        :return:  Dict[str, Any]
+    """
+    return {"items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page - 1) * page_size + len(items) < total,
+            "has_prev": page > 1
+            }
 
 
 class PyUtils:
