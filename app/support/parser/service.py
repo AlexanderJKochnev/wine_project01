@@ -9,6 +9,7 @@ from app.support.parser import schemas
 from app.support.parser import repository as repo
 from app.support.parser import model as mode
 from app.core.config.database.db_async import get_db
+from app.core.utils.pydantic_utils import make_paginated_response
 
 
 class RegistryService(Service):
@@ -128,13 +129,14 @@ class RawdataService(Service):
     async def search_fts(
             cls, search_str: str, repository: repo.RawdataRepository,
             model: mode.Rawdata, session: AsyncSession,
-            skip: int = None, limit: int = None
+            page: int = None, page_size: int = None
     ):
         """
             Поиск элементов с использованием полнотекстового индекса
         """
-        items, total = await repository.search_fts(search_str, model, session, skip, limit)
-        return items, total
+        skip = (page - 1) * page_size
+        items, total = await repository.search_fts(search_str, model, session, skip, page_size)
+        return make_paginated_response(items, total, page, page_size)
 
 
 class StatusService(Service):

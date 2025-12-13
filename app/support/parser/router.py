@@ -1,8 +1,9 @@
 # app/support/parser/router.py
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import ValidationError
 from sqlalchemy import select, and_
 import asyncio
-from fastapi import Depends, Query
+from fastapi import Depends, Query, HTTPException
 from typing import Optional
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
@@ -13,6 +14,7 @@ from app.support.parser.service import RawdataService
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.repository import StatusRepository, RawdataRepository
 from app.core.config.database.db_async import AsyncSessionLocal
+from app.core.utils.exception_handler import ValidationError_handler
 
 background_tasks = set()  # чтобы ссылка не удалилась
 
@@ -277,11 +279,12 @@ class RawdataRouter(BaseRouter):
             model=Rawdata,
             prefix="/rawdatas",
         )
-        self.paginated_response = PaginatedResponse[schemas.RawdataRead]
 
     def setup_routes(self):
         self.router.add_api_route(
-            "/searchtfs", self.search_fts, methods=["GET"], response_model=self.paginated_response
+            "/searchtfs",
+            self.search_fts, methods=["GET"],
+            response_model=PaginatedResponse[schemas.RawdataRead]
         )
         super().setup_routes()
 
@@ -305,19 +308,16 @@ class RawdataRouter(BaseRouter):
                              "(при отсутствии значения - выдает все записи)"),
                          page: int = Query(1, ge=1, description="Номер страницы"),
                          page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
-                         session: AsyncSession = Depends(get_db)):
+                         session: AsyncSession = Depends(get_db)) -> PaginatedResponse[schemas.RawdataRead]:
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        skip = (page - 1) * page_size
-        limit = page_size
-        items, total = await RawdataService.search_fts(search_str, RawdataRepository, self.model, session, skip, limit)
-        return {
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "has_next": 1 if skip + len(items) < total else 0,
-            "has_prev": 1 if page > 1 else 0
-        }
+        try:
+            result = await RawdataService.search_fts(search_str,
+                                                     RawdataRepository,
+                                                     self.model, session, page, page_size)
+            return result
+        except ValidationError as exc:
+            err = ValidationError_handler(exc)
+            raise HTTPException(status_code=422, detail=err)
 
 
 class ImageRouter(BaseRouter):
