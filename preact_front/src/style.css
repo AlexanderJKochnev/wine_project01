@@ -162,7 +162,7 @@ body {
   flex: 1;
   min-height: 80vh;
   width: 100%;
-  flex-direction: row-reverse; /* Put navbar on the right */
+  flex-direction: row; /* Put navbar on the right */
 }
 
 /* On mobile, when navbar is hidden, content should take full width */
