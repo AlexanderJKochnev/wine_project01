@@ -130,15 +130,16 @@ export const HandbookUpdateForm = () => {
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
     const endpoints: Record<string, string> = {
-      'categories': `/update/categories/${id}`,
-      'countries': `/update/countries/${id}`,
-      'subcategories': `/update/subcategories/${id}`,
-      'subregions': `/update/subregions/${id}`,
-      'sweetness': `/update/sweetness/${id}`,
-      'foods': `/update/foods/${id}`,
-      'varietals': `/update/varietals/${id}`,
+      'categories': `/patch/categories/${id}`,
+      'countries': `/patch/countries/${id}`,
+      'subcategories': `/patch/subcategories/${id}`,
+      'subregions': `/patch/subregions/${id}`,
+      'sweetness': `/patch/sweetness/${id}`,
+      'foods': `/patch/foods/${id}`,
+      'varietals': `/patch/varietals/${id}`,
+      'regions': `/patch/regions/${id}`,
     };
-    return endpoints[type] || `/update/${type}/${id}`;
+    return endpoints[type] || `/patch/${type}/${id}`;
   };
 
   const handleSubmit = async (e: Event) => {
