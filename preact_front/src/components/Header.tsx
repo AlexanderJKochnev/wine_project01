@@ -105,7 +105,11 @@ export const Header = ({ sidebarVisible, setSidebarVisible }: HeaderProps) => {
           <div className="relative">
             <select 
               value={currentLang} 
-              onChange={(e) => handleLangChange(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleLangChange(e.target.value);
+              }}
               className="btn btn-ghost bg-transparent border-none"
             >
               {languages.map(lang => (
