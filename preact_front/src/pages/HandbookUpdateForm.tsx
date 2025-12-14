@@ -49,11 +49,11 @@ export const HandbookUpdateForm = () => {
 
   // Additional API calls for dropdowns based on the model type
   const { data: countriesData, loading: loadingCountries } = useApi<any[]>(
-    type === 'region' ? '/handbooks/countries/ru' : null,
+    type === 'regions' ? '/handbooks/countries/ru' : null,
     'GET',
     undefined,
     undefined,
-    type === 'region'
+    type === 'regions'
   );
 
   const { data: categoriesData, loading: loadingCategories } = useApi<any[]>(
@@ -87,8 +87,8 @@ export const HandbookUpdateForm = () => {
     description: '',
     description_ru: '',
     description_fr: '',
-    countries_id: undefined,
-    categories_id: undefined,
+    country_id: undefined,
+    category_id: undefined,
     region_id: undefined,
     superfood_id: undefined
   });
@@ -104,8 +104,8 @@ export const HandbookUpdateForm = () => {
         description: data.description || '',
         description_ru: data.description_ru || '',
         description_fr: data.description_fr || '',
-        countries_id: data.countries_id || undefined,
-        categories_id: data.categories_id || undefined,
+        country_id: data.country_id || undefined,
+        category_id: data.category_id || undefined,
         region_id: data.region_id || undefined,
         superfood_id: data.superfood_id || undefined
       });
@@ -302,13 +302,13 @@ export const HandbookUpdateForm = () => {
                     </select>
                   ) : (
                     <select
-                      name="countries_id"
-                      value={formData.countries_id || ''}
+                      name="country_id"
+                      value={formData.country_id || ''}
                       onChange={(e) => {
                         const target = e.target as HTMLSelectElement;
                         setFormData(prev => ({
                           ...prev,
-                          countries_id: target.value ? parseInt(target.value) : undefined
+                          country_id: target.value ? parseInt(target.value) : undefined
                         }));
                       }}
                       className="select select-bordered w-full"
@@ -335,13 +335,13 @@ export const HandbookUpdateForm = () => {
                     </select>
                   ) : (
                     <select
-                      name="categories_id"
-                      value={formData.categories_id || ''}
+                      name="category_id"
+                      value={formData.category_id || ''}
                       onChange={(e) => {
                         const target = e.target as HTMLSelectElement;
                         setFormData(prev => ({
                           ...prev,
-                          categories_id: target.value ? parseInt(target.value) : undefined
+                          category_id: target.value ? parseInt(target.value) : undefined
                         }));
                       }}
                       className="select select-bordered w-full"
