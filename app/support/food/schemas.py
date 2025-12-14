@@ -18,7 +18,8 @@ class CustomCreateRelation:
 
 
 class CustomUpdSchema:
-    superfood: Optional[SuperfoodCreateRelation] = None
+    superfood_id: Optional[int] = None
+    # superfood: Optional[SuperfoodCreateRelation] = None
 
 
 class FoodRead(ReadSchema, CustomReadSchema):

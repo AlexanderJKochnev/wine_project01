@@ -167,7 +167,6 @@ class Service(metaclass=ServiceMeta):
         return await repository.get_by_id(id, model, session)
 
     @classmethod
-    @classmethod
     async def patch(cls, id: int, data: ModelType,
                     repository: Type[Repository],
                     model: ModelType, session: AsyncSession) -> dict:
@@ -181,6 +180,7 @@ class Service(metaclass=ServiceMeta):
             return {'success': False, 'message': f'Редактируемая запись {id} не найдена на сервере',
                     'error_type': 'not_found'}
         data_dict = data.model_dump(exclude_unset=True)
+
         if not data_dict:
             return {'success': False, 'message': 'Нет данных для обновления', 'error_type': 'no_data'}
         # Выполняем обновление
@@ -193,7 +193,7 @@ class Service(metaclass=ServiceMeta):
                 error_type = result.get('error_type')
                 message = result.get('message', 'Неизвестная ошибка')
                 field_info = result.get('field_info')
-                
+
                 if error_type == 'unique_constraint_violation':
                     return {'success': False, 'message': message,
                             'error_type': 'unique_constraint_violation', 'field_info': field_info}
@@ -215,6 +215,8 @@ class Service(metaclass=ServiceMeta):
         else:
             return {'success': False, 'message': f'Неизвестная ошибка при обновлении записи {id}',
                     'error_type': 'unknown_error'}
+
+    @classmethod
     async def delete(cls, id: int, model: ModelType, repository: Type[Repository],
                      session: AsyncSession) -> bool:
         instance = await repository.get_by_id(id, model, session)
