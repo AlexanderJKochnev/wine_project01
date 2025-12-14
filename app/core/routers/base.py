@@ -158,7 +158,6 @@ class BaseRouter:
         if not result.get('success'):
             error_type = result.get('error_type')
             error_message = result.get('message', 'Неизвестная ошибка')
-
             if error_type == 'not_found':
                 raise HTTPException(status_code=404, detail=error_message)
             elif error_type == 'unique_constraint_violation':
