@@ -46,8 +46,9 @@ def get_repo(model: Union[Type[DeclarativeBase], str]):
     return get_rep(model)
 
 
-def get_pyschema(model: Union[Type[DeclarativeBase]], schema: str = 'Read') -> PyModel:
+def get_pyschema(model: Union[Type[DeclarativeBase], str], schema: str = 'Read') -> PyModel:
     """
+        model: alchemy model or it's name
         получение pydantic schema по ее имени:
         name: имя схемы
         default: дефолтное имя (не у всех схем есть кастомизированные схемы, в этом случае берем базовую

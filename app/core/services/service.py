@@ -195,7 +195,7 @@ class Service(metaclass=ServiceMeta):
         elif isinstance(result, str) and result.startswith(('integrity_error:', 'database_error:')):
             return {'success': False, 'message': f'Ошибка базы данных при обновлении: {result.split(":", 1)[1]}',
                     'error_type': 'database_error'}
-        elif isinstance(result, model):
+        elif isinstance(result, ModelType):
             return {'success': True, 'data': result, 'message': f'Запись {id} успешно обновлена'}
         else:
             return {'success': False, 'message': f'Неизвестная ошибка при обновлении записи {id}',
