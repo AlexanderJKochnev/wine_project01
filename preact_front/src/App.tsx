@@ -71,10 +71,11 @@ export function App() {
               <Route path="/items/edit/:id" component={ItemUpdateForm} />
 
               <Route path="/handbooks" component={HandbookList} />
-              <Route path="/handbooks/:type" component={HandbookTypeList} />
-              <Route path="/handbooks/:type/:id" component={HandbookDetail} />
+
               <Route path="/handbooks/:type/create" component={HandbookCreateForm} />
               <Route path="/handbooks/:type/edit/:id" component={HandbookUpdateForm} />
+              <Route path="/handbooks/:type/:id" component={HandbookDetail} />
+              <Route path="/handbooks/:type" component={HandbookTypeList} />
 
               <Route default component={NotFound} />
             </Router>

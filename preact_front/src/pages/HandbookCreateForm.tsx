@@ -5,26 +5,32 @@ import { Link } from '../components/Link';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
 
-export const HandbookCreateForm = () => {
-  const { path } = useLocation();
-  
-  // Extract handbook type from path: /handbooks/:type/create
-  // Using regex to extract type parameter more reliably
-  const match = path.match(/^\/handbooks\/([^\/]+)\/create$/);
-  const type = match ? match[1] : undefined;
-  
+
+// Добавьте интерфейс для пропсов, которые передает Router
+interface HandbookCreateFormProps {
+    type?: string;
+}
+
+
+export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
+  // const { path } = useLocation();
+  // const match = path.match(/^\/handbooks\/([^\/]+)\/create$/);
+  // const type = match ? match[1] : undefined;
+  const { type } = props; // Используем props напрямую
+  const { route } = useLocation(); // useLocation() все еще нужен для навигации после submit
   // Check if type is valid
   if (!type) {
     return (
       <div className="alert-error">
         <div>
-          <span>Error: Invalid handbook ID: {match ? match[1] : 'unknown'}. Expected format: /handbooks/type/create</span>
+          {/* Обновите сообщение об ошибке */}
+          <span>Error: Handbook type is missing. Expected format: /handbooks/type/create</span>
         </div>
       </div>
     );
   }
   
-  const { route } = useLocation();
+  // const { route } = useLocation();
   const { showNotification } = useNotification();
   
   const [formData, setFormData] = useState({
