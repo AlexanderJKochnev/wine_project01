@@ -27,8 +27,8 @@ export const Header = ({ sidebarVisible, setSidebarVisible }: HeaderProps) => {
     if (currentLang !== lang) {
       // Update the language in context, which will trigger saving to localStorage
       setLanguage(lang);
-      // Reload the current page to fetch data with the new language
-      window.location.reload();
+      // We don't reload the page anymore to avoid logout issues
+      // Data will be updated through context and component re-renders
     }
   };
 
