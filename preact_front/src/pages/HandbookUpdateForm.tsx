@@ -291,7 +291,7 @@ export const HandbookUpdateForm = () => {
               </div>
               
               {/* Conditional dropdowns based on handbook type */}
-              {type === 'region' && (
+              {type === 'regions' && (
                 <div>
                   <label className="label">
                     <span className="label-text">Country</span>
