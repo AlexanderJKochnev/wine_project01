@@ -73,7 +73,7 @@ export const HandbookUpdateForm = () => {
   );
 
   const { data: superfoodsData, loading: loadingSuperfoods } = useApi<any[]>(
-    type === 'foods' ? `/handbooks/superfoods/${id}` : null,
+    type === 'foods' ? '/handbooks/superfoods/ru' : null,
     'GET',
     undefined,
     undefined,
