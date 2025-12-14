@@ -32,32 +32,61 @@ export const HandbookUpdateForm = () => {
   const { data, loading: loadingItem, error: errorItem } = useApi<any>(
     (() => {
       const endpoints: Record<string, string> = {
-        'categories': `/get/categories/${language}/${id}`,
-        'countries': `/get/countries/${language}/${id}`,
-        'regions': `/get/regions/${language}/${id}`,
-        'subcategories': `/get/subcategories/${language}/${id}`,
-        'subregions': `/get/subregions/${language}/${id}`,
-        'sweetness': `/get/sweetness/${language}/${id}`,
-        'superfoods': `/get/superfoods/${language}/${id}`,
-        'foods': `/get/foods/${language}/${id}`,
-        'varietals': `/get/varietals/${language}/${id}`,
+        'categories': `/read/categories/${id}`,
+        'countries': `/read/countries/${id}`,
+        'regions': `/read/regions/${id}`,
+        'subcategories': `/read/subcategories/${id}`,
+        'subregions': `/read/subregions/${id}`,
+        'sweetness': `/read/sweetness/${id}`,
+        'superfoods': `/read/superfoods/${id}`,
+        'foods': `/read/foods/${id}`,
+        'varietals': `/read/varietals/${id}`,
       };
-      return endpoints[type] || `/get/${type}/${language}/${id}`;
+      return endpoints[type] || `/read/${type}/${id}`;
     })(),
     'GET'
+  );
+
+  // Additional API calls for dropdowns based on the model type
+  const { data: countriesData, loading: loadingCountries } = useApi<any[]>(
+    type === 'region' ? '/handbooks/countries/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'region'
+  );
+
+  const { data: categoriesData, loading: loadingCategories } = useApi<any[]>(
+    type === 'subcategories' ? '/handbooks/categories/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'subcategories'
+  );
+
+  const { data: regionsData, loading: loadingRegions } = useApi<any[]>(
+    type === 'subregions' ? '/handbooks/regions/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'subregions'
+  );
+
+  const { data: superfoodsData, loading: loadingSuperfoods } = useApi<any[]>(
+    type === 'foods' ? '/handbooks/superfoods/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'foods'
   );
   
   const [formData, setFormData] = useState({
     name: '',
-    name_en: '',
-    name_ru: '',
-    name_fr: '',
     description: '',
-    description_en: '',
-    description_ru: '',
-    description_fr: '',
-    code: '',
-    value: ''
+    countries_id: undefined,
+    categories_id: undefined,
+    region_id: undefined,
+    suprefood_id: undefined
   });
   const [loading, setLoading] = useState(false);
 
@@ -66,15 +95,11 @@ export const HandbookUpdateForm = () => {
     if (data) {
       setFormData({
         name: data.name || '',
-        name_en: data.name_en || '',
-        name_ru: data.name_ru || '',
-        name_fr: data.name_fr || '',
         description: data.description || '',
-        description_en: data.description_en || '',
-        description_ru: data.description_ru || '',
-        description_fr: data.description_fr || '',
-        code: data.code || '',
-        value: data.value || ''
+        countries_id: data.countries_id || undefined,
+        categories_id: data.categories_id || undefined,
+        region_id: data.region_id || undefined,
+        suprefood_id: data.suprefood_id || undefined
       });
     }
   }, [data]);
@@ -105,15 +130,15 @@ export const HandbookUpdateForm = () => {
   // Determine the endpoint based on the handbook type
   const getEndpoint = (type: string) => {
     const endpoints: Record<string, string> = {
-      'categories': `/patch/categories/${id}`,
-      'countries': `/patch/countries/${id}`,
-      'subcategories': `/patch/subcategories/${id}`,
-      'subregions': `/patch/subregions/${id}`,
-      'sweetness': `/patch/sweetness/${id}`,
-      'foods': `/patch/foods/${id}`,
-      'varietals': `/patch/varietals/${id}`,
+      'categories': `/update/categories/${id}`,
+      'countries': `/update/countries/${id}`,
+      'subcategories': `/update/subcategories/${id}`,
+      'subregions': `/update/subregions/${id}`,
+      'sweetness': `/update/sweetness/${id}`,
+      'foods': `/update/foods/${id}`,
+      'varietals': `/update/varietals/${id}`,
     };
-    return endpoints[type] || `/patch/${type}/${id}`;
+    return endpoints[type] || `/update/${type}/${id}`;
   };
 
   const handleSubmit = async (e: Event) => {
@@ -122,7 +147,7 @@ export const HandbookUpdateForm = () => {
     
     try {
       await apiClient(getEndpoint(type), {
-        method: 'PUT',
+        method: 'PATCH',
         body: formData
       });
       showNotification(`${getReadableName(type)} updated successfully`, 'success');
@@ -188,48 +213,6 @@ export const HandbookUpdateForm = () => {
               
               <div>
                 <label className="label">
-                  <span className="label-text">Name (EN)</span>
-                </label>
-                <input
-                  type="text"
-                  name="name_en"
-                  value={formData.name_en}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="English name"
-                />
-              </div>
-              
-              <div>
-                <label className="label">
-                  <span className="label-text">Name (RU)</span>
-                </label>
-                <input
-                  type="text"
-                  name="name_ru"
-                  value={formData.name_ru}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="Russian name"
-                />
-              </div>
-              
-              <div>
-                <label className="label">
-                  <span className="label-text">Name (FR)</span>
-                </label>
-                <input
-                  type="text"
-                  name="name_fr"
-                  value={formData.name_fr}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="French name"
-                />
-              </div>
-              
-              <div>
-                <label className="label">
                   <span className="label-text">Description</span>
                 </label>
                 <textarea
@@ -242,75 +225,138 @@ export const HandbookUpdateForm = () => {
                 />
               </div>
               
-              <div>
-                <label className="label">
-                  <span className="label-text">Description (EN)</span>
-                </label>
-                <textarea
-                  name="description_en"
-                  value={formData.description_en}
-                  onInput={handleChange}
-                  className="textarea textarea-bordered w-full"
-                  rows={3}
-                  placeholder="English description"
-                />
-              </div>
+              {/* Conditional dropdowns based on handbook type */}
+              {type === 'region' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Country</span>
+                  </label>
+                  {loadingCountries ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="countries_id"
+                      value={formData.countries_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          countries_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a country</option>
+                      {countriesData && countriesData.map((country: any) => (
+                        <option key={country.id} value={country.id}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               
-              <div>
-                <label className="label">
-                  <span className="label-text">Description (RU)</span>
-                </label>
-                <textarea
-                  name="description_ru"
-                  value={formData.description_ru}
-                  onInput={handleChange}
-                  className="textarea textarea-bordered w-full"
-                  rows={3}
-                  placeholder="Russian description"
-                />
-              </div>
+              {type === 'subcategories' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Category</span>
+                  </label>
+                  {loadingCategories ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="categories_id"
+                      value={formData.categories_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          categories_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a category</option>
+                      {categoriesData && categoriesData.map((category: any) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               
-              <div>
-                <label className="label">
-                  <span className="label-text">Description (FR)</span>
-                </label>
-                <textarea
-                  name="description_fr"
-                  value={formData.description_fr}
-                  onInput={handleChange}
-                  className="textarea textarea-bordered w-full"
-                  rows={3}
-                  placeholder="French description"
-                />
-              </div>
+              {type === 'subregions' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Region</span>
+                  </label>
+                  {loadingRegions ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="region_id"
+                      value={formData.region_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          region_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a region</option>
+                      {regionsData && regionsData.map((region: any) => (
+                        <option key={region.id} value={region.id}>
+                          {region.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               
-              <div>
-                <label className="label">
-                  <span className="label-text">Code</span>
-                </label>
-                <input
-                  type="text"
-                  name="code"
-                  value={formData.code}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="Code (optional)"
-                />
-              </div>
-              
-              <div>
-                <label className="label">
-                  <span className="label-text">Value</span>
-                </label>
-                <input
-                  type="text"
-                  name="value"
-                  value={formData.value}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="Value (optional)"
-                />
-              </div>
+              {type === 'foods' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Superfood</span>
+                  </label>
+                  {loadingSuperfoods ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="suprefood_id"
+                      value={formData.suprefood_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          suprefood_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a superfood</option>
+                      {superfoodsData && superfoodsData.map((superfood: any) => (
+                        <option key={superfood.id} value={superfood.id}>
+                          {superfood.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
