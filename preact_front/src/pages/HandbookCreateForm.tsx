@@ -2,8 +2,10 @@
 import { h, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { Link } from '../components/Link';
+import { useApi } from '../hooks/useApi';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
+import { useLanguage } from '../contexts/LanguageContext';
 
 
 // Добавьте интерфейс для пропсов, которые передает Router
@@ -30,20 +32,54 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
     );
   }
   
+  const { language } = useLanguage();
   // const { route } = useLocation();
   const { showNotification } = useNotification();
   
+  // Additional API calls for dropdowns based on the model type
+  const { data: countriesData, loading: loadingCountries } = useApi<any[]>(
+    type === 'regions' ? '/handbooks/countries/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'regions'
+  );
+
+  const { data: categoriesData, loading: loadingCategories } = useApi<any[]>(
+    type === 'subcategories' ? '/handbooks/categories/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'subcategories'
+  );
+
+  const { data: regionsData, loading: loadingRegions } = useApi<any[]>(
+    type === 'subregions' ? '/handbooks/regions/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'subregions'
+  );
+
+  const { data: superfoodsData, loading: loadingSuperfoods } = useApi<any[]>(
+    type === 'foods' ? '/handbooks/superfoods/ru' : null,
+    'GET',
+    undefined,
+    undefined,
+    type === 'foods'
+  );
+  
   const [formData, setFormData] = useState({
     name: '',
-    name_en: '',
     name_ru: '',
     name_fr: '',
     description: '',
-    description_en: '',
     description_ru: '',
     description_fr: '',
-    code: '',
-    value: ''
+    country_id: undefined,
+    category_id: undefined,
+    region_id: undefined,
+    superfood_id: undefined
   });
   const [loading, setLoading] = useState(false);
 
@@ -132,21 +168,7 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
               
               <div>
                 <label className="label">
-                  <span className="label-text">Name (EN)</span>
-                </label>
-                <input
-                  type="text"
-                  name="name_en"
-                  value={formData.name_en}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="English name"
-                />
-              </div>
-              
-              <div>
-                <label className="label">
-                  <span className="label-text">Name (RU)</span>
+                  <span className="label-text">Name (Russian)</span>
                 </label>
                 <input
                   type="text"
@@ -154,13 +176,13 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
                   value={formData.name_ru}
                   onInput={handleChange}
                   className="input input-bordered w-full"
-                  placeholder="Russian name"
+                  placeholder="Name in Russian"
                 />
               </div>
               
               <div>
                 <label className="label">
-                  <span className="label-text">Name (FR)</span>
+                  <span className="label-text">Name (French)</span>
                 </label>
                 <input
                   type="text"
@@ -168,7 +190,7 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
                   value={formData.name_fr}
                   onInput={handleChange}
                   className="input input-bordered w-full"
-                  placeholder="French name"
+                  placeholder="Name in French"
                 />
               </div>
               
@@ -188,21 +210,7 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
               
               <div>
                 <label className="label">
-                  <span className="label-text">Description (EN)</span>
-                </label>
-                <textarea
-                  name="description_en"
-                  value={formData.description_en}
-                  onInput={handleChange}
-                  className="textarea textarea-bordered w-full"
-                  rows={3}
-                  placeholder="English description"
-                />
-              </div>
-              
-              <div>
-                <label className="label">
-                  <span className="label-text">Description (RU)</span>
+                  <span className="label-text">Description (Russian)</span>
                 </label>
                 <textarea
                   name="description_ru"
@@ -210,13 +218,13 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
                   onInput={handleChange}
                   className="textarea textarea-bordered w-full"
                   rows={3}
-                  placeholder="Russian description"
+                  placeholder="Description in Russian"
                 />
               </div>
               
               <div>
                 <label className="label">
-                  <span className="label-text">Description (FR)</span>
+                  <span className="label-text">Description (French)</span>
                 </label>
                 <textarea
                   name="description_fr"
@@ -224,37 +232,142 @@ export const HandbookCreateForm = (props: HandbookCreateFormProps) => {
                   onInput={handleChange}
                   className="textarea textarea-bordered w-full"
                   rows={3}
-                  placeholder="French description"
+                  placeholder="Description in French"
                 />
               </div>
               
-              <div>
-                <label className="label">
-                  <span className="label-text">Code</span>
-                </label>
-                <input
-                  type="text"
-                  name="code"
-                  value={formData.code}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="Code (optional)"
-                />
-              </div>
+              {/* Conditional dropdowns based on handbook type */}
+              {type === 'regions' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Country</span>
+                  </label>
+                  {loadingCountries ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="country_id"
+                      value={formData.country_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          country_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a country</option>
+                      {countriesData && countriesData.map((country: any) => (
+                        <option key={country.id} value={country.id}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               
-              <div>
-                <label className="label">
-                  <span className="label-text">Value</span>
-                </label>
-                <input
-                  type="text"
-                  name="value"
-                  value={formData.value}
-                  onInput={handleChange}
-                  className="input input-bordered w-full"
-                  placeholder="Value (optional)"
-                />
-              </div>
+              {type === 'subcategories' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Category</span>
+                  </label>
+                  {loadingCategories ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="category_id"
+                      value={formData.category_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          category_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a category</option>
+                      {categoriesData && categoriesData.map((category: any) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+              
+              {type === 'subregions' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Region</span>
+                  </label>
+                  {loadingRegions ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="region_id"
+                      value={formData.region_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          region_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a region</option>
+                      {regionsData && regionsData.map((region: any) => (
+                        <option key={region.id} value={region.id}>
+                          {region.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+              
+              {type === 'foods' && (
+                <div>
+                  <label className="label">
+                    <span className="label-text">Superfood</span>
+                  </label>
+                  {loadingSuperfoods ? (
+                    <select className="select select-bordered w-full" disabled>
+                      <option>Loading...</option>
+                    </select>
+                  ) : (
+                    <select
+                      name="superfood_id"
+                      value={formData.superfood_id || ''}
+                      onChange={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        setFormData(prev => ({
+                          ...prev,
+                          superfood_id: target.value ? parseInt(target.value) : undefined
+                        }));
+                      }}
+                      className="select select-bordered w-full"
+                    >
+                      <option value="">Select a superfood</option>
+                      {superfoodsData && superfoodsData.map((superfood: any) => (
+                        <option key={superfood.id} value={superfood.id}>
+                          {superfood.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
