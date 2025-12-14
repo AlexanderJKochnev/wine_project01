@@ -15,47 +15,85 @@ __pycache__/
 env/
 venv/
 .venv/
-.ENV
-.ENV.local
-
-# Logs
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
 *.log
-
-# OS generated files
+.git/modules/
 .DS_Store
 Thumbs.db
 
-# Editor files
+# TypeScript/JavaScript
+*.tsbuildinfo
+next-env.d.ts
+.nuxt
+.output
+.svelte-kit
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Environment variables
+# Environment
 .env
 .env.local
-*.env.*
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
 
-# Coverage reports
+# Temp
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coverage
 coverage/
-htmlcov/
-.coverage
+.nyc_output/
+istanbul.config.js
+nyc.config.js
+.jest/
+jest.xml
+mocha.opts
 
-# Cache directories
-.mypy_cache/
-.pytest_cache/
-.gradle/
-.npm/
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+VolumeIcon.icns
 
-# Compressed files
+# Archives
 *.zip
-*.gz
-*.tar
+*.tar*
 *.tgz
 *.bz2
-*.xz
-*.7z
+*.gz
 *.rar
+*.7z
+*.xz
 *.zst
 *.lz4
 *.lzh
@@ -66,7 +104,14 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+
+# Preact/Vite specific
+!dist/
+dist/**
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
