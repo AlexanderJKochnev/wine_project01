@@ -34,6 +34,7 @@ export const HandbookUpdateForm = () => {
       const endpoints: Record<string, string> = {
         'categories': `/get/categories/${language}/${id}`,
         'countries': `/get/countries/${language}/${id}`,
+        'regions': `/get/regions/${language}/${id}`,
         'subcategories': `/get/subcategories/${language}/${id}`,
         'subregions': `/get/subregions/${language}/${id}`,
         'sweetness': `/get/sweetness/${language}/${id}`,
