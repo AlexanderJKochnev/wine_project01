@@ -7,17 +7,18 @@ import { useNotification } from '../hooks/useNotification';
 
 export const HandbookCreateForm = () => {
   const { path } = useLocation();
-  // Extract handbook type from path: /handbooks/:type/create -> type is the 3rd segment
-  const pathSegments = path.split('/').filter(segment => segment.trim() !== '');
-  // Looking for pattern: ['handbooks', 'type', 'create'] -> type is at index 1
-  const type = pathSegments.length >= 3 && pathSegments[0] === 'handbooks' && pathSegments[2] === 'create' ? pathSegments[1] : undefined;
+  
+  // Extract handbook type from path: /handbooks/:type/create
+  // Using regex to extract type parameter more reliably
+  const match = path.match(/^\/handbooks\/([^\/]+)\/create$/);
+  const type = match ? match[1] : undefined;
   
   // Check if type is valid
   if (!type) {
     return (
       <div className="alert-error">
         <div>
-          <span>Error: Invalid handbook type. Please select a valid handbook from the menu.</span>
+          <span>Error: Invalid handbook ID: {match ? match[1] : 'unknown'}. Expected format: /handbooks/type/create</span>
         </div>
       </div>
     );
