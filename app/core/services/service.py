@@ -167,6 +167,7 @@ class Service(metaclass=ServiceMeta):
         return await repository.get_by_id(id, model, session)
 
     @classmethod
+    @classmethod
     async def patch(cls, id: int, data: ModelType,
                     repository: Type[Repository],
                     model: ModelType, session: AsyncSession) -> dict:
@@ -185,23 +186,35 @@ class Service(metaclass=ServiceMeta):
         # Выполняем обновление
         result = await repository.patch(existing_item, data_dict, session)
         # Обрабатываем результат
-        if result == "unique_constraint_violation":
-            return {'success': False, 'message': 'Нарушение уникальности: запись с такими данными уже существует',
-                    'error_type': 'unique_constraint_violation'}
-        elif result == "foreign_key_violation":
-            return {'success': False,
-                    'message': 'Нарушение ссылочной целостности: указаны несуществующие связанные объекты',
-                    'error_type': 'foreign_key_violation'}
-        elif isinstance(result, str) and result.startswith(('integrity_error:', 'database_error:')):
-            return {'success': False, 'message': f'Ошибка базы данных при обновлении: {result.split(":", 1)[1]}',
-                    'error_type': 'database_error'}
-        elif isinstance(result, ModelType):
-            return {'success': True, 'data': result, 'message': f'Запись {id} успешно обновлена'}
+        if isinstance(result, dict):
+            if result.get('success'):
+                return {'success': True, 'data': result.get('data'), 'message': f'Запись {id} успешно обновлена'}
+            else:
+                error_type = result.get('error_type')
+                message = result.get('message', 'Неизвестная ошибка')
+                field_info = result.get('field_info')
+                
+                if error_type == 'unique_constraint_violation':
+                    return {'success': False, 'message': message,
+                            'error_type': 'unique_constraint_violation', 'field_info': field_info}
+                elif error_type == 'foreign_key_violation':
+                    return {'success': False, 'message': message,
+                            'error_type': 'foreign_key_violation', 'field_info': field_info}
+                elif error_type == 'update_failed':
+                    return {'success': False, 'message': message,
+                            'error_type': 'update_failed'}
+                elif error_type == 'integrity_error':
+                    return {'success': False, 'message': message,
+                            'error_type': 'integrity_error', 'field_info': field_info}
+                elif error_type == 'database_error':
+                    return {'success': False, 'message': message,
+                            'error_type': 'database_error'}
+                else:
+                    return {'success': False, 'message': message,
+                            'error_type': error_type}
         else:
             return {'success': False, 'message': f'Неизвестная ошибка при обновлении записи {id}',
                     'error_type': 'unknown_error'}
-
-    @classmethod
     async def delete(cls, id: int, model: ModelType, repository: Type[Repository],
                      session: AsyncSession) -> bool:
         instance = await repository.get_by_id(id, model, session)

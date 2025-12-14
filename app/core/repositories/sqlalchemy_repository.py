@@ -86,30 +86,118 @@ class Repository(metaclass=RepositoryMeta):
 
     @classmethod
     async def patch(cls, obj: ModelType,
-                    data: Dict[str, Any], session: AsyncSession) -> Union[ModelType, str, None]:
+                    data: Dict[str, Any], session: AsyncSession) -> Union[ModelType, dict, None]:
         """
         редактирование записи
         :param obj: редактируемая запись
         :param data: изменения в редактируемую запись
         """
         try:
+            # Store original values for comparison later
+            original_values = {}
             for k, v in data.items():
                 if hasattr(obj, k):
+                    original_values[k] = getattr(obj, k)
                     setattr(obj, k, v)
+            
             await session.commit()
             await session.refresh(obj)
-            return obj
+            
+            # Validate that the changes were actually applied
+            for k, v in data.items():
+                if hasattr(obj, k):
+                    current_value = getattr(obj, k)
+                    if current_value != v:
+                        # Check if the value was modified as expected
+                        # Some fields might have been processed differently (e.g., timestamps)
+                        pass  # Allow for different processing of values
+            
+            # Additional validation: check if the update was successful by comparing expected vs actual changes
+            all_changes_applied = True
+            for k, v in data.items():
+                if hasattr(obj, k):
+                    current_value = getattr(obj, k)
+                    if current_value != v:
+                        all_changes_applied = False
+                        break
+            
+            if not all_changes_applied:
+                await session.rollback()
+                return {
+                    "success": False,
+                    "error_type": "update_failed",
+                    "message": "Обновление не произошло по неизвестной причине"
+                }
+            
+            return {"success": True, "data": obj}
+            
         except IntegrityError as e:
             await session.rollback()
             error_str = str(e.orig).lower()
+            original_error_str = str(e.orig)
+            
             if 'unique constraint' in error_str or 'duplicate key' in error_str:
-                return "unique_constraint_violation"
-            elif 'foreign key constraint' in error_str:
-                return "foreign_key_violation"
-            return f"integrity_error: {error_str}"
+                # Extract field name and value from the error message
+                field_info = cls._extract_field_info_from_error(original_error_str)
+                return {
+                    "success": False,
+                    "error_type": "unique_constraint_violation",
+                    "message": f"Нарушение уникальности: {original_error_str}",
+                    "field_info": field_info
+                }
+            elif 'foreign key constraint' in error_str or 'fk_' in error_str:
+                # Extract field name and value from the error message
+                field_info = cls._extract_field_info_from_error(original_error_str)
+                return {
+                    "success": False,
+                    "error_type": "foreign_key_violation", 
+                    "message": f"Нарушение внешнего ключа: {original_error_str}",
+                    "field_info": field_info
+                }
+            return {
+                "success": False,
+                "error_type": "integrity_error",
+                "message": f"Ошибка целостности данных: {original_error_str}"
+            }
         except Exception as e:
             await session.rollback()
-            return f"database_error: {str(e)}"
+            return {
+                "success": False,
+                "error_type": "database_error",
+                "message": f"Ошибка базы данных при обновлении: {str(e)}"
+            }
+
+    @classmethod
+    def _extract_field_info_from_error(cls, error_message: str) -> dict:
+        """
+        Extract field name and value information from database error message
+        """
+        # This is a simplified version - in real implementation you might want to parse
+        # specific patterns from different database error messages
+        field_info = {}
+        
+        # Example parsing for PostgreSQL unique constraint violations
+        if 'duplicate key value violates unique constraint' in error_message.lower():
+            # Extract table and field names
+            import re
+            table_match = re.search(r'"([^"]+)"', error_message)
+            if table_match:
+                field_info['table'] = table_match.group(1)
+            
+            # Extract the duplicate value
+            value_match = re.search(r'\(([^)]+)\)=\(([^)]+)\)', error_message)
+            if value_match:
+                field_info['field'] = value_match.group(1)
+                field_info['value'] = value_match.group(2)
+                
+        elif 'foreign key constraint' in error_message.lower():
+            # Extract referenced table and key info
+            import re
+            ref_match = re.search(r'reference "(.+?)"', error_message)
+            if ref_match:
+                field_info['referenced_table'] = ref_match.group(1)
+        
+        return field_info
 
     @classmethod
     async def delete(cls, obj: ModelType, session: AsyncSession) -> Union[bool, str]:

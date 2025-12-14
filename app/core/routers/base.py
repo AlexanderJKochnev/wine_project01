@@ -167,6 +167,10 @@ class BaseRouter:
                 raise HTTPException(status_code=400, detail=error_message)
             elif error_type == 'no_data':
                 raise HTTPException(status_code=400, detail=error_message)
+            elif error_type == 'update_failed':
+                raise HTTPException(status_code=500, detail=error_message)
+            elif error_type == 'integrity_error':
+                raise HTTPException(status_code=400, detail=error_message)
             elif error_type == 'database_error':
                 raise HTTPException(status_code=500, detail=error_message)
             else:
