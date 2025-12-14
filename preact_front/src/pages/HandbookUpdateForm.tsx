@@ -38,6 +38,7 @@ export const HandbookUpdateForm = () => {
         'subcategories': `/get/subcategories/${language}/${id}`,
         'subregions': `/get/subregions/${language}/${id}`,
         'sweetness': `/get/sweetness/${language}/${id}`,
+        'superfoods': `/get/superfoods/${language}/${id}`,
         'foods': `/get/foods/${language}/${id}`,
         'varietals': `/get/varietals/${language}/${id}`,
       };
