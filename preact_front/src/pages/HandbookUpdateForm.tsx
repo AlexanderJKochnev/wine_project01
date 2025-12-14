@@ -73,7 +73,7 @@ export const HandbookUpdateForm = () => {
   );
 
   const { data: superfoodsData, loading: loadingSuperfoods } = useApi<any[]>(
-    type === 'foods' ? '/handbooks/superfoods/ru' : null,
+    type === 'foods' ? `/handbooks/superfoods/${id}` : null,
     'GET',
     undefined,
     undefined,
@@ -82,11 +82,15 @@ export const HandbookUpdateForm = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    name_ru: '',
+    name_fr: '',
     description: '',
+    description_ru: '',
+    description_fr: '',
     countries_id: undefined,
     categories_id: undefined,
     region_id: undefined,
-    suprefood_id: undefined
+    superfood_id: undefined
   });
   const [loading, setLoading] = useState(false);
 
@@ -95,11 +99,15 @@ export const HandbookUpdateForm = () => {
     if (data) {
       setFormData({
         name: data.name || '',
+        name_ru: data.name_ru || '',
+        name_fr: data.name_fr || '',
         description: data.description || '',
+        description_ru: data.description_ru || '',
+        description_fr: data.description_fr || '',
         countries_id: data.countries_id || undefined,
         categories_id: data.categories_id || undefined,
         region_id: data.region_id || undefined,
-        suprefood_id: data.suprefood_id || undefined
+        superfood_id: data.superfood_id || undefined
       });
     }
   }, [data]);
@@ -214,6 +222,34 @@ export const HandbookUpdateForm = () => {
               
               <div>
                 <label className="label">
+                  <span className="label-text">Name (Russian)</span>
+                </label>
+                <input
+                  type="text"
+                  name="name_ru"
+                  value={formData.name_ru}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Name in Russian"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Name (French)</span>
+                </label>
+                <input
+                  type="text"
+                  name="name_fr"
+                  value={formData.name_fr}
+                  onInput={handleChange}
+                  className="input input-bordered w-full"
+                  placeholder="Name in French"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
                   <span className="label-text">Description</span>
                 </label>
                 <textarea
@@ -223,6 +259,34 @@ export const HandbookUpdateForm = () => {
                   className="textarea textarea-bordered w-full"
                   rows={3}
                   placeholder="Description"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Description (Russian)</span>
+                </label>
+                <textarea
+                  name="description_ru"
+                  value={formData.description_ru}
+                  onInput={handleChange}
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  placeholder="Description in Russian"
+                />
+              </div>
+              
+              <div>
+                <label className="label">
+                  <span className="label-text">Description (French)</span>
+                </label>
+                <textarea
+                  name="description_fr"
+                  value={formData.description_fr}
+                  onInput={handleChange}
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  placeholder="Description in French"
                 />
               </div>
               
@@ -337,13 +401,13 @@ export const HandbookUpdateForm = () => {
                     </select>
                   ) : (
                     <select
-                      name="suprefood_id"
-                      value={formData.suprefood_id || ''}
+                      name="superfood_id"
+                      value={formData.superfood_id || ''}
                       onChange={(e) => {
                         const target = e.target as HTMLSelectElement;
                         setFormData(prev => ({
                           ...prev,
-                          suprefood_id: target.value ? parseInt(target.value) : undefined
+                          superfood_id: target.value ? parseInt(target.value) : undefined
                         }));
                       }}
                       className="select select-bordered w-full"
