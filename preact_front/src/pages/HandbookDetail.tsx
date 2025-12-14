@@ -118,7 +118,7 @@ export const HandbookDetail = () => {
             Edit
           </Link>
           <button
-            className="btn btn-error"
+            className="btn btn-primary"
             onClick={() => setShowConfirmDialog(true)}
           >
             Delete
@@ -224,7 +224,7 @@ export const HandbookDetail = () => {
             <p className="py-4">Are you sure you want to delete this {getReadableName(type).toLowerCase()}?</p>
             <div className="modal-action">
               <button
-                className="btn btn-error"
+                className="btn btn-primary"
                 onClick={handleDelete}
               >
                 Yes, Delete

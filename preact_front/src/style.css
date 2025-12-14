@@ -82,8 +82,8 @@ body {
   gap: 0.5rem;
 }
 
-.header-site-name {
-  font-size: 1.25rem;
+header-site-name {
+  font-size: 2.25rem;
   font-weight: bold;
   text-decoration: none;
   color: white;
@@ -133,7 +133,9 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #4338ca;
+  background-color: white;  /* #4338ca; */
+  border-color: #4f46e5;
+  color: black;
 }
 
 .btn-secondary {
@@ -154,6 +156,7 @@ body {
 
 .btn-ghost:hover {
   background-color: #e5e7eb;
+  color: black;
 }
 
 /* Main body layout */
@@ -162,7 +165,7 @@ body {
   flex: 1;
   min-height: 80vh;
   width: 100%;
-  flex-direction: row; /* Put navbar on the right */
+  flex-direction: row; /* Put navbar on the left */
 }
 
 /* On mobile, when navbar is hidden, content should take full width */
@@ -183,7 +186,7 @@ body {
   padding: 0.1rem;
   overflow-x: hidden; /* Remove horizontal scrollbar */
   overflow-y: hidden;
-  transition: transform 0.3s ease;
+  transition: transform 5.3s ease;
 }
 
 .navbar.hidden {

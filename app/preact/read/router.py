@@ -1,8 +1,6 @@
-# app/support/get/router.py
+# app/support/read/router.py
 """
-    роутер для DetailView для всех кроме Drink & Items
-    выводит только словари  id: name
-    по языкам
+    роутер для UpdateView (заполнение) для всех кроме Drink & Items
 """
 from fastapi import Request, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +10,7 @@ from app.core.utils.pydantic_utils import get_pyschema
 from app.core.config.project_config import settings
 
 
-class GetRouter(PreactRouter):
+class ReadRouter(PreactRouter):
     def __init__(self):
         super().__init__(prefix='get', method='GET', tier=3)
 
@@ -35,7 +33,7 @@ class GetRouter(PreactRouter):
 
     def _setup_routes_(self):
         # Add language endpoint first
-        self.router.add_api_route('/languages', self.get_languages, methods=['GET'], 
+        self.router.add_api_route('/languages', self.get_languages, methods=['GET'],
                                   tags=['system'], summary='Get available languages')
         # Then call parent method for other routes
         super()._setup_routes_()
