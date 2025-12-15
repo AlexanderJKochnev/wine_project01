@@ -4,15 +4,19 @@
     выводит плоские словари с локализованными полями
     по языкам
 """
+import json
 from typing import List
-from fastapi import Request, Depends, Query, Path
+
+from fastapi import (Depends, File, Form, Path, Query, UploadFile)
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import PaginatedResponse
-from app.support.item.service import ItemService
-from app.support.item.repository import ItemRepository
+from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
-from app.support.item.schemas import ItemListView, ItemDetailView
+from app.support.item.repository import ItemRepository
+from app.support.item.schemas import ItemCreatePreact, ItemCreateResponseSchema, ItemDetailView, ItemListView
+from app.support.item.service import ItemService
 
 
 class ItemViewRouter:
@@ -25,6 +29,15 @@ class ItemViewRouter:
         self.setup_routes()
 
     def setup_routes(self):
+        self.router.add_api_route(
+            "/create",
+            self.create_item,
+            methods=['POST'],
+            response_model=ItemCreateResponseSchema,
+            tags=self.tags,
+            summary="Создание напитка в упаковке с этикетке"
+        )
+
         """Настройка маршрутов для ListView и DetailView"""
         # Маршрут для получения списка элементов без пагинации
         self.router.add_api_route(
@@ -76,7 +89,27 @@ class ItemViewRouter:
             summary="Поиск элементов по триграммному индексу в связанной модели Drink"
         )
 
-    async def get_list(self, lang: str = Path(..., description="Язык локализации"), session: AsyncSession = Depends(get_db)):
+    async def create_item(self,
+                          data: str = Form(..., description="JSON string of DrinkCreateRelation"),
+                          file: UploadFile = File(...),
+                          session: AsyncSession = Depends(get_db),
+                          image_service: ThumbnailImageService = Depends()
+                          ) -> ItemCreateResponseSchema:
+        """
+                Создание одной записи Item -> Drink с зависимостями - если в таблице есть зависимости
+                они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
+                кроме того будет добавлено изображение.
+                перед этим нужно импортировать изображения
+                POST mongodb/images/direct
+                """
+        # входные данные текстовый файл
+        data_dict = json.loads(data)
+        # валидация данных
+        item_data = ItemCreatePreact(**data_dict)
+        return item_data
+
+    async def get_list(self, lang: str = Path(..., description="Язык локализации"),
+                       session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
         service = ItemService()
         result = await service.get_list_view(lang, ItemRepository, Item, session)
@@ -95,7 +128,9 @@ class ItemViewRouter:
 
         return result
 
-    async def get_detail(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
+    async def get_detail(self, lang: str = Path(..., description="Язык локализации"),
+                         id: int = Path(..., description="ID элемента"),
+                         session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
         service = ItemService()
         item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
@@ -111,7 +146,8 @@ class ItemViewRouter:
     async def search_by_drink_title_subtitle_paginated(self,
                                                        lang: str = Path(..., description="Язык локализации"),
                                                        search: str = Query(
-                                                           ..., description="Строка для поиска в полях title* и subtitle* модели Drink"),
+                                                           ..., description="Строка для поиска в полях title* "
+                                                                            "и subtitle* модели Drink"),
                                                        page: int = Query(1, ge=1, description="Номер страницы"),
                                                        page_size: int = Query(
                                                            20, ge=1, le=100, description="Размер страницы"),

@@ -6,9 +6,9 @@ from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.base import (BaseModel, CreateNoNameSchema, CreateResponse, PkSchema,
                                    ReadNoNameSchema, UpdateNoNameSchema, ReadApiSchema)
 from app.support.drink.drink_varietal_schema import (DrinkVarietalRelation, DrinkVarietalRelationFlat,
-                                                     DrinkVarietalRelationApi)
+                                                     DrinkVarietalRelationApi, DrinkVarietalId)
 from app.support.drink.drink_food_schema import DrinkFoodRelationApi, DrinkFoodRelation
-from app.support.food.schemas import FoodCreateRelation, FoodRead
+from app.support.food.schemas import FoodCreateRelation, FoodRead, FoodId
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead, SubcategoryReadApiSchema
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead, SubregionReadApiSchema
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
@@ -38,6 +38,9 @@ class LangMixin:
 
 
 class LangMixinExclude:
+    """
+        для вычисляемых столбцов
+    """
     title: Optional[str] = Field(exclude=True)
     title_ru: Optional[str] = Field(exclude=True)
     title_fr: Optional[str] = Field(exclude=True)
@@ -78,6 +81,22 @@ class CustomCreateSchema(LangMixin):
     sugar: Optional[float] = None
     age: Optional[str] = None
     sparkling: Optional[bool] = False
+    foods: Optional[List[FoodCreateRelation]] = None
+    varietals: Optional[List[DrinkVarietalRelation]] = None
+
+
+class CustomCreateDrinkItem(LangMixin):
+    """
+         для  схемы ItemDrinkCreate
+    """
+    subcategory_id: Optional[int] = Field(exclude=True)
+    sweetness_id: Optional[int] = Field(exclude=True)
+    subregion_id: Optional[int] = Field(exclude=True)
+    alc: Optional[float] = Field(exclude=True)
+    sugar: Optional[float] = Field(exclude=True)
+    age: Optional[str] = Field(exclude=True)
+    foods: Optional[List[FoodId]] = None
+    varietals: Optional[List[DrinkVarietalId]] = None
 
 
 class CustomCreateRelation(LangMixin):
@@ -161,6 +180,10 @@ class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
 
 
 class DrinkCreateRelation(CreateNoNameSchema, CustomCreateRelation):
+    pass
+
+
+class DrinkCreateItems(CreateNoNameSchema, CustomCreateDrinkItem):
     pass
 
 

@@ -14,7 +14,8 @@ from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemCreate, ItemCreateRelation, DirectUploadSchema,
-                                      ItemCreateResponseSchema, ItemUpdate, FileUpload, ItemListView, ItemDetailView)
+                                      ItemCreateResponseSchema, ItemUpdate, FileUpload,
+                                      ItemListView, ItemDetailView)
 from app.support.item.service import ItemService
 
 paging = get_paging
@@ -32,33 +33,7 @@ class ItemRouter(BaseRouter):
     def setup_routes(self):
         super().setup_routes()
         # Добавляем маршруты для ListView и DetailView
-        """self.router.add_api_route(
-            "/list/{lang}",
-            self.get_list_view,
-            methods=["GET"],
-            response_model=list[ItemListView],
-            tags=["items_view"],
-            summary="Получить список элементов с локализацией"
-        )
-        
-        self.router.add_api_route(
-            "/list_paginated/{lang}",
-            self.get_list_view_paginated,
-            methods=["GET"],
-            response_model=PaginatedResponse,
-            tags=["items_view"],
-            summary="Получить список элементов с пагинацией и локализацией"
-        )
-        
-        self.router.add_api_route(
-            "/detail/{lang}/{id}",
-            self.get_detail_view,
-            methods=["GET"],
-            response_model=ItemDetailView,
-            tags=["items_view"],
-            summary="Получить детальную информацию по элементу с локализацией"
-        )"""
-        
+
         self.router.add_api_route(
             "/full", self.create_relation_image, status_code=status.HTTP_200_OK, methods=["POST"],
             response_model=self.read_schema

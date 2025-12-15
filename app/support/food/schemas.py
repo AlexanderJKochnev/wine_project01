@@ -1,7 +1,8 @@
 # app/support/food/schemas.py
 
 from typing import Optional
-from app.core.schemas.base import CreateResponse, CreateSchema, ReadSchema, UpdateSchema, DetailView, ListView
+from app.core.schemas.base import (CreateResponse, CreateSchema, ReadSchema,
+                                   UpdateSchema, DetailView, ListView, PkSchema)
 from app.support.superfood.schemas import SuperfoodCreateRelation, SuperfoodRead
 
 
@@ -21,6 +22,12 @@ class CustomUpdSchema:
     superfood_id: Optional[int] = None
     # superfood: Optional[SuperfoodCreateRelation] = None
 
+
+class FoodId(PkSchema):
+    """
+        для использования в CustomCreateDrinkItem
+    """
+    pass
 
 class FoodRead(ReadSchema, CustomReadSchema):
     pass

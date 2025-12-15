@@ -21,16 +21,17 @@ import './styles/tailwind-to-css.css';
 
 function HomeRedirect() {
   const { route } = useLocation();
-  
+
   // Redirect to /items immediately
   route('/items', true); // true for replace (equivalent to { replace: true })
-  
+
   return null; // Return null while redirecting
 }
 
 export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const location = useLocation(); // Get location outside of useEffect
 
   useEffect(() => {
     const token = getAuthToken();
@@ -38,6 +39,15 @@ export function App() {
       setIsAuthenticated(true);
     }
   }, []);
+
+  // Ensure sidebar stays visible after route changes
+  useEffect(() => {
+    // When route changes, ensure sidebar remains visible
+    // This prevents the sidebar from closing automatically during navigation
+    if (!sidebarVisible) {
+      setSidebarVisible(true);
+    }
+  }, [location.url]); // This will run when the route changes
 
   if (!isAuthenticated) {
     return (
@@ -51,25 +61,25 @@ export function App() {
 
   return (
     <div className="app-container">
-      <Header 
-        sidebarVisible={sidebarVisible} 
-        setSidebarVisible={setSidebarVisible} 
+      <Header
+        sidebarVisible={sidebarVisible}
+        setSidebarVisible={setSidebarVisible}
       />
-      
+
       <div className="main-body">
         <div className={`navbar ${sidebarVisible ? '' : 'hidden'}`}>
           <Sidebar onClose={() => setSidebarVisible(false)} />
         </div>
-        
+
         <div className="content-area">
           <div className="w-full">
             <Router>
               <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
-              <Route path="/items" component={ItemListView} />
-              <Route path="/items/:id" component={ItemDetailView} />
+
               <Route path="/items/create" component={ItemCreateForm} />
               <Route path="/items/edit/:id" component={ItemUpdateForm} />
-
+              <Route path="/items/:id" component={ItemDetailView} />
+              <Route path="/items" component={ItemListView} />
               <Route path="/handbooks" component={HandbookList} />
 
               <Route path="/handbooks/:type/create" component={HandbookCreateForm} />
@@ -82,7 +92,7 @@ export function App() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

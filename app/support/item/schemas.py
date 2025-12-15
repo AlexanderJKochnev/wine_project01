@@ -2,12 +2,12 @@
 
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from pydantic import Field, model_validator, computed_field, field_serializer
+from pydantic import Field, model_validator, computed_field
 from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
 from app.support.drink.schemas import (DrinkCreateRelation, DrinkReadApi, DrinkReadFlat,
-                                       DrinkReadRelation)
+                                       DrinkReadRelation, DrinkCreateItems, LangMixin)
 
 
 class CustomReadFlatSchema:
@@ -111,7 +111,6 @@ class CustomReadRelation:
 
 class CustomCreateRelation:
     drink: DrinkCreateRelation
-    # warehouse: Optional[WarehouseCreateRelation] = None
     vol: Optional[float] = None
     price: Optional[float] = None
     count: Optional[int] = 0
@@ -165,6 +164,14 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
 
 class ItemCreateRelation(BaseModel, CustomCreateRelation, ImageUrlMixin):
     pass
+
+
+class ItemCreatePreact(BaseModel, LangMixin, ImageUrlMixin):  # , DrinkCreateItems, ImageUrlMixin):
+    vol: Optional[float] = None
+    price: Optional[float] = None
+    count: Optional[int] = 0
+    image_path: Optional[str] = None
+    image_id: Optional[str] = None
 
 # -------------------preact schemas-----------------------
 

@@ -6,6 +6,11 @@ from app.core.schemas.api_mixin import LangMixin
 from app.support.varietal.schemas import VarietalCreateRelation
 
 
+class DrinkVarietalId(BaseModel):
+    varietal_id: int
+    percentage: Optional[float] = None
+
+
 class DrinkVarietalRelation(BaseModel):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
