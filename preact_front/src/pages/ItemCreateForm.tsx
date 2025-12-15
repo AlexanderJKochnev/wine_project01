@@ -5,7 +5,7 @@ import { useLocation } from 'preact-iso';
 import { apiClient } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
 
-export const ItemCreateForm = () => {
+export const ItemCreateForm = ({ path }: { path?: string }) => {
   const { route } = useLocation();
   const { showNotification } = useNotification();
   const [formData, setFormData] = useState({
