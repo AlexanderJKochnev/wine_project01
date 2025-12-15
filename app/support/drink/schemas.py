@@ -69,7 +69,6 @@ class CustomUpdSchema(LangMixin):
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
-    sparkling: Optional[bool] = False
 
 
 class CustomCreateSchema(LangMixin):
@@ -80,7 +79,6 @@ class CustomCreateSchema(LangMixin):
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
-    sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
 
@@ -107,7 +105,6 @@ class CustomCreateRelation(LangMixin):
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
-    sparkling: Optional[bool] = False
     foods: Optional[List[FoodCreateRelation]] = None
     varietals: Optional[List[DrinkVarietalRelation]] = None
 
@@ -120,7 +117,6 @@ class CustomReadRelation(LangMixin):
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
-    sparkling: Optional[bool] = False
     varietal_associations: Optional[List[DrinkVarietalRelation]] = Field(exclude=True)
     food_associations: Optional[List[DrinkFoodRelation]] = Field(exclude=True)
 
@@ -141,7 +137,6 @@ class CustomReadSchema(LangMixin):
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
-    sparkling: Optional[bool] = False
     foods: List[FoodRead]
     varietals: List[VarietalRead]
     varietal_associations: Optional[List[DrinkVarietalRelationFlat]]
@@ -215,7 +210,6 @@ class CustomReadApiSchema(LangMixinExclude):
     alc: Optional[float] = Field(exclude=True)
     sugar: Optional[float] = Field(exclude=True)
     age: Optional[str] = Field(exclude=True)
-    sparkling: Optional[bool] = Field(exclude=True)
     foods: Optional[List[FoodRead]] = Field(exclude=True)
     food_associations: Optional[List[DrinkFoodRelationApi]] = Field(exclude=True)
     varietal_associations: Optional[List[DrinkVarietalRelationApi]] = Field(exclude=True)
@@ -345,7 +339,6 @@ class CustomReadApiSchema(LangMixinExclude):
             result["sugar"] = f"{self.sugar}%" if current_lang == "en" else f"{self.sugar}%"
 
         result["age"] = self.age
-        result["sparkling"] = self.sparkling
 
         # Убираем None значения
         return {k: v for k, v in result.items() if v is not None}
@@ -380,7 +373,6 @@ class CustomReadFlatSchema(LangMixinExclude):
     alc: Optional[float] = Field(exclude=True)
     sugar: Optional[float] = Field(exclude=True)
     age: Optional[str] = Field(exclude=True)
-    sparkling: Optional[bool] = Field(exclude=True)
     foods: Optional[List[FoodRead]] = Field(exclude=True)
     food_associations: Optional[List[DrinkFoodRelationApi]] = Field(exclude=True)
     varietal_associations: Optional[List[DrinkVarietalRelationApi]] = Field(exclude=True)
