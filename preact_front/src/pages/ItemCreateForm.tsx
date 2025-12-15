@@ -16,9 +16,14 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
     category: '',
     country: '',
     region: '',
-    en: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', alc: '', sugar: '', age: '', sparkling: false, pairing: [], varietal: [] },
-    ru: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', alc: '', sugar: '', age: '', sparkling: false, pairing: [], varietal: [] },
-    fr: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', alc: '', sugar: '', age: '', sparkling: false, pairing: [], varietal: [] }
+    alc: '',
+    sugar: '',
+    age: '',
+    pairing: [],
+    varietal: [],
+    en: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', sparkling: false },
+    ru: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', sparkling: false },
+    fr: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', sparkling: false }
   });
   const [loading, setLoading] = useState(false);
   const [handbooks, setHandbooks] = useState({
@@ -80,7 +85,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
   const handleChange = (e: Event) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const { name, value, type } = target;
-    
+
     if (type === 'checkbox') {
       const checkbox = target as HTMLInputElement;
       const [lang, field] = name.split('.');
@@ -91,23 +96,47 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
           [field]: checkbox.checked
         }
       }));
-    } else {
-      const [lang, field] = name.split('.');
-      if (lang === 'vol' || lang === 'price' || lang === 'count') {
+    } else if (type === 'select-multiple') {
+      // Handle multi-select for pairing and varietal
+      const select = target as HTMLSelectElement;
+      const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
+
+      if (name === 'pairing') {
         setFormData(prev => ({
           ...prev,
-          [lang]: Number(value)
+          pairing: selectedValues
         }));
-      } else if (lang === 'image_id' || lang === 'category' || lang === 'country' || lang === 'region') {
+      } else if (name === 'varietal') {
         setFormData(prev => ({
           ...prev,
-          [lang]: value
+          varietal: selectedValues
+        }));
+      }
+    } else {
+      const [firstPart, field] = name.split('.');
+
+      if (firstPart === 'vol' || firstPart === 'price' || firstPart === 'count') {
+        setFormData(prev => ({
+          ...prev,
+          [firstPart]: Number(value)
+        }));
+      } else if (firstPart === 'image_id' || firstPart === 'category' || firstPart === 'country' || firstPart === 'region' ||
+                 firstPart === 'alc' || firstPart === 'sugar' || firstPart === 'age') {
+        setFormData(prev => ({
+          ...prev,
+          [firstPart]: value
+        }));
+      } else if (firstPart === 'pairing' || firstPart === 'varietal') {
+        // Handle single selection for pairing/varietal (in case of single select dropdown)
+        setFormData(prev => ({
+          ...prev,
+          [firstPart]: value
         }));
       } else {
         setFormData(prev => ({
           ...prev,
-          [lang]: {
-            ...prev[lang],
+          [firstPart]: {
+            ...prev[firstPart],
             [field]: value
           }
         }));
@@ -118,7 +147,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       await apiClient('/items', {
         method: 'POST',
@@ -137,7 +166,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Create New Item</h1>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Basic Information */}
@@ -158,7 +187,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Price (€)</span>
@@ -172,7 +201,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Count</span>
@@ -186,7 +215,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Image ID</span>
@@ -200,7 +229,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     placeholder="MongoDB image ID"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Category</span>
@@ -220,7 +249,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Country</span>
@@ -240,7 +269,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Region</span>
@@ -258,6 +287,88 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Alcohol (%)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="alc"
+                    value={formData.alc}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="e.g., 13%"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Sugar (%)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="sugar"
+                    value={formData.sugar}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="e.g., 5%"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Age</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="age"
+                    value={formData.age}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="e.g., 2019"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Pairing</span>
+                  </label>
+                  <select
+                    name="pairing"
+                    multiple
+                    value={formData.pairing}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full h-24"
+                  >
+                    {handbooks.foods.map(food => (
+                      <option key={food.id} value={food.id}>
+                        {food.name || food.name_en || food.name_ru || food.name_fr}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Varietal</span>
+                  </label>
+                  <select
+                    name="varietal"
+                    multiple
+                    value={formData.varietal}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full h-24"
+                  >
+                    {handbooks.varietals.map(varietal => (
+                      <option key={varietal.id} value={varietal.id}>
+                        {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
                 </div>
               </div>
             </div>
@@ -280,7 +391,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subtitle</span>
@@ -293,7 +404,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Description</span>
@@ -306,7 +417,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation</span>
@@ -319,7 +430,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Made Of</span>
@@ -332,49 +443,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Alcohol (%)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="en.alc"
-                    value={formData.en.alc}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 13%"
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Sugar (%)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="en.sugar"
-                    value={formData.en.sugar}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 5%"
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Age</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="en.age"
-                    value={formData.en.age}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 2019"
-                  />
-                </div>
-                
+
                 <div className="form-control">
                   <label className="label cursor-pointer">
                     <span className="label-text">Sparkling</span>
@@ -408,7 +477,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subtitle</span>
@@ -421,7 +490,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Description</span>
@@ -434,7 +503,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation</span>
@@ -447,7 +516,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Made Of</span>
@@ -460,49 +529,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Alcohol (%)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="ru.alc"
-                    value={formData.ru.alc}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 13%"
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Sugar (%)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="ru.sugar"
-                    value={formData.ru.sugar}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 5%"
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Age</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="ru.age"
-                    value={formData.ru.age}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 2019"
-                  />
-                </div>
-                
+
                 <div className="form-control">
                   <label className="label cursor-pointer">
                     <span className="label-text">Sparkling</span>
@@ -536,7 +563,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subtitle</span>
@@ -549,7 +576,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Description</span>
@@ -562,7 +589,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation</span>
@@ -575,7 +602,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Made Of</span>
@@ -588,49 +615,7 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Alcohol (%)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fr.alc"
-                    value={formData.fr.alc}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 13%"
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Sugar (%)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fr.sugar"
-                    value={formData.fr.sugar}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 5%"
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">
-                    <span className="label-text">Age</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fr.age"
-                    value={formData.fr.age}
-                    onInput={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 2019"
-                  />
-                </div>
-                
+
                 <div className="form-control">
                   <label className="label cursor-pointer">
                     <span className="label-text">Sparkling</span>
@@ -649,8 +634,8 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
         </div>
 
         <div className="flex gap-4">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`btn btn-primary ${loading ? 'loading' : ''}`}
             disabled={loading}
           >
