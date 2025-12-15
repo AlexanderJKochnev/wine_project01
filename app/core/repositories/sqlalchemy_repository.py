@@ -99,10 +99,10 @@ class Repository(metaclass=RepositoryMeta):
                 if hasattr(obj, k):
                     original_values[k] = getattr(obj, k)
                     setattr(obj, k, v)
-            
+
             await session.commit()
             await session.refresh(obj)
-            
+
             # Validate that the changes were actually applied
             for k, v in data.items():
                 if hasattr(obj, k):
@@ -111,7 +111,7 @@ class Repository(metaclass=RepositoryMeta):
                         # Check if the value was modified as expected
                         # Some fields might have been processed differently (e.g., timestamps)
                         pass  # Allow for different processing of values
-            
+
             # Additional validation: check if the update was successful by comparing expected vs actual changes
             all_changes_applied = True
             for k, v in data.items():
@@ -120,7 +120,7 @@ class Repository(metaclass=RepositoryMeta):
                     if current_value != v:
                         all_changes_applied = False
                         break
-            
+
             if not all_changes_applied:
                 await session.rollback()
                 return {
@@ -128,14 +128,14 @@ class Repository(metaclass=RepositoryMeta):
                     "error_type": "update_failed",
                     "message": "Обновление не произошло по неизвестной причине"
                 }
-            
+
             return {"success": True, "data": obj}
-            
+
         except IntegrityError as e:
             await session.rollback()
             error_str = str(e.orig).lower()
             original_error_str = str(e.orig)
-            
+
             if 'unique constraint' in error_str or 'duplicate key' in error_str:
                 # Extract field name and value from the error message
                 field_info = cls._extract_field_info_from_error(original_error_str)
@@ -150,7 +150,7 @@ class Repository(metaclass=RepositoryMeta):
                 field_info = cls._extract_field_info_from_error(original_error_str)
                 return {
                     "success": False,
-                    "error_type": "foreign_key_violation", 
+                    "error_type": "foreign_key_violation",
                     "message": f"Нарушение внешнего ключа: {original_error_str}",
                     "field_info": field_info
                 }
@@ -175,7 +175,7 @@ class Repository(metaclass=RepositoryMeta):
         # This is a simplified version - in real implementation you might want to parse
         # specific patterns from different database error messages
         field_info = {}
-        
+
         # Example parsing for PostgreSQL unique constraint violations
         if 'duplicate key value violates unique constraint' in error_message.lower():
             # Extract table and field names
@@ -183,20 +183,20 @@ class Repository(metaclass=RepositoryMeta):
             table_match = re.search(r'"([^"]+)"', error_message)
             if table_match:
                 field_info['table'] = table_match.group(1)
-            
+
             # Extract the duplicate value
             value_match = re.search(r'\(([^)]+)\)=\(([^)]+)\)', error_message)
             if value_match:
                 field_info['field'] = value_match.group(1)
                 field_info['value'] = value_match.group(2)
-                
+
         elif 'foreign key constraint' in error_message.lower():
             # Extract referenced table and key info
             import re
             ref_match = re.search(r'reference "(.+?)"', error_message)
             if ref_match:
                 field_info['referenced_table'] = ref_match.group(1)
-        
+
         return field_info
 
     @classmethod
@@ -404,6 +404,7 @@ class Repository(metaclass=RepositoryMeta):
         stmt = cls.get_short_query(model).offset(skip).limit(limit)
         fields = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
         stmt = select(*fields)
+
         # получение результата всех записей
         total = cls.get_all_count(model, session)
         result = await session.execute(stmt)
