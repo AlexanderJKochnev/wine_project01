@@ -1,6 +1,6 @@
 # app/support/item/schemas.py
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 from pydantic import Field, model_validator, computed_field
 from app.core.utils.common_utils import camel_to_enum
@@ -239,3 +239,42 @@ class ItemDetailView(BaseModel):
             if value is not None and value != '' and value != []:
                 cleaned_data[key] = value
         return cleaned_data
+
+
+class ItemDrinkPreactSchema(BaseModel, LangMixin, ImageUrlMixin):
+    # перечисленные ниже поля из модели Drink
+    title: str
+    title_ru: Optional[str] = None
+    title_fr: Optional[str] = None
+
+    subtitle: Optional[str] = None
+    subtitle_ru: Optional[str] = None
+    subtitle_fr: Optional[str] = None
+
+    description: Optional[str] = None
+    description_ru: Optional[str] = None
+    description_fr: Optional[str] = None
+
+    recommendation: Optional[str] = None
+    recommendation_ru: Optional[str] = None
+    recommendation_fr: Optional[str] = None
+
+    madeof: Optional[str] = None
+    madeof_ru: Optional[str] = None
+    madeof_fr: Optional[str] = None
+
+    subcategory_id: int 
+    sweetness_id: Optional[int] = None 
+    subregion_id: int
+    alc: Optional[float] = None
+    sugar: Optional[float] = None
+    age: Optional[str] = None
+    # Drink - DrinkVarietal
+    varietals: Optional[List[Tuple[int, float]]] = None
+    # Drink - DrinkFood
+    foods: Optional[List[int]] = None
+    # Item - Drink
+    vol: Optional[float] =  None
+    price: Optional[float] =  None
+    image_id: Optional[str] = None
+    image_path: Optional[str] = None

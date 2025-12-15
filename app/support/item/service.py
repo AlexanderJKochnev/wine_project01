@@ -303,6 +303,103 @@ class ItemService(Service):
             raise Exception(f'itemservice.create_relation. {e}')
 
     @classmethod
+    async def create_item_drink(cls, data: ItemDrinkPreactSchema,
+                                repository: ItemRepository, model: Item,
+                                session: AsyncSession) -> ItemRead:
+        """
+        Создание записи Item с Drink и всеми связями
+        Сохраняет в порядке: Drink -> DrinkVarietal -> DrinkFood -> Item
+        """
+        try:
+            # Prepare drink data from the schema
+            drink_data = {
+                'title': data.title,
+                'title_ru': data.title_ru,
+                'title_fr': data.title_fr,
+                'subtitle': data.subtitle,
+                'subtitle_ru': data.subtitle_ru,
+                'subtitle_fr': data.subtitle_fr,
+                'description': data.description,
+                'description_ru': data.description_ru,
+                'description_fr': data.description_fr,
+                'recommendation': data.recommendation,
+                'recommendation_ru': data.recommendation_ru,
+                'recommendation_fr': data.recommendation_fr,
+                'madeof': data.madeof,
+                'madeof_ru': data.madeof_ru,
+                'madeof_fr': data.madeof_fr,
+                'subcategory_id': data.subcategory_id,
+                'sweetness_id': data.sweetness_id,
+                'subregion_id': data.subregion_id,
+                'alc': data.alc,
+                'sugar': data.sugar,
+                'age': data.age,
+                'image_id': data.image_id,
+                'image_path': data.image_path,
+            }
+            
+            # Create drink with its relationships
+            from app.support.drink.service import DrinkService
+            from app.support.drink.schemas import DrinkCreateRelation
+            from app.support.drink.repository import DrinkRepository
+            from app.support.drink.model import Drink
+            
+            # Create drink first
+            drink_create_data = DrinkCreateRelation(**drink_data)
+            drink_result, _ = await DrinkService.create_relation(drink_create_data, DrinkRepository, Drink, session)
+            
+            # Handle varietals if provided
+            if data.varietals:
+                from app.support.drink.drink_varietal_service import DrinkVarietalService
+                from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
+                from app.support.drink.model import DrinkVarietal
+                from app.support.drink.drink_varietal_schema import DrinkVarietalCreate
+                
+                for varietal_id, percentage in data.varietals:
+                    varietal_data = DrinkVarietalCreate(
+                        drink_id=drink_result.id,
+                        varietal_id=varietal_id,
+                        percentage=percentage
+                    )
+                    await DrinkVarietalService.create(varietal_data, DrinkVarietalRepository, DrinkVarietal, session)
+            
+            # Handle foods if provided
+            if data.foods:
+                from app.support.drink.drink_food_service import DrinkFoodService
+                from app.support.drink.drink_food_repo import DrinkFoodRepository
+                from app.support.drink.model import DrinkFood
+                from app.support.drink.drink_food_schema import DrinkFoodCreate
+                
+                for food_id in data.foods:
+                    food_data = DrinkFoodCreate(
+                        drink_id=drink_result.id,
+                        food_id=food_id
+                    )
+                    await DrinkFoodService.create(food_data, DrinkFoodRepository, DrinkFood, session)
+            
+            # Now create the item with the drink_id
+            item_data = {
+                'drink_id': drink_result.id,
+                'vol': data.vol,
+                'price': data.price,
+                'image_id': data.image_id,
+                'image_path': data.image_path
+            }
+            
+            # Remove None values
+            item_data = {k: v for k, v in item_data.items() if v is not None}
+            
+            from app.support.item.schemas import ItemCreate
+            item = ItemCreate(**item_data)
+            item_instance, new = await cls.get_or_create(item, ItemRepository, Item, session)
+            
+            await session.commit()
+            return item_instance, new
+        except Exception as e:
+            await session.rollback()
+            raise Exception(f'itemservice.create_item_drink. {e}')
+
+    @classmethod
     async def search_by_drink_title_subtitle(cls, search_str: str, lang: str,
                                              repository: ItemRepository, model: Item,
                                              session: AsyncSession,

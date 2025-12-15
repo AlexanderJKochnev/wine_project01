@@ -15,7 +15,7 @@ from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemCreate, ItemCreateRelation, DirectUploadSchema,
                                       ItemCreateResponseSchema, ItemUpdate, FileUpload,
-                                      ItemListView, ItemDetailView)
+                                      ItemListView, ItemDetailView, ItemDrinkPreactSchema)
 from app.support.item.service import ItemService
 
 paging = get_paging
@@ -36,6 +36,10 @@ class ItemRouter(BaseRouter):
 
         self.router.add_api_route(
             "/full", self.create_relation_image, status_code=status.HTTP_200_OK, methods=["POST"],
+            response_model=self.read_schema
+        )
+        self.router.add_api_route(
+            "/create_item_drink", self.create_item_drink, status_code=status.HTTP_200_OK, methods=["POST"],
             response_model=self.read_schema
         )
         """ import from upload directory """
@@ -127,6 +131,36 @@ class ItemRouter(BaseRouter):
         # item_data.image_path = image_path
         # item_data.image_id = image_id
         result = await super().create_relation(item_data, session)
+        return result
+
+    async def create_item_drink(self,
+                                data: str = Form(..., description="JSON string of ItemDrinkPreactSchema"),
+                                file: UploadFile = File(None),
+                                session: AsyncSession = Depends(get_db),
+                                image_service: ThumbnailImageService = Depends()
+                                ) -> ItemCreateResponseSchema:
+        """
+        Создание записи Item с Drink и всеми связями
+        Принимает JSON строку и файл изображения
+        Валидирует схемой ItemDrinkPreactSchema
+        Сохраняет в порядке: Drink -> DrinkVarietal -> DrinkFood -> Item
+        """
+        try:
+            data_dict = json.loads(data)
+            item_drink_data = ItemDrinkPreactSchema(**data_dict)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
+        
+        # Если есть файл, загружаем изображение
+        if file and file.filename:
+            image_id, image_path = await image_service.upload_image(file, description=item_drink_data.title)
+            item_drink_data.image_id = image_id
+            item_drink_data.image_path = image_path
+        
+        # Create the item with drink using the service method
+        result = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
         return result
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),
