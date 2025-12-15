@@ -47,7 +47,13 @@ export const apiClient = async <T,>(endpoint: string, options: ApiOptions = {}, 
   };
   
   if (body) {
-    config.body = JSON.stringify(body);
+    if (body instanceof FormData) {
+      config.body = body;
+      // Don't set Content-Type header for FormData, let browser set it with boundary
+      delete headers['Content-Type'];
+    } else {
+      config.body = JSON.stringify(body);
+    }
   }
   
   const response = await fetch(url, config);

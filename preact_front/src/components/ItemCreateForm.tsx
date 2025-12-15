@@ -60,11 +60,11 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           varietals,
           foods
         ] = await Promise.all([
-          apiClient<any[]>(`/subcategories/${language}`),
-          apiClient<any[]>(`/sweetness/${language}`),
-          apiClient<any[]>(`/subregions/${language}`),
-          apiClient<any[]>(`/varietals/all`),
-          apiClient<any[]>(`/foods/all`)
+          apiClient<any[]>(`/handbooks/subcategories/${language}`),
+          apiClient<any[]>(`/handbooks/sweetness/${language}`),
+          apiClient<any[]>(`/handbooks/subregions/${language}`),
+          apiClient<any[]>(`/handbooks/varietals/all`),
+          apiClient<any[]>(`/handbooks/foods/all`)
         ]);
         
         setHandbooks({
@@ -147,7 +147,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         method: 'POST',
         body: multipartFormData,
         // Don't set Content-Type header, let browser set it with boundary
-      });
+      }, false); // Don't include language for multipart form data
       
       onCreated();
       onClose();
