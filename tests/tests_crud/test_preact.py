@@ -40,12 +40,12 @@ async def test_create_routers(authenticated_client_with_db, test_db_session):
             pathes = [f'{a}{prefix}/{pref}' for a in ('', '/', '//')]
             for path in pathes:
                 response = await client.post(path, json=data)
-                print(f'{prefix}/{pref}', response.status_code)
+                print(path, response.status_code)
                 if response.status_code not in [200, 201]:
                     jprint(data)
-                    print(f'----------/{prefix}/{pref}---------------')
+                    print(f'----------{path}---------------')
                     jprint(sucess_pref)
-                assert response.status_code in [200, 201], f'{pref} {m}'
+                assert response.status_code in [200, 201], f'{path} {m}'
         sucess_pref.append((pref, m))
 
 
