@@ -40,12 +40,19 @@ body {
 
 /* Header styles */
 .header {
+  position: sticky; /* «Прилипание» */
+  top: 0;           /* Закрепляем у самого верха */
+  z-index: 50;      /* Чтобы был поверх контента */
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 15vh;
   min-height: 80px;
-  max-height: 135px;
+  height: auto; /* Убираем жесткое 15vh */
+  max-height: none; /* Убираем ограничение, чтобы контент не вылезал */
+  /* height: 15vh;
+  min-height: 80px;
+  max-height: 135px; */
   background-color: #4f46e5; /* primary color */
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -62,24 +69,31 @@ body {
 }
 
 .header-left {
-  flex: 1;
+  flex: 1 1 auto;
+  display: flex;
+  flex-shrink: 3; /* Сжимается ПЕРВЫМ */
   display: flex;
   align-items: center;
+  min-width: 100px; /* Минимальный порог перед сжатием следующего */
 }
 
 .header-center {
-  flex: 1;
+  flex: 1 1 auto;
+  flex-shrink: 2; /* Сжимается ВТОРЫМ */
   display: flex;
   justify-content: center;
   align-items: center;
+  min-width: 150px;
 }
 
 .header-right {
-  flex: 1;
+  flex: 1 1 auto;
+  flex-shrink: 1; /* Сжимается ПОСЛЕДНИМ */
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
+  min-width: 120px;
 }
 
 header-site-name {
