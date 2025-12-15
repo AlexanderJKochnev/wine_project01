@@ -244,6 +244,7 @@ class ItemDetailView(BaseModel):
 class ItemDrinkPreactSchema(BaseModel, LangMixin, ImageUrlMixin):
     # перечисленные ниже поля из модели Drink
     title: str
+    """
     title_ru: Optional[str] = None
     title_fr: Optional[str] = None
 
@@ -262,9 +263,9 @@ class ItemDrinkPreactSchema(BaseModel, LangMixin, ImageUrlMixin):
     madeof: Optional[str] = None
     madeof_ru: Optional[str] = None
     madeof_fr: Optional[str] = None
-
-    subcategory_id: int 
-    sweetness_id: Optional[int] = None 
+    """
+    subcategory_id: int
+    sweetness_id: Optional[int] = None
     subregion_id: int
     alc: Optional[float] = None
     sugar: Optional[float] = None
@@ -274,7 +275,7 @@ class ItemDrinkPreactSchema(BaseModel, LangMixin, ImageUrlMixin):
     # Drink - DrinkFood
     foods: Optional[List[int]] = None
     # Item - Drink
-    vol: Optional[float] =  None
-    price: Optional[float] =  None
+    vol: Optional[float] = None
+    price: Optional[float] = None
     image_id: Optional[str] = None
     image_path: Optional[str] = None

@@ -1,146 +1,112 @@
-// src/pages/ItemCreateForm.tsx
+// src/components/ItemCreateForm.tsx
 import { h, useState, useEffect } from 'preact/hooks';
-import { Link } from '../components/Link';
-import { useLocation } from 'preact-iso';
 import { apiClient } from '../lib/apiClient';
-import { useNotification } from '../hooks/useNotification';
+import { useLanguage } from '../contexts/LanguageContext';
 
-export const ItemCreateForm = ({ path }: { path?: string }) => {
-  const { route } = useLocation();
-  const { showNotification } = useNotification();
+interface ItemCreateFormProps {
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
   const [formData, setFormData] = useState({
-    vol: 0,
-    price: 0,
-    count: 0,
-    image_id: '',
-    category: '',
-    country: '',
-    region: '',
+    title: '',
+    title_ru: '',
+    title_fr: '',
+    subtitle: '',
+    subtitle_ru: '',
+    subtitle_fr: '',
+    subcategory_id: '',
+    sweetness_id: '',
+    subregion_id: '',
     alc: '',
     sugar: '',
     age: '',
-    pairing: [],
-    varietal: [],
-    en: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', sparkling: false },
-    ru: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', sparkling: false },
-    fr: { title: '', subtitle: '', description: '', recommendation: '', madeof: '', sparkling: false }
+    description: '',
+    description_ru: '',
+    description_fr: '',
+    recommendation: '',
+    recommendation_ru: '',
+    recommendation_fr: '',
+    madeof: '',
+    madeof_ru: '',
+    madeof_fr: '',
+    vol: '',
+    price: '',
+    varietals: [] as string[],
+    foods: [] as string[],
+    file: null as File | null
   });
+
   const [loading, setLoading] = useState(false);
   const [handbooks, setHandbooks] = useState({
-    categories: [],
-    countries: [],
-    regions: [],
     subcategories: [],
-    subregions: [],
     sweetness: [],
-    superfoods: [],
-    foods: [],
-    varietals: []
+    subregions: [],
+    varietals: [],
+    foods: []
   });
+
+  const { language } = useLanguage();
 
   // Load handbook data
   useEffect(() => {
     const loadHandbooks = async () => {
       try {
         const [
-          categories,
-          countries,
-          regions,
           subcategories,
-          subregions,
           sweetness,
-          superfoods,
-          foods,
-          varietals
+          subregions,
+          varietals,
+          foods
         ] = await Promise.all([
-          apiClient<any[]>('/categories/all'),
-          apiClient<any[]>('/countries/all'),
-          apiClient<any[]>('/regions/all'),
-          apiClient<any[]>('/subcategories/all'),
-          apiClient<any[]>('/subregions/all'),
-          apiClient<any[]>('/sweetness/all'),
-          apiClient<any[]>('/superfoods/all'),
-          apiClient<any[]>('/foods/all'),
-          apiClient<any[]>('/varietals/all'),
+          apiClient<any[]>(`/subcategories/${language}`),
+          apiClient<any[]>(`/sweetness/${language}`),
+          apiClient<any[]>(`/subregions/${language}`),
+          apiClient<any[]>(`/varietals/all`),
+          apiClient<any[]>(`/foods/all`)
         ]);
+
         setHandbooks({
-          categories,
-          countries,
-          regions,
           subcategories,
-          subregions,
           sweetness,
-          superfoods,
-          foods,
-          varietals
+          subregions,
+          varietals,
+          foods
         });
       } catch (err) {
         console.error('Failed to load handbook data', err);
-        showNotification('Failed to load handbook data', 'error');
       }
     };
+
     loadHandbooks();
-  }, []);
+  }, [language]);
 
   const handleChange = (e: Event) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const { name, value, type } = target;
 
-    if (type === 'checkbox') {
-      const checkbox = target as HTMLInputElement;
-      const [lang, field] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [lang]: {
-          ...prev[lang],
-          [field]: checkbox.checked
-        }
-      }));
+    if (type === 'file') {
+      const fileInput = target as HTMLInputElement;
+      if (fileInput.files && fileInput.files[0]) {
+        setFormData(prev => ({
+          ...prev,
+          file: fileInput.files[0]
+        }));
+      }
     } else if (type === 'select-multiple') {
-      // Handle multi-select for pairing and varietal
       const select = target as HTMLSelectElement;
       const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
 
-      if (name === 'pairing') {
-        setFormData(prev => ({
-          ...prev,
-          pairing: selectedValues
-        }));
-      } else if (name === 'varietal') {
-        setFormData(prev => ({
-          ...prev,
-          varietal: selectedValues
-        }));
-      }
+      setFormData(prev => ({
+        ...prev,
+        [name]: selectedValues
+      }));
     } else {
-      const [firstPart, field] = name.split('.');
-
-      if (firstPart === 'vol' || firstPart === 'price' || firstPart === 'count') {
-        setFormData(prev => ({
-          ...prev,
-          [firstPart]: Number(value)
-        }));
-      } else if (firstPart === 'image_id' || firstPart === 'category' || firstPart === 'country' || firstPart === 'region' ||
-                 firstPart === 'alc' || firstPart === 'sugar' || firstPart === 'age') {
-        setFormData(prev => ({
-          ...prev,
-          [firstPart]: value
-        }));
-      } else if (firstPart === 'pairing' || firstPart === 'varietal') {
-        // Handle single selection for pairing/varietal (in case of single select dropdown)
-        setFormData(prev => ({
-          ...prev,
-          [firstPart]: value
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          [firstPart]: {
-            ...prev[firstPart],
-            [field]: value
-          }
-        }));
-      }
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
   };
 
@@ -149,176 +115,301 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
     setLoading(true);
 
     try {
-      await apiClient('/items', {
+      // Create form data for multipart request
+      const multipartFormData = new FormData();
+
+      // Add JSON string of form data
+      const dataToSend = {
+        ...formData,
+        alc: formData.alc ? parseFloat(formData.alc) : null,
+        sugar: formData.sugar ? parseFloat(formData.sugar) : null,
+        vol: formData.vol ? parseFloat(formData.vol) : null,
+        price: formData.price ? parseFloat(formData.price) : null,
+        subcategory_id: parseInt(formData.subcategory_id),
+        subregion_id: parseInt(formData.subregion_id),
+        sweetness_id: formData.sweetness_id ? parseInt(formData.sweetness_id) : null,
+        varietals: formData.varietals.map(v => {
+          // Assuming varietals format is "id:percentage" - need to parse it
+          const [id, percentage] = v.split(':');
+          return [parseInt(id), parseFloat(percentage)];
+        }).filter(v => !isNaN(v[0]) && !isNaN(v[1])),
+        foods: formData.foods.map(f => parseInt(f)).filter(f => !isNaN(f))
+      };
+
+      multipartFormData.append('data', JSON.stringify(dataToSend));
+
+      // Add file if exists
+      if (formData.file) {
+        multipartFormData.append('file', formData.file);
+      }
+
+      await apiClient('/items/create_item_drink', {
         method: 'POST',
-        body: formData
+        body: multipartFormData,
+        // Don't set Content-Type header, let browser set it with boundary
       });
-      showNotification('Item created successfully', 'success');
-      route('/items');
+
+      onCreated();
+      onClose();
     } catch (error) {
       console.error('Error creating item:', error);
-      showNotification(`Error creating item: ${error.message}`, 'error');
+      alert(`Error creating item: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Create New Item</h1>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      zIndex: 1500,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        maxWidth: '800px',
+        width: '90%',
+        maxHeight: '90vh',
+        overflowY: 'auto'
+      }}>
+        <h2>Create New Item</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <h2 className="card-title">Basic Information</h2>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Volume (ml)</span>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Basic Information */}
+            <div className="card bg-base-100 shadow">
+              <div className="card-body">
+                <h3 className="card-title">Basic Information</h3>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title *</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title (RU)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title_ru"
+                    value={formData.title_ru}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title (FR)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title_fr"
+                    value={formData.title_fr}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle"
+                    value={formData.subtitle}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle (RU)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle_ru"
+                    value={formData.subtitle_ru}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle (FR)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle_fr"
+                    value={formData.subtitle_fr}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Volume</span>
                   </label>
                   <input
                     type="number"
                     name="vol"
                     value={formData.vol}
                     onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    required
+                    className="input input-bordered w-full"
+                    step="0.01"
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Price (€)</span>
+                <div>
+                  <label className="label">
+                    <span className="label-text">Price</span>
                   </label>
                   <input
                     type="number"
                     name="price"
                     value={formData.price}
                     onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    required
+                    className="input input-bordered w-full"
+                    step="0.01"
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Count</span>
+                <div>
+                  <label className="label">
+                    <span className="label-text">File</span>
                   </label>
                   <input
-                    type="number"
-                    name="count"
-                    value={formData.count}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    required
+                    type="file"
+                    name="file"
+                    onChange={handleChange as any}
+                    className="file-input file-input-bordered w-full"
+                    accept="image/*"
                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Image ID</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="image_id"
-                    value={formData.image_id}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    placeholder="MongoDB image ID"
-                  />
-                </div>
+            {/* Category and Location */}
+            <div className="card bg-base-100 shadow">
+              <div className="card-body">
+                <h3 className="card-title">Category and Location</h3>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Category</span>
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subcategory *</span>
                   </label>
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="subcategory_id"
+                    value={formData.subcategory_id}
                     onChange={handleChange as any}
-                    className="select select-bordered w-2/3"
+                    className="select select-bordered w-full"
                     required
                   >
-                    <option value="">Select a category</option>
-                    {handbooks.categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name || cat.name_en || cat.name_ru || cat.name_fr}
+                    <option value="">Select a subcategory</option>
+                    {handbooks.subcategories.map(subcategory => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name || subcategory.name_en || subcategory.name_ru || subcategory.name_fr}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Country</span>
+                <div>
+                  <label className="label">
+                    <span className="label-text">Sweetness</span>
                   </label>
                   <select
-                    name="country"
-                    value={formData.country}
+                    name="sweetness_id"
+                    value={formData.sweetness_id}
                     onChange={handleChange as any}
-                    className="select select-bordered w-2/3"
+                    className="select select-bordered w-full"
+                  >
+                    <option value="">Select sweetness</option>
+                    {handbooks.sweetness.map(sweet => (
+                      <option key={sweet.id} value={sweet.id}>
+                        {sweet.name || sweet.name_en || sweet.name_ru || sweet.name_fr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subregion *</span>
+                  </label>
+                  <select
+                    name="subregion_id"
+                    value={formData.subregion_id}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full"
                     required
                   >
-                    <option value="">Select a country</option>
-                    {handbooks.countries.map(country => (
-                      <option key={country.id} value={country.id}>
-                        {country.name || country.name_en || country.name_ru || country.name_fr}
+                    <option value="">Select a subregion</option>
+                    {handbooks.subregions.map(subregion => (
+                      <option key={subregion.id} value={subregion.id}>
+                        {subregion.name || subregion.name_en || subregion.name_ru || subregion.name_fr}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Region</span>
-                  </label>
-                  <select
-                    name="region"
-                    value={formData.region}
-                    onChange={handleChange as any}
-                    className="select select-bordered w-2/3"
-                  >
-                    <option value="">Select a region (optional)</option>
-                    {handbooks.regions.map(region => (
-                      <option key={region.id} value={region.id}>
-                        {region.name || region.name_en || region.name_ru || region.name_fr}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
+                <div>
+                  <label className="label">
                     <span className="label-text">Alcohol (%)</span>
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     name="alc"
                     value={formData.alc}
                     onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    placeholder="e.g., 13%"
+                    className="input input-bordered w-full"
+                    step="0.01"
+                    min="0"
+                    max="100"
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
+                <div>
+                  <label className="label">
                     <span className="label-text">Sugar (%)</span>
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     name="sugar"
                     value={formData.sugar}
                     onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    placeholder="e.g., 5%"
+                    className="input input-bordered w-full"
+                    step="0.01"
+                    min="0"
+                    max="100"
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
+                <div>
+                  <label className="label">
                     <span className="label-text">Age</span>
                   </label>
                   <input
@@ -326,330 +417,210 @@ export const ItemCreateForm = ({ path }: { path?: string }) => {
                     name="age"
                     value={formData.age}
                     onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                    placeholder="e.g., 2019"
+                    className="input input-bordered w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Descriptions */}
+            <div className="card bg-base-100 shadow">
+              <div className="card-body">
+                <h3 className="card-title">Descriptions</h3>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Description</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
                   />
                 </div>
 
                 <div>
-                  <label className="label w-1/3 inline-block">
-                    <span className="label-text">Pairing</span>
+                  <label className="label">
+                    <span className="label-text">Description (RU)</span>
                   </label>
-                  <div className="w-2/3 inline-block">
-                    <select
-                      name="pairing"
-                      multiple
-                      value={formData.pairing}
-                      onChange={handleChange as any}
-                      className="select select-bordered w-full h-24"
-                    >
-                      {handbooks.foods.map(food => (
-                        <option key={food.id} value={food.id}>
-                          {food.name || food.name_en || food.name_ru || food.name_fr}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
-                  </div>
+                  <textarea
+                    name="description_ru"
+                    value={formData.description_ru}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                  />
                 </div>
 
                 <div>
-                  <label className="label w-1/3 inline-block">
-                    <span className="label-text">Varietal</span>
-                  </label>
-                  <div className="w-2/3 inline-block">
-                    <select
-                      name="varietal"
-                      multiple
-                      value={formData.varietal}
-                      onChange={handleChange as any}
-                      className="select select-bordered w-full h-24"
-                    >
-                      {handbooks.varietals.map(varietal => (
-                        <option key={varietal.id} value={varietal.id}>
-                          {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* EN Language Fields */}
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <h2 className="card-title">English Fields</h2>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Title</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="en.title"
-                    value={formData.en.title}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Subtitle</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="en.subtitle"
-                    value={formData.en.subtitle}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Description</span>
+                  <label className="label">
+                    <span className="label-text">Description (FR)</span>
                   </label>
                   <textarea
-                    name="en.description"
-                    value={formData.en.description}
+                    name="description_fr"
+                    value={formData.description_fr}
                     onInput={handleChange}
-                    className="textarea textarea-bordered w-2/3"
+                    className="textarea textarea-bordered w-full"
                     rows={3}
                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
+            {/* Recommendations and Made Of */}
+            <div className="card bg-base-100 shadow">
+              <div className="card-body">
+                <h3 className="card-title">Recommendations and Made Of</h3>
+
+                <div>
+                  <label className="label">
                     <span className="label-text">Recommendation</span>
                   </label>
                   <textarea
-                    name="en.recommendation"
-                    value={formData.en.recommendation}
+                    name="recommendation"
+                    value={formData.recommendation}
                     onInput={handleChange}
-                    className="textarea textarea-bordered w-2/3"
+                    className="textarea textarea-bordered w-full"
                     rows={3}
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Made Of</span>
+                <div>
+                  <label className="label">
+                    <span className="label-text">Recommendation (RU)</span>
                   </label>
-                  <input
-                    type="text"
-                    name="en.madeof"
-                    value={formData.en.madeof}
+                  <textarea
+                    name="recommendation_ru"
+                    value={formData.recommendation_ru}
                     onInput={handleChange}
-                    className="input input-bordered w-2/3"
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Sparkling</span>
+                <div>
+                  <label className="label">
+                    <span className="label-text">Recommendation (FR)</span>
                   </label>
-                  <input
-                    type="checkbox"
-                    name="en.sparkling"
-                    checked={formData.en.sparkling}
-                    onChange={handleChange as any}
-                    className="checkbox checkbox-primary"
+                  <textarea
+                    name="recommendation_fr"
+                    value={formData.recommendation_fr}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
                   />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of</span>
+                  </label>
+                  <textarea
+                    name="madeof"
+                    value={formData.madeof}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of (RU)</span>
+                  </label>
+                  <textarea
+                    name="madeof_ru"
+                    value={formData.madeof_ru}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of (FR)</span>
+                  </label>
+                  <textarea
+                    name="madeof_fr"
+                    value={formData.madeof_fr}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Varietals and Foods */}
+            <div className="card bg-base-100 shadow">
+              <div className="card-body">
+                <h3 className="card-title">Varietals and Foods</h3>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Varietals (with percentages)</span>
+                  </label>
+                  <select
+                    name="varietals"
+                    multiple
+                    value={formData.varietals}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full h-32"
+                  >
+                    {handbooks.varietals.map(varietal => (
+                      <option key={varietal.id} value={`${varietal.id}:100`}>
+                        {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr} (100%)
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options. Format: ID:Percentage</p>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Foods</span>
+                  </label>
+                  <select
+                    name="foods"
+                    multiple
+                    value={formData.foods}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full h-32"
+                  >
+                    {handbooks.foods.map(food => (
+                      <option key={food.id} value={food.id}>
+                        {food.name || food.name_en || food.name_ru || food.name_fr}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* RU Language Fields */}
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <h2 className="card-title">Russian Fields</h2>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Title</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="ru.title"
-                    value={formData.ru.title}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Subtitle</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="ru.subtitle"
-                    value={formData.ru.subtitle}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Description</span>
-                  </label>
-                  <textarea
-                    name="ru.description"
-                    value={formData.ru.description}
-                    onInput={handleChange}
-                    className="textarea textarea-bordered w-2/3"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Recommendation</span>
-                  </label>
-                  <textarea
-                    name="ru.recommendation"
-                    value={formData.ru.recommendation}
-                    onInput={handleChange}
-                    className="textarea textarea-bordered w-2/3"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Made Of</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="ru.madeof"
-                    value={formData.ru.madeof}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Sparkling</span>
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="ru.sparkling"
-                    checked={formData.ru.sparkling}
-                    onChange={handleChange as any}
-                    className="checkbox checkbox-primary"
-                  />
-                </div>
-              </div>
-            </div>
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-ghost"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={`btn btn-primary ${loading ? 'loading' : ''}`}
+              disabled={loading}
+            >
+              {loading ? 'Creating...' : 'Create Item'}
+            </button>
           </div>
-
-          {/* FR Language Fields */}
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <h2 className="card-title">French Fields</h2>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Title</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fr.title"
-                    value={formData.fr.title}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Subtitle</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fr.subtitle"
-                    value={formData.fr.subtitle}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Description</span>
-                  </label>
-                  <textarea
-                    name="fr.description"
-                    value={formData.fr.description}
-                    onInput={handleChange}
-                    className="textarea textarea-bordered w-2/3"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Recommendation</span>
-                  </label>
-                  <textarea
-                    name="fr.recommendation"
-                    value={formData.fr.recommendation}
-                    onInput={handleChange}
-                    className="textarea textarea-bordered w-2/3"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Made Of</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="fr.madeof"
-                    value={formData.fr.madeof}
-                    onInput={handleChange}
-                    className="input input-bordered w-2/3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="label w-1/3">
-                    <span className="label-text">Sparkling</span>
-                  </label>
-                  <input
-                    type="checkbox"
-                    name="fr.sparkling"
-                    checked={formData.fr.sparkling}
-                    onChange={handleChange as any}
-                    className="checkbox checkbox-primary"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            className={`btn btn-primary ${loading ? 'loading' : ''}`}
-            disabled={loading}
-          >
-            {loading ? 'Creating...' : 'Create Item'}
-          </button>
-          <Link href="/items" variant="ghost">
-            Cancel
-          </Link>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

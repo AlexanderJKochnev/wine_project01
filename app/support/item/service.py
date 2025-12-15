@@ -14,7 +14,8 @@ from app.support.drink.repository import DrinkRepository
 from app.support.drink.service import DrinkService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import (ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation)
+from app.support.item.schemas import (ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation,
+                                      ItemDrinkPreactSchema)
 
 
 class ItemService(Service):
