@@ -10,7 +10,7 @@ from app.preact.core.router import PreactRouter
 
 class CreateRouter(PreactRouter):
     def __init__(self):
-        super().__init__(prefix='create', method='POST', tier=2)
+        super().__init__(prefix='create', method='POST', tier=3)
 
     def __set_schema__(self, model: Type[DeclarativeBase]):
         """ по имени модели находит для response_model соотвествующую Create схему,
@@ -35,17 +35,17 @@ class CreateRouter(PreactRouter):
                        session: AsyncSession = Depends(get_db)):
         try:
             current_path = request.url.path
-            tmp = self.__path_decoder__(current_path)
+            _, tmp = self.__path_decoder__(current_path)
             model = self.source.get(tmp)
             schema = self.__get_schemas__(model)
             repo = self.get_repo(model)
             service = self.get_service(model)
             model_data = schema(**data)
-            obj = await service.get_or_create(model_data, repo, model, session)
+            obj, result = await service.get_or_create(model_data, repo, model, session)
             return obj
         except Exception as e:
             await session.rollback()
             raise HTTPException(
-                status_code=505,
+                status_code=500,
                 detail=f'Create Fault, {e}'
             )

@@ -32,8 +32,8 @@ class PreactRouter:
                        'subregions': Subregion,
                        'superfoods': Superfood,
                        'foods': Food,
-                       'varietals': Varietal,
-                       'sweetness': Sweetness
+                       'sweetness': Sweetness,
+                       'varietals': Varietal
                        }
         self.router = APIRouter(prefix=self.prefix,
                                 tags=self.tags,

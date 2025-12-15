@@ -23,6 +23,7 @@ async def test_create_routers(authenticated_client_with_db, test_db_session):
     router = CreateRouter()
     prefix = router.prefix
     test_number = 5
+    sucess_pref = []
     for pref, model in router.source.items():
         schema = router.__get_schemas__(model)
         test_data = generate_test_data(schema,
@@ -36,11 +37,15 @@ async def test_create_routers(authenticated_client_with_db, test_db_session):
             py_model = schema(**data)
             rev_dict = py_model.model_dump()
             assert data == rev_dict, f'pydantic validation fault "{pref}"'
-            response = await client.post(f'/{prefix}/{pref}', json=data)
+            response = await client.post(f'//{prefix}/{pref}', json=data)
+            print(f'{prefix}/{pref}', response.status_code, response.text)
             if response.status_code not in [200, 201]:
                 jprint(data)
-                print('-------------------------------')
+                print(f'----------/{prefix}/{pref}---------------')
+                jprint(sucess_pref)
             assert response.status_code in [200, 201], f'{pref} {m}'
+        sucess_pref.append((pref, m))
+    assert False
 
 
 async def test_get_routers(authenticated_client_with_db, test_db_session,
