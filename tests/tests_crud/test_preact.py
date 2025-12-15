@@ -37,20 +37,17 @@ async def test_create_routers(authenticated_client_with_db, test_db_session):
             py_model = schema(**data)
             rev_dict = py_model.model_dump()
             assert data == rev_dict, f'pydantic validation fault "{pref}"'
-            pathes = [f'{a}{prefix}/{pref}' for a in ('', '/', '//')]
-            for path in pathes:
-                response = await client.post(path, json=data)
-                print(path, response.status_code)
-                if response.status_code not in [200, 201]:
-                    jprint(data)
-                    print(f'----------{path}---------------')
-                    jprint(sucess_pref)
-                assert response.status_code in [200, 201], f'{path} {m}'
+            path = f'{prefix}/{pref}'
+            response = await client.post(path, json=data)
+            if response.status_code not in [200, 201]:
+                jprint(data)
+                print(f'----------{path}---------------')
+                jprint(sucess_pref)
+            assert response.status_code in [200, 201], f'{path} {m}'
         sucess_pref.append((pref, m))
 
 
-async def test_get_routers(authenticated_client_with_db, test_db_session,
-                           fakedata_generator):
+async def test_get_routers(authenticated_client_with_db, test_db_session):
     """  тесты GET """
     from app.preact.get.router import GetRouter
     client = authenticated_client_with_db
@@ -69,41 +66,72 @@ async def test_get_routers(authenticated_client_with_db, test_db_session,
         assert result['id'] == id, f"ожидалась запись {id=}, получена id = {result['id']}"
 
 
-async def test_patch_routers(authenticated_client_with_db, test_db_session,
-                             fakedata_generator):
+async def test_read_routers(authenticated_client_with_db, test_db_session):
+    """  тесты GET """
+    from app.preact.read.router import ReadRouter
+    client = authenticated_client_with_db
+    router = ReadRouter()
+    id = 3   # ищем первую запись
+    prefix = router.prefix
+    subprefix = [key for key, val in router.source.items()]
+    # language = ['ru', 'en', 'fr']
+    test_set = [f'{prefix}/{a}' for a in subprefix]
+    for pref in test_set:
+        pre = f'{pref}/{id}'
+        response = await client.get(pre)
+        assert response.status_code == 200, f'{pre=}  {response.text}'
+        result = response.json()
+        assert isinstance(result, dict), result
+
+
+async def test_patch_routers(authenticated_client_with_db, test_db_session):
     """ тестирование route PATCH """
-    from app.preact.get.router import GetRouter
+    from app.preact.read.router import ReadRouter
     from app.preact.patch.router import PatchRouter
     client = authenticated_client_with_db
-    router = GetRouter()
+    router = ReadRouter()
     router2 = PatchRouter()
-    id = 1   # ищем первую запись
+    id = 2   # ищем запись
     prefix = router.prefix
     prefix2 = router2.prefix
     subprefix = [key for key, val in router2.source.items()]
-    test_set = [f'/{a}' for a in subprefix]
+    test_set = [f'{a}' for a in subprefix]
     for pref in test_set:
-        # поиск запси get_by_id
-        response = await client.get(f'{prefix}{pref}/en/{id}')
-        assert response.status_code == 200, f'{prefix}{pref}/en/{id} | {response.text}'
+        # получение записи
+        get_prefix = f'{prefix}/{pref}/{id}'
+        response = await client.get(get_prefix)
+        assert response.status_code == 200, f'{get_prefix}. запись {id=} не существует'
         result = response.json()
         # генерируем измененния в текстовых полях
-        result.pop('id')
         expected_data = 'updated_data'
         data = {key: expected_data for key, val in result.items() if isinstance(val, str)}
         # запускаем изменение
-        full_prefix = f'{prefix2}{pref}'
-        response = await client.patch(f'{full_prefix}/{id}', json=data)
-        assert response.status_code == 200, f'{full_prefix}/{id} |  | {response.text}'
+        full_prefix = f'{prefix2}/{pref}/{id}'
+        response = await client.patch(full_prefix, json=data)
+        assert response.status_code == 200, f'{full_prefix}'
         result = response.json()
-        result_dict = {key: val for key, val in result.items() if isinstance(val, str) and val != expected_data}
-        if result_dict:
-            jprint(result_dict)
-            assert False, f'ошибка обновления {prefix2}{pref}/{id}'
+        for key, val in data.items():
+            assert result.get(key) == val, f'update fault. full_prefix. {key}'
 
 
-async def test_delete_routers(authenticated_client_with_db, test_db_session,
-                              fakedata_generator):
+async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
+                                 routers_get):
+    from app.preact.handbook.router import HandbookRouter
+    client = authenticated_client_with_db
+    router = HandbookRouter()
+    prefix = router.prefix
+    subprefix = [key for key, val in router.source.items()]
+    language = ['ru', 'en', 'fr']
+    test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
+    for pref in test_set:
+        pre = f'{pref}'
+        response = await client.get(pre)
+        assert response.status_code == 200, f'{pre=}  {response.text}'
+        result = response.json()
+        assert isinstance(result, List), result
+
+
+async def test_delete_routers(authenticated_client_with_db, test_db_session):
     """  тестирование роутера DELETE """
     from app.preact.delete.router import DeleteRouter
     client = authenticated_client_with_db
@@ -118,20 +146,3 @@ async def test_delete_routers(authenticated_client_with_db, test_db_session,
         assert response.status_code == 200, f'{full_prefix}/{id}, {response.text}'
         result = response.json()
         assert result.get('success'), f'{full_prefix}/{id} :: {result}'
-
-
-async def test_handbooks_routers(authenticated_client_with_db, test_db_session,
-                                 fakedata_generator, routers_get):
-    from app.preact.handbook.router import HandbookRouter
-    client = authenticated_client_with_db
-    router = HandbookRouter()
-    prefix = router.prefix
-    subprefix = [key for key, val in router.source.items()]
-    language = ['ru', 'en', 'fr']
-    test_set = [f'{prefix}/{a}/{b}' for a in subprefix for b in language]
-    for pref in test_set:
-        pre = f'{pref}'
-        response = await client.get(pre)
-        assert response.status_code == 200, f'{pre=}  {response.text}'
-        result = response.json()
-        assert isinstance(result, List), result

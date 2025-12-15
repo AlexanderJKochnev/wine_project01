@@ -1,6 +1,7 @@
 # app/core/utils/exception_handler.py
 from app.core.utils.common_utils import jprint
 
+
 def ValidationError_handler(exc):
     """
         обработка и вывод информации об ошибке

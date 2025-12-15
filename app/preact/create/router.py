@@ -35,6 +35,7 @@ class CreateRouter(PreactRouter):
                        session: AsyncSession = Depends(get_db)):
         try:
             current_path = request.url.path
+            print(f'{current_path=}')
             _, tmp = self.__path_decoder__(current_path)
             model = self.source.get(tmp)
             schema = self.__get_schemas__(model)
@@ -42,6 +43,7 @@ class CreateRouter(PreactRouter):
             service = self.get_service(model)
             model_data = schema(**data)
             obj, result = await service.get_or_create(model_data, repo, model, session)
+            print(f'{result=}')
             return obj
         except Exception as e:
             await session.rollback()
