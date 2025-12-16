@@ -283,7 +283,7 @@ class Service(metaclass=ServiceMeta):
     @classmethod
     async def get_list_view(cls, lang: str, repository: Type[Repository],
                             model: ModelType, session: AsyncSession, ) -> List[tuple]:
-        # Запрос с загрузкой связей и пагинацией
+        # Запрос с загрузкой связей и без пагинацией
         rows = await repository.get_list(model, session)
         list_fields = ['name']
         result = [flatten_dict_with_localized_fields(obj.to_dict(), list_fields, lang) for obj in rows]

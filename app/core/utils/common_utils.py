@@ -785,7 +785,7 @@ def dict_sorter(source: dict) -> dict:
 def flatten_dict_with_localized_fields(data: Dict[str, Any],
                                        fields: List[str],
                                        lang: str = 'en',
-                                       reverse: bool = True) -> Dict[str, Any]:
+                                       reverse: bool = False) -> Dict[str, Any]:
     """
     принимает словарь с данными (schema.dump_to_dict()...
     списое полей
@@ -841,7 +841,7 @@ def flatten_dict_with_localized_fields(data: Dict[str, Any],
         if val is not None:
             main_parts.append(val)
     if main_parts:
-        result[main_field] = '. '.join(main_parts) + '.'
+        result[main_field] = '. '.join(main_parts)
 
     # === 3. Обработка ОСТАЛЬНЫХ полей (только корень, без рекурсии) ===
     root = data
