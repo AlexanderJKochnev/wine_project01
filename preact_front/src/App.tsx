@@ -8,7 +8,7 @@ import { Sidebar } from './components/Sidebar';
 import { Footer } from './components/Footer';
 import { ItemListView } from './pages/ItemListView';
 import { ItemDetailView } from './pages/ItemDetailView';
-import { ItemCreatePage } from './pages/ItemCreatePage';
+import { ItemCreateForm } from './pages/ItemCreateForm';
 import { ItemUpdateForm } from './pages/ItemUpdateForm';
 import { HandbookList } from './pages/HandbookList';
 import { HandbookDetail } from './pages/HandbookDetail';
@@ -76,7 +76,7 @@ export function App() {
             <Router>
               <Route path="/" component={isAuthenticated ? HomeRedirect : Home} />
 
-              <Route path="/items/create" component={ItemCreatePage} />
+              <Route path="/items/create" component={ItemCreateForm} />
               <Route path="/items/edit/:id" component={ItemUpdateForm} />
               <Route path="/items/:id" component={ItemDetailView} />
               <Route path="/items" component={ItemListView} />
