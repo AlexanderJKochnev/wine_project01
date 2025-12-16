@@ -40,7 +40,7 @@ class ItemRouter(BaseRouter):
         )
         self.router.add_api_route(
             "/create_item_drink", self.create_item_drink, status_code=status.HTTP_200_OK, methods=["POST"],
-            response_model=self.read_schema
+            response_model=ItemCreateResponseSchema
         )
         """ import from upload directory """
         self.router.add_api_route(
@@ -51,7 +51,8 @@ class ItemRouter(BaseRouter):
             response_model=dict
         )
 
-    async def get_list_view(self, lang: str = Path(..., description="Язык локализации"), session: AsyncSession = Depends(get_db)):
+    async def get_list_view(self, lang: str = Path(..., description="Язык локализации"),
+                            session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
         service = ItemService()
         items = await service.get_list_view(lang, ItemRepository, Item, session)
@@ -67,7 +68,9 @@ class ItemRouter(BaseRouter):
         result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session)
         return result
 
-    async def get_detail_view(self, lang: str = Path(..., description="Язык локализации"), id: int = Path(..., description="ID элемента"), session: AsyncSession = Depends(get_db)):
+    async def get_detail_view(self, lang: str = Path(..., description="Язык локализации"),
+                              id: int = Path(..., description="ID элемента"),
+                              session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
         service = ItemService()
         item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
