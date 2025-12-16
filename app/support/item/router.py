@@ -57,8 +57,8 @@ class ItemRouter(BaseRouter):
         items = await service.get_list_view(lang, ItemRepository, Item, session)
         return items
 
-    async def get_list_view_paginated(self, 
-                                      lang: str = Path(..., description="Язык локализации"), 
+    async def get_list_view_paginated(self,
+                                      lang: str = Path(..., description="Язык локализации"),
                                       page: int = Query(1, ge=1, description="Номер страницы"),
                                       page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
@@ -152,13 +152,13 @@ class ItemRouter(BaseRouter):
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
-        
+
         # Если есть файл, загружаем изображение
         if file and file.filename:
             image_id, image_path = await image_service.upload_image(file, description=item_drink_data.title)
             item_drink_data.image_id = image_id
             item_drink_data.image_path = image_path
-        
+
         # Create the item with drink using the service method
         result = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
         return result

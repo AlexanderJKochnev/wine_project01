@@ -338,24 +338,24 @@ class ItemService(Service):
                 'image_id': data.image_id,
                 'image_path': data.image_path,
             }
-            
+
             # Create drink with its relationships
             from app.support.drink.service import DrinkService
             from app.support.drink.schemas import DrinkCreateRelation
             from app.support.drink.repository import DrinkRepository
             from app.support.drink.model import Drink
-            
+
             # Create drink first
             drink_create_data = DrinkCreateRelation(**drink_data)
             drink_result, _ = await DrinkService.create_relation(drink_create_data, DrinkRepository, Drink, session)
-            
+
             # Handle varietals if provided
             if data.varietals:
                 from app.support.drink.drink_varietal_service import DrinkVarietalService
                 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
                 from app.support.drink.model import DrinkVarietal
                 from app.support.drink.drink_varietal_schema import DrinkVarietalCreate
-                
+
                 for varietal_id, percentage in data.varietals:
                     varietal_data = DrinkVarietalCreate(
                         drink_id=drink_result.id,
@@ -363,21 +363,21 @@ class ItemService(Service):
                         percentage=percentage
                     )
                     await DrinkVarietalService.create(varietal_data, DrinkVarietalRepository, DrinkVarietal, session)
-            
+
             # Handle foods if provided
             if data.foods:
                 from app.support.drink.drink_food_service import DrinkFoodService
                 from app.support.drink.drink_food_repo import DrinkFoodRepository
                 from app.support.drink.model import DrinkFood
                 from app.support.drink.drink_food_schema import DrinkFoodCreate
-                
+
                 for food_id in data.foods:
                     food_data = DrinkFoodCreate(
                         drink_id=drink_result.id,
                         food_id=food_id
                     )
                     await DrinkFoodService.create(food_data, DrinkFoodRepository, DrinkFood, session)
-            
+
             # Now create the item with the drink_id
             item_data = {
                 'drink_id': drink_result.id,
@@ -386,14 +386,14 @@ class ItemService(Service):
                 'image_id': data.image_id,
                 'image_path': data.image_path
             }
-            
+
             # Remove None values
             item_data = {k: v for k, v in item_data.items() if v is not None}
-            
+
             from app.support.item.schemas import ItemCreate
             item = ItemCreate(**item_data)
             item_instance, new = await cls.get_or_create(item, ItemRepository, Item, session)
-            
+
             await session.commit()
             return item_instance, new
         except Exception as e:
