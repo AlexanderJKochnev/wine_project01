@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Type
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+# from sqlalchemy.orm import Session
 
 from app.core.config.project_config import settings
 from app.core.repositories.sqlalchemy_repository import ModelType, Repository
@@ -60,7 +60,7 @@ class Service(metaclass=ServiceMeta):
 
     @classmethod
     async def get_or_create(cls, data: ModelType, repository: Type[Repository],
-                            model: ModelType, session: Session,
+                            model: ModelType, session: AsyncSession,
                             default: List[str] = None) -> Tuple[ModelType, bool]:
         """
             находит или создет запись
@@ -89,7 +89,7 @@ class Service(metaclass=ServiceMeta):
 
     @classmethod
     async def update_or_create(cls, data: ModelType, repository: Type[Repository],
-                               model: ModelType, session: Session,
+                               model: ModelType, session: AsyncSession,
                                default: List[str] = None) -> Tuple[ModelType, bool]:
         """
             находит и обновляет запись или создает если ее нет
@@ -118,7 +118,7 @@ class Service(metaclass=ServiceMeta):
 
     @classmethod
     async def create_relation(cls, data: ModelType,
-                              repository: Type[Repository], model: ModelType, session: Session) -> ModelType:
+                              repository: Type[Repository], model: ModelType, session: AsyncSession) -> ModelType:
         """
         создание записей из json - со связями
         """

@@ -20,8 +20,7 @@ from app.support.subregion.model import Subregion
 from app.support.varietal.model import Varietal
 from app.support.food.model import Food
 from app.support.drink.schemas import DrinkCreate
-from app.support.item.schemas import ItemCreatePreact
-from app.core.utils.exception_handler import ValidationError_handler
+from app.support.item.schemas import ItemCreatePreact, ItemCreate
 from app.core.utils.common_utils import jprint
 
 
@@ -30,7 +29,8 @@ pytestmark = pytest.mark.asyncio
 
 async def test_create_item_drink_success(
         authenticated_client_with_db: AsyncClient,
-        test_db_session: AsyncSession
+        test_db_session: AsyncSession,
+        sample_image_paths
 ):
     """
     Test successful creation of an item with drink using the create_item_drink endpoint.
@@ -77,15 +77,21 @@ async def test_create_item_drink_success(
 
     # Create varietal
     varietal = Varietal(name="Cabernet Sauvignon", name_ru="Каберне Совиньон", name_fr="Cabernet Sauvignon")
+    varietal1 = Varietal(name="Shiraz", name_ru="Шираз")
     session.add(varietal)
+    session.add(varietal1)
     await session.commit()
     await session.refresh(varietal)
+    await session.refresh(varietal1)
 
     # Create food
     food = Food(name="Cheese", name_ru="Сыр", name_fr="Fromage")
+    food1 = Food(name="Meet", name_ru="Мясо")
     session.add(food)
+    session.add(food1)
     await session.commit()
     await session.refresh(food)
+    await session.refresh(food1)
 
     # Prepare the request data
     request_data = {
@@ -114,23 +120,24 @@ async def test_create_item_drink_success(
         "price": 25.99,
         # "varietals": [[varietal.id, 100.0]],
         # "foods": [[food.id]]
-        "varietals": [{'id': varietal.id, 'percentage': 100.0}],
-        "foods": [{'id': food.id}]
+        "varietals": [{'id': varietal.id, 'percentage': 40.0}, {'id': varietal1.id, 'percentage': 60.0}],
+        "foods": [{'id': food.id}, {'id': food1.id}]
     }
 
     try:
         data_str = json.dumps(request_data)
         data_dict = json.loads(data_str)
-        x = 'Item'
-        _ = ItemCreatePreact(**data_dict)
-        x = 'Drink'
-        _ = DrinkCreate(**data_dict)
-
+        drink = DrinkCreate(**data_dict)
+        item = ItemCreatePreact(**data_dict)
+        data_dict['drink_id'] = 1
+        item = ItemCreate(**data_dict)
+        for key, val in item.model_dump().items():
+            print(key, ': ', val)
     except ValidationError as exc:
         jprint(data_dict)
         result: dict = {}
         for error in exc.errors():
-            result['head'] = f"Ошибка валидации. {x}"
+            result['head'] = f"Ошибка валидации."
             result['Место ошибки (loc)'] = f"{error['loc']}"
             result['Сообщение (msg)'] = f"{error['loc']}"
             result['Тип ошибки (type)'] = f"{error['type']}"
@@ -139,8 +146,12 @@ async def test_create_item_drink_success(
         assert False, exc.errors()
     except Exception as exc:
         assert False, exc
+    m = 0
+    with open(sample_image_paths[m], 'rb') as f:
+        test_image_data = f.read()  # test_image_data = b"fake_image_876876876876_data"
+    files = {"file": (f"test_{m}.jpg", test_image_data, "image/jpeg")}
     response = await client.post("/items/create_item_drink",
-                                 data={"data": data_str})
+                                 data={"data": data_str}, files=files)
     # Assertions
     if response.status_code not in [200, 201]:
         print(response.text)

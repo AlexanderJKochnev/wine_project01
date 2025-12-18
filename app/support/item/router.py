@@ -168,31 +168,26 @@ class ItemRouter(BaseRouter):
             data_dict = json.loads(data)
             item_drink_data = ItemCreatePreact(**data_dict)
             # load image to database, get image_id & image_path
-            image_dict = await image_service.upload_image(file, description=item_drink_data.drink.title)
-            item_drink_data.image_path = image_dict.get('filename')
-            item_drink_data.image_id = image_dict.get('id')
+            if file:
+                image_dict = await image_service.upload_image(file, description=item_drink_data.title)
+                item_drink_data.image_path = image_dict.get('filename')
+                item_drink_data.image_id = image_dict.get('id')
             result, _ = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
             return result
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
         except ValidationError as exc:
-            """
-            ValidationError_handler(exc)
+            # ValidationError_handler(exc)
             detail = (f'ошибка создания записи {exc}, model = {self.model}, '
                       f'create_schema = {self.create_schema}, '
                       f'service = {self.service} ,'
                       f'repository = {self.repo} ,'
                       f'create_response_schema = {self.create_response_schema}')
             print(detail)
-            """
             raise HTTPException(status_code=501, detail=exc)
         except Exception as e:
             await session.rollback()
-            detail = (f'ошибка создания записи {e}, model = {self.model}, '
-                      f'create_schema = {self.create_schema}, '
-                      f'service = {self.service} ,'
-                      f'repository = {self.repo}')
-            print(detail)
+            detail = str(e)
             raise HTTPException(status_code=500, detail=detail)
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),

@@ -302,6 +302,9 @@ class Repository(metaclass=RepositoryMeta):
                 else:
                     conditions.append(column == value)
             stmt = select(model).where(and_(*conditions)).limit(1)
+            print(f"DEBUG: session object: {session}")
+            print(f"DEBUG: session type: {type(session)}")
+            print(f"DEBUG: hasattr execute: {hasattr(session, 'execute')}")
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:

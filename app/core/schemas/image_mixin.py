@@ -7,6 +7,7 @@ from app.core.config.project_config import settings
 class ImageUrlMixin(BaseModel):
     """ добавляет поле для image_id"""
     image_id: Optional[str] = Field(default=None)
+    image_path: Optional[str] = Field(default=None)
 
 
 class ImageUrlMixinPath(BaseModel):
