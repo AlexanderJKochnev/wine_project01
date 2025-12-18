@@ -41,6 +41,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [handbooks, setHandbooks] = useState({
     subcategories: [],
     sweetness: [],
@@ -109,6 +110,15 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const { name, value, type } = target;
 
+    // Clear error for this field when user starts typing
+    if (name && fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
     if (type === 'file') {
       const fileInput = target as HTMLInputElement;
       if (fileInput.files && fileInput.files[0]) {
@@ -152,10 +162,13 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         subregion_id: parseInt(formData.subregion_id),
         sweetness_id: formData.sweetness_id ? parseInt(formData.sweetness_id) : null,
         varietals: formData.varietals.map(v => {
-          // Assuming varietals format is "id:percentage" - need to parse it
+          // Format for Pydantic schema: {id: id, percentage: percentage}
           const [id, percentage] = v.split(':');
-          return [parseInt(id), parseFloat(percentage)];
-        }).filter(v => !isNaN(v[0]) && !isNaN(v[1])),
+          return {
+            id: parseInt(id),
+            percentage: parseFloat(percentage)
+          };
+        }).filter(v => !isNaN(v.id) && !isNaN(v.percentage)),
         foods: formData.foods.map(f => parseInt(f)).filter(f => !isNaN(f))
       };
 
@@ -166,24 +179,56 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         multipartFormData.append('file', formData.file);
       }
 
-      await apiClient('/items/create_item_drink', {
+      const response = await apiClient('/items/create_item_drink', {
         method: 'POST',
         body: multipartFormData,
         // Don't set Content-Type header, let browser set it with boundary
       }, false); // Don't include language for multipart form data
 
-      if (onCreated) {
-        onCreated();
-      }
+      // Check if the response contains the item id
+      if (response && response.id) {
+        if (onCreated) {
+          onCreated();
+        }
 
-      if (onClose) {
-        onClose();
+        if (onClose) {
+          onClose();
+        } else {
+          route(`/items/${response.id}`); // Navigate to item detail view
+        }
       } else {
-        route('/items'); // Navigate to items list if no onClose callback provided
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
       console.error('Error creating item:', error);
-      alert(`Error creating item: ${error.message}`);
+      
+      // Check if it's a validation error with field-specific messages
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as any).message;
+        
+        // Try to parse field-specific errors if they exist
+        try {
+          const errorObj = JSON.parse(errorMessage);
+          if (errorObj.detail && Array.isArray(errorObj.detail)) {
+            const fieldErrors: Record<string, string> = {};
+            errorObj.detail.forEach((err: any) => {
+              if (err.loc && err.loc.length > 0) {
+                const field = err.loc[err.loc.length - 1];
+                fieldErrors[field] = err.msg;
+              }
+            });
+            setFieldErrors(fieldErrors);
+            alert('Please correct the highlighted fields');
+          } else {
+            alert(`Error creating item: ${errorMessage}`);
+          }
+        } catch {
+          // If parsing fails, show the original message
+          alert(`Error creating item: ${errorMessage}`);
+        }
+      } else {
+        alert(`Error creating item: ${error.message || error}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -229,9 +274,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="title"
                     value={formData.title}
                     onInput={handleChange}
-                    className="input input-bordered w-full"
+                    className={`input w-full ${fieldErrors.title ? 'input-error' : 'input-bordered'}`}
                     required
                   />
+                  {fieldErrors.title && (
+                    <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>
+                  )}
                 </div>
 
                 <div>
@@ -355,7 +403,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="subcategory_id"
                     value={formData.subcategory_id}
                     onChange={handleChange as any}
-                    className="select select-bordered w-full"
+                    className={`select w-full ${fieldErrors.subcategory_id ? 'select-error' : 'select-bordered'}`}
                     required
                   >
                     <option value="">Select a subcategory</option>
@@ -365,6 +413,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.subcategory_id && (
+                    <div className="text-red-500 text-sm mt-1">{fieldErrors.subcategory_id}</div>
+                  )}
                 </div>
 
                 <div>
@@ -394,7 +445,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="subregion_id"
                     value={formData.subregion_id}
                     onChange={handleChange as any}
-                    className="select select-bordered w-full"
+                    className={`select w-full ${fieldErrors.subregion_id ? 'select-error' : 'select-bordered'}`}
                     required
                   >
                     <option value="">Select a subregion</option>
@@ -404,6 +455,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.subregion_id && (
+                    <div className="text-red-500 text-sm mt-1">{fieldErrors.subregion_id}</div>
+                  )}
                 </div>
 
                 <div>
