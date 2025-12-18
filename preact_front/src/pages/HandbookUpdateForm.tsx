@@ -15,7 +15,7 @@ export const HandbookUpdateForm = () => {
   const id = parseInt(idParam);
   const { route } = useLocation();
   const { showNotification } = useNotification();
-  
+
   // Check if ID is valid
   if (isNaN(id)) {
     return (
@@ -26,9 +26,9 @@ export const HandbookUpdateForm = () => {
       </div>
     );
   }
-  
+
   const { language } = useLanguage();
-  
+
   const { data, loading: loadingItem, error: errorItem } = useApi<any>(
     (() => {
       const endpoints: Record<string, string> = {
@@ -79,7 +79,7 @@ export const HandbookUpdateForm = () => {
     undefined,
     type === 'foods'
   );
-  
+
   const [formData, setFormData] = useState({
     name: '',
     name_ru: '',
@@ -153,7 +153,7 @@ export const HandbookUpdateForm = () => {
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       await apiClient(getEndpoint(type), {
         method: 'PATCH',
@@ -200,7 +200,7 @@ export const HandbookUpdateForm = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Edit {getReadableName(type)}</h1>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="card bg-base-100 shadow">
           <div className="card-body">
@@ -219,7 +219,7 @@ export const HandbookUpdateForm = () => {
                   placeholder="Name"
                 />
               </div>
-              
+
               <div>
                 <label className="label">
                   <span className="label-text">Name (Russian)</span>
@@ -233,7 +233,7 @@ export const HandbookUpdateForm = () => {
                   placeholder="Name in Russian"
                 />
               </div>
-              
+
               <div>
                 <label className="label">
                   <span className="label-text">Name (French)</span>
@@ -247,7 +247,7 @@ export const HandbookUpdateForm = () => {
                   placeholder="Name in French"
                 />
               </div>
-              
+
               <div>
                 <label className="label">
                   <span className="label-text">Description</span>
@@ -261,7 +261,7 @@ export const HandbookUpdateForm = () => {
                   placeholder="Description"
                 />
               </div>
-              
+
               <div>
                 <label className="label">
                   <span className="label-text">Description (Russian)</span>
@@ -275,7 +275,7 @@ export const HandbookUpdateForm = () => {
                   placeholder="Description in Russian"
                 />
               </div>
-              
+
               <div>
                 <label className="label">
                   <span className="label-text">Description (French)</span>
@@ -289,7 +289,7 @@ export const HandbookUpdateForm = () => {
                   placeholder="Description in French"
                 />
               </div>
-              
+
               {/* Conditional dropdowns based on handbook type */}
               {type === 'regions' && (
                 <div>
@@ -323,7 +323,7 @@ export const HandbookUpdateForm = () => {
                   )}
                 </div>
               )}
-              
+
               {type === 'subcategories' && (
                 <div>
                   <label className="label">
@@ -356,7 +356,7 @@ export const HandbookUpdateForm = () => {
                   )}
                 </div>
               )}
-              
+
               {type === 'subregions' && (
                 <div>
                   <label className="label">
@@ -389,7 +389,7 @@ export const HandbookUpdateForm = () => {
                   )}
                 </div>
               )}
-              
+
               {type === 'foods' && (
                 <div>
                   <label className="label">
@@ -427,8 +427,8 @@ export const HandbookUpdateForm = () => {
         </div>
 
         <div className="flex gap-4">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`btn btn-primary ${loading ? 'loading' : ''}`}
             disabled={loading}
           >
