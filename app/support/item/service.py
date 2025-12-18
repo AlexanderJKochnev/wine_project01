@@ -314,7 +314,6 @@ class ItemService(Service):
         try:
             data_dict = data.model_dump(exclude_unset=True)
             drink = DrinkCreate(**data_dict)
-            print('--------------', drink)
             result, created = DrinkService.create(drink, DrinkRepository, Drink, AsyncSession)
             data_dict["drink_id"] = result
             item = ItemCreate(**data_dict)

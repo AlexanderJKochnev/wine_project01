@@ -20,6 +20,7 @@ from app.support.region.model import Region
 from app.support.subregion.model import Subregion
 from app.support.varietal.model import Varietal
 from app.support.food.model import Food
+from app.support.drink.schemas import DrinkCreate
 from app.support.item.schemas import ItemCreatePreact
 from app.core.utils.exception_handler import ValidationError_handler
 from app.core.utils.common_utils import jprint
@@ -119,11 +120,14 @@ async def test_create_item_drink_success(
     try:
         data_str = json.dumps(request_data)
         data_dict = json.loads(data_str)
+        x = 'Item'
         _ = ItemCreatePreact(**data_dict)
+        x = 'Drink'
+        _ = DrinkCreate(**data_dict)
     except ValidationError as exc:
         result: dict = {}
         for error in exc.errors():
-            result['head'] = "Ошибка валидации"
+            result['head'] = f"Ошибка валидации. {x}"
             result['Место ошибки (loc)'] = f"{error['loc']}"
             result['Сообщение (msg)'] = f"{error['loc']}"
             result['Тип ошибки (type)'] = f"{error['type']}"
