@@ -11,7 +11,7 @@ from app.core.utils.common_utils import flatten_dict
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 from app.support.drink.model import Drink
-from app.support.drink.schemas import DrinkCreate, DrinkCreateRelation, DrinkRead
+from app.support.drink.schemas import DrinkCreate1, DrinkCreateRelation, DrinkRead, DrinkCreate
 from app.support.drink.repository import DrinkRepository
 
 from app.support.food.service import FoodService
@@ -82,9 +82,13 @@ class DrinkService(Service):
                 result, _ = await SweetnessService.get_or_create(data.sweetness,
                                                                  SweetnessRepository, Sweetness, session)
                 drink_data['sweetness_id'] = result.id
-
-            drink = DrinkCreate(**drink_data)
-            drink_instance, _ = await cls.get_or_create(drink, DrinkRepository, Drink, session)
+            # костыль DrinkCreate1
+            drink = DrinkCreate1(**drink_data)
+            drink_instance, new = await cls.get_or_create(drink, DrinkRepository, Drink, session)
+            # проверку ниже включить если нет массовых добавлений с обновлениями
+            # if not new:
+            #     raise Exception(f"запись '{drink}' существует. Если необходимо обновить ее, "
+            #                     f"воспользуйтесь формой 'Edit'")
             drink_id = drink_instance.id
 
             if isinstance(data.foods, list):
@@ -116,3 +120,37 @@ class DrinkService(Service):
             return drink_instance
         except Exception as e:
             print(f'drink_create_relation error: {e}')
+
+    @classmethod
+    async def create(cls, data: ModelType, repository: Type[Repository],
+                     model: ModelType, session: AsyncSession) -> ModelType:
+        """ create & return record """
+        try:
+            # remove unset and 'varietals', 'foods' items
+            drink_data = data.model_dump(exclude={'varietals', 'foods'},
+                                         exclude_unset=True)
+            """
+                "foods": [{"id": 5}, ...],
+                "varietals": [{"varietal_id": 4,"percentage": null}, ...]
+            """
+            drink = DrinkCreate(**drink_data)
+            print(f'============{drink} {type(drink)=}')
+            drink_instance, new = await cls.get_or_create(drink, DrinkRepository, Drink, session)
+            print(f'{drink_instance=} {new=}')
+            if not new:
+                raise Exception(f"запись '{drink}' существует. Если необходимо обновить ее, "
+                                f"воспользуйтесь формой 'Edit'")
+            drink_id = drink_instance.id
+            # добавляем drink_foods & drink_varietals
+            if isinstance(data.foods, list):
+                food_ids = [item.get('id') for item in data.foods]
+                result = await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
+            if isinstance(data.varietals):
+                # convert [{'id':4, 'percentage': null},...] -> {4: null, ...}
+                varietal_precentage = {item.get('id'): item.get('percentage') for item in data.varietals}
+                # add drink_id, varietal.ids to DrinkVarietal
+                for key, val in varietal_precentage.items():
+                    await DrinkVarietalRepository.add_varietal_to_drink(drink_id, key, val, session)
+            return result
+        except Exception as e:
+            raise Exception(f'drink_create_error: {e}')

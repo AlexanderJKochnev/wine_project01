@@ -1,7 +1,6 @@
 # flake8: noqa: E121
 # tests/data_factory/data_generator.py
 from typing import Type, Dict, Any, Union, List
-from app.support.drink.schemas import DrinkRead, DrinkCreate, DrinkUpdate, BaseModel
 from pathlib import Path
 import json
 from tests.data_factory.fake_generator import TestDataGenerator

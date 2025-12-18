@@ -1,5 +1,6 @@
 # app/support/varietal/schemas.py
-from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema, CreateResponse)
+from app.core.schemas.base import (CreateSchema, ReadSchema, UpdateSchema,
+                                   CreateResponse, PkSchema)
 
 
 class CustomReadSchema:
@@ -39,4 +40,8 @@ class VarietalUpdate(UpdateSchema, CustomUpdSchema):
 
 
 class VarietalCreateResponseSchema(VarietalCreate, CreateResponse):
+    pass
+
+
+class VarietalId(PkSchema):
     pass

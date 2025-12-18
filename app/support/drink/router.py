@@ -49,8 +49,7 @@ class DrinkRouter(BaseRouter):
 
     async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
         """
-        Создание одной запси с зависимостями - если в таблице есть зависимости
-        они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии)
+        Создание одной записи
         """
         result = await super().create(data, session)
         return result

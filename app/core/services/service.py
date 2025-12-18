@@ -64,6 +64,7 @@ class Service(metaclass=ServiceMeta):
                             default: List[str] = None) -> Tuple[ModelType, bool]:
         """
             находит или создет запись
+            возвращает instance и True (запись создана) или False (запись существует)
         """
         try:
             if default is None:

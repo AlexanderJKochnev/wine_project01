@@ -29,14 +29,23 @@ class DrinkVarietalRepository:
 
     @classmethod
     async def add_varietal_to_drink(cls, drink_id: int, varietal_id: int, percentage: int, session: AsyncSession):
-        association = DrinkVarietal(drink_id=drink_id, varietal_id=varietal_id, percentage=percentage)
-        session.add(association)
-        await session.commit()
-        # await session.refresh()
-        # return association
+        """
+            добавление одной записи
+        """
+        try:
+            association = DrinkVarietal(drink_id=drink_id, varietal_id=varietal_id, percentage=percentage)
+            session.add(association)
+            await session.commit()
+            return association
+        except Exception as e:
+            raise Exception(f"ошибка выполнения метода DrinkVarietalRepository.add_varietal_to_drink."
+                            f"{drink_id=}, {varietal_id=}, {percentage=}. {e}")
 
     @classmethod
     async def remove_varietal_from_drink(cls, drink_id: int, varietal_id: int, session: AsyncSession):
+        """
+            удалеени однйо записи
+        """
         stmt = select(DrinkVarietal).where(DrinkVarietal.drink_id == drink_id, DrinkVarietal.varietal_id == varietal_id)
         result = await session.execute(stmt)
         association = result.scalar_one_or_none()
@@ -46,6 +55,9 @@ class DrinkVarietalRepository:
 
     @classmethod
     async def update_percentage(cls, drink_id: int, varietal_id: int, percentage: int, session: AsyncSession):
+        """
+            обновление процентов
+        """
         stmt = select(DrinkVarietal).where(DrinkVarietal.drink_id == drink_id, DrinkVarietal.varietal_id == varietal_id)
         result = await session.execute(stmt)
         association = result.scalar_one_or_none()

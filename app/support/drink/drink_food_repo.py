@@ -36,7 +36,7 @@ class DrinkFoodRepository:
         return association
 
     @classmethod
-    async def remove_food_from_drink(cls, drink_id: int, food_id: int, session: AsyncSession):
+    async def remove_food_from_drink(cls, drink_id: int, food_id: int, session: AsyncSession) -> bool:
         try:
             stmt = select(DrinkFood).where(DrinkFood.drink_id == drink_id, DrinkFood.food_id == food_id)
             result = await session.execute(stmt)
@@ -58,11 +58,15 @@ class DrinkFoodRepository:
         #     await session.delete(obj)
         # await session.commit()
         # Non-orm method альтернативный способ удаления записей - быстрее но не поддердивает ORM-логику
-        await session.execute(delete(DrinkFood).where(DrinkFood.drink_id == drink_id))
-        # Добавляем новые
-        associations = [
-            DrinkFood(drink_id=drink_id, food_id=food_id)
-            for food_id in food_ids
-        ]
-        session.add_all(associations)
-        await session.commit()
+        try:
+            await session.execute(delete(DrinkFood).where(DrinkFood.drink_id == drink_id))
+            # Добавляем новые
+            associations = [
+                DrinkFood(drink_id=drink_id, food_id=food_id)
+                for food_id in food_ids
+            ]
+            session.add_all(associations)
+            await session.commit()
+            return True
+        except Exception as e:
+            raise Exception(f'ошибка при выполнении метода DrinkFoodRepository.set_drink_foods. {e}')

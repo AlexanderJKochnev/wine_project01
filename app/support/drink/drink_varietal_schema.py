@@ -7,7 +7,7 @@ from app.support.varietal.schemas import VarietalCreateRelation
 
 
 class DrinkVarietalId(BaseModel):
-    varietal_id: int
+    id: int     # varietal id
     percentage: Optional[float] = None
 
 
