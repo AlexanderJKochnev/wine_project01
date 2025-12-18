@@ -561,42 +561,114 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                 
                 <div>
                   <label className="label">
-                    <span className="label-text">Varietals (with percentages)</span>
+                    <span className="label-text">Varietals</span>
                   </label>
-                  <select
-                    name="varietals"
-                    multiple
-                    value={formData.varietals}
-                    onChange={handleChange as any}
-                    className="select select-bordered w-full h-32"
-                  >
-                    {handbooks.varietals.map(varietal => (
-                      <option key={varietal.id} value={`${varietal.id}:100`}>
-                        {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr} (100%)
-                      </option>
+                  <div className="max-h-60 overflow-y-auto border rounded p-2">
+                    {handbooks.varietals.map((varietal, index) => (
+                      <div key={varietal.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`varietal-${varietal.id}`}
+                          checked={formData.varietals.some(v => v.startsWith(`${varietal.id}:`))}
+                          onChange={(e) => {
+                            const isChecked = (e.target as HTMLInputElement).checked;
+                            let newVarietals = [...formData.varietals];
+                            
+                            if (isChecked) {
+                              // Add varietal with default 100% if not already present
+                              const existingIndex = newVarietals.findIndex(v => v.startsWith(`${varietal.id}:`));
+                              if (existingIndex === -1) {
+                                newVarietals.push(`${varietal.id}:100`);
+                              }
+                            } else {
+                              // Remove varietal
+                              newVarietals = newVarietals.filter(v => !v.startsWith(`${varietal.id}:`));
+                            }
+                            
+                            setFormData(prev => ({
+                              ...prev,
+                              varietals: newVarietals
+                            }));
+                          }}
+                          className="checkbox checkbox-primary mr-2"
+                        />
+                        <label htmlFor={`varietal-${varietal.id}`} className="flex-1">
+                          {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
+                        </label>
+                        {/* Percentage input field */}
+                        {formData.varietals.some(v => v.startsWith(`${varietal.id}:`)) && (
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="%" 
+                            value={
+                              formData.varietals.find(v => v.startsWith(`${varietal.id}:`))
+                                ?.split(':')[1] || '100'
+                            }
+                            onChange={(e) => {
+                              const percentage = e.target.value;
+                              const newVarietals = formData.varietals.map(v => {
+                                if (v.startsWith(`${varietal.id}:`)) {
+                                  return `${varietal.id}:${percentage}`;
+                                }
+                                return v;
+                              });
+                              
+                              setFormData(prev => ({
+                                ...prev,
+                                varietals: newVarietals
+                              }));
+                            }}
+                            className="input input-bordered input-xs w-20 ml-2"
+                          />
+                        )}
+                      </div>
                     ))}
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options. Format: ID:Percentage</p>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">Check to select varietals and enter percentage values</p>
                 </div>
                 
                 <div>
                   <label className="label">
                     <span className="label-text">Foods</span>
                   </label>
-                  <select
-                    name="foods"
-                    multiple
-                    value={formData.foods}
-                    onChange={handleChange as any}
-                    className="select select-bordered w-full h-32"
-                  >
-                    {handbooks.foods.map(food => (
-                      <option key={food.id} value={food.id}>
-                        {food.name || food.name_en || food.name_ru || food.name_fr}
-                      </option>
+                  <div className="max-h-60 overflow-y-auto border rounded p-2">
+                    {handbooks.foods.map((food) => (
+                      <div key={food.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`food-${food.id}`}
+                          checked={formData.foods.includes(food.id.toString())}
+                          onChange={(e) => {
+                            const isChecked = (e.target as HTMLInputElement).checked;
+                            let newFoods = [...formData.foods];
+                            
+                            if (isChecked) {
+                              // Add food if not already present
+                              if (!newFoods.includes(food.id.toString())) {
+                                newFoods.push(food.id.toString());
+                              }
+                            } else {
+                              // Remove food
+                              newFoods = newFoods.filter(f => f !== food.id.toString());
+                            }
+                            
+                            setFormData(prev => ({
+                              ...prev,
+                              foods: newFoods
+                            }));
+                          }}
+                          className="checkbox checkbox-primary mr-2"
+                        />
+                        <label htmlFor={`food-${food.id}`} className="flex-1">
+                          {food.name || food.name_en || food.name_ru || food.name_fr}
+                        </label>
+                      </div>
                     ))}
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">Check to select foods</p>
                 </div>
               </div>
             </div>
