@@ -113,6 +113,8 @@ async def test_create_item_drink_success(
         "age": "2020",
         "vol": 0.75,
         "price": 25.99,
+        # "varietals": [[varietal.id, 100.0]],
+        # "foods": [[food.id]]
         "varietals": [{'id': varietal.id, 'percentage': 100.0}],
         "foods": [{'id': food.id}]
     }
@@ -124,7 +126,14 @@ async def test_create_item_drink_success(
         _ = ItemCreatePreact(**data_dict)
         x = 'Drink'
         _ = DrinkCreate(**data_dict)
+
+        # response = await client.post("/items/create_item_drink",
+        #                              data = {"data": data_str})
+        # print('-------------------')
+        # jprint(data_dict)
+        #  assert False
     except ValidationError as exc:
+        jprint(data_dict)
         result: dict = {}
         for error in exc.errors():
             result['head'] = f"Ошибка валидации. {x}"
@@ -136,9 +145,8 @@ async def test_create_item_drink_success(
         assert False, exc.errors()
     except Exception as exc:
         assert False, exc
-
     response = await client.post("/items/create_item_drink",
-                                 data={"data": json.dumps(request_data)})
+                                 data={"data": data_str})
     # Assertions
     if response.status_code not in [200, 201]:
         print(response.text)
