@@ -4,19 +4,16 @@
     выводит плоские словари с локализованными полями
     по языкам
 """
-import json
 from typing import List
 
-from fastapi import (Depends, File, Form, Path, Query, UploadFile)
+from fastapi import (Depends, Path, Query)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
-from app.core.routers.base import BaseRouter
 from app.core.schemas.base import PaginatedResponse
-from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import ItemCreatePreact, ItemCreateResponseSchema, ItemDetailView, ItemListView
+from app.support.item.schemas import ItemDetailView, ItemListView
 from app.support.item.service import ItemService
 
 
@@ -90,25 +87,6 @@ class ItemViewRouter:
             tags=self.tags,
             summary="Поиск элементов по триграммному индексу в связанной модели Drink"
         )
-
-    async def create_item(self,
-                          data: str = Form(..., description="JSON string of DrinkCreateRelation"),
-                          file: UploadFile = File(...),
-                          session: AsyncSession = Depends(get_db),
-                          image_service: ThumbnailImageService = Depends()
-                          ) -> ItemCreateResponseSchema:
-        """
-                Создание одной записи Item -> Drink с зависимостями - если в таблице есть зависимости
-                они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
-                кроме того будет добавлено изображение.
-                перед этим нужно импортировать изображения
-                POST mongodb/images/direct
-                """
-        # входные данные текстовый файл
-        data_dict = json.loads(data)
-        # валидация данных
-        item_data = ItemCreatePreact(**data_dict)
-        return item_data
 
     async def get_list(self, lang: str = Path(..., description="Язык локализации"),
                        session: AsyncSession = Depends(get_db)):

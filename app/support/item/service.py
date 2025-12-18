@@ -314,8 +314,11 @@ class ItemService(Service):
         try:
             data_dict = data.model_dump(exclude_unset=True)
             drink = DrinkCreate(**data_dict)
+            print(f'00==========={drink}==========')
             result, created = DrinkService.create(drink, DrinkRepository, Drink, AsyncSession)
-            data_dict["drink_id"] = result
+            print(f'dinrk=={result=}====={created=}======')
+
+            data_dict["drink_id"] = result.id
             item = ItemCreate(**data_dict)
             item_instance, new = await cls.get_or_create(item, ItemRepository, Item, session)
             return item_instance, new

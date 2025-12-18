@@ -9,7 +9,6 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
-from app.support.item.schemas import ItemDrinkPreactSchema
 from app.support.drink.model import Drink
 from app.support.item.model import Item
 from app.support.category.model import Category
@@ -127,11 +126,6 @@ async def test_create_item_drink_success(
         x = 'Drink'
         _ = DrinkCreate(**data_dict)
 
-        # response = await client.post("/items/create_item_drink",
-        #                              data = {"data": data_str})
-        # print('-------------------')
-        # jprint(data_dict)
-        #  assert False
     except ValidationError as exc:
         jprint(data_dict)
         result: dict = {}
@@ -150,7 +144,7 @@ async def test_create_item_drink_success(
     # Assertions
     if response.status_code not in [200, 201]:
         print(response.text)
-    assert response.status_code == 200, f"Response: {response.status_code}"
+    assert response.status_code == 200, response.text
 
 
 @pytest.mark.skip

@@ -2,10 +2,10 @@
 import json
 from typing import Optional
 
-from fastapi import Depends, File, Form, HTTPException, Query, Path, status, UploadFile
+from fastapi import Depends, File, Form, HTTPException, Path, Query, status, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.utils.exception_handler import ValidationError_handler
+
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging
 from app.core.routers.base import BaseRouter
@@ -13,9 +13,8 @@ from app.core.schemas.base import PaginatedResponse
 from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import (ItemCreate, ItemCreateRelation, DirectUploadSchema,
-                                      ItemCreateResponseSchema, ItemUpdate, FileUpload,
-                                      ItemListView, ItemDetailView, ItemDrinkPreactSchema)
+from app.support.item.schemas import (FileUpload, ItemCreate, ItemCreatePreact, ItemCreateRelation,
+                                      ItemCreateResponseSchema, ItemUpdate)
 from app.support.item.service import ItemService
 
 paging = get_paging
@@ -154,7 +153,7 @@ class ItemRouter(BaseRouter):
             raise HTTPException(status_code=500, detail=detail)
 
     async def create_item_drink(self,
-                                data: str = Form(..., description="JSON string of ItemDrinkPreactSchema"),
+                                data: str = Form(..., description="JSON string of ItemCreatePreact"),
                                 file: UploadFile = File(None),
                                 session: AsyncSession = Depends(get_db),
                                 image_service: ThumbnailImageService = Depends()
@@ -162,12 +161,12 @@ class ItemRouter(BaseRouter):
         """
         Создание записи Item & Drink и всеми связями
         Принимает JSON строку и файл изображения
-        Валидирует схемой ItemDrinkPreactSchema
+        Валидирует схемой ItemCreatePreact
         Сохраняет в порядке: Drink -> DrinkVarietal -> DrinkFood -> Item
         """
         try:
             data_dict = json.loads(data)
-            item_drink_data = ItemDrinkPreactSchema(**data_dict)
+            item_drink_data = ItemCreatePreact(**data_dict)
             # load image to database, get image_id & image_path
             image_dict = await image_service.upload_image(file, description=item_drink_data.drink.title)
             item_drink_data.image_path = image_dict.get('filename')

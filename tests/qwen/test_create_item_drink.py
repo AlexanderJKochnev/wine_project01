@@ -8,7 +8,6 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.support.item.schemas import ItemDrinkPreactSchema
 from app.support.drink.model import Drink
 from app.support.item.model import Item
 from app.support.category.model import Category
