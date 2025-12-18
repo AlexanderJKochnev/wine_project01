@@ -182,12 +182,14 @@ class ItemRouter(BaseRouter):
                       f'create_schema = {self.create_schema}, '
                       f'service = {self.service} ,'
                       f'repository = {self.repo} ,'
-                      f'create_response_schema = {self.create_response_schema}')
+                      f'create_response_schema = {self.create_response_schema}, '
+                      f'{data=}')
             print(detail)
             raise HTTPException(status_code=501, detail=exc)
         except Exception as e:
             await session.rollback()
-            detail = str(e)
+            detail = f'{str(e)}, {data=}'
+            print(f'=========={data}')
             raise HTTPException(status_code=500, detail=detail)
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),

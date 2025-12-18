@@ -169,7 +169,10 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
             percentage: parseFloat(percentage)
           };
         }).filter(v => !isNaN(v.id) && !isNaN(v.percentage)),
-        foods: formData.foods.map(f => parseInt(f)).filter(f => !isNaN(f))
+        foods: formData.foods.map(f => {
+          const id = parseInt(f);
+          return isNaN(id) ? null : { id };
+        }).filter((f): f is { id: number } => f !== null)
       };
 
       multipartFormData.append('data', JSON.stringify(dataToSend));
@@ -201,11 +204,11 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
       }
     } catch (error) {
       console.error('Error creating item:', error);
-      
+
       // Check if it's a validation error with field-specific messages
       if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = (error as any).message;
-        
+
         // Try to parse field-specific errors if they exist
         try {
           const errorObj = JSON.parse(errorMessage);
