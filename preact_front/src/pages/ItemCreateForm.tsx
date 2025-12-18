@@ -2,13 +2,15 @@
 import { h, useState, useEffect } from 'preact/hooks';
 import { apiClient } from '../lib/apiClient';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useLocation } from 'preact-iso';
 
 interface ItemCreateFormProps {
-  onClose: () => void;
-  onCreated: () => void;
+  onClose?: () => void;
+  onCreated?: () => void;
 }
 
 export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
+  const { route } = useLocation();
   const [formData, setFormData] = useState({
     title: '',
     title_ru: '',
@@ -39,6 +41,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [handbooks, setHandbooks] = useState({
     subcategories: [],
     sweetness: [],
@@ -67,12 +70,33 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           apiClient<any[]>(`/handbooks/foods/all`)
         ]);
 
+        // Sort each handbook alphabetically by the visible field
+        const getVisibleName = (item: any) => {
+          return item.name || item.name_en || item.name_ru || item.name_fr || '';
+        };
+
+        const sortedSubcategories = [...subcategories].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedSweetness = [...sweetness].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedSubregions = [...subregions].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedVarietals = [...varietals].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedFoods = [...foods].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+
         setHandbooks({
-          subcategories,
-          sweetness,
-          subregions,
-          varietals,
-          foods
+          subcategories: sortedSubcategories,
+          sweetness: sortedSweetness,
+          subregions: sortedSubregions,
+          varietals: sortedVarietals,
+          foods: sortedFoods
         });
       } catch (err) {
         console.error('Failed to load handbook data', err);
@@ -85,6 +109,15 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
   const handleChange = (e: Event) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const { name, value, type } = target;
+
+    // Clear error for this field when user starts typing
+    if (name && fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
 
     if (type === 'file') {
       const fileInput = target as HTMLInputElement;
@@ -110,67 +143,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     }
   };
 
-  const handleVarietalChange = (id: number, checked: boolean) => {
-    setFormData(prev => {
-      const currentVarietals = [...prev.varietals];
-      const existingIndex = currentVarietals.findIndex(v => v.startsWith(`${id}:`));
-
-      if (checked) {
-        if (existingIndex === -1) {
-          currentVarietals.push(`${id}:100`);
-        }
-      } else {
-        if (existingIndex !== -1) {
-          currentVarietals.splice(existingIndex, 1);
-        }
-      }
-
-      return {
-        ...prev,
-        varietals: currentVarietals
-      };
-    });
-  };
-
-  const handleVarietalPercentageChange = (id: number, percentage: string) => {
-    setFormData(prev => {
-      const currentVarietals = [...prev.varietals];
-      const existingIndex = currentVarietals.findIndex(v => v.startsWith(`${id}:`));
-
-      if (existingIndex !== -1) {
-        currentVarietals[existingIndex] = `${id}:${percentage}`;
-      }
-
-      return {
-        ...prev,
-        varietals: currentVarietals
-      };
-    });
-  };
-
-  const handleFoodChange = (id: number, checked: boolean) => {
-    setFormData(prev => {
-      const currentFoods = [...prev.foods];
-      const idStr = String(id);
-      const existingIndex = currentFoods.indexOf(idStr);
-
-      if (checked) {
-        if (existingIndex === -1) {
-          currentFoods.push(idStr);
-        }
-      } else {
-        if (existingIndex !== -1) {
-          currentFoods.splice(existingIndex, 1);
-        }
-      }
-
-      return {
-        ...prev,
-        foods: currentFoods
-      };
-    });
-  };
-
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     setLoading(true);
@@ -190,11 +162,17 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         subregion_id: parseInt(formData.subregion_id),
         sweetness_id: formData.sweetness_id ? parseInt(formData.sweetness_id) : null,
         varietals: formData.varietals.map(v => {
-          // Assuming varietals format is "id:percentage" - need to parse it
+          // Format for Pydantic schema: {id: id, percentage: percentage}
           const [id, percentage] = v.split(':');
-          return [parseInt(id), parseFloat(percentage)];
-        }).filter(v => !isNaN(v[0]) && !isNaN(v[1])),
-        foods: formData.foods.map(f => parseInt(f)).filter(f => !isNaN(f))
+          return {
+            id: parseInt(id),
+            percentage: parseFloat(percentage)
+          };
+        }).filter(v => !isNaN(v.id) && !isNaN(v.percentage)),
+        foods: formData.foods.map(f => {
+          const id = parseInt(f);
+          return isNaN(id) ? null : { id };
+        }).filter((f): f is { id: number } => f !== null)
       };
 
       multipartFormData.append('data', JSON.stringify(dataToSend));
@@ -204,17 +182,56 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         multipartFormData.append('file', formData.file);
       }
 
-      await apiClient('/items/create_item_drink', {
+      const response = await apiClient('/items/create_item_drink', {
         method: 'POST',
         body: multipartFormData,
         // Don't set Content-Type header, let browser set it with boundary
       }, false); // Don't include language for multipart form data
 
-      onCreated();
-      onClose();
+      // Check if the response contains the item id
+      if (response && response.id) {
+        if (onCreated) {
+          onCreated();
+        }
+
+        if (onClose) {
+          onClose();
+        } else {
+          route(`/items/${response.id}`); // Navigate to item detail view
+        }
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('Error creating item:', error);
-      alert(`Error creating item: ${error.message}`);
+
+      // Check if it's a validation error with field-specific messages
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as any).message;
+
+        // Try to parse field-specific errors if they exist
+        try {
+          const errorObj = JSON.parse(errorMessage);
+          if (errorObj.detail && Array.isArray(errorObj.detail)) {
+            const fieldErrors: Record<string, string> = {};
+            errorObj.detail.forEach((err: any) => {
+              if (err.loc && err.loc.length > 0) {
+                const field = err.loc[err.loc.length - 1];
+                fieldErrors[field] = err.msg;
+              }
+            });
+            setFieldErrors(fieldErrors);
+            alert('Please correct the highlighted fields');
+          } else {
+            alert(`Error creating item: ${errorMessage}`);
+          }
+        } catch {
+          // If parsing fails, show the original message
+          alert(`Error creating item: ${errorMessage}`);
+        }
+      } else {
+        alert(`Error creating item: ${error.message || error}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -260,9 +277,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="title"
                     value={formData.title}
                     onInput={handleChange}
-                    className="input input-bordered w-full"
+                    className={`input w-full ${fieldErrors.title ? 'input-error' : 'input-bordered'}`}
                     required
                   />
+                  {fieldErrors.title && (
+                    <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>
+                  )}
                 </div>
 
                 <div>
@@ -386,7 +406,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="subcategory_id"
                     value={formData.subcategory_id}
                     onChange={handleChange as any}
-                    className="select select-bordered w-full"
+                    className={`select w-full ${fieldErrors.subcategory_id ? 'select-error' : 'select-bordered'}`}
                     required
                   >
                     <option value="">Select a subcategory</option>
@@ -396,6 +416,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.subcategory_id && (
+                    <div className="text-red-500 text-sm mt-1">{fieldErrors.subcategory_id}</div>
+                  )}
                 </div>
 
                 <div>
@@ -425,7 +448,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="subregion_id"
                     value={formData.subregion_id}
                     onChange={handleChange as any}
-                    className="select select-bordered w-full"
+                    className={`select w-full ${fieldErrors.subregion_id ? 'select-error' : 'select-bordered'}`}
                     required
                   >
                     <option value="">Select a subregion</option>
@@ -435,6 +458,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.subregion_id && (
+                    <div className="text-red-500 text-sm mt-1">{fieldErrors.subregion_id}</div>
+                  )}
                 </div>
 
                 <div>
@@ -622,62 +648,42 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Varietals</span>
+                    <span className="label-text">Varietals (with percentages)</span>
                   </label>
-                  <div className="border border-gray-300 rounded-lg p-2 max-h-40 overflow-y-auto">
-                    {handbooks.varietals.map((varietal, index) => {
-                      const isSelected = formData.varietals.some(v => v.startsWith(`${varietal.id}:`));
-                      const percentage = isSelected ? formData.varietals.find(v => v.startsWith(`${varietal.id}:`))?.split(':')[1] || '100' : '100';
-
-                      return (
-                        <div key={varietal.id} className="flex items-center mb-2">
-                          <input
-                            type="checkbox"
-                            id={`varietal-${varietal.id}`}
-                            checked={isSelected}
-                            onChange={(e) => handleVarietalChange(varietal.id, e.currentTarget.checked)}
-                            className="checkbox checkbox-primary mr-2"
-                          />
-                          <label htmlFor={`varietal-${varietal.id}`} className="flex-1">
-                            {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
-                          </label>
-                          {isSelected && (
-                            <input
-                              type="number"
-                              value={percentage}
-                              onChange={(e) => handleVarietalPercentageChange(varietal.id, e.currentTarget.value)}
-                              className="input input-bordered input-sm w-20 ml-2"
-                              min="0"
-                              max="100"
-                              step="0.1"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <select
+                    name="varietals"
+                    multiple
+                    value={formData.varietals}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full h-32"
+                  >
+                    {handbooks.varietals.map(varietal => (
+                      <option key={varietal.id} value={`${varietal.id}:100`}>
+                        {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr} (100%)
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options. Format: ID:Percentage</p>
                 </div>
 
                 <div>
                   <label className="label">
                     <span className="label-text">Foods</span>
                   </label>
-                  <div className="border border-gray-300 rounded-lg p-2 max-h-40 overflow-y-auto">
+                  <select
+                    name="foods"
+                    multiple
+                    value={formData.foods}
+                    onChange={handleChange as any}
+                    className="select select-bordered w-full h-32"
+                  >
                     {handbooks.foods.map(food => (
-                      <div key={food.id} className="flex items-center mb-2">
-                        <input
-                          type="checkbox"
-                          id={`food-${food.id}`}
-                          checked={formData.foods.includes(String(food.id))}
-                          onChange={(e) => handleFoodChange(food.id, e.currentTarget.checked)}
-                          className="checkbox checkbox-primary mr-2"
-                        />
-                        <label htmlFor={`food-${food.id}`}>
-                          {food.name || food.name_en || food.name_ru || food.name_fr}
-                        </label>
-                      </div>
+                      <option key={food.id} value={food.id}>
+                        {food.name || food.name_en || food.name_ru || food.name_fr}
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
                 </div>
               </div>
             </div>
@@ -686,7 +692,13 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                if (onClose) {
+                  onClose();
+                } else {
+                  route('/items'); // Navigate to items list if no onClose callback provided
+                }
+              }}
               className="btn btn-ghost"
               disabled={loading}
             >
