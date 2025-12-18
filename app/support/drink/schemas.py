@@ -12,8 +12,7 @@ from app.support.food.schemas import FoodCreateRelation, FoodRead, FoodId
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead, SubcategoryReadApiSchema
 from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead, SubregionReadApiSchema
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead
-from app.support.varietal.schemas import VarietalRead, VarietalId
-from app.support.food.schemas import FoodId
+from app.support.varietal.schemas import VarietalRead
 
 
 class LangMixin:
@@ -182,12 +181,8 @@ class DrinkCreate1(CreateNoNameSchema, CustomCreateSchema, DrinkFoodVarietalSche
 
 
 class DrinkCreate(CreateNoNameSchema, CustomCreateSchema):
-    foods: Optional[List[FoodId]] = []
-    # varietals: Optional[List[DrinkVarietalId]] = []
-    # foods: List[VarietalId]
-    # varietals: List[DrinkVarietalId]
-    foods: List[FoodId]
-    varietals: List[VarietalId]
+    foods: Optional[List[FoodId]] = None
+    varietals: Optional[List[DrinkVarietalId]] = None
 
 
 class DrinkCreateRelation(CreateNoNameSchema, CustomCreateRelation):

@@ -2,7 +2,7 @@
 import asyncio
 import io
 from datetime import datetime, timezone
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 from pathlib import Path
 
 from dateutil.relativedelta import relativedelta
@@ -280,7 +280,7 @@ class ThumbnailImageService:
     async def upload_image(self,
                            file: UploadFile,
                            description: str,
-                           ):
+                           ) -> Dict[str, Any]:
         try:
             content = await file.read()
             # content = make_transparent_white_bg(content)
@@ -295,6 +295,12 @@ class ThumbnailImageService:
             )
         result = await self.image_repository.create_image(filename, content, content_type, description)
         result['filename'] = filename
+        """
+            {"id": str,
+             "has_thumbnail": bool,
+             "filename": str
+             }
+        """
         return result
 
     async def delete_image(self,

@@ -61,8 +61,9 @@ async def test_new_data_generator_relation(authenticated_client_with_db, test_db
                 response = await client.post(f'{prefix}/full', data=form_data, files=files)
                 assert response.status_code in [200, 201], response.text
             except Exception as e:
-                # jprint(data)
-                if 'response' in locals():
-                    print(f"Response status: {response.status_code=}")
-                    print(f"Response text: {response.text=}")
+                jprint(data)
+                print(e)
+                # if 'response' in locals():
+                #     print(f"Response status: {response.status_code=}")
+                #     print(f"Response text: {response.text=}")
                 assert False, e

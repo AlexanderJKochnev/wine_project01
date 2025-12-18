@@ -122,35 +122,35 @@ class DrinkService(Service):
             print(f'drink_create_relation error: {e}')
 
     @classmethod
-    async def create(cls, data: ModelType, repository: Type[Repository],
-                     model: ModelType, session: AsyncSession) -> ModelType:
+    async def create(cls, data: DrinkCreate, repository: Type[Repository],
+                     model: Drink, session: AsyncSession) -> ModelType:
         """ create & return record """
         try:
-            # remove unset and 'varietals', 'foods' items
-            drink_data = data.model_dump(exclude={'varietals', 'foods'},
-                                         exclude_unset=True)
+            # remove unset and 'varietals', 'foods' items and back to pydantci schema
+            data_dict: dict = data.model_dump(exclude={'varietals', 'foods'},
+                                              exclude_unset=True)
             """
                 "foods": [{"id": 5}, ...],
                 "varietals": [{"varietal_id": 4,"percentage": null}, ...]
             """
-            drink = DrinkCreate(**drink_data)
-            print(f'============{drink} {type(drink)=}')
-            drink_instance, new = await cls.get_or_create(drink, DrinkRepository, Drink, session)
-            print(f'{drink_instance=} {new=}')
-            if not new:
-                raise Exception(f"запись '{drink}' существует. Если необходимо обновить ее, "
+            obj = DrinkCreate(**data_dict)
+            drink_instance, created = await cls.get_or_create(obj, DrinkRepository, Drink, session)
+
+            if not created:
+                raise Exception(f"запись '{obj}' существует. Если необходимо обновить ее, "
                                 f"воспользуйтесь формой 'Edit'")
             drink_id = drink_instance.id
             # добавляем drink_foods & drink_varietals
             if isinstance(data.foods, list):
-                food_ids = [item.get('id') for item in data.foods]
-                result = await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
-            if isinstance(data.varietals):
+                food_ids = [item.id for item in data.foods]
+                await DrinkFoodRepository.set_drink_foods(drink_id, food_ids, session)
+            if isinstance(data.varietals, list):
                 # convert [{'id':4, 'percentage': null},...] -> {4: null, ...}
-                varietal_precentage = {item.get('id'): item.get('percentage') for item in data.varietals}
+                varietal_percentage = {item.id: item.percentage for item in data.varietals}
                 # add drink_id, varietal.ids to DrinkVarietal
-                for key, val in varietal_precentage.items():
+                for key, val in varietal_percentage.items():
                     await DrinkVarietalRepository.add_varietal_to_drink(drink_id, key, val, session)
-            return result
+            await session.refresh(drink_instance)
+            return drink_instance, created
         except Exception as e:
             raise Exception(f'drink_create_error: {e}')

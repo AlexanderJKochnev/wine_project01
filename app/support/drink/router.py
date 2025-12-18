@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
 # from app.core.config.project_config import settings
+from app.core.utils.exception_handler import ValidationError_handler
 from app.core.routers.base import BaseRouter
 from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
@@ -15,6 +16,8 @@ from app.support.drink.model import Drink
 from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelation, DrinkCreateResponseSchema,
                                        DrinkFoodLinkUpdate, DrinkRead, DrinkReadApi, DrinkUpdate,
                                        )
+from app.support.drink.service import DrinkService
+from app.support.drink.repository import DrinkRepository
 
 
 class DrinkRouter(BaseRouter):
@@ -51,8 +54,27 @@ class DrinkRouter(BaseRouter):
         """
         Создание одной записи
         """
-        result = await super().create(data, session)
-        return result
+        try:
+            obj, created = await self.service.create(data, self.repo, self.model, session)
+            # result = await super().create(data, session)
+            return obj
+        except ValidationError as exc:
+            ValidationError_handler(exc)
+            detail = (f'ошибка создания записи {exc}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo} ,'
+                      f'create_response_schema = {self.create_response_schema}'
+                      )
+            print(detail)
+        except Exception as e:
+            await session.rollback()
+            detail = (f'ошибка создания записи {e}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo}')
+            print(detail)
+            raise HTTPException(status_code=500, detail=detail)
 
     async def create_relation(self, data: DrinkCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> DrinkRead:

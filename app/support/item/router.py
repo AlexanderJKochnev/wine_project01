@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import Depends, File, Form, HTTPException, Query, Path, status, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.core.utils.exception_handler import ValidationError_handler
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging
 from app.core.routers.base import BaseRouter
@@ -36,11 +36,11 @@ class ItemRouter(BaseRouter):
 
         self.router.add_api_route(
             "/full", self.create_relation_image, status_code=status.HTTP_200_OK, methods=["POST"],
-            response_model=self.read_schema
+            # response_model=self.read_schema
         )
         self.router.add_api_route(
             "/create_item_drink", self.create_item_drink, status_code=status.HTTP_200_OK, methods=["POST"],
-            response_model=ItemCreateResponseSchema
+            # response_model=ItemCreateResponseSchema
         )
         """ import from upload directory """
         self.router.add_api_route(
@@ -125,16 +125,33 @@ class ItemRouter(BaseRouter):
         try:
             data_dict = json.loads(data)
             item_data = ItemCreateRelation(**data_dict)
+            # load image to database, get image_id & image_path
+            image_dict = await image_service.upload_image(file, description=item_data.drink.title)
+            item_data.image_path = image_dict.get('filename')
+            item_data.image_id = image_dict.get('id')
+            result = await super().create_relation(item_data, session)
+            return result
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
-        # load image to database, get image_id & image_path
-        # image_id, image_path = await image_service.upload_image(file, description=item_data.drink.title)
-        # item_data.image_path = image_path
-        # item_data.image_id = image_id
-        result = await super().create_relation(item_data, session)
-        return result
+        except ValidationError as exc:
+            """
+            ValidationError_handler(exc)
+            detail = (f'ошибка создания записи {exc}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo} ,'
+                      f'create_response_schema = {self.create_response_schema}')
+            print(detail)
+            """
+            raise HTTPException(status_code=501, detail=exc)
+        except Exception as e:
+            await session.rollback()
+            detail = (f'ошибка создания записи {e}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo}')
+            print(detail)
+            raise HTTPException(status_code=500, detail=detail)
 
     async def create_item_drink(self,
                                 data: str = Form(..., description="JSON string of ItemDrinkPreactSchema"),
@@ -143,7 +160,7 @@ class ItemRouter(BaseRouter):
                                 image_service: ThumbnailImageService = Depends()
                                 ) -> ItemCreateResponseSchema:
         """
-        Создание записи Item с Drink и всеми связями
+        Создание записи Item & Drink и всеми связями
         Принимает JSON строку и файл изображения
         Валидирует схемой ItemDrinkPreactSchema
         Сохраняет в порядке: Drink -> DrinkVarietal -> DrinkFood -> Item
@@ -151,20 +168,33 @@ class ItemRouter(BaseRouter):
         try:
             data_dict = json.loads(data)
             item_drink_data = ItemDrinkPreactSchema(**data_dict)
+            # load image to database, get image_id & image_path
+            image_dict = await image_service.upload_image(file, description=item_drink_data.drink.title)
+            item_drink_data.image_path = image_dict.get('filename')
+            item_drink_data.image_id = image_dict.get('id')
+            result, _ = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
+            return result
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
-
-        # Если есть файл, загружаем изображение
-        if file and file.filename:
-            image_id, image_path = await image_service.upload_image(file, description=item_drink_data.title)
-            item_drink_data.image_id = image_id
-            item_drink_data.image_path = image_path
-
-        # Create the item with drink using the service method
-        result = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
-        return result
+        except ValidationError as exc:
+            """
+            ValidationError_handler(exc)
+            detail = (f'ошибка создания записи {exc}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo} ,'
+                      f'create_response_schema = {self.create_response_schema}')
+            print(detail)
+            """
+            raise HTTPException(status_code=501, detail=exc)
+        except Exception as e:
+            await session.rollback()
+            detail = (f'ошибка создания записи {e}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo}')
+            print(detail)
+            raise HTTPException(status_code=500, detail=detail)
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),
                                         session: AsyncSession = Depends(get_db),

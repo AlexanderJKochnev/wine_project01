@@ -45,6 +45,7 @@ class BaseRouter:
         self.service = get_service(model)
         # input py schema for simple create without relation
         self.create_schema = get_pyschema(model, 'Create')
+        self.create_response_schema = get_pyschema(model, 'CreateResponse') or self.create_schema
         # input py schema for create with relation
         self.create_schema_relation = get_pyschema(model, 'CreateRelation') or self.create_schema
         # input update schema
@@ -68,7 +69,7 @@ class BaseRouter:
     def setup_routes(self):
         """Настраивает маршруты"""
         self.router.add_api_route("", self.create, methods=["POST"],
-                                  response_model=self.create_schema)
+                                  response_model=self.create_response_schema)
 
         self.router.add_api_route("/hierarchy",
                                   self.create_relation,
@@ -116,7 +117,7 @@ class BaseRouter:
                       f'service = {self.service} ,'
                       f'repository = {self.repo}')
             print(detail)
-            raise HTTPException(status_code=405, detail=detail)
+            raise HTTPException(status_code=500, detail=detail)
 
     async def create_relation(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
         """

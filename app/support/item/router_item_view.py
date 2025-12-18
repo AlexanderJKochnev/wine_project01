@@ -11,6 +11,7 @@ from fastapi import (Depends, File, Form, Path, Query, UploadFile)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
+from app.core.routers.base import BaseRouter
 from app.core.schemas.base import PaginatedResponse
 from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
@@ -29,15 +30,16 @@ class ItemViewRouter:
         self.setup_routes()
 
     def setup_routes(self):
+        """
         self.router.add_api_route(
             "/create",
             self.create_item,
             methods=['POST'],
             response_model=ItemCreateResponseSchema,
             tags=self.tags,
-            summary="Создание напитка в упаковке с этикетке"
+            summary="Создание напитка в упаковке с этикеткой"
         )
-
+        """
         """Настройка маршрутов для ListView и DetailView"""
         # Маршрут для получения списка элементов без пагинации
         self.router.add_api_route(

@@ -7,7 +7,7 @@ from app.core.utils.common_utils import camel_to_enum
 from app.core.schemas.image_mixin import ImageUrlMixin
 from app.core.schemas.base import BaseModel, CreateResponse
 from app.support.drink.schemas import (DrinkCreateRelation, DrinkReadApi, DrinkReadFlat,
-                                       DrinkReadRelation, DrinkCreateItems, LangMixin)
+                                       DrinkReadRelation, DrinkCreate, LangMixin)
 
 
 class CustomReadFlatSchema:
@@ -154,6 +154,12 @@ class ItemCreate(BaseModel, CustomCreateSchema, ImageUrlMixin):
     pass
 
 
+class ItemCreatePreact(DrinkCreate, ImageUrlMixin):
+    vol: Optional[float] = None
+    price: Optional[float] = None
+    count: Optional[int] = 0
+
+
 class ItemUpdate(BaseModel, CustomUpdSchema, ImageUrlMixin):
     pass
 
@@ -165,13 +171,6 @@ class ItemCreateResponseSchema(ItemCreate, CreateResponse):
 class ItemCreateRelation(BaseModel, CustomCreateRelation, ImageUrlMixin):
     pass
 
-
-class ItemCreatePreact(BaseModel, LangMixin, ImageUrlMixin):  # , DrinkCreateItems, ImageUrlMixin):
-    vol: Optional[float] = None
-    price: Optional[float] = None
-    count: Optional[int] = 0
-    image_path: Optional[str] = None
-    image_id: Optional[str] = None
 
 # -------------------preact schemas-----------------------
 
