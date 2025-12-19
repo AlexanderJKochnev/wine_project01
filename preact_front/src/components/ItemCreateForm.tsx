@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 interface ItemCreateFormProps {
   onClose: () => void;
-  onCreated: () => void;
+  onCreated?: () => void;
 }
 
 export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
@@ -37,7 +37,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     foods: [] as string[],
     file: null as File | null
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [handbooks, setHandbooks] = useState({
     subcategories: [],
@@ -46,7 +46,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     varietals: [],
     foods: []
   });
-  
+
   const { language } = useLanguage();
 
   // Load handbook data
@@ -66,7 +66,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           apiClient<any[]>(`/handbooks/varietals/all`),
           apiClient<any[]>(`/handbooks/foods/all`)
         ]);
-        
+
         setHandbooks({
           subcategories,
           sweetness,
@@ -78,7 +78,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         console.error('Failed to load handbook data', err);
       }
     };
-    
+
     loadHandbooks();
   }, [language]);
 
@@ -97,7 +97,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     } else if (type === 'select-multiple') {
       const select = target as HTMLSelectElement;
       const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
-      
+
       setFormData(prev => ({
         ...prev,
         [name]: selectedValues
@@ -117,7 +117,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     try {
       // Create form data for multipart request
       const multipartFormData = new FormData();
-      
+
       // Add JSON string of form data
       const dataToSend = {
         ...formData,
@@ -135,9 +135,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         }).filter(v => !isNaN(v[0]) && !isNaN(v[1])),
         foods: formData.foods.map(f => parseInt(f)).filter(f => !isNaN(f))
       };
-      
+
       multipartFormData.append('data', JSON.stringify(dataToSend));
-      
+
       // Add file if exists
       if (formData.file) {
         multipartFormData.append('file', formData.file);
@@ -148,8 +148,10 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         body: multipartFormData,
         // Don't set Content-Type header, let browser set it with boundary
       }, false); // Don't include language for multipart form data
-      
-      onCreated();
+
+      if (onCreated) {
+        onCreated();
+      }
       onClose();
     } catch (error) {
       console.error('Error creating item:', error);
@@ -160,36 +162,36 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
   };
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      width: '100%', 
-      height: '100%', 
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-      zIndex: 1500, 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center' 
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      zIndex: 1500,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
     }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        padding: '20px', 
-        borderRadius: '8px', 
-        maxWidth: '800px', 
-        width: '90%', 
-        maxHeight: '90vh', 
-        overflowY: 'auto' 
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        maxWidth: '800px',
+        width: '90%',
+        maxHeight: '90vh',
+        overflowY: 'auto'
       }}>
         <h2>Create New Item</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title">Basic Information</h3>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Title *</span>
@@ -203,7 +205,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Title (RU)</span>
@@ -216,7 +218,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Title (FR)</span>
@@ -229,7 +231,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subtitle</span>
@@ -242,7 +244,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subtitle (RU)</span>
@@ -255,7 +257,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subtitle (FR)</span>
@@ -268,7 +270,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     className="input input-bordered w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Volume</span>
@@ -282,7 +284,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     step="0.01"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Price</span>
@@ -296,7 +298,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     step="0.01"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">File</span>
@@ -311,12 +313,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Category and Location */}
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title">Category and Location</h3>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subcategory *</span>
@@ -336,7 +338,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Sweetness</span>
@@ -355,7 +357,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Subregion *</span>
@@ -375,7 +377,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Alcohol (%)</span>
@@ -391,7 +393,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     max="100"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Sugar (%)</span>
@@ -407,7 +409,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     max="100"
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Age</span>
@@ -422,12 +424,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Descriptions */}
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title">Descriptions</h3>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Description</span>
@@ -440,7 +442,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Description (RU)</span>
@@ -453,7 +455,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Description (FR)</span>
@@ -468,12 +470,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Recommendations and Made Of */}
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title">Recommendations and Made Of</h3>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation</span>
@@ -486,7 +488,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation (RU)</span>
@@ -499,7 +501,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation (FR)</span>
@@ -512,7 +514,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Made Of</span>
@@ -525,7 +527,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Made Of (RU)</span>
@@ -538,7 +540,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Made Of (FR)</span>
@@ -553,12 +555,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Varietals and Foods */}
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title">Varietals and Foods</h3>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Varietals (with percentages)</span>
@@ -578,7 +580,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   </select>
                   <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options. Format: ID:Percentage</p>
                 </div>
-                
+
                 <div>
                   <label className="label">
                     <span className="label-text">Foods</span>
@@ -601,7 +603,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
