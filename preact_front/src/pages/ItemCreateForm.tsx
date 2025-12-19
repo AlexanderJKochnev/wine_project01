@@ -184,8 +184,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow">
+            <details>
+              <summary>Basic Information</summary>
               <div className="card-body">
-                <h3 className="card-title">Basic Information</h3>
 
                 <div>
                   <label className="label">
@@ -200,7 +201,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     required
                   />
                 </div>
-
                 <div>
                   <label className="label">
                     <span className="label-text">Title (RU)</span>
@@ -307,13 +307,14 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   />
                 </div>
               </div>
+            </details>
             </div>
 
             {/* Category and Location */}
             <div className="card bg-base-100 shadow">
+            <details>
+              <summary>Category and Location</summary>
               <div className="card-body">
-                <h3 className="card-title">Category and Location</h3>
-
                 <div>
                   <label className="label">
                     <span className="label-text">Subcategory *</span>
@@ -418,13 +419,14 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   />
                 </div>
               </div>
+            </details>
             </div>
 
             {/* Descriptions */}
             <div className="card bg-base-100 shadow">
+            <details>
+              <summary>Descriptions</summary>
               <div className="card-body">
-                <h3 className="card-title">Descriptions</h3>
-
                 <div>
                   <label className="label">
                     <span className="label-text">Description</span>
@@ -464,13 +466,14 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   />
                 </div>
               </div>
+            </details>
             </div>
 
             {/* Recommendations and Made Of */}
             <div className="card bg-base-100 shadow">
+            <details>
+            <summary>Recommendations and Made Of</summary>
               <div className="card-body">
-                <h3 className="card-title">Recommendations and Made Of</h3>
-
                 <div>
                   <label className="label">
                     <span className="label-text">Recommendation</span>
@@ -549,17 +552,14 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   />
                 </div>
               </div>
+            </details>
             </div>
 
             {/* Varietals and Foods */}
             <div className="card bg-base-100 shadow">
               <div className="card-body">
-                <h3 className="card-title">Varietals and Foods</h3>
-
-                <div>
-                  <label className="label">
-                    <span className="label-text">Varietals</span>
-                  </label>
+              <details> <summary>Varietals</summary>
+                <div className="card-body">
                   <div className="border rounded-lg p-2 max-h-40 overflow-y-auto">
                     {handbooks.varietals.map((varietal, index) => (
                       <div key={varietal.id} className="flex items-center mb-2">
@@ -623,11 +623,11 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     ))}
                   </div>
                 </div>
-
-                <div>
-                  <label className="label">
-                    <span className="label-text">Foods</span>
-                  </label>
+                </details>
+              </div>
+              </div>
+            <div className="card bg-base-100 shadow">
+              <details><summary> Foods </summary>
                   <div className="border rounded-lg p-2 max-h-40 overflow-y-auto">
                     {handbooks.foods.map(food => (
                       <div key={food.id} className="flex items-center mb-2">
@@ -660,9 +660,8 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </div>
                     ))}
                   </div>
+                  </details>
                 </div>
-              </div>
-            </div>
           </div>
 
           <div className="flex justify-end gap-4 mt-6">

@@ -503,6 +503,13 @@ body {
   display: none;
 }
 
+summary {
+  font-size: 1.2rem;
+  font-weight: bold;
+  /* color: #2c3e50; */
+  cursor: context-menu;
+}
+
 /* Responsive styles for mobile */
 @media (max-width: 768px) {
   .header {
