@@ -8,7 +8,7 @@ from typing import List
 
 from fastapi import Depends, Path, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import PaginatedResponse
 from app.support.item.model import Item
@@ -21,9 +21,10 @@ from app.support.item.service import ItemService
 class ItemViewRouter:
     def __init__(self, prefix: str = '/items_view', tags: List[str] = None):
         from fastapi import APIRouter
-        self.router = APIRouter()
         self.prefix = prefix
         self.tags = tags or ["items_view"]
+        # self.router = APIRouter()
+        self.router = APIRouter(dependencies=[Depends(get_active_user_or_internal)])
         self.service = ItemService()
         self.paginated_response = PaginatedResponse[ItemListView]
         self.setup_routes()
@@ -91,7 +92,7 @@ class ItemViewRouter:
         )
 
         self.router.add_api_route(
-            "/preact/{lang}/{id}",
+            "/preact/{id}",
             self.get_one,
             methods=["GET"],
             response_model=ItemReadPreactForUpdate,
