@@ -118,12 +118,25 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
           apiClient<any[]>(`/handbooks/foods/all`)
         ]);
 
+        // Sort handbooks alphabetically by language name
+        const sortedVarietals = [...varietals].sort((a, b) => {
+          const aName = a.name || a.name_en || a.name_ru || a.name_fr || '';
+          const bName = b.name || b.name_en || b.name_ru || b.name_fr || '';
+          return aName.localeCompare(bName);
+        });
+
+        const sortedFoods = [...foods].sort((a, b) => {
+          const aName = a.name || a.name_en || a.name_ru || a.name_fr || '';
+          const bName = b.name || b.name_en || b.name_ru || b.name_fr || '';
+          return aName.localeCompare(bName);
+        });
+
         setHandbooks({
           subcategories,
           sweetness,
           subregions,
-          varietals,
-          foods
+          varietals: sortedVarietals,
+          foods: sortedFoods
         });
       } catch (err) {
         console.error('Failed to load handbook data', err);
@@ -143,39 +156,74 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
           method: 'GET'
         });
         
-        // Sort varietals and foods: checked first, then alphabetical
+        // Create arrays of checked items from the loaded data
         const checkedVarietals = data.varietals || [];
+        const checkedFoodIds = new Set((data.foods || []).map(f => f.id.toString()));
+        
+        // Prepare varietals array with checked items first, then unchecked (alphabetically)
+        const checkedVarietalsArray = checkedVarietals.map(v => `${v.id}:${v.percentage}`);
+        
         const uncheckedVarietals = handbooks.varietals.filter(v => 
           !checkedVarietals.some(cv => cv.id === v.id)
-        );
+        ).map(v => `${v.id}:100`); // Default percentage for unchecked items
         
-        const checkedFoods = data.foods || [];
+        // Combine: checked first, then unchecked sorted alphabetically by name
+        const allVarietalsWithNames = [
+          ...checkedVarietals.map(v => ({ id: v.id, percentage: v.percentage, name: handbooks.varietals.find(hv => hv.id === v.id)?.name || hv.name_en || hv.name_ru || hv.name_fr || '' })),
+          ...uncheckedVarietals.map(v => {
+            const [varId] = v.split(':');
+            const varIntId = parseInt(varId);
+            const varietal = handbooks.varietals.find(hv => hv.id === varIntId);
+            return { 
+              id: varIntId, 
+              percentage: 100, 
+              name: varietal?.name || varietal?.name_en || varietal?.name_ru || varietal?.name_fr || '' 
+            };
+          })
+        ].sort((a, b) => {
+          // First priority: checked items first
+          const aIsChecked = checkedVarietals.some(cv => cv.id === a.id);
+          const bIsChecked = checkedVarietals.some(cv => cv.id === b.id);
+          
+          if (aIsChecked && !bIsChecked) return -1;
+          if (!aIsChecked && bIsChecked) return 1;
+          
+          // Second priority: alphabetical by name
+          return a.name.localeCompare(b.name);
+        });
+        
+        const sortedVarietals = allVarietalsWithNames.map(v => `${v.id}:${v.percentage}`);
+        
+        // Prepare foods array with checked items first, then unchecked (alphabetically)
+        const checkedFoodsArray = (data.foods || []).map(f => f.id.toString());
+        
         const uncheckedFoods = handbooks.foods.filter(f => 
-          !checkedFoods.some(cf => cf.id === f.id)
+          !checkedFoodIds.has(f.id.toString())
         );
         
-        // Create sorted arrays: checked items first, then unchecked (alphabetically)
-        const sortedVarietals = [
-          ...checkedVarietals.map(v => `${v.id}:${v.percentage}`),
-          ...uncheckedVarietals
-            .sort((a, b) => {
-              const aName = a.name || a.name_en || a.name_ru || a.name_fr || '';
-              const bName = b.name || b.name_en || b.name_ru || b.name_fr || '';
-              return aName.localeCompare(bName);
-            })
-            .map(v => `${v.id}:100`) // Default percentage for unchecked items
-        ];
+        // Combine: checked first, then unchecked sorted alphabetically by name
+        const allFoodsWithNames = [
+          ...(data.foods || []).map(f => ({ 
+            id: f.id, 
+            name: handbooks.foods.find(hf => hf.id === f.id)?.name || hf.name_en || hf.name_ru || hf.name_fr || '' 
+          })),
+          ...uncheckedFoods.map(f => ({ 
+            id: f.id, 
+            name: f.name || f.name_en || f.name_ru || f.name_fr || '' 
+          }))
+        ].sort((a, b) => {
+          // First priority: checked items first
+          const aIsChecked = checkedFoodIds.has(a.id.toString());
+          const bIsChecked = checkedFoodIds.has(b.id.toString());
+          
+          if (aIsChecked && !bIsChecked) return -1;
+          if (!aIsChecked && bIsChecked) return 1;
+          
+          // Second priority: alphabetical by name
+          return a.name.localeCompare(b.name);
+        });
         
-        const sortedFoods = [
-          ...checkedFoods.map(f => f.id.toString()),
-          ...uncheckedFoods
-            .sort((a, b) => {
-              const aName = a.name || a.name_en || a.name_ru || a.name_fr || '';
-              const bName = b.name || b.name_en || b.name_ru || b.name_fr || '';
-              return aName.localeCompare(bName);
-            })
-            .map(f => f.id.toString())
-        ];
+        const sortedFoods = allFoodsWithNames.map(f => f.id.toString());
 
         setFormData({
           title: data.title || '',
@@ -886,11 +934,11 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
               <details> <summary>Varietals</summary>
                 <div className="card-body">
                   <div className="border rounded-lg p-2 max-h-40 overflow-y-auto">
-                    {handbooks.varietals.map((varietal, index) => {
-                      const isChecked = formData.varietals.some(v => v.startsWith(`${varietal.id}:`));
-                      const percentage = isChecked 
-                        ? formData.varietals.find(v => v.startsWith(`${varietal.id}:`))?.split(':')[1] || '100'
-                        : '100';
+                    {formData.varietals.map((varietalStr, index) => {
+                      const [varietalId, percentage] = varietalStr.split(':');
+                      const varietal = handbooks.varietals.find(v => v.id === parseInt(varietalId));
+                      
+                      if (!varietal) return null;
                       
                       return (
                         <div key={varietal.id} className="flex items-center mb-2">
@@ -898,30 +946,48 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
                             type="checkbox"
                             id={`varietal-${varietal.id}`}
                             name={`varietal-${varietal.id}`}
-                            checked={isChecked}
+                            checked={true}
                             onChange={handleChange as any}
                             className="mr-2"
                           />
                           <label htmlFor={`varietal-${varietal.id}`} className="flex-1 cursor-pointer">
                             {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
                           </label>
-                          {isChecked && (
-                            <div className="ml-2">
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                placeholder="%"
-                                value={percentage}
-                                onChange={(e) => handleVarietalPercentageChange(varietal.id.toString(), (e.target as HTMLInputElement).value)}
-                                className="input input-bordered w-20"
-                              />
-                            </div>
-                          )}
+                          <div className="ml-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              placeholder="%"
+                              value={percentage}
+                              onChange={(e) => handleVarietalPercentageChange(varietal.id.toString(), (e.target as HTMLInputElement).value)}
+                              className="input input-bordered w-20"
+                            />
+                          </div>
                         </div>
                       );
                     })}
+                    {/* Render unchecked varietals after the checked ones */}
+                    {handbooks.varietals
+                      .filter(v => !formData.varietals.some(fv => fv.startsWith(`${v.id}:`)))
+                      .map(varietal => {
+                        return (
+                          <div key={varietal.id} className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              id={`varietal-${varietal.id}`}
+                              name={`varietal-${varietal.id}`}
+                              checked={false}
+                              onChange={handleChange as any}
+                              className="mr-2"
+                            />
+                            <label htmlFor={`varietal-${varietal.id}`} className="flex-1 cursor-pointer">
+                              {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
+                            </label>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
                 </details>
@@ -930,8 +996,10 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
             <div className="card bg-base-100 shadow">
               <details><summary> Foods </summary>
                   <div className="border rounded-lg p-2 max-h-40 overflow-y-auto">
-                    {handbooks.foods.map(food => {
-                      const isChecked = formData.foods.includes(food.id.toString());
+                    {formData.foods.map((foodId) => {
+                      const food = handbooks.foods.find(f => f.id === parseInt(foodId));
+                      
+                      if (!food) return null;
                       
                       return (
                         <div key={food.id} className="flex items-center mb-2">
@@ -939,7 +1007,7 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
                             type="checkbox"
                             id={`food-${food.id}`}
                             name={`food-${food.id}`}
-                            checked={isChecked}
+                            checked={true}
                             onChange={handleChange as any}
                             className="mr-2"
                           />
@@ -949,6 +1017,32 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
                         </div>
                       );
                     })}
+                    {/* Render unchecked foods after the checked ones */}
+                    {handbooks.foods
+                      .filter(f => !formData.foods.includes(f.id.toString()))
+                      .sort((a, b) => {
+                        // Sort alphabetically by language name
+                        const aName = a.name || a.name_en || a.name_ru || a.name_fr || "";
+                        const bName = b.name || b.name_en || b.name_ru || b.name_fr || "";
+                        return aName.localeCompare(bName);
+                      })
+                      .map(food => {
+                        return (
+                          <div key={food.id} className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              id={`food-${food.id}`}
+                              name={`food-${food.id}`}
+                              checked={false}
+                              onChange={handleChange as any}
+                              className="mr-2"
+                            />
+                            <label htmlFor={`food-${food.id}`} className="cursor-pointer">
+                              {food.name || food.name_en || food.name_ru || food.name_fr}
+                            </label>
+                          </div>
+                        );
+                      })}
                   </div>
                   </details>
                 </div>
