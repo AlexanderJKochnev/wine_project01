@@ -2,15 +2,13 @@
 import { h, useState, useEffect } from 'preact/hooks';
 import { apiClient } from '../lib/apiClient';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useLocation } from 'preact-iso';
 
 interface ItemCreateFormProps {
-  onClose?: () => void;
-  onCreated?: () => void;
+  onClose: () => void;
+  onCreated: () => void;
 }
 
 export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
-  const { route } = useLocation();
   const [formData, setFormData] = useState({
     title: '',
     title_ru: '',
@@ -41,7 +39,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [handbooks, setHandbooks] = useState({
     subcategories: [],
     sweetness: [],
@@ -70,33 +67,12 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           apiClient<any[]>(`/handbooks/foods/all`)
         ]);
 
-        // Sort each handbook alphabetically by the visible field
-        const getVisibleName = (item: any) => {
-          return item.name || item.name_en || item.name_ru || item.name_fr || '';
-        };
-
-        const sortedSubcategories = [...subcategories].sort((a, b) =>
-          getVisibleName(a).localeCompare(getVisibleName(b))
-        );
-        const sortedSweetness = [...sweetness].sort((a, b) =>
-          getVisibleName(a).localeCompare(getVisibleName(b))
-        );
-        const sortedSubregions = [...subregions].sort((a, b) =>
-          getVisibleName(a).localeCompare(getVisibleName(b))
-        );
-        const sortedVarietals = [...varietals].sort((a, b) =>
-          getVisibleName(a).localeCompare(getVisibleName(b))
-        );
-        const sortedFoods = [...foods].sort((a, b) =>
-          getVisibleName(a).localeCompare(getVisibleName(b))
-        );
-
         setHandbooks({
-          subcategories: sortedSubcategories,
-          sweetness: sortedSweetness,
-          subregions: sortedSubregions,
-          varietals: sortedVarietals,
-          foods: sortedFoods
+          subcategories,
+          sweetness,
+          subregions,
+          varietals,
+          foods
         });
       } catch (err) {
         console.error('Failed to load handbook data', err);
@@ -110,15 +86,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const { name, value, type } = target;
 
-    // Clear error for this field when user starts typing
-    if (name && fieldErrors[name]) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-
     if (type === 'file') {
       const fileInput = target as HTMLInputElement;
       if (fileInput.files && fileInput.files[0]) {
@@ -127,14 +94,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           file: fileInput.files[0]
         }));
       }
-    } else if (type === 'select-multiple') {
-      const select = target as HTMLSelectElement;
-      const selectedValues = Array.from(select.selectedOptions).map(option => option.value);
-
-      setFormData(prev => ({
-        ...prev,
-        [name]: selectedValues
-      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -162,12 +121,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         subregion_id: parseInt(formData.subregion_id),
         sweetness_id: formData.sweetness_id ? parseInt(formData.sweetness_id) : null,
         varietals: formData.varietals.map(v => {
-          // Format for Pydantic schema: {id: id, percentage: percentage}
+          // Parse the "id:percentage" format and return in required format {id: id}
           const [id, percentage] = v.split(':');
-          return {
-            id: parseInt(id),
-            percentage: parseFloat(percentage)
-          };
+          return { id: parseInt(id), percentage: parseFloat(percentage) };
         }).filter(v => !isNaN(v.id) && !isNaN(v.percentage)),
         foods: formData.foods.map(f => {
           const id = parseInt(f);
@@ -182,56 +138,17 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
         multipartFormData.append('file', formData.file);
       }
 
-      const response = await apiClient('/items/create_item_drink', {
+      await apiClient('/items/create_item_drink', {
         method: 'POST',
         body: multipartFormData,
         // Don't set Content-Type header, let browser set it with boundary
       }, false); // Don't include language for multipart form data
 
-      // Check if the response contains the item id
-      if (response && response.id) {
-        if (onCreated) {
-          onCreated();
-        }
-
-        if (onClose) {
-          onClose();
-        } else {
-          route(`/items/${response.id}`); // Navigate to item detail view
-        }
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      onCreated();
+      onClose();
     } catch (error) {
       console.error('Error creating item:', error);
-
-      // Check if it's a validation error with field-specific messages
-      if (error && typeof error === 'object' && 'message' in error) {
-        const errorMessage = (error as any).message;
-
-        // Try to parse field-specific errors if they exist
-        try {
-          const errorObj = JSON.parse(errorMessage);
-          if (errorObj.detail && Array.isArray(errorObj.detail)) {
-            const fieldErrors: Record<string, string> = {};
-            errorObj.detail.forEach((err: any) => {
-              if (err.loc && err.loc.length > 0) {
-                const field = err.loc[err.loc.length - 1];
-                fieldErrors[field] = err.msg;
-              }
-            });
-            setFieldErrors(fieldErrors);
-            alert('Please correct the highlighted fields');
-          } else {
-            alert(`Error creating item: ${errorMessage}`);
-          }
-        } catch {
-          // If parsing fails, show the original message
-          alert(`Error creating item: ${errorMessage}`);
-        }
-      } else {
-        alert(`Error creating item: ${error.message || error}`);
-      }
+      alert(`Error creating item: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -277,12 +194,9 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="title"
                     value={formData.title}
                     onInput={handleChange}
-                    className={`input w-full ${fieldErrors.title ? 'input-error' : 'input-bordered'}`}
+                    className="input input-bordered w-full"
                     required
                   />
-                  {fieldErrors.title && (
-                    <div className="text-red-500 text-sm mt-1">{fieldErrors.title}</div>
-                  )}
                 </div>
 
                 <div>
@@ -406,7 +320,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="subcategory_id"
                     value={formData.subcategory_id}
                     onChange={handleChange as any}
-                    className={`select w-full ${fieldErrors.subcategory_id ? 'select-error' : 'select-bordered'}`}
+                    className="select select-bordered w-full"
                     required
                   >
                     <option value="">Select a subcategory</option>
@@ -416,9 +330,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </option>
                     ))}
                   </select>
-                  {fieldErrors.subcategory_id && (
-                    <div className="text-red-500 text-sm mt-1">{fieldErrors.subcategory_id}</div>
-                  )}
                 </div>
 
                 <div>
@@ -448,7 +359,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     name="subregion_id"
                     value={formData.subregion_id}
                     onChange={handleChange as any}
-                    className={`select w-full ${fieldErrors.subregion_id ? 'select-error' : 'select-bordered'}`}
+                    className="select select-bordered w-full"
                     required
                   >
                     <option value="">Select a subregion</option>
@@ -458,9 +369,6 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                       </option>
                     ))}
                   </select>
-                  {fieldErrors.subregion_id && (
-                    <div className="text-red-500 text-sm mt-1">{fieldErrors.subregion_id}</div>
-                  )}
                 </div>
 
                 <div>
@@ -648,42 +556,108 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Varietals (with percentages)</span>
+                    <span className="label-text">Varietals</span>
                   </label>
-                  <select
-                    name="varietals"
-                    multiple
-                    value={formData.varietals}
-                    onChange={handleChange as any}
-                    className="select select-bordered w-full h-32"
-                  >
-                    {handbooks.varietals.map(varietal => (
-                      <option key={varietal.id} value={`${varietal.id}:100`}>
-                        {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr} (100%)
-                      </option>
+                  <div className="border rounded-lg p-2 max-h-40 overflow-y-auto">
+                    {handbooks.varietals.map((varietal, index) => (
+                      <div key={varietal.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`varietal-${varietal.id}`}
+                          checked={formData.varietals.some(v => v.startsWith(`${varietal.id}:`))}
+                          onChange={(e) => {
+                            const isChecked = (e.target as HTMLInputElement).checked;
+                            let newVarietals = [...formData.varietals];
+
+                            if (isChecked) {
+                              // Add with default 100% if not already present
+                              if (!newVarietals.some(v => v.startsWith(`${varietal.id}:`))) {
+                                newVarietals.push(`${varietal.id}:100`);
+                              }
+                            } else {
+                              // Remove the varietal
+                              newVarietals = newVarietals.filter(v => !v.startsWith(`${varietal.id}:`));
+                            }
+
+                            setFormData(prev => ({
+                              ...prev,
+                              varietals: newVarietals
+                            }));
+                          }}
+                          className="mr-2"
+                        />
+                        <label htmlFor={`varietal-${varietal.id}`} className="flex-1 cursor-pointer">
+                          {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
+                        </label>
+                        {formData.varietals.some(v => v.startsWith(`${varietal.id}:`)) && (
+                          <div className="ml-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              placeholder="%"
+                              value={
+                                formData.varietals.find(v => v.startsWith(`${varietal.id}:`))
+                                  ? formData.varietals.find(v => v.startsWith(`${varietal.id}:`)).split(':')[1]
+                                  : '100'
+                              }
+                              onChange={(e) => {
+                                const percentage = (e.target as HTMLInputElement).value;
+                                const newVarietals = formData.varietals.map(v =>
+                                  v.startsWith(`${varietal.id}:`) ? `${varietal.id}:${percentage}` : v
+                                );
+
+                                setFormData(prev => ({
+                                  ...prev,
+                                  varietals: newVarietals
+                                }));
+                              }}
+                              className="input input-bordered w-20"
+                            />
+                          </div>
+                        )}
+                      </div>
                     ))}
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options. Format: ID:Percentage</p>
+                  </div>
                 </div>
 
                 <div>
                   <label className="label">
                     <span className="label-text">Foods</span>
                   </label>
-                  <select
-                    name="foods"
-                    multiple
-                    value={formData.foods}
-                    onChange={handleChange as any}
-                    className="select select-bordered w-full h-32"
-                  >
+                  <div className="border rounded-lg p-2 max-h-40 overflow-y-auto">
                     {handbooks.foods.map(food => (
-                      <option key={food.id} value={food.id}>
-                        {food.name || food.name_en || food.name_ru || food.name_fr}
-                      </option>
+                      <div key={food.id} className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`food-${food.id}`}
+                          checked={formData.foods.includes(food.id.toString())}
+                          onChange={(e) => {
+                            const isChecked = (e.target as HTMLInputElement).checked;
+                            let newFoods = [...formData.foods];
+
+                            if (isChecked) {
+                              if (!newFoods.includes(food.id.toString())) {
+                                newFoods.push(food.id.toString());
+                              }
+                            } else {
+                              newFoods = newFoods.filter(f => f !== food.id.toString());
+                            }
+
+                            setFormData(prev => ({
+                              ...prev,
+                              foods: newFoods
+                            }));
+                          }}
+                          className="mr-2"
+                        />
+                        <label htmlFor={`food-${food.id}`} className="cursor-pointer">
+                          {food.name || food.name_en || food.name_ru || food.name_fr}
+                        </label>
+                      </div>
                     ))}
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple options</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -692,13 +666,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
           <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
-              onClick={() => {
-                if (onClose) {
-                  onClose();
-                } else {
-                  route('/items'); // Navigate to items list if no onClose callback provided
-                }
-              }}
+              onClick={onClose}
               className="btn btn-ghost"
               disabled={loading}
             >

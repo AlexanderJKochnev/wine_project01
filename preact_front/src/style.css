@@ -350,6 +350,21 @@ body {
   background-color: #f3f4f6;
 }
 
+/* Checkbox container styles */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+.checkbox-container label {
+  cursor: pointer;
+}
+
 /* Card/grid styles for ListView */
 .card-grid {
   display: grid;
@@ -495,12 +510,12 @@ body {
     height: auto;
     padding: 0.5rem;
   }
-  
+
   .header-content {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .header-left,
   .header-center,
   .header-right {
@@ -512,15 +527,15 @@ body {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .auth-input {
     width: 8rem;
   }
-  
+
   .main-body {
     flex-direction: column;
   }
-  
+
   .navbar {
     width: 100%;
     max-width: 100%;
@@ -528,28 +543,28 @@ body {
     border-left: none;
     border-top: 1px solid #e5e7eb;
   }
-  
+
   .content-area {
     min-width: 100%;
   }
-  
+
   .detail-view {
     flex-direction: column;
   }
-  
+
   .detail-image {
     max-width: 100%;
     min-height: auto;
   }
-  
+
   .card-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .footer-content {
     flex-direction: column;
   }
-  
+
   .footer-links {
     margin-top: 0.5rem;
   }
@@ -561,7 +576,7 @@ body {
     max-width: 1440px;
     margin: 0 auto;
   }
-  
+
   .detail-image {
     max-width: 20%;
   }
@@ -582,12 +597,12 @@ body {
     height: auto;
     padding: 0.5rem;
   }
-  
+
   .header-content {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .header-left,
   .header-center,
   .header-right {
@@ -599,15 +614,15 @@ body {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .auth-input {
     width: 8rem;
   }
-  
+
   .main-body {
     flex-direction: column;
   }
-  
+
   .navbar {
     width: 100%;
     max-width: 100%;
@@ -615,28 +630,28 @@ body {
     border-left: none;
     border-top: 1px solid #e5e7eb;
   }
-  
+
   .content-area {
     min-width: 100%;
   }
-  
+
   .detail-view {
     flex-direction: column;
   }
-  
+
   .detail-image {
     max-width: 100%;
     min-height: auto;
   }
-  
+
   .card-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .footer-content {
     flex-direction: column;
   }
-  
+
   .footer-links {
     margin-top: 0.5rem;
   }
@@ -648,30 +663,30 @@ body {
     color: #ccc;
     background-color: #1a1a1a;
   }
-  
+
   .header {
     background-color: #3730a3;
   }
-  
+
   .navbar {
     background-color: #1f2937;
     color: white;
   }
-  
+
   .content-area {
     background-color: #111827;
     color: white;
   }
-  
+
   .footer {
     background-color: #1f2937;
     color: white;
   }
-  
+
   .nav-menu a {
     color: #d1d5db;
   }
-  
+
   .nav-menu a:hover,
   .nav-menu a.active {
     background-color: #374151;
