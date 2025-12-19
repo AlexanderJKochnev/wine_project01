@@ -160,6 +160,12 @@ class ItemCreatePreact(DrinkCreate, ImageUrlMixin):
     count: Optional[int] = 0
 
 
+class ItemReadPreactForUpdate(ItemCreatePreact):
+    """ схема для получения данных для обновления в Preact"""
+    id: int
+    drink_id: int
+
+
 class ItemUpdate(BaseModel, CustomUpdSchema, ImageUrlMixin):
     pass
 

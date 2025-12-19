@@ -6,14 +6,15 @@
 """
 from typing import List
 
-from fastapi import (Depends, Path, Query)
+from fastapi import Depends, Path, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import PaginatedResponse
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import ItemDetailView, ItemListView
+from app.support.item.schemas import ItemDetailView, ItemListView, ItemReadPreactForUpdate
+from app.support.drink.schemas import DrinkCreate
 from app.support.item.service import ItemService
 
 
@@ -23,6 +24,7 @@ class ItemViewRouter:
         self.router = APIRouter()
         self.prefix = prefix
         self.tags = tags or ["items_view"]
+        self.service = ItemService()
         self.paginated_response = PaginatedResponse[ItemListView]
         self.setup_routes()
 
@@ -88,11 +90,51 @@ class ItemViewRouter:
             summary="Поиск элементов по триграммному индексу в связанной модели Drink"
         )
 
+        self.router.add_api_route(
+            "/preact/{lang}/{id}",
+            self.get_one,
+            methods=["GET"],
+            response_model=ItemReadPreactForUpdate,
+            tags=self.tags,
+            summary="Получить детальную информацию по элементу с локализацией"
+        )
+
+    async def get_one(self,
+                      id: int,
+                      session: AsyncSession = Depends(get_db)) -> ItemReadPreactForUpdate:
+        """
+            Получение одной записи по ID
+        """
+        repo = ItemRepository
+        model = Item
+        obj = await self.service.get_by_id(id, repo, model, session)
+        if obj is None:
+            raise HTTPException(status_code=404, detail=f'Запрашиваемый файл {id} не найден на сервере')
+        item_dict: dict = obj.to_dict()
+        drink = obj.drink
+        varietal_associations = drink.varietal_associations
+        varietals = [{'id': item.id, 'percentage': item.percentage} for item in varietal_associations if item]
+        food_associations = drink.food_associations
+        foods = [{'id': item.id} for item in food_associations if item]
+        drink_dict = drink.to_dict()
+        item_dict['drink_id'] = drink.id
+        if varietals:
+            drink_dict.pop('varietals', None)
+            drink_dict['varietals'] = varietals
+        if foods:
+            drink_dict.pop('foods', None)
+            drink_dict['foods'] = foods
+        tmp = DrinkCreate(**drink_dict)
+        drink_dict = tmp.model_dump(exclude_unset=True, exclude_none=True)
+        item_dict.update(drink_dict)
+        item_py = ItemReadPreactForUpdate.validate(item_dict)
+        item_dict = item_py.model_dump(exclude_unset=True, exclude_none=True)
+        return item_dict
+
     async def get_list(self, lang: str = Path(..., description="Язык локализации"),
                        session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
-        service = ItemService()
-        result = await service.get_list_view(lang, ItemRepository, Item, session)
+        result = await self.service.get_list_view(lang, ItemRepository, Item, session)
 
         return result
 
@@ -102,8 +144,7 @@ class ItemViewRouter:
                                  page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                  session: AsyncSession = Depends(get_db)):
         """Получить список элементов с пагинацией и локализацией"""
-        service = ItemService()
-        result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
+        result = await self.service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
         # self.paginated_response
 
         return result
@@ -112,8 +153,7 @@ class ItemViewRouter:
                          id: int = Path(..., description="ID элемента"),
                          session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
-        service = ItemService()
-        item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
+        item = await self.service.get_detail_view(lang, id, ItemRepository, Item, session)
         if not item:
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
@@ -136,8 +176,7 @@ class ItemViewRouter:
             Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией
             оатсется для совместимости (сравнить скорость поиска обычного (этого) и триграмм/FTS
         """
-        service = ItemService()
-        result = await service.search_by_drink_title_subtitle(
+        result = await self.service.search_by_drink_title_subtitle(
             search, lang, ItemRepository, Item, session, page, page_size
         )
         return result
@@ -151,8 +190,7 @@ class ItemViewRouter:
                                       page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
         """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        service = ItemService()
-        result = await service.search_by_trigram_index(
+        result = await self.service.search_by_trigram_index(
             search_str, lang, ItemRepository, Item, session, page, page_size
         )
 
