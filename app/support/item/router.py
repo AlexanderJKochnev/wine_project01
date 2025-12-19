@@ -14,7 +14,7 @@ from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (FileUpload, ItemCreate, ItemCreatePreact, ItemCreateRelation,
-                                      ItemCreateResponseSchema, ItemUpdate)
+                                      ItemCreateResponseSchema, ItemUpdate, ItemUpdatePreact)
 from app.support.item.service import ItemService
 
 paging = get_paging
@@ -39,6 +39,10 @@ class ItemRouter(BaseRouter):
         )
         self.router.add_api_route(
             "/create_item_drink", self.create_item_drink, status_code=status.HTTP_200_OK, methods=["POST"],
+            # response_model=ItemCreateResponseSchema
+        )
+        self.router.add_api_route(
+            "/update_item_drink/{id}", self.update_item_drink, status_code=status.HTTP_200_OK, methods=["POST"],
             # response_model=ItemCreateResponseSchema
         )
         """ import from upload directory """
@@ -179,6 +183,66 @@ class ItemRouter(BaseRouter):
         except ValidationError as exc:
             # ValidationError_handler(exc)
             detail = (f'ошибка создания записи {exc}, model = {self.model}, '
+                      f'create_schema = {self.create_schema}, '
+                      f'service = {self.service} ,'
+                      f'repository = {self.repo} ,'
+                      f'create_response_schema = {self.create_response_schema}, '
+                      f'{data=}')
+            print(detail)
+            raise HTTPException(status_code=501, detail=exc)
+        except Exception as e:
+            await session.rollback()
+            detail = f'{str(e)}, {data=}'
+            print(f'=========={data}')
+            raise HTTPException(status_code=500, detail=detail)
+
+    async def update_item_drink(self,
+                                id: int,
+                                data: str = Form(..., description="JSON string of ItemUpdatePreact"),
+                                file: UploadFile = File(None),
+                                session: AsyncSession = Depends(get_db),
+                                image_service: ThumbnailImageService = Depends()
+                                ) -> ItemCreateResponseSchema:
+        """
+        Обновление записи Item & Drink и всеми связями
+        Принимает JSON строку и файл изображения
+        Валидирует схемой ItemUpdatePreact
+        Обновляет или создает Drink в зависимости от drink_action
+        """
+        try:
+            data_dict = json.loads(data)
+            item_drink_data = ItemUpdatePreact(**data_dict)
+            
+            # load image to database, get image_id & image_path
+            if file:
+                image_dict = await image_service.upload_image(file, description=item_drink_data.title)
+                item_drink_data.image_path = image_dict.get('filename')
+                item_drink_data.image_id = image_dict.get('id')
+            
+            # Find the existing item to update
+            item = await ItemRepository.get_by_id(id, Item, session)
+            if not item:
+                raise HTTPException(status_code=404, detail=f'Item with id {id} not found')
+            
+            # Determine whether to update existing drink or create new based on drink_action
+            if item_drink_data.drink_action == 'update':
+                # Update the existing drink using its ID
+                drink_id = item_drink_data.drink_id
+                result, _ = await self.service.update_or_create(item_drink_data, ItemRepository, Item, session)
+            elif item_drink_data.drink_action == 'create':
+                # Create a new drink and link to the item
+                # We need to clear the drink_id so a new drink is created
+                item_drink_data.drink_id = 0  # This will trigger creation of a new drink
+                result, _ = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
+            else:
+                raise HTTPException(status_code=400, detail=f"Invalid drink_action: {item_drink_data.drink_action}")
+            
+            return result
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
+        except ValidationError as exc:
+            # ValidationError_handler(exc)
+            detail = (f'ошибка обновления записи {exc}, model = {self.model}, '
                       f'create_schema = {self.create_schema}, '
                       f'service = {self.service} ,'
                       f'repository = {self.repo} ,'
