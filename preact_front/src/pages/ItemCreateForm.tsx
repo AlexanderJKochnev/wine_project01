@@ -327,6 +327,19 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     accept="image/*"
                   />
                 </div>
+                {/* Display selected file preview */}
+                {formData.file && (
+                  <div>
+                    <label className="label">
+                      <span className="label-text">Selected Image Preview</span>
+                    </label>
+                    <img
+                      src={URL.createObjectURL(formData.file)}
+                      alt="Selected item"
+                      className="max-w-xs max-h-48 object-contain border rounded"
+                    />
+                  </div>
+                )}
               </div>
             </details>
             </div>
