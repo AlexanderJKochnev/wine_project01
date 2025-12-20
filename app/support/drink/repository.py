@@ -1,14 +1,16 @@
 # app/support/drink/repository.py
-from typing import Type, Optional, List
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from typing import List, Optional, Type
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.services.logger import logger
-from app.core.repositories.sqlalchemy_repository import Repository, ModelType
-from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
-from app.support.subregion.model import Subregion
+from app.support.drink.model import Drink
 from app.support.region.model import Region
 from app.support.subcategory.model import Subcategory
+from app.support.subregion.model import Subregion
 
 
 class DrinkRepository(Repository):
@@ -26,10 +28,11 @@ class DrinkRepository(Repository):
                                      selectinload(Drink.subcategory).
                                      selectinload(Subcategory.category),
                                      selectinload(Drink.sweetness),
-                                     selectinload(Drink.foods),
-                                     selectinload(Drink.food_associations).joinedload(DrinkFood.food),
-                                     selectinload(Drink.varietals),
-                                     selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal))
+                                     # selectinload(Drink.foods),
+                                     selectinload(Drink.food_associations),  # .joinedload(DrinkFood.food),
+                                     # selectinload(Drink.varietals),
+                                     selectinload(Drink.varietal_associations),  # .joinedload(DrinkVarietal.varietal))
+                                     )
 
     @classmethod
     async def search_in_main_table(cls,

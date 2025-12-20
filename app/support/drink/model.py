@@ -1,7 +1,7 @@
 # app/support/drink/model.py
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import (CheckConstraint, Column, DDL, event, ForeignKey, Integer, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.support.sweetness.model import Sweetness
     from app.support.subcategory.model import Subcategory
     from app.support.subregion.model import Subregion
+    from app.support.food.model import Food
 
 
 class Lang:
@@ -69,10 +70,20 @@ class Drink(Base, BaseAt, Lang):
                          cascade=cascade,
                          lazy=lazy)
 
-    # Связь через промежуточную модель
-    # food_associations = relationship("DrinkFood", back_populates="drink", cascade="all, delete-orphan")
-    # foods = relationship("Food", secondary="drink_food_associations", viewonly=True, lazy="selectin")
+    # Связь через промежуточную модель NEW
+    # 1. Связь через промежуточную таблицу
+    food_associations: Mapped[List["DrinkFood"]] = relationship(
+        back_populates="drink", cascade="all, delete-orphan"
+    )
 
+    # 2. Прямая связь Many-to-Many
+    foods: Mapped[List["Food"]] = relationship(
+        secondary="drink_food_associations",
+        back_populates="drinks", lazy="selectin",
+        viewonly=True
+        # Загрузит список объектов Food автоматически
+    )
+    """
     # Прямые связи с промежуточной таблицей
     food_associations = relationship("DrinkFood",
                                      back_populates="drink",
@@ -84,7 +95,7 @@ class Drink(Base, BaseAt, Lang):
                          lazy="selectin",
                          viewonly=False,  # чтобы можно было использовать в form
                          overlaps="food_associations,drink")
-
+    """
     varietal_associations = relationship(
         "DrinkVarietal", back_populates="drink", cascade="all, delete-orphan", overlaps="varietals"
     )
@@ -135,13 +146,20 @@ event.listen(
 
 class DrinkFood(Base):
     __tablename__ = "drink_food_associations"
+    drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), primary_key=True)
+    food_id: Mapped[int] = mapped_column(ForeignKey("foods.id"), primary_key=True)
 
-    drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
-    food_id = Column(Integer, ForeignKey("foods.id"), primary_key=True)
+    # Связи с конкретными объектами
+    drink: Mapped["Drink"] = relationship(back_populates="food_associations")
+    food: Mapped["Food"] = relationship(back_populates="drink_associations")
+
+    # --- PREVIOUS MESSAGE ---
+    # drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
+    # food_id = Column(Integer, ForeignKey("foods.id"), primary_key=True)
 
     # Relationships
-    drink = relationship("Drink", back_populates="food_associations", overlaps='foods')
-    food = relationship("Food", back_populates="drink_associations", overlaps='drinks,foods')
+    # drink = relationship("Drink", back_populates="food_associations", overlaps='foods')
+    # food = relationship("Food", back_populates="drink_associations", overlaps='drinks,foods')
 
     def __str__(self):
         return f"Drink {self.drink_id} - Food {self.food_id}"
