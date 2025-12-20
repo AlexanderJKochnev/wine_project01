@@ -113,10 +113,18 @@ class ItemViewRouter:
             raise HTTPException(status_code=404, detail=f'Запрашиваемый файл {id} не найден на сервере')
         item_dict: dict = obj.to_dict()
         drink = obj.drink
+        drink_dict = drink.to_dict()
+        for key, val in drink_dict.items():
+            if key in ['food_associations', 'food', 'varietals', 'varietal_associations']:
+                print('----------------')
+                print(key, ': ', val)
         varietal_associations = drink.varietal_associations
-        varietals = [{'id': item.id, 'percentage': item.percentage} for item in varietal_associations if item]
+        # for key, val in varietal_associations..items():
+        #     print(key, val)
+        varietals = [{'id': item.varietal_id, 'percentage': item.percentage}
+                     for item in varietal_associations if item]
         food_associations = drink.food_associations
-        foods = [{'id': item.id} for item in food_associations if item]
+        foods = [{'id': item.food_id} for item in food_associations if item]
         drink_dict = drink.to_dict()
         item_dict['drink_id'] = drink.id
         if varietals:

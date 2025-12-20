@@ -241,6 +241,7 @@ class ItemRepository(Repository):
             )
         )
 
+
         query = query.order_by(Item.id.asc())
         count_query = select(func.count()).select_from(Item)
         count_result = await session.execute(count_query)
