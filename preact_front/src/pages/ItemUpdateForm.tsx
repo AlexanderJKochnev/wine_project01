@@ -118,23 +118,31 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
           apiClient<any[]>(`/handbooks/foods/all`)
         ]);
 
-        // Sort handbooks alphabetically by language name
-        const sortedVarietals = [...varietals].sort((a, b) => {
-          const aName = a.name || a.name_en || a.name_ru || a.name_fr || '';
-          const bName = b.name || b.name_en || b.name_ru || b.name_fr || '';
-          return aName.localeCompare(bName);
-        });
+        // Sort each handbook alphabetically by the visible field
+        const getVisibleName = (item: any) => {
+          return item.name || item.name_en || item.name_ru || item.name_fr || '';
+        };
 
-        const sortedFoods = [...foods].sort((a, b) => {
-          const aName = a.name || a.name_en || a.name_ru || a.name_fr || '';
-          const bName = b.name || b.name_en || b.name_ru || b.name_fr || '';
-          return aName.localeCompare(bName);
-        });
+        const sortedSubcategories = [...subcategories].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedSweetness = [...sweetness].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedSubregions = [...subregions].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedVarietals = [...varietals].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
+        const sortedFoods = [...foods].sort((a, b) =>
+          getVisibleName(a).localeCompare(getVisibleName(b))
+        );
 
         setHandbooks({
-          subcategories,
-          sweetness,
-          subregions,
+          subcategories: sortedSubcategories,
+          sweetness: sortedSweetness,
+          subregions: sortedSubregions,
           varietals: sortedVarietals,
           foods: sortedFoods
         });
