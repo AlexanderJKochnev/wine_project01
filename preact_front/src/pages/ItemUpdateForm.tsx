@@ -3,6 +3,7 @@ import { h, useState, useEffect } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { apiClient } from '../lib/apiClient';
 import { useLanguage } from '../contexts/LanguageContext';
+import { IMAGE_BASE_URL } from '../config/api';
 
 interface ItemUpdateFormProps {
   onClose: () => void;
@@ -666,11 +667,13 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
                     <label className="label">
                       <span className="label-text">Current Image</span>
                     </label>
-                    <img 
-                      src={`/api/v1/image/${formData.image_path}`} 
+                    <span className="half-life">
+                    <img
+                      src={`${IMAGE_BASE_URL}/mongodb/thumbnails/${formData.image_id}`}
                       alt="Current item" 
                       className="max-w-xs max-h-48 object-contain border rounded"
                     />
+                    </span>
                   </div>
                 )}
 
@@ -680,11 +683,13 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
                     <label className="label">
                       <span className="label-text">Selected Image Preview</span>
                     </label>
-                    <img 
+                    <span className="half-life">
+                    <img
                       src={URL.createObjectURL(formData.file)} 
                       alt="Selected item" 
                       className="max-w-xs max-h-48 object-contain border rounded"
                     />
+                    </span>
                   </div>
                 )}
               </div>

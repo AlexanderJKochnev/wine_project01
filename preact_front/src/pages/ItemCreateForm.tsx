@@ -333,11 +333,13 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     <label className="label">
                       <span className="label-text">Selected Image Preview</span>
                     </label>
-                    <img
+                    <span className="half-life">
+                     <img
                       src={URL.createObjectURL(formData.file)}
                       alt="Selected item"
                       className="max-w-xs max-h-48 object-contain border rounded"
-                    />
+                      />
+                    </span>
                   </div>
                 )}
               </div>

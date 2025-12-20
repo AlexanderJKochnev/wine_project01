@@ -212,18 +212,18 @@ class ItemRouter(BaseRouter):
         try:
             data_dict = json.loads(data)
             item_drink_data = ItemUpdatePreact(**data_dict)
-            
+
             # load image to database, get image_id & image_path
             if file:
                 image_dict = await image_service.upload_image(file, description=item_drink_data.title)
                 item_drink_data.image_path = image_dict.get('filename')
                 item_drink_data.image_id = image_dict.get('id')
-            
+
             # Find the existing item to update
             item = await ItemRepository.get_by_id(id, Item, session)
             if not item:
                 raise HTTPException(status_code=404, detail=f'Item with id {id} not found')
-            
+
             # Determine whether to update existing drink or create new based on drink_action
             if item_drink_data.drink_action == 'update':
                 # Update the existing drink using its ID
@@ -236,7 +236,6 @@ class ItemRouter(BaseRouter):
                 result, _ = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
             else:
                 raise HTTPException(status_code=400, detail=f"Invalid drink_action: {item_drink_data.drink_action}")
-            
             return result
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
@@ -253,7 +252,7 @@ class ItemRouter(BaseRouter):
         except Exception as e:
             await session.rollback()
             detail = f'{str(e)}, {data=}'
-            print(f'=========={data}')
+            print(f'{data}')
             raise HTTPException(status_code=500, detail=detail)
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),

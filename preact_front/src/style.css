@@ -388,6 +388,18 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.half-life {
+  width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+/* размер изображения на ItemUpdateForm и ItemCreaetForm*/
+.half-life img {
+    width: auto;
+    max-height: 45vh;
+}
+
 /* Detail view styles */
 .detail-view {
   display: flex;
