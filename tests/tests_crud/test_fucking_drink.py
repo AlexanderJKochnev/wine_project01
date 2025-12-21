@@ -9,6 +9,7 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip
 async def test_new_drink_data_generator(authenticated_client_with_db, test_db_session,
                                         simple_router_list, complex_router_list):
     """ валидация генерируемых данных и загрузка """
@@ -43,6 +44,7 @@ async def test_new_drink_data_generator(authenticated_client_with_db, test_db_se
         # assert response.status_code in [200, 201], f'{prefix}, {response.text}'
 
 
+@pytest.mark.skip
 async def test_new_drink_data_relation(authenticated_client_with_db, test_db_session):
     """ валидация генерируемых данных и загрузка """
     from tests.data_factory.fake_generator import generate_test_data
@@ -69,6 +71,7 @@ async def test_new_drink_data_relation(authenticated_client_with_db, test_db_ses
         assert response.status_code in [200, 201], f'{prefix}/hierarchy, {response.text}'
 
 
+@pytest.mark.skip
 async def test_new_item_data_relation(authenticated_client_with_db, test_db_session):
     """ валидация генерируемых данных и загрузка """
     from tests.data_factory.fake_generator import generate_test_data

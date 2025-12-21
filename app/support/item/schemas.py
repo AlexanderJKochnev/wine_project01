@@ -173,7 +173,7 @@ class ItemUpdate(BaseModel, CustomUpdSchema, ImageUrlMixin):
 class ItemUpdatePreact(ItemCreatePreact):
     """ схема для обновления данных для Preact """
     drink_action: str  # 'update' or 'create'
-    drink_id: int
+    drink_id: Optional[int] = None
 
 
 class ItemCreateResponseSchema(ItemCreate, CreateResponse):

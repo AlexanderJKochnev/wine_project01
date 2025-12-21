@@ -69,6 +69,8 @@ class CustomUpdSchema(LangMixin):
     alc: Optional[float] = None
     sugar: Optional[float] = None
     age: Optional[str] = None
+    foods: Optional[List[FoodId]] = None
+    varietals: Optional[List[DrinkVarietalId]] = None
 
 
 class CustomCreateSchema(LangMixin):

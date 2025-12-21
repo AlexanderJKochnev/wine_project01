@@ -1,5 +1,7 @@
 # app/support/drink/drink_varietal_repo.py
-from sqlalchemy import select, delete
+from typing import Dict
+
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -83,3 +85,25 @@ class DrinkVarietalRepository:
         ]
         session.add_all(associations)
         await session.commit()
+
+    @classmethod
+    async def set_drink_varietals_with_percentage(cls, drink_id: int,
+                                                  varietal_dict: Dict[int, float], session: AsyncSession):
+        """Полная замена связей (для update)"""
+        # Удаляем старые
+        # stmt = select(DrinkVarietal).where(DrinkVarietal.drink_id == drink_id).execution_options(yield_per=1000)
+        # result = session.scalars(stmt).yield_per(100)
+        # for obj in result:
+        #     await session.delete(obj)
+        # await session.commit()
+        # альтернативный способ удаления записей - быстрее но не поддердивает ORM-логику
+        try:
+            await session.execute(delete(DrinkVarietal).where(DrinkVarietal.drink_id == drink_id))
+            # Добавляем новые
+            associations = [DrinkVarietal(drink_id=drink_id, varietal_id=key, percentage=val)
+                            for key, val in varietal_dict.items()]
+            session.add_all(associations)
+            await session.commit()
+            return True
+        except Exception as e:
+            print(f'set_drink_varietals_with_percentage.error {e}')

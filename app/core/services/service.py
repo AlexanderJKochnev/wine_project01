@@ -88,7 +88,7 @@ class Service(metaclass=ServiceMeta):
             raise Exception(f"UNKNOWN_ERROR: {str(e)}") from e
 
     @classmethod
-    async def update_or_create(cls, data: ModelType, repository: Type[Repository],
+    async def update_or_create(cls, id: int, data: ModelType, repository: Type[Repository],
                                model: ModelType, session: AsyncSession,
                                default: List[str] = None) -> Tuple[ModelType, bool]:
         """

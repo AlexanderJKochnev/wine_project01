@@ -57,8 +57,8 @@ class ItemRouter(BaseRouter):
     async def get_list_view(self, lang: str = Path(..., description="Язык локализации"),
                             session: AsyncSession = Depends(get_db)):
         """Получить список элементов с локализацией"""
-        service = ItemService()
-        items = await service.get_list_view(lang, ItemRepository, Item, session)
+
+        items = await self.service.get_list_view(lang, ItemRepository, Item, session)
         return items
 
     async def get_list_view_paginated(self,
@@ -67,16 +67,16 @@ class ItemRouter(BaseRouter):
                                       page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                       session: AsyncSession = Depends(get_db)):
         """Получить список элементов с пагинацией и локализацией"""
-        service = ItemService()
-        result = await service.get_list_view_page(page, page_size, ItemRepository, Item, session)
+
+        result = await self.service.get_list_view_page(page, page_size, ItemRepository, Item, session)
         return result
 
     async def get_detail_view(self, lang: str = Path(..., description="Язык локализации"),
                               id: int = Path(..., description="ID элемента"),
                               session: AsyncSession = Depends(get_db)):
         """Получить детальную информацию по элементу с локализацией"""
-        service = ItemService()
-        item = await service.get_detail_view(lang, id, ItemRepository, Item, session)
+
+        item = await self.service.get_detail_view(lang, id, ItemRepository, Item, session)
         if not item:
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
         return item
@@ -211,36 +211,38 @@ class ItemRouter(BaseRouter):
         """
         try:
             data_dict = json.loads(data)
+            drink_action = data_dict.get('drink_action')
             item_drink_data = ItemUpdatePreact(**data_dict)
-
             # load image to database, get image_id & image_path
             if file:
                 image_dict = await image_service.upload_image(file, description=item_drink_data.title)
                 item_drink_data.image_path = image_dict.get('filename')
                 item_drink_data.image_id = image_dict.get('id')
-
+                item_drink_data.drink_action = drink_action
             # Find the existing item to update
-            item = await ItemRepository.get_by_id(id, Item, session)
-            if not item:
-                raise HTTPException(status_code=404, detail=f'Item with id {id} not found')
-
-            # Determine whether to update existing drink or create new based on drink_action
-            if item_drink_data.drink_action == 'update':
-                # Update the existing drink using its ID
-                drink_id = item_drink_data.drink_id
-                result, _ = await self.service.update_or_create(item_drink_data, ItemRepository, Item, session)
-            elif item_drink_data.drink_action == 'create':
-                # Create a new drink and link to the item
-                # We need to clear the drink_id so a new drink is created
-                item_drink_data.drink_id = 0  # This will trigger creation of a new drink
-                result, _ = await self.service.create_item_drink(item_drink_data, ItemRepository, Item, session)
-            else:
-                raise HTTPException(status_code=400, detail=f"Invalid drink_action: {item_drink_data.drink_action}")
-            return result
+            result = await self.service.update_item_drink(item_drink_data, ItemRepository, Item, session)
+            """ will be return:
+                                {"success": True, "data": obj}
+                                or
+                                {"success": False,
+                                 "error_type": "unique_constraint_violation",
+                                 "message": f"Нарушение уникальности: {original_error_str}",
+                                 "field_info": field_info... !this field is Optional
+                                 }
+                            """
+            if not result.get('success'):
+                print(result)
+                raise HTTPException(status_code=500, detail=result.get('message', 'ошибка обновления'))
         except json.JSONDecodeError as e:
+            if file and image_dict:
+                image_id = image_dict.get('id')
+                await image_service.delete_image(image_id)
             raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
         except ValidationError as exc:
             # ValidationError_handler(exc)
+            if file and image_dict:
+                image_id = image_dict.get('id')
+                await image_service.delete_image(image_id)
             detail = (f'ошибка обновления записи {exc}, model = {self.model}, '
                       f'create_schema = {self.create_schema}, '
                       f'service = {self.service} ,'
@@ -250,9 +252,11 @@ class ItemRouter(BaseRouter):
             print(detail)
             raise HTTPException(status_code=501, detail=exc)
         except Exception as e:
+            if file and image_dict:
+                image_id = image_dict.get('id')
+                await image_service.delete_image(image_id)
             await session.rollback()
             detail = f'{str(e)}, {data=}'
-            print(f'{data}')
             raise HTTPException(status_code=500, detail=detail)
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),

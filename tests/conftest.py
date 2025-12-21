@@ -205,12 +205,12 @@ def simple_router_list():
               SweetnessRouter,
               VarietalRouter,
               FoodRouter,
-              StatusRouter,
-              RegistryRouter,
-              CodeRouter,
-              NameRouter,
-              RawdataRouter,
-              ImageRouter
+              # StatusRouter,
+              # RegistryRouter,
+              # CodeRouter,
+              # NameRouter,
+              # RawdataRouter,
+              # ImageRouter
               )
     return source
 
@@ -225,7 +225,6 @@ def complex_router_list():
     # from app.support.warehouse.router import WarehouseRouter
     from app.support.drink.router import DrinkRouter
     from app.support.item.router import ItemRouter
-    from app.support.item.router_item_view import ItemViewRouter
     return (SubcategoryRouter,
             RegionRouter,
             SubregionRouter,

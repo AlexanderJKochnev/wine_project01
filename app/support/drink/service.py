@@ -1,6 +1,6 @@
 # app.support.drink.service.py
 from typing import Optional, Type
-
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.repositories.sqlalchemy_repository import Repository
@@ -11,7 +11,8 @@ from app.core.utils.common_utils import flatten_dict
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_varietal_repo import DrinkVarietalRepository
 from app.support.drink.model import Drink
-from app.support.drink.schemas import DrinkCreate1, DrinkCreateRelation, DrinkRead, DrinkCreate
+from app.support.drink.schemas import (DrinkCreate1, DrinkCreateRelation, DrinkRead,
+                                       DrinkCreate, DrinkUpdate)
 from app.support.drink.repository import DrinkRepository
 
 from app.support.food.service import FoodService
@@ -154,3 +155,40 @@ class DrinkService(Service):
             return drink_instance, created
         except Exception as e:
             raise Exception(f'drink_create_error: {e}')
+
+    @classmethod
+    async def patch(cls, id: int,
+                    data: DrinkUpdate,
+                    repository: Type[Repository],
+                    model: ModelType,
+                    session: AsyncSession) -> dict:
+        obj = await repository.get_by_id(id, model, session)
+        if not obj:
+            raise HTTPException(status_code=404, detail=f'drink.update запись c {id=} не найдена')
+        data_dict = data.model_dump()
+        varietals = data_dict.pop('varietals', None)
+        foods = data_dict.pop('foods', None)
+        if varietals and isinstance(varietals, list):
+            #  обновляем varietals
+            #  заодно проверим правильность процентов (дополнить)
+            varietal_dict = {var.get('id'): var.get('percentage', 0) for var in varietals}
+            result = await DrinkVarietalRepository.set_drink_varietals_with_percentage(id, varietal_dict, session)
+            if not result:
+                raise HTTPException(status_code=500, detail=f'не удалось обновить varietals для drink {id=}')
+        if foods and isinstance(foods, list):
+            # [{'id': 91}, {'id': 114}]
+            food_ids = [item.get('id') for item in foods]
+            result = await DrinkFoodRepository.set_drink_foods(id, food_ids, session)
+            if not result:
+                raise HTTPException(status_code=500, detail=f'не удалось обновить foods для drink {id=}')
+        result = await repository.patch(obj, data_dict, session)
+        """ will be return:
+            {"success": True, "data": obj}
+            or
+            {"success": False,
+             "error_type": "unique_constraint_violation",
+             "message": f"Нарушение уникальности: {original_error_str}",
+             "field_info": field_info... !this field is Optional
+             }
+        """
+        return result

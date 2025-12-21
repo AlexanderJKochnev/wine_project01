@@ -54,6 +54,7 @@ body {
   min-height: 80px;
   max-height: 135px; */
   background-color: #4f46e5; /* primary color */
+  background-color: linear-gradient(direction, #4f46e5, red);
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   z-index: 50;

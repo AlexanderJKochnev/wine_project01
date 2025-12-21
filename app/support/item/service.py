@@ -2,7 +2,7 @@
 from deepdiff import DeepDiff
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from fastapi import HTTPException
 # from app.support.item.schemas import ItemCreate, ItemCreateRelation, ItemRead
 from app.core.services.service import Service
 from app.core.utils.common_utils import flatten_dict_with_localized_fields, get_value, jprint  # noqa: F401
@@ -12,11 +12,11 @@ from app.mongodb.service import ThumbnailImageService
 from app.support.drink.model import Drink
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.service import DrinkService
-from app.support.drink.schemas import DrinkCreate
+from app.support.drink.schemas import DrinkCreate, DrinkUpdate
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemCreate, ItemCreateRelation, ItemRead, ItemReadRelation,
-                                      ItemCreatePreact)
+                                      ItemCreatePreact, ItemUpdatePreact, ItemUpdate)
 
 
 class ItemService(Service):
@@ -321,6 +321,44 @@ class ItemService(Service):
             return item_instance, new
         except Exception as e:
             raise Exception(f'item_create_item_drink_error: {e}')
+
+    @classmethod
+    async def update_item_drink(cls, data: ItemUpdatePreact, repository: ItemRepository, model: Item,
+                                session: AsyncSession) -> ItemRead:
+        """
+            обновление item, включая drink
+        """
+        data_dict = data.model_dump(exclude_unset=True)
+        item_id = data_dict.get('id')
+        print(f'{item_id=} ================================')
+        for key, val in data_dict.items():
+            print(key, ': ', val)
+            print('=====================')
+        if data.drink_action == 'create':
+            drink = DrinkCreate(**data_dict)
+            result, created = await DrinkService.create(drink, DrinkRepository, Drink, session)
+            data_dict["drink_id"] = result.id
+        else:
+            drink_id = data_dict.get('drink_id')
+            drink = DrinkUpdate(**data_dict)
+            result = await DrinkService.patch(drink_id, drink, DrinkRepository, Drink, session)
+            if not result.get('success'):
+                raise HTTPException(status_code=500, detail=f'Не удалось обновить запись Drink {drink_id=}')
+        item = ItemUpdate(**data_dict)
+        item_instance = await repository.get_by_id(item_id, Item, session)
+        if not item_instance:
+            raise HTTPException(f'Item records with {item_id=} not found')
+        result = await repository.patch(item_instance, item, session)
+        """ will be return:
+                    {"success": True, "data": obj}
+                    or
+                    {"success": False,
+                     "error_type": "unique_constraint_violation",
+                     "message": f"Нарушение уникальности: {original_error_str}",
+                     "field_info": field_info... !this field is Optional
+                     }
+                """
+        return result
 
     @classmethod
     async def search_by_drink_title_subtitle(cls, search_str: str, lang: str,

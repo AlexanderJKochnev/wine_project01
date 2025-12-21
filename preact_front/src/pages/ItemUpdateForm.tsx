@@ -81,10 +81,10 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
     foods: [] as string[],
     file: null as File | null,
     drink_id: 0,
+    id: 0,
     image_id: '',
     image_path: '',
-    count: 0,
-    id: 0
+    count: 0
   });
 
   const [drinkAction, setDrinkAction] = useState<'update' | 'create'>('update');
@@ -222,7 +222,7 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
           image_id: data.image_id || '',
           image_path: data.image_path || '',
           count: data.count || 0,
-          id: data.id || 0
+          id: id || 0
         });
       } catch (err) {
         console.error('Failed to load item data', err);
@@ -339,7 +339,8 @@ export const ItemUpdateForm = ({ onClose, onUpdated }: ItemUpdateFormProps) => {
           return isNaN(id) ? null : { id };
         }).filter((f): f is { id: number } => f !== null),
         drink_action: drinkAction, // Add the drink action
-        drink_id: formData.drink_id // Include drink_id for update
+        drink_id: formData.drink_id, // Include drink_id for update
+        id: formData.id // Include Item id for update
       };
 
       console.log('Sending data to update:', JSON.stringify(dataToSend));

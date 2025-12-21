@@ -11,6 +11,7 @@ from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging, settings
 from app.core.utils.common_utils import back_to_the_future
+from app.core.services.service import Service
 from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
                                    CreateResponse, UpdateSchema, CreateSchema)
 from app.core.exceptions import exception_to_http
@@ -23,6 +24,8 @@ TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
 TReadSchema = TypeVar("TReadSchema", bound=ReadSchema)
 TCreateResponse = TypeVar("TCreateResponse", bound=CreateResponse)
 TUpdateSchema = TypeVar("TUpdateSchema", bound=UpdateSchema)
+TService = TypeVar("TService", bound=Service)
+
 dev = settings.DEV
 logger = logging.getLogger(__name__)
 delta = (datetime.now(timezone.utc) - relativedelta(years=2)).isoformat()
@@ -42,7 +45,7 @@ class BaseRouter:
     ):
         self.model = model
         self.repo = get_repo(model)
-        self.service = get_service(model)
+        self.service: TService = get_service(model)
         # input py schema for simple create without relation
         self.create_schema = get_pyschema(model, 'Create')
         self.create_response_schema = get_pyschema(model, 'CreateResponse') or self.create_schema
@@ -136,10 +139,11 @@ class BaseRouter:
             logger.error(f"Unexpected error in create_item: {e}")
             raise exception_to_http(e)
 
-    async def get_or_update(self, data: TCreateSchema, session: AsyncSession = Depends(get_db)) -> TReadSchema:
-        """ обновление / добавление одной записи """
+    async def update_or_create(self, id: int, data: TCreateSchema,
+                               session: AsyncSession = Depends(get_db)) -> TReadSchema:
+        """ обновление / добавление одной записи ? пока нигде не используется"""
         try:
-            obj, created = await self.service.get_or_update(data, self.repo, self.model, session)
+            obj, created = await self.service.update_or_create(id, data, self.repo, self.model, session)
             return obj
         except Exception as e:
             await session.rollback()
