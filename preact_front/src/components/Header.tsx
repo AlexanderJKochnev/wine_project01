@@ -68,7 +68,7 @@ export const Header = ({ sidebarVisible, setSidebarVisible }: HeaderProps) => {
         
         {/* Center: Site Name */}
         <div className="header-center">
-          <Link href="/" className="header-site-name">THE VERY GOOD SITE</Link>
+          <Link href="/" className="header-site-name">ALL ABOUT WINE</Link>
         </div>
         
         {/* Right: Auth Controls */}
