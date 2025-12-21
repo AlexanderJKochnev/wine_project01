@@ -94,43 +94,11 @@ class Repository(metaclass=RepositoryMeta):
         """
         try:
             # Store original values for comparison later
-            original_values = {}
             for k, v in data.items():
                 if hasattr(obj, k):
-                    original_values[k] = getattr(obj, k)
                     setattr(obj, k, v)
-
             await session.commit()
-            await session.refresh(obj)
-
-            # Validate that the changes were actually applied
-            for k, v in data.items():
-                if hasattr(obj, k):
-                    current_value = getattr(obj, k)
-                    if current_value != v:
-                        # Check if the value was modified as expected
-                        # Some fields might have been processed differently (e.g., timestamps)
-                        pass  # Allow for different processing of values
-
-            # Additional validation: check if the update was successful by comparing expected vs actual changes
-            all_changes_applied = True
-            for k, v in data.items():
-                if hasattr(obj, k):
-                    current_value = getattr(obj, k)
-                    if current_value != v:
-                        all_changes_applied = False
-                        break
-
-            if not all_changes_applied:
-                await session.rollback()
-                return {
-                    "success": False,
-                    "error_type": "update_failed",
-                    "message": "Обновление не произошло по неизвестной причине"
-                }
-
             return {"success": True, "data": obj}
-
         except IntegrityError as e:
             await session.rollback()
             error_str = str(e.orig).lower()

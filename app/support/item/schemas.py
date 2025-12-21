@@ -174,7 +174,7 @@ class ItemUpdatePreact(ItemCreatePreact):
     """ схема для обновления данных для Preact """
     drink_action: str  # 'update' or 'create'
     drink_id: Optional[int] = None
-
+    id: Optional[int] = None
 
 class ItemCreateResponseSchema(ItemCreate, CreateResponse):
     pass

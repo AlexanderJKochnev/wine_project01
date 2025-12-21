@@ -14,8 +14,7 @@ from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (FileUpload, ItemCreate, ItemCreatePreact, ItemCreateRelation,
-                                      ItemCreateResponseSchema, ItemUpdate, ItemUpdatePreact)
-from app.support.item.service import ItemService
+                                      ItemCreateResponseSchema, ItemRead, ItemUpdate, ItemUpdatePreact)
 
 paging = get_paging
 
@@ -202,7 +201,7 @@ class ItemRouter(BaseRouter):
                                 file: UploadFile = File(None),
                                 session: AsyncSession = Depends(get_db),
                                 image_service: ThumbnailImageService = Depends()
-                                ) -> ItemCreateResponseSchema:
+                                ) -> ItemRead:  # ItemCreateResponseSchema:
         """
         Обновление записи Item & Drink и всеми связями
         Принимает JSON строку и файл изображения
@@ -220,19 +219,11 @@ class ItemRouter(BaseRouter):
                 item_drink_data.image_id = image_dict.get('id')
                 item_drink_data.drink_action = drink_action
             # Find the existing item to update
-            result = await self.service.update_item_drink(item_drink_data, ItemRepository, Item, session)
-            """ will be return:
-                                {"success": True, "data": obj}
-                                or
-                                {"success": False,
-                                 "error_type": "unique_constraint_violation",
-                                 "message": f"Нарушение уникальности: {original_error_str}",
-                                 "field_info": field_info... !this field is Optional
-                                 }
-                            """
+            result = await self.service.update_item_drink(id, item_drink_data, ItemRepository, Item, session)
             if not result.get('success'):
-                print(result)
+                print(result, 'ошибка обновления')
                 raise HTTPException(status_code=500, detail=result.get('message', 'ошибка обновления'))
+            return result.get('data')
         except json.JSONDecodeError as e:
             if file and image_dict:
                 image_id = image_dict.get('id')
@@ -257,6 +248,7 @@ class ItemRouter(BaseRouter):
                 await image_service.delete_image(image_id)
             await session.rollback()
             detail = f'{str(e)}, {data=}'
+            print('3rd error', detail)
             raise HTTPException(status_code=500, detail=detail)
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),
