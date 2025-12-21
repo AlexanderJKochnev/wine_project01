@@ -213,13 +213,16 @@ class ItemRouter(BaseRouter):
             drink_action = data_dict.get('drink_action')
             item_drink_data = ItemUpdatePreact(**data_dict)
             # load image to database, get image_id & image_path
+            isfile: bool = False
             if file:
                 image_dict = await image_service.upload_image(file, description=item_drink_data.title)
                 item_drink_data.image_path = image_dict.get('filename')
                 item_drink_data.image_id = image_dict.get('id')
-                item_drink_data.drink_action = drink_action
+                isfile = True
+            # item_drink_data.drink_action = drink_action
             # Find the existing item to update
-            result = await self.service.update_item_drink(id, item_drink_data, ItemRepository, Item, session)
+            result = await self.service.update_item_drink(id, item_drink_data, isfile,
+                                                          ItemRepository, Item, session)
             if not result.get('success'):
                 print(result, 'ошибка обновления')
                 raise HTTPException(status_code=500, detail=result.get('message', 'ошибка обновления'))

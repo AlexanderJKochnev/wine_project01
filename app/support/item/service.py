@@ -323,12 +323,16 @@ class ItemService(Service):
             raise Exception(f'item_create_item_drink_error: {e}')
 
     @classmethod
-    async def update_item_drink(cls, id: int, data: ItemUpdatePreact, repository: ItemRepository, model: Item,
-                                session: AsyncSession) -> ItemRead:
+    async def update_item_drink(cls, id: int, data: ItemUpdatePreact,
+                                isfile: bool, repository: ItemRepository,
+                                model: Item, session: AsyncSession) -> ItemRead:
         """
             обновление item, включая drink
         """
-        data_dict = data.model_dump(exclude_unset=True)
+        data_dict = data.model_dump()
+        for key, val in data_dict.items():
+            print(key, val)
+        print('=================')
         item_id = id
         if data.drink_action == 'create':
             drink = DrinkCreate(**data_dict)
@@ -341,7 +345,12 @@ class ItemService(Service):
             if not result.get('success'):
                 raise HTTPException(status_code=500, detail=f'Не удалось обновить запись Drink {drink_id=}')
         item = ItemUpdate(**data_dict)
-        item_dict = item.model_dump()
+        if isfile:
+            item_dict = item.model_dump()
+        else:
+            item_dict = item.model_dump(exclude=['image_id', 'image_path'])
+        for key, val in item_dict.items():
+            print(key, val)
         item_instance = await repository.get_by_id(item_id, Item, session)
         if not item_instance:
             raise HTTPException(f'Item records with {item_id=} not found')
