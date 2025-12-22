@@ -106,7 +106,7 @@ class ItemViewRouter:
         """
             Получение одной записи по ID
         """
-        repo = ItemRepository
+        # repo = ItemRepository
         item_dict = await self.service.get_one(id, session)
         item_py = ItemReadPreactForUpdate.validate(item_dict)
         item_dict = item_py.model_dump(exclude_unset=True, exclude_none=True)

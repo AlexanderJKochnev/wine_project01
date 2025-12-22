@@ -332,9 +332,6 @@ class ItemService(Service):
             обновление item, включая drink
         """
         data_dict = data.model_dump()
-        for key, val in data_dict.items():
-            print(key, val)
-        print('=================')
         item_id = id
         if data.drink_action == 'create':
             drink = DrinkCreate(**data_dict)
@@ -351,8 +348,6 @@ class ItemService(Service):
             item_dict = item.model_dump()
         else:
             item_dict = item.model_dump(exclude=['image_id', 'image_path'])
-        for key, val in item_dict.items():
-            print(key, val)
         item_instance = await repository.get_by_id(item_id, Item, session)
         if not item_instance:
             raise HTTPException(f'Item records with {item_id=} not found')
@@ -473,13 +468,8 @@ class ItemService(Service):
                                                                          page_size, page)
         result = []
         for item in items:
-            print(f'{type(item)=} , {item}')
             tmp = item.to_dict()
-            for key, val in tmp.items():
-                print(f'{key}: {val}')
             localized_result = cls._process_item_localization(tmp, lang)
-            for key, val in localized_result.items():
-                print(f'{key}:  {val}')
             result.append(localized_result)
         return make_paginated_response(result, total, page, page_size)
 
@@ -523,8 +513,6 @@ class ItemService(Service):
         drink = obj.drink
 
         varietal_associations = drink.varietal_associations
-        # for key, val in varietal_associations..items():
-        #     print(key, val)
         varietals = [{'id': item.varietal_id, 'percentage': item.percentage}
                      for item in varietal_associations if item]
         food_associations = drink.food_associations
