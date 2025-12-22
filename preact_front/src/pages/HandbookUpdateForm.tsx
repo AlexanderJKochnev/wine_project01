@@ -272,7 +272,7 @@ export const HandbookUpdateForm = () => {
                   onInput={handleChange}
                   className="textarea textarea-bordered w-full"
                   rows={3}
-                  placeholder="Description in Russian"
+                  placeholder="Описание на Русском"
                 />
               </div>
 

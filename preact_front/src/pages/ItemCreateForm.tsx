@@ -268,6 +268,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   <input
                     type="text"
                     name="subtitle_ru"
+                    lang="ru"
                     value={formData.subtitle_ru}
                     onInput={handleChange}
                     className="input input-bordered w-full"
@@ -281,6 +282,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                   <input
                     type="text"
                     name="subtitle_fr"
+                    inputmode="latin"
                     value={formData.subtitle_fr}
                     onInput={handleChange}
                     className="input input-bordered w-full"
