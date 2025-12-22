@@ -81,24 +81,24 @@ class Service(metaclass=ServiceMeta):
                     instance_dict = instance.to_dict()
                 else:
                     instance_dict = instance
-                    
+
                 translated_instance = await fill_missing_translations(instance_dict)
-                
+
                 return translated_instance, False
             # запись не найдена
             obj = model(**data_dict)
             instance = await repository.create(obj, model, session)
             await session.flush()
             await session.refresh(instance)
-            
+
             # Apply translations to the newly created instance
             if not isinstance(instance, dict):
                 instance_dict = instance.to_dict()
             else:
                 instance_dict = instance
-                
+
             translated_instance = await fill_missing_translations(instance_dict)
-            
+
             return translated_instance, True
         except IntegrityError as e:
             raise Exception(f'Integrity error: {e}')
@@ -190,10 +190,10 @@ class Service(metaclass=ServiceMeta):
                 result_dict = result.to_dict()
             else:
                 result_dict = result
-                
+
             # Apply translations to fill missing localized fields
             translated_result = await fill_missing_translations(result_dict)
-            
+
             # Return the model object with translated values
             return translated_result
         return result
@@ -332,7 +332,7 @@ class Service(metaclass=ServiceMeta):
             return None
         if not isinstance(obj, dict):   # если объект не словарь
             obj = obj.to_dict()  # model_to_dict(obj)
-        
+
         # Apply translations to fill missing localized fields before flattening
         translated_obj = await fill_missing_translations(obj)
         result = flatten_dict_with_localized_fields(translated_obj, detail_fields, lang)

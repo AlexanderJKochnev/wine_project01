@@ -143,7 +143,7 @@ class Settings(BaseSettings):
     ARQ_MAX_TRIES: int = 3  # максимум 3 попытки
     ARQ_MIN_DELAY: int = 3
     ARQ_MAX_DELAY: int = 10
-    
+
     # === EMAIL SETTINGS ===
     EMAIL_HOST: str = "smtp.gmail.com"
     EMAIL_PORT: int = 587
@@ -153,7 +153,7 @@ class Settings(BaseSettings):
     EMAIL_ADMIN: str = "akochnev66@gmail.com"  # Email address to send error notifications to
     EMAIL_USE_TLS: bool = True
     EMAIL_USE_SSL: bool = False
-    
+
     # === MYMEMORY TRANSLATION SERVICE ===
     MYMEMORY_API_EMAIL: str = "akochnev66@gmail.com"
     MYMEMORY_API_BASE_URL: str = "https://api.mymemory.translated.net/get"

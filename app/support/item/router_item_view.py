@@ -6,15 +6,15 @@
 """
 from typing import List
 
-from fastapi import Depends, Path, Query, HTTPException
+from fastapi import Depends, Path, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
 from app.core.schemas.base import PaginatedResponse
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import ItemDetailView, ItemListView, ItemReadPreactForUpdate
-from app.support.drink.schemas import DrinkCreate
 from app.support.item.service import ItemService
 
 
@@ -107,31 +107,7 @@ class ItemViewRouter:
             Получение одной записи по ID
         """
         repo = ItemRepository
-        model = Item
-        obj = await self.service.get_by_id(id, repo, model, session)
-        if obj is None:
-            raise HTTPException(status_code=404, detail=f'Запрашиваемый файл {id} не найден на сервере')
-        item_dict: dict = obj.to_dict()
-        drink = obj.drink
-
-        varietal_associations = drink.varietal_associations
-        # for key, val in varietal_associations..items():
-        #     print(key, val)
-        varietals = [{'id': item.varietal_id, 'percentage': item.percentage}
-                     for item in varietal_associations if item]
-        food_associations = drink.food_associations
-        foods = [{'id': item.food_id} for item in food_associations if item]
-        drink_dict = drink.to_dict()
-        item_dict['drink_id'] = drink.id
-        if varietals:
-            drink_dict.pop('varietals', None)
-            drink_dict['varietals'] = varietals
-        if foods:
-            drink_dict.pop('foods', None)
-            drink_dict['foods'] = foods
-        tmp = DrinkCreate(**drink_dict)
-        drink_dict = tmp.model_dump(exclude_unset=True, exclude_none=True)
-        item_dict.update(drink_dict)
+        item_dict = await self.service.get_one(id, session)
         item_py = ItemReadPreactForUpdate.validate(item_dict)
         item_dict = item_py.model_dump(exclude_unset=True, exclude_none=True)
         return item_dict
