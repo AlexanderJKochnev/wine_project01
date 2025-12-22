@@ -153,6 +153,10 @@ class Settings(BaseSettings):
     EMAIL_ADMIN: str = "akochnev66@gmail.com"  # Email address to send error notifications to
     EMAIL_USE_TLS: bool = True
     EMAIL_USE_SSL: bool = False
+    
+    # === MYMEMORY TRANSLATION SERVICE ===
+    MYMEMORY_API_EMAIL: str = "akochnev66@gmail.com"
+    MYMEMORY_API_BASE_URL: str = "https://api.mymemory.translated.net/get"
 
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',

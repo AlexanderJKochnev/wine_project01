@@ -1,10 +1,31 @@
+```
+# Environment variables
+.env
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.py[cod]
-*$py.class
-*.so
+.Python
+env/
+venv/
+.venv/
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.mypy_cache/
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -23,37 +44,16 @@ wheels/
 *.egg
 MANIFEST
 
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
-.coverage.xml
-.pytest_cache/
-
-# Environment
-# .env
-# .env.local
-# .env.*
-.venv/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# IDE
+# IDEs
 .vscode/
 .idea/
-*.swp
-*.swo
-*.tmp
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-
-TODO.md
-migration_volume
-mongodb_data
-pg_data
-pg_dump
-upload_volume
+```

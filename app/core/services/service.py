@@ -12,6 +12,7 @@ from app.core.repositories.sqlalchemy_repository import ModelType, Repository
 from app.core.utils.alchemy_utils import get_models
 from app.core.utils.common_utils import flatten_dict_with_localized_fields
 from app.core.utils.pydantic_utils import make_paginated_response
+from app.core.utils.translation_utils import fill_missing_translations
 from app.service_registry import register_service
 
 joint = '. '
@@ -75,13 +76,30 @@ class Service(metaclass=ServiceMeta):
             # поиск существующей записи по совпадению объектов по уникальным полям
             instance = await repository.get_by_fields(default_dict, model, session)
             if instance:
-                return instance, False
+                # Apply translations to fill missing localized fields for existing record
+                if not isinstance(instance, dict):
+                    instance_dict = instance.to_dict()
+                else:
+                    instance_dict = instance
+                    
+                translated_instance = await fill_missing_translations(instance_dict)
+                
+                return translated_instance, False
             # запись не найдена
             obj = model(**data_dict)
             instance = await repository.create(obj, model, session)
             await session.flush()
             await session.refresh(instance)
-            return instance, True
+            
+            # Apply translations to the newly created instance
+            if not isinstance(instance, dict):
+                instance_dict = instance.to_dict()
+            else:
+                instance_dict = instance
+                
+            translated_instance = await fill_missing_translations(instance_dict)
+            
+            return translated_instance, True
         except IntegrityError as e:
             raise Exception(f'Integrity error: {e}')
         except Exception as e:
@@ -164,8 +182,21 @@ class Service(metaclass=ServiceMeta):
     async def get_by_id(
             cls, id: int, repository: Type[Repository],
             model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        """Получение записи по ID"""
-        return await repository.get_by_id(id, model, session)
+        """Получение записи по ID с автоматическим переводом недостающих локализованных полей"""
+        result = await repository.get_by_id(id, model, session)
+        if result:
+            # Convert model to dict to work with translation
+            if not isinstance(result, dict):
+                result_dict = result.to_dict()
+            else:
+                result_dict = result
+                
+            # Apply translations to fill missing localized fields
+            translated_result = await fill_missing_translations(result_dict)
+            
+            # Return the model object with translated values
+            return translated_result
+        return result
 
     @classmethod
     async def patch(cls, id: int, data: ModelType,
@@ -293,7 +324,7 @@ class Service(metaclass=ServiceMeta):
     @classmethod
     async def get_detail_view(cls, lang: str, id: int, repository: Type[Repository],
                               model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        """ Получение и обработка записи по ID """
+        """ Получение и обработка записи по ID с автоматическим переводом недостающих локализованных полей """
         detail_fields = settings.DETAIL_VIEW
         obj = await repository.get_by_id(id, model, session)
         # return obj
@@ -301,5 +332,8 @@ class Service(metaclass=ServiceMeta):
             return None
         if not isinstance(obj, dict):   # если объект не словарь
             obj = obj.to_dict()  # model_to_dict(obj)
-        result = flatten_dict_with_localized_fields(obj, detail_fields, lang)
+        
+        # Apply translations to fill missing localized fields before flattening
+        translated_obj = await fill_missing_translations(obj)
+        result = flatten_dict_with_localized_fields(translated_obj, detail_fields, lang)
         return result
