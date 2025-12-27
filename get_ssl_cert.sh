@@ -6,22 +6,8 @@
 
 set -e  # Exit on any error
 
-# Check if argument is provided
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <validity_period_in_days>"
-    echo "Example: $0 365"
-    exit 1
-fi
-
-VALIDITY_PERIOD=$1
 DOMAIN="abc8888.ru"
 SUBDOMAIN="api.abc8888.ru"
-
-# Validate that the argument is a number
-if ! [[ "$VALIDITY_PERIOD" =~ ^[0-9]+$ ]]; then
-    echo "Error: Validity period must be a positive integer"
-    exit 1
-fi
 
 echo "Obtaining SSL certificates for domain: $DOMAIN and subdomain: $SUBDOMAIN"
 echo "Note: Let's Encrypt certificates have a fixed 90-day validity period by policy"
