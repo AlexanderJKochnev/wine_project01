@@ -23,3 +23,6 @@ vite.config.js
     Nginx: Создано два server_name.
     FastAPI: Включен CORSMiddleware с указанием abc8888.ru.
     Preact: API_BASE_URL указывает на http://api.abc8888.ru.
+
+# 7. SSL сертификаты: получаются атоматически при запуске/перезапуске и автоматически продляются по истечении времени
+   см. scripts/entrypoint.sh
