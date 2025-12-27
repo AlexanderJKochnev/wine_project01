@@ -7,6 +7,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: [
+      'abc8888.ru',
+    ],
     proxy: {
       // Проксируем все запросы к /proxy-api → FastAPI внутри Docker
       '/proxy-api': {
