@@ -321,9 +321,9 @@ class inItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         ).join(Item.drink).where(Drink.id.in_(matching_drink_ids))
-        
+
         query = query.order_by(Item.id.asc())
-        
+
         if skip is not None:
             query = query.offset(skip)
         if limit is not None:
@@ -364,15 +364,15 @@ class inItemRepository(Repository):
         drink_search_query = select(Drink.id).where(
             search_expr.cast(String).ilike(f'%{search_str}%')
         )
-        
+
         if skip is not None:
             drink_search_query = drink_search_query.offset(skip)
         if limit is not None:
             drink_search_query = drink_search_query.limit(limit)
-        
+
         result = await session.execute(drink_search_query)
         matching_drink_ids = [row[0] for row in result.fetchall()]
-        
+
         if not matching_drink_ids:
             return [], 0
 
@@ -393,9 +393,9 @@ class inItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         ).join(Item.drink).where(Drink.id.in_(matching_drink_ids))
-        
+
         query = query.order_by(Item.id.asc())
-        
+
         if skip is not None:
             query = query.offset(skip)
         if limit is not None:
