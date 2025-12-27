@@ -22,7 +22,7 @@ from app.core.services.logger import logger
 
 
 # ItemRepository = RepositoryFactory.get_repository(Item)
-class inItemRepository(Repository):
+class ItemRepository(Repository):
     model = Item
 
     @classmethod
