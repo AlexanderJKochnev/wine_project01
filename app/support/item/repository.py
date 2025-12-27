@@ -22,7 +22,7 @@ from app.core.services.logger import logger
 
 
 # ItemRepository = RepositoryFactory.get_repository(Item)
-class ItemRepository(Repository):
+class inItemRepository(Repository):
     model = Item
 
     @classmethod
@@ -240,7 +240,6 @@ class ItemRepository(Repository):
                 selectinload(Drink.sweetness)
             )
         )
-
 
         query = query.order_by(Item.id.asc())
         count_query = select(func.count()).select_from(Item)
