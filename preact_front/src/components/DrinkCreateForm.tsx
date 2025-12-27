@@ -2,6 +2,7 @@
 import { h, useState } from 'preact/hooks';
 import { MUIForm } from './MUIForm';
 import { getDrinkCreateSchema } from '../lib/schemaMapper';
+import { API_BASE_URL } from '../config/api';
 
 interface ReferenceData {
   subcategories: any[];
@@ -26,7 +27,7 @@ export const DrinkCreateForm = ({ references, onCreated, onCancel }: DrinkCreate
     setSubmitStatus(null);
     try {
       // Отправка данных
-      const response = await fetch('/proxy-api/drinks', {
+      const response = await fetch(`${API_BASE_URL}/drinks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

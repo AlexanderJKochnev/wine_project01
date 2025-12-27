@@ -2,6 +2,7 @@
 import { h } from 'preact'; // ← h из 'preact'
 import { useState } from 'preact/hooks'; // ← useState из 'preact/hooks'
 import { apiClient, setAuthToken } from '../lib/apiClient';
+import { API_BASE_URL } from '../config/api'; // Импортируем нашу константу
 
 export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
   const [username, setUsername] = useState('');
@@ -16,10 +17,11 @@ export const LoginForm = ({ onLogin }: { onLogin: () => void }) => {
     formData.append('grant_type', 'password'); // ← обязательно
 
     try {
-      const response = await fetch('/proxy-api/auth/token', {
+      const response = await fetch(`${API_BASE_URL}/auth/token`, {
+      // const response = await fetch('/auth/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData,
+        body: formData.toString(),
       });
 
       if (!response.ok) {

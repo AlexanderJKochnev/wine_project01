@@ -51,7 +51,8 @@ app = FastAPI(title="Hybrid PostgreSQL-MongoDB API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://abc8888.ru",
+    allow_origins=[
+                   # "http://abc8888.ru",
                    "https://abc8888.ru",
                    "http://localhost:5173"],
     allow_credentials=True,
