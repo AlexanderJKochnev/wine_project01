@@ -127,7 +127,7 @@ def process_file(file_path: Path) -> Tuple[Dict, str]:
 
 def main():
     # Find all Python files that might contain localized fields
-    workspace_path = Path('/workspace')
+    workspace_path = Path('')
 
     all_files = set()
 
@@ -163,7 +163,7 @@ def main():
             yaml_data[file_key].update(entries)
 
     # Write language.yaml file
-    with open('/workspace/language.yaml', 'w', encoding='utf-8') as f:
+    with open('language.yaml', 'w', encoding='utf-8') as f:
         f.write("file:\n")
         for file_path, entries in yaml_data.items():
             f.write(f"  {file_path}:\n")
