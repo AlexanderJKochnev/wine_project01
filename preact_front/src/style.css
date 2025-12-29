@@ -712,3 +712,15 @@ summary {
     background-color: #374151;
   }
 }
+
+.modal-box {
+    position: relative;
+    /* other styles */
+}
+
+.btn-circle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    /* other styles */
+}
