@@ -1,0 +1,58 @@
+# Python language configuration for ast-grep
+rules:
+  - id: localized-field-model
+    message: "Localized field in SQLAlchemy model"
+    severity: info
+    language: python
+    rule:
+      pattern: |
+        $NAME_$LANG: Mapped[$TYPE]
+    constraints:
+      $NAME:
+        regex: "name|description|title|subtitle"
+      $LANG:
+        regex: "ru|fr|[a-z]{2}"
+      $TYPE:
+        anyOf:
+          - regex: "str_null_true|descr|str_null_index"
+
+  - id: localized-field-schema
+    message: "Localized field in Pydantic schema"
+    severity: info
+    language: python
+    rule:
+      pattern: |
+        $NAME_$LANG: Optional[str] = $DEFAULT
+    constraints:
+      $NAME:
+        regex: "name|description|title|subtitle"
+      $LANG:
+        regex: "ru|fr|[a-z]{2}"
+      $DEFAULT:
+        anyOf:
+          - regex: "None|Field\\(exclude=True\\)"
+
+  - id: lang-schema-class
+    message: "Language-specific schema class"
+    severity: info
+    language: python
+    rule:
+      pattern: |
+        class $CLASS_NAME$EXTENSION\(ListView\):
+    constraints:
+      $EXTENSION:
+        regex: "Ru|Fr|[A-Z]{2}"
+
+  - id: translation-field-list
+    message: "List of localized fields for translation"
+    severity: info
+    language: python
+    rule:
+      pattern: |
+        return [
+          $BASE_FIELDS,
+          $LOCALIZED_FIELDS
+        ]
+    constraints:
+      $LOCALIZED_FIELDS:
+        regex: "name_[a-z]{2}|description_[a-z]{2}|title_[a-z]{2}|subtitle_[a-z]{2}"

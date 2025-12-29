@@ -1,0 +1,40 @@
+# TypeScript language configuration for ast-grep
+rules:
+  - id: localized-field-interface
+    message: "Localized field in TypeScript interface"
+    severity: info
+    language: typescript
+    rule:
+      pattern: |
+        $NAME_$LANG?: string;
+    constraints:
+      $NAME:
+        regex: "name|description|title|subtitle"
+      $LANG:
+        regex: "ru|fr|[a-z]{2}"
+
+  - id: localized-input-field
+    message: "Localized input field in React component"
+    severity: info
+    language: typescript
+    rule:
+      pattern: |
+        name="$NAME_$LANG"
+    constraints:
+      $NAME:
+        regex: "name|title|subtitle|description"
+      $LANG:
+        regex: "ru|fr|[a-z]{2}"
+
+  - id: localized-form-state
+    message: "Localized field in form state"
+    severity: info
+    language: typescript
+    rule:
+      pattern: |
+        $NAME_$LANG: '',
+    constraints:
+      $NAME:
+        regex: "name|title|subtitle|description"
+      $LANG:
+        regex: "ru|fr|[a-z]{2}"
