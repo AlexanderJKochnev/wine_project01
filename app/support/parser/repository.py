@@ -90,7 +90,7 @@ class RawdataRepository(Repository):
                 fts_column = model.fts_english
         ts_query = func.to_tsquery(language, search_str)
         search_condition = fts_column.op('@@')(ts_query)
-        
+
         # Optimized query - only apply relationship loading for Rawdata model
         if model == Rawdata:
             stmt = select(model).where(search_condition).options(
@@ -102,17 +102,17 @@ class RawdataRepository(Repository):
             ).order_by(model.id)
         else:
             stmt = select(model).where(search_condition).order_by(model.id)
-        
+
         # Count query
         count_stmt = select(count(model.id)).where(search_condition)
-        
+
         # Execute count query
         count_result = await session.execute(count_stmt)
         total_count = count_result.scalar() or 0
-        
+
         if total_count == 0:
             return [], total_count
-        
+
         # Apply pagination to the main query
         stmt = stmt.offset(skip).limit(limit)
         result_result = await session.execute(stmt)
