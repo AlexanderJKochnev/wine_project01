@@ -65,6 +65,8 @@ services:
       postgres_network:
         ipv4_address: ${IP_POSTGRES}
       clickhousepg_network:
+        aliases:
+          - ${PG_ALIAS}
       
   
   app:
