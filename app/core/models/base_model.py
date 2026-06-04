@@ -46,6 +46,8 @@ str_null_false = Annotated[str, mapped_column(nullable=False)]
 
 # 5. Числа с дефолтом
 nmbr = Annotated[int, mapped_column(server_default=text('0'))]
+int_null_index = Annotated[Optional[int], mapped_column(nullable=True, index=True)]
+
 
 # 6. Text (Mapped[Optional[str]] укажет SQLAlchemy на тип TEXT/VARCHAR автоматически)
 descr = Annotated[Optional[str], mapped_column(Text)]
@@ -316,12 +318,21 @@ class BaseLang(BaseDescription):
     # name_xx: Mapped[str_null_true]
 
 
-class BaseFull(Base, BaseInt, BaseAt, BaseLang):
+class ClickId:
+    """
+        добавляет click_id для однозначной идентификации записей импортированных из clickhouse
+        после импортов из ch можно удалить
+    """
+    __abstract__ = True
+    ch_id: Mapped[int_null_index]
+
+
+class BaseFull(ClickId, Base, BaseInt, BaseAt, BaseLang):
     __abstract__ = True
     pass
 
 
-class BaseFullFree(Base, BaseIntFree, BaseAt, BaseLang):
+class BaseFullFree(ClickId, Base, BaseIntFree, BaseAt, BaseLang):
     """ модель без обязательных полей под составной индекс"""
     __abstract__ = True
 

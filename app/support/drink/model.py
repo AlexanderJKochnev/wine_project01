@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr, v
 from sqlalchemy.types import DECIMAL
 from decimal import Decimal
 from app.core.config.project_config import settings
-from app.core.models.base_model import (Base, BaseAt, boolnone, descr, plural, str_null_false, str_null_true)
+from app.core.models.base_model import (Base, BaseAt, boolnone, ClickId, descr, plural, str_null_false, str_null_true)
 from app.service_registry import registers_search_update
 
 if TYPE_CHECKING:
@@ -191,7 +191,7 @@ class DisplayName:
 
 
 @registers_search_update("item")
-class Drink(Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, DisplayName):
+class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, DisplayName):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'drink'
