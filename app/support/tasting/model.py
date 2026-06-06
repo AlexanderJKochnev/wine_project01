@@ -13,7 +13,7 @@ from app.core.models.base_model import BaseFull, plural
 
 
 # @registers_search_update("drink_associations.drink.items")
-class Tasting(BaseFull):
+class TastingNote(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'tasting'
