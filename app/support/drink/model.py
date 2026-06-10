@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     # from app.support.subregion.model import Subregion
     # from app.support.food.model import Food
     from app.support import (Source, Sweetness, Subcategory, Food, Producer, VintageConfig,
-                             Classification, Designation, Site, Parcel, Glassware, Scale, TastingNote,
-                             BaseIngredient, Body)
+                             Classification, Designation, Site, Parcel, TastingNote,
+                             BaseIngredient)
 
 
 class Lang:
@@ -321,7 +321,7 @@ class DrinkTastingNote(Base):
 
     # Связи с конкретными объектами
     drink: Mapped["Drink"] = relationship(back_populates="tastingnote_associations")
-    tastingnote: Mapped["Food"] = relationship(back_populates="drink_associations")
+    tastingnote: Mapped["TastingNote"] = relationship(back_populates="drink_associations")
 
     def __str__(self):
         return f"Drink {self.drink_id} - TastingNote {self.tastingnote_id}"
