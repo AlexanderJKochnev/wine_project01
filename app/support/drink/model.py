@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     # from app.support.food.model import Food
     from app.support import (Source, Sweetness, Subcategory, Food, Producer, VintageConfig,
                              Classification, Designation, Site, Parcel, TastingNote,
-                             BaseIngredient)
+                             BaseIngredient, Glassware, Scale, Body)
 
 
 class Lang:
@@ -151,6 +151,18 @@ class ForeignOneToMany:
 
     @declared_attr
     def site(cls) -> Mapped["Site"]:
+        return relationship(back_populates="drinks")
+
+    @declared_attr
+    def glassware(cls) -> Mapped["Glassware"]:
+        return relationship(back_populates="drinks")
+
+    @declared_attr
+    def scale(cls) -> Mapped["Scale"]:
+        return relationship(back_populates="drinks")
+
+    @declared_attr
+    def body(cls) -> Mapped["Body"]:
         return relationship(back_populates="drinks")
 
 
