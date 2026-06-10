@@ -123,7 +123,7 @@ class ForeignOneToMany:
     parcel_id: Mapped[int | None] = mapped_column(ForeignKey("parcels.id"), nullable=True, index=True)
     glassware_id: Mapped[int | None] = mapped_column(ForeignKey("glasswares.id"), nullable=True, index=True)
     scale_id: Mapped[int | None] = mapped_column(ForeignKey("scales.id"), nullable=True, index=True)
-    body_id: Mapped[int | None] = mapped_column(ForeignKey("bodiess.id"), nullable=True, index=True)
+    body_id: Mapped[int | None] = mapped_column(ForeignKey("bodies.id"), nullable=True, index=True)
 
     @declared_attr
     def source(cls) -> Mapped["Source"]:
