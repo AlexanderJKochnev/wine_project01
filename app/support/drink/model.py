@@ -229,15 +229,6 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, Display
     )
 
     # 2. Прямая связь Many-to-Many
-    """
-    foods: Mapped[List["Food"]] = relationship(
-        secondary="drink_food_associations",
-        back_populates="drinks",
-        lazy="selectin",
-        # viewonly=False, overlaps="food_associations,drink"
-        # Загрузит список объектов Food автоматически
-    )
-    """
     varietal_associations = relationship(
         "DrinkVarietal",
         back_populates="drink",
@@ -251,6 +242,9 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, Display
                              lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
 
     tastingnote_associations: Mapped[List["DrinkTastingNote"]] = relationship(
+        back_populates="drink", cascade="all, delete-orphan", lazy="selectin"
+    )
+    baseingredient_associations: Mapped[List["DrinkBaseIngredient"]] = relationship(
         back_populates="drink", cascade="all, delete-orphan", lazy="selectin"
     )
 
