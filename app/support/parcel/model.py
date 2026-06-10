@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from app.support.subregion.model import Subregion
 
 
-@registers_search_update("producer.drink.item")
+@registers_search_update("drink.item")
 class Parcel(BaseFull):
     """
         часть виноградника (верхняя, нижняя, возле леса - неуникальное имя)

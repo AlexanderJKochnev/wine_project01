@@ -17,7 +17,8 @@ if TYPE_CHECKING:
     # from app.support.subregion.model import Subregion
     # from app.support.food.model import Food
     from app.support import (Source, Sweetness, Subcategory, Food, Producer, VintageConfig,
-                             Classification, Designation, Site, Parcel)
+                             Classification, Designation, Site, Parcel, Glassware, Scale, TastingNote,
+                             BaseIngredient, Body)
 
 
 class Lang:
@@ -120,6 +121,9 @@ class ForeignOneToMany:
     designation_id: Mapped[int | None] = mapped_column(ForeignKey("designations.id"), nullable=True, index=True)
     site_id: Mapped[int | None] = mapped_column(ForeignKey("sites.id"), nullable=False, index=True)
     parcel_id: Mapped[int | None] = mapped_column(ForeignKey("parcels.id"), nullable=True, index=True)
+    glassware_id: Mapped[int | None] = mapped_column(ForeignKey("glasswares.id"), nullable=True, index=True)
+    scale_id: Mapped[int | None] = mapped_column(ForeignKey("scales.id"), nullable=True, index=True)
+    body_id: Mapped[int | None] = mapped_column(ForeignKey("bodiess.id"), nullable=True, index=True)
 
     @declared_attr
     def source(cls) -> Mapped["Source"]:
@@ -246,6 +250,10 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, Display
                              back_populates="drinks",
                              lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
 
+    tastingnote_associations: Mapped[List["DrinkTastingNote"]] = relationship(
+        back_populates="drink", cascade="all, delete-orphan", lazy="selectin"
+    )
+
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
     __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
                       CheckConstraint("(first_vintage IS NULL) OR (first_vintage >= 1000 AND first_vintage <= 3000)",
@@ -303,3 +311,31 @@ class DrinkVarietal(Base):
     def __str__(self):
         # return f"Drink {self.drink_id} - Varietal {self.food_id} (Percentage: {self.percentage})"
         return f"Varietal {self.varietal_id} (Percentage: {self.percentage})"
+
+
+@registers_search_update("drink.item")
+class DrinkTastingNote(Base):
+    __tablename__ = "drink_tastingnote_associations"
+    drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), primary_key=True)
+    tastingnote_id: Mapped[int] = mapped_column(ForeignKey("tastingnotes.id"), primary_key=True)
+
+    # Связи с конкретными объектами
+    drink: Mapped["Drink"] = relationship(back_populates="tastingnote_associations")
+    tastingnote: Mapped["Food"] = relationship(back_populates="drink_associations")
+
+    def __str__(self):
+        return f"Drink {self.drink_id} - TastingNote {self.tastingnote_id}"
+
+
+@registers_search_update("drink.item")
+class DrinkBaseIngredient(Base):
+    __tablename__ = "drink_baseingredient_associations"
+    drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), primary_key=True)
+    baseingredient_id: Mapped[int] = mapped_column(ForeignKey("baseingredients.id"), primary_key=True)
+
+    # Связи с конкретными объектами
+    drink: Mapped["Drink"] = relationship(back_populates="baseingredient_associations")
+    baseingredient: Mapped["BaseIngredient"] = relationship(back_populates="drink_associations")
+
+    def __str__(self):
+        return f"Drink {self.drink_id} - BaseIngredient {self.baseingredient_id}"

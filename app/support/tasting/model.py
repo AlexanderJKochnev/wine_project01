@@ -1,39 +1,41 @@
 # app/support/tasting/model.py
 from __future__ import annotations
 
-# from typing import List, TYPE_CHECKING
+from sqlalchemy.orm import Mapped, relationship
+
+from typing import List, TYPE_CHECKING
 
 # from sqlalchemy.orm import Mapped, relationship
 from app.core.config.project_config import settings
 from app.core.models.base_model import BaseFull, plural
-# from app.service_registry import registers_search_update
+from app.service_registry import registers_search_update
 
-# if TYPE_CHECKING:
-#     from app.support.drink.model import DrinkTasting
+if TYPE_CHECKING:
+    from app.support.drink.model import DrinkTastingNote, DrinkBaseIngredient
 
 
-# @registers_search_update("drink_associations.drink.items")
+@registers_search_update("drink_associations.drink.items")
 class TastingNote(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    single_name = 'tasting'
+    single_name = 'tastingnote'
     plural_name = plural(single_name)
-    # Связь с промежуточной таблицей (пока не создана)
-    """
-    drink_associations: Mapped[List["DrinkTasting"]] = relationship("DrinkTasting",
-                                                                     back_populates="tasting",
-                                                                     cascade="all, delete-orphan",
-                                                                     overlaps="drinks,tastings")
-    drinks = relationship("Drink", secondary="drink_tasting_associations", back_populates="tastings",
-                          lazy="selectin", overlaps="drink_associations,tasting,drink,tasting_associations")
-    """
+    # Связь с промежуточной таблицей
+    drink_associations: Mapped[List["DrinkTastingNote"]] = relationship(
+        back_populates="tastingnote", cascade="all, delete-orphan"
+    )
 
 
+@registers_search_update("drink_associations.drink.items")
 class BaseIngredient(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'baseingredient'
     plural_name = plural(single_name)
+    # Связь с промежуточной таблицей
+    drink_associations: Mapped[List["DrinkBaseIngredient"]] = relationship(
+        back_populates="baseingredient", cascade="all, delete-orphan"
+    )
 
 
 class Glassware(BaseFull):
@@ -41,6 +43,9 @@ class Glassware(BaseFull):
     cascade = settings.CASCADE
     single_name = 'glassware'
     plural_name = plural(single_name)
+    drinks = relationship(
+        "Drink", back_populates=single_name, cascade=cascade, lazy=lazy
+    )
 
 
 class Scale(BaseFull):
@@ -48,6 +53,9 @@ class Scale(BaseFull):
     cascade = settings.CASCADE
     single_name = 'scale'
     plural_name = plural(single_name)
+    drinks = relationship(
+        "Drink", back_populates=single_name, cascade=cascade, lazy=lazy
+    )
 
 
 class Body(BaseFull):
@@ -55,3 +63,6 @@ class Body(BaseFull):
     cascade = settings.CASCADE
     single_name = 'body'
     plural_name = plural(single_name)
+    drinks = relationship(
+        "Drink", back_populates=single_name, cascade=cascade, lazy=lazy
+    )
