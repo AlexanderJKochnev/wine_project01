@@ -1,5 +1,7 @@
 # app.support.tasting.service.py
 from app.core.services.service import Service
+from app.support.tasting.repository import (BaseIngredientRepository, BodyRepository, GlasswareRepository,
+                                            ScaleRepository, TastingNoteRepository)
 
 
 class BaseIngredientService(Service):
