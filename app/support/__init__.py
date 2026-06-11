@@ -65,6 +65,7 @@ from app.support.producer.service import ProducerService, ProducerTitleService
 from app.support.vintage.service import VintageConfigService, DesignationService, ClassificationService
 from app.support.parcel.service import ParcelService, SiteService
 from app.support.source.service import SourceService
+from app.support.tasting.service import BaseIngredientService, BodyService, GlasswareService, ScaleService, TastingNoteService
 
 # from app.support.warehouse.service import WarehouseService
 from app.support.warehouse.repository import WarehouseRepository

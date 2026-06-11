@@ -18,5 +18,5 @@ class ScaleService(Service):
     pass
 
 
-class TrainingNoteService(Service):
+class TastingNoteService(Service):
     pass
