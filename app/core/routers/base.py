@@ -15,6 +15,7 @@ from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema
                                    CreateResponse, UpdateSchema, CreateSchema)
 from app.core.exceptions import exception_to_http
 from app.core.utils.pydantic_utils import get_repo, get_service, get_pyschema, orresponse
+from loguru import logger
 
 
 paging = get_paging
@@ -54,6 +55,7 @@ class BaseRouter:
         self.model = model
         self.repo = get_repo(model)
         self.service: TService = get_service(model)
+        logger.warning(f"{self.service=}")
 
         self.auth_dependency = auth_dependency
         # input py schema for simple create without relation
