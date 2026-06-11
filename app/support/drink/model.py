@@ -212,11 +212,12 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, Display
     cascade = settings.CASCADE
     single_name = 'drink'
     plural_name = plural(single_name)
-    # наименование на языке производителя
     alc: Mapped[Decimal | None] = mapped_column(DECIMAL(6, 2), nullable=True, default=0.0)
     sugar: Mapped[Decimal | None] = mapped_column(DECIMAL(6, 2), nullable=True)  # , default = 0.0)
     age: Mapped[str_null_true]
     sparkling: Mapped[boolnone]
+    # поля для связи с clickhouse data
+    ch_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     # Foreign Keys on-to-many
     subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
     # subregion_id: Mapped[int] = mapped_column(ForeignKey("subregions.id"), nullable=False, index=True)
