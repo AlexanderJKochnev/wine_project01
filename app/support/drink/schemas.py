@@ -14,6 +14,7 @@ from app.support.source.schemas import SourceCreateRelation, SourceRead
 from app.support.subcategory.schemas import SubcategoryCreateRelation, SubcategoryRead, SubcategoryReadRelation
 # from app.support.subregion.schemas import SubregionCreateRelation, SubregionRead, SubregionReadRelation
 from app.support.sweetness.schemas import SweetnessCreateRelation, SweetnessRead, SweetnessReadRelation
+from app.support.tasting.schema import BodyRead, GlasswareRead, ScaleRead
 from app.support.varietal.schemas import VarietalRead
 from app.support.vintage.schemas import (ClassificationCreateRelation, ClassificationRead, DesignationCreateRelation,
                                          DesignationRead, VintageConfigCreateRelation, VintageConfigRead)
@@ -144,23 +145,29 @@ class NewReadSchema:
     anno: Optional[str] = None
     producer: Optional[ProducerRead] = None
     source: SourceRead
-    classification: Optional[ClassificationRead]
-    vintageconfig: Optional[VintageConfigRead]
-    designation: Optional[DesignationRead]
+    classification: Optional[ClassificationRead] = None
+    vintageconfig: Optional[VintageConfigRead] = None
+    designation: Optional[DesignationRead] = None
     site: SiteRead
     first_vintage: Optional[str] = Field(default=None)
     last_vintage: Optional[str] = Field(default=None)
+    glassware: Optional[GlasswareRead] = None
+    scale: Optional[ScaleRead] = None
+    body_id: Optional[BodyRead] = None
 
 
 class NewCreateRelationsSchema:
     producer: Optional[ProducerCreateRelation] = None
     source: SourceCreateRelation
-    classification: Optional[ClassificationCreateRelation]
-    vintageconfig: Optional[VintageConfigCreateRelation]
-    designation: Optional[DesignationCreateRelation]
+    classification: Optional[ClassificationCreateRelation] = None
+    vintageconfig: Optional[VintageConfigCreateRelation] = None
+    designation: Optional[DesignationCreateRelation] = None
     site: SiteCreateRelation
     first_vintage: Optional[int] = Field(default=None, ge=1000, le=3000)
     last_vintage: Optional[int] = Field(default=None, ge=1000, le=3000)
+    glassware: Optional[GlasswareRead] = None
+    scale: Optional[ScaleRead] = None
+    body_id: Optional[BodyRead] = None
 
 
 class CustomUpdSchema(LangMixin, NewUpdSchema):
@@ -173,6 +180,9 @@ class CustomUpdSchema(LangMixin, NewUpdSchema):
     age: Optional[str] = None
     # foods: Optional[List[FoodId]] = None
     varietals: Optional[List[DrinkVarietalId]] = None
+    glassware_id: Optional[int] = None
+    scale_id: Optional[int] = None
+    body_id: Optional[int] = None
 
 
 class CustomCreateSchema(LangMixin, NewCreateSchema):
