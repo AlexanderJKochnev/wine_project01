@@ -116,6 +116,9 @@ class NewUpdSchema:
     site_id: Optional[int] = None
     first_vintage: Optional[str] = Field(default=None)
     last_vintage: Optional[str] = Field(default=None)
+    glassware_id: Optional[int] = None
+    scale_id: Optional[int] = None
+    body_id: Optional[int] = None
 
 
 class NewCreateSchema:
@@ -130,6 +133,9 @@ class NewCreateSchema:
     site_id: Optional[int] = None
     first_vintage: Optional[str] = Field(default=None)
     last_vintage: Optional[str] = Field(default=None)
+    glassware_id: Optional[int] = None
+    scale_id: Optional[int] = None
+    body_id: Optional[int] = None
 
 
 class NewReadSchema:

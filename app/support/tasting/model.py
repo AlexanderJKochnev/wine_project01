@@ -38,6 +38,7 @@ class BaseIngredient(BaseFull):
     )
 
 
+@registers_search_update("drink.items")
 class Glassware(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
@@ -48,6 +49,7 @@ class Glassware(BaseFull):
     )
 
 
+@registers_search_update("drink.items")
 class Scale(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
@@ -58,6 +60,7 @@ class Scale(BaseFull):
     )
 
 
+@registers_search_update("drink.items")
 class Body(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
