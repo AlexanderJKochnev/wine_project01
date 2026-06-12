@@ -27,7 +27,7 @@ class VllmRouter(LightRouter):
                                   # response_model=List[LlmResponseSchema],
                                   openapi_extra={'x-request-schema': None})
         self.router.add_api_route(
-            "/translate2", self.get_translate_prompt, methods=["POST"],
+            "/translate2", self.get_translate_prompts, methods=["POST"],
             openapi_extra={'x-request-schema': None}
         )
         # super().setup_routes()
