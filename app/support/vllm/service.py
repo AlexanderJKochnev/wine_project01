@@ -171,6 +171,7 @@ class VLLMService:
             response = get_metrics(
                 response_text, response.usage.completion_tokens, start_ms, gpu_ms
             )
+            response.update(options)
             return response
 
         except Exception as x:
