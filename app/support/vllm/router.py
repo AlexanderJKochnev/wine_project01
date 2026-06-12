@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers  # , LLmodel, Languages, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import LightRouter
+from app.support.vllm.schemas import PromptsModel
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
 from app.support.vllm.service import VLLMService
@@ -27,7 +28,7 @@ class VllmRouter(LightRouter):
                                   # response_model=List[LlmResponseSchema],
                                   openapi_extra={'x-request-schema': None})
         self.router.add_api_route(
-            "/translate2", self.get_translate_prompt, methods=["POST"],
+            "/translate2", self.get_translate_prompts, methods=["POST"],
             openapi_extra={'x-request-schema': None}
         )
         # super().setup_routes()
@@ -62,7 +63,7 @@ class VllmRouter(LightRouter):
             self, phrase: str = Body(
                 ..., description="Текст для перевода.", title="текст для перевода",
                 media_type="text/plain", ),
-            prompt: str = Field(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
+            prompt: str = Query(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
             proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
             writer: Writers = Query(None, description="Типовые правила перевода"),
             langs: str = Query(
@@ -79,6 +80,27 @@ class VllmRouter(LightRouter):
         """
         try:
             result = await self.VLLMservice.get_translate2(phrase, prompt, proption, writer, langs, session)
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=501, detail=e)
+
+    async def get_translate_prompts(self,
+                                    request: PromptsModel,
+                                    session: AsyncSession = Depends(get_db)
+                                    ):
+        """
+           тестирование prompts (роли) для перевода:
+           1. фраза для перевода
+           2. prompt
+           3. язык/языки для перевода
+           возвращает:
+        """
+        try:
+            result = await self.VLLMservice.get_translate2(request.phrase,
+                                                           request.prompt,
+                                                           request.proption,
+                                                           request.writer,
+                                                           request.langs, session)
             return result
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
