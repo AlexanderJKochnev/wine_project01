@@ -102,8 +102,7 @@ class VLLMService:
         from app.core.utils.common_utils import jprint
         jprint(payload)
         lang = await self.get_lang(langs, session)
-        logger.warning(f'{lang=}')
-        result = await self.performing(lang, phrase, payload)
+        result = await self.performing2(lang, phrase, payload)
         return result
 
     async def get_lang(self, langs: str, session: AsyncSession):
@@ -124,31 +123,55 @@ class VLLMService:
             prompt, writer - могцт быть как названием из базы данных так и собственно значением параметра
         """
         # язык перевода тут не задается (один язык - для массового перевода)
-        # langs = [lang.strip() for lang in language.split(',')]
-        # lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs,
-        # 'iso_639_1', ISOLanguage,                                                                                       session)
-        # language = lang_response[0]
-        logger.warning('get_payload')
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption)}
         payload: dict = {}
-        logger.warning('get_payloadd')
         for key, val in dataset.items():
-            logger.warning(f'get_payloadd4 {key=}')
             model, repo, field_name, field_out, search = val
-            logger.warning('get_payloadd5')
             if '{lang}' in search:
                 payload[key] = search
             else:
                 tmp: ModelType = await repo.get_by_field(field_name, search, model, session)
-                logger.warning(f'get_payloadd6 {key=}')
                 if field_out:
-                    logger.warning(f'field_out get_payloadd6 {key=}')
                     payload[key] = getattr(tmp, field_out)
                 else:
-                    logger.warning(f'tmp_get_payloadd6 {key=}')
                     payload[key] = tmp.to_dict()
-            logger.warning(f'end of round {key=}')
-        logger.warning('get_payloaddd')
         return payload
+
+    async def performing2(self, lang: str, phrase: str, payload: dict):
+        """
+        перевод/генерация текста
+        """
+        try:
+            start_ms = time.time() * 1000
+            options = payload.get("proption", {})
+            gpu_ms = time.time() * 1000
+
+            # Получаем компоненты из payload
+            system_content = payload.get("prompt", "")
+            user_template = payload.get("writer", "")
+            user_content = user_template.format(lang=lang, phrase=phrase)
+
+            # 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Форматируем в стиле Mistral
+            # Формат: [INST] {system_prompt}\n\n{user_message} [/INST]
+            formatted_prompt = f"[INST] {system_content}\n\n{user_content} [/INST]"
+
+            # Для Mistral токенизатора используем completions endpoint (не chat.completions)
+            response = await self.client.completions.create(
+                model=self.model_name, prompt=formatted_prompt, temperature=options.get("temperature", 0.1),
+                top_p=options.get("top_p", 0.9), max_tokens=options.get("num_predict", 1024),
+                frequency_penalty=options.get("frequency_penalty", 0),
+                presence_penalty=options.get("presence_penalty", 0), seed=options.get("seed", 42),
+                stop=options.get("stop", None)
+            )
+
+            response_text = clean_string(response.choices[0].text)
+            response = get_metrics(
+                response_text, response.usage.completion_tokens, start_ms, gpu_ms
+            )
+            return response
+
+        except Exception as x:
+            logger.error(f'base_url "http://172.60.0.10/v1", error: {x}')
+            return {'result': False}
