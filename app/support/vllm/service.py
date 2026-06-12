@@ -99,8 +99,6 @@ class VLLMService:
         # phrase, prompt, preset, writer, langs, session
         # собираем payload
         payload: dict = await self.get_payload(prompt, proption, writer, session)
-        from app.core.utils.common_utils import jprint
-        jprint(payload)
         lang = await self.get_lang(langs, session)
         result = await self.performing2(lang, phrase, payload)
         return result
@@ -156,6 +154,7 @@ class VLLMService:
             # 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Форматируем в стиле Mistral
             # Формат: [INST] {system_prompt}\n\n{user_message} [/INST]
             formatted_prompt = f"[INST] {system_content}\n\n{user_content} [/INST]"
+            print(f'{formatted_prompt=}')
 
             # Для Mistral токенизатора используем completions endpoint (не chat.completions)
             response = await self.client.completions.create(
