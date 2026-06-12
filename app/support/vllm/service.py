@@ -90,8 +90,8 @@ class VLLMService:
                             session: AsyncSession,
                             **kwargs):
         # phrase, prompt, preset, writer, langs, session
-        result = await self.get_datas(phrase, prompt, proption, writer, langs, session)
-
+        payload: dict = await self.get_payload(prompt, proption, writer, session)
+        return payload
         return {'response': True if result else False,
                 'answer': result}
 
@@ -104,29 +104,29 @@ class VLLMService:
         return {'response': True if result else False,
                 'answer': result}
 
-    async def get_payload(self, prompt: str, proption: str, writer: str, language: str,
+    async def get_payload(self, prompt: str, proption: str, writer: str,
                           session: AsyncSession):
         """
             формирование patyload для массового перевода
+            prompt, writer - могцт быть как названием из базы данных так и собственно значением параметра
         """
-        # язык перевода (один язык - для массового перевода)
-        langs = [lang.strip() for lang in language.split(',')]
-        lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs, 'iso_639_1', ISOLanguage,
-                                                                                                  session)
-        language_set = {lang.iso_639_1 for lang in lang_response}
+        # язык перевода тут не задается (один язык - для массового перевода)
+        # langs = [lang.strip() for lang in language.split(',')]
+        # lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs,
+        # 'iso_639_1', ISOLanguage,                                                                                       session)
+        # language = lang_response[0]
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption)}
         payload: dict = {}
         for key, val in dataset.items():
             model, repo, field_name, field_out, search = val
-            tmp: ModelType = await repo.get_by_field(field_name, search, model, session)
-            if field_out:
-                payload[key] = getattr(tmp, field_out)
+            if '{lang}' in search:
+                payload[key] = search
             else:
-                payload[key] = tmp.to_dict()
-        result: dict = {}
-        for lang in language_set:
-            response = await self.performing(lang, phrase, payload)
-            result[lang] = response  # .choices[0].message.content
-        return result
+                tmp: ModelType = await repo.get_by_field(field_name, search, model, session)
+                if field_out:
+                    payload[key] = getattr(tmp, field_out)
+                else:
+                    payload[key] = tmp.to_dict()
+        return payload
