@@ -3,7 +3,6 @@
 # app.suport.ollama.router.py
 # from loguru import logger
 from fastapi import Depends, HTTPException, Query, Body  # , BackgroundTasks
-from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers  # , LLmodel, Languages, Writers
 from app.core.config.database.db_async import get_db
@@ -28,7 +27,7 @@ class VllmRouter(LightRouter):
                                   # response_model=List[LlmResponseSchema],
                                   openapi_extra={'x-request-schema': None})
         self.router.add_api_route(
-            "/translate2", self.get_translate_prompts, methods=["POST"],
+            "/translate2", self.get_translate_prompt, methods=["POST"],
             openapi_extra={'x-request-schema': None}
         )
         # super().setup_routes()
@@ -63,7 +62,7 @@ class VllmRouter(LightRouter):
             self, phrase: str = Body(
                 ..., description="Текст для перевода.", title="текст для перевода",
                 media_type="text/plain", ),
-            prompt: str = Query(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
+            prompt: str = Body(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
             proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
             writer: Writers = Query(None, description="Типовые правила перевода"),
             langs: str = Query(
