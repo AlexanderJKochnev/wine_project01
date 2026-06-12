@@ -69,7 +69,7 @@ class VLLMService:
             response = await self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "system", "content": payload.get("prompt", "")},
-                          # Маппинг параметров в формат OpenAI/v)LM
+                          # Маппинг параметров в формат OpenAI/vllm
                           {"role": "user", "content": payload.get("writer", "").format(lang=lang, phrase=phrase)}],
                 temperature=options.get("temperature", 0.1), top_p=options.get("top_p", 0.1),
                 max_tokens=options.get("num_predict", 1024), presence_penalty=options.get("presence_penalty", 0),
@@ -102,7 +102,7 @@ class VLLMService:
         from app.core.utils.common_utils import jprint
         jprint(payload)
         lang = await self.get_lang(langs, session)
-        logger.warning(f'{lang}')
+        logger.warning(f'{lang=}')
         result = await self.performing(lang, phrase, payload)
         return result
 
@@ -114,7 +114,7 @@ class VLLMService:
         lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs, 'iso_639_1', ISOLanguage,
                                                                                                   session)
         if lang_response:
-            return lang_response[0].iso_639_1
+            return lang_response[0].name_en
         raise HTTPException(detail='language not found', status_code=404)
 
     async def get_payload(self, prompt: str, proption: str, writer: str,
