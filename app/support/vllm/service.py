@@ -147,7 +147,8 @@ class VLLMService:
             gpu_ms = time.time() * 1000
 
             # Получаем компоненты из payload
-            system_content = payload.get("prompt", "")
+            system_template = payload.get("prompt", "")
+            system_content = system_template.format(lang=lang)
             user_template = payload.get("writer", "")
             user_content = user_template.format(lang=lang, phrase=phrase)
 
