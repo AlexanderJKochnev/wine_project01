@@ -102,7 +102,7 @@ class VLLMService:
         lang = await self.get_lang(langs, session)
         result = await self.performing2(lang, phrase, payload)
         result['original'] = phrase
-        return
+        return result
 
     async def get_lang(self, langs: str, session: AsyncSession):
         """
