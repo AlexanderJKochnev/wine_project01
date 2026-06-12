@@ -128,10 +128,12 @@ class VLLMService:
         # lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs,
         # 'iso_639_1', ISOLanguage,                                                                                       session)
         # language = lang_response[0]
+        logger.warning'get_payload'
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption)}
         payload: dict = {}
+        
         for key, val in dataset.items():
             model, repo, field_name, field_out, search = val
             if '{lang}' in search:
