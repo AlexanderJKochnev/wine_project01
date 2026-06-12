@@ -90,17 +90,17 @@ class VLLMService:
                             session: AsyncSession,
                             **kwargs):
         # phrase, prompt, preset, writer, langs, session
-        payload: dict = await self.get_payload(prompt, proption, writer, session)
-        return payload
+        result = await self.get_datas(phrase, prompt, proption, writer, langs, session)
+        return {'response': True if result else False, 'answer': result}
 
     async def get_translate2(self, phrase, prompt: str, proption: str, writer: str, langs: str,
                              session: AsyncSession,
                              **kwargs):
         # phrase, prompt, preset, writer, langs, session
-        result = await self.get_datas(phrase, prompt, proption, writer, langs, session)
-
-        return {'response': True if result else False,
-                'answer': result}
+        payload: dict = await self.get_payload(prompt, proption, writer, session)
+        from app.core.utils.common_utils import jprint
+        jprint(payload)
+        return payload
 
     async def get_payload(self, prompt: str, proption: str, writer: str,
                           session: AsyncSession):
