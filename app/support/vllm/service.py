@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.types import ModelType
 from app.core.utils.benchmarks import get_metrics
+from app.core.utils.common_utils import clean_string
 # from app.core.utils.common_utils import jprint
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
 from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
@@ -67,14 +68,14 @@ class VLLMService:
             response = await self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "system", "content": payload.get("prompt", "")},
-                          # Маппинг ваших параметров в формат OpenAI/v)LM
+                          # Маппинг параметров в формат OpenAI/v)LM
                           {"role": "user", "content": payload.get("writer", "").format(lang=lang, phrase=phrase)}],
                 temperature=options.get("temperature", 0.1), top_p=options.get("top_p", 0.1),
                 max_tokens=options.get("num_predict", 1024), presence_penalty=options.get("presence_penalty", 0),
                 frequency_penalty=options.get("frequency_penalty", 0), seed=options.get("seed", 42),
                 stop=options.get("stop", None)
             )
-            response = get_metrics(response.choices[0].message.content,
+            response = get_metrics(clean_string(response.choices[0].message.content),
                                    response.usage.completion_tokens,
                                    start_ms, gpu_ms
                                    )

@@ -25,8 +25,9 @@ def setter(obj: Any, item_name: str, value: Any | None) -> bool:
     try:
         setattr(obj, item_name, value)
         return True
-    except Exception as _:
+    except Exception as _:  # noqa: F841
         return False
+
 
 def delta_data(shift: int = 2) -> str:
     """ возвращает дату отстоящую от now() на shift лет (отрицательные числа - вперед)"""
@@ -558,7 +559,7 @@ def camel_to_enum(input: str) -> str:
         return None
 
 
-def clean_string(s: str) -> str:
+def clean_string_old(s: str) -> str:
     """
          очистка строки от битых экранированных скобок, служебных символов
     """
@@ -577,6 +578,56 @@ def clean_string(s: str) -> str:
     s = re.sub(r'\s+', ' ', s).strip()
 
     return s
+
+
+def clean_string(s: str) -> str:
+    """Очистка строки от мусора без re, с нормализацией кавычек"""
+    if not isinstance(s, str):
+        return s
+
+    # Таблица перевода символов (оптимально для CPython)
+    translation_table = str.maketrans(
+        {  # Кавычки разных видов -> обычные двойные кавычки
+            '"': '"',  # оставляем как есть
+            "'": '"',  # одинарная -> двойная
+            '«': '"',  # левая французская
+            '»': '"',  # правая французская
+            '“': '"',  # левая двойная
+            '”': '"',  # правая двойная
+            '„': '"',  # нижняя двойная
+            '‛': '"',  # одинарная перевернутая
+            '’': '"',  # правая одинарная
+            '‘': '"',  # левая одинарная
+            '′': '"',  # штрих
+            '″': '"',  # двойной штрих
+
+            # Мусорные символы -> удаляем (заменяем на None)
+            '(': None, ')': None, '/': None, '\\': None, '[': None, ']': None, '{': None, '}': None, '<': None,
+            '>': None, '`': None, '´': None, '^': None, '|': None, '*': None, '#': None, '~': None, }
+    )
+
+    # Шаг 1: заменяем управляющие символы на пробел
+    # Создаём список символов (так быстрее, чем посимвольный replace в цикле)
+    result_chars = []
+    for ch in s:
+        code = ord(ch)
+        # Управляющие символы и DEL -> пробел
+        if code < 0x20 or code == 0x7F:
+            result_chars.append(' ')
+        # Нормальные символы -> через таблицу перевода
+        else:
+            translated = translation_table.get(ch)
+            if translated is None:
+                result_chars.append(ch)
+            elif translated is not None:  # None означает удаление
+                result_chars.append(translated)
+
+    # Шаг 2: соединяем и сжимаем пробелы
+    result = ''.join(result_chars)
+
+    # Шаг 3: схлопываем множественные пробелы и обрезаем края
+    # Это быстрее всего сделать через split/join
+    return ' '.join(result.split())
 
 
 def get_value(source: list, search: str) -> Union[list, str]:
