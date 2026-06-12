@@ -3,6 +3,7 @@
 # app.suport.ollama.router.py
 # from loguru import logger
 from fastapi import Depends, HTTPException, Query, Body  # , BackgroundTasks
+from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers  # , LLmodel, Languages, Writers
 from app.core.config.database.db_async import get_db
@@ -61,7 +62,7 @@ class VllmRouter(LightRouter):
             self, phrase: str = Body(
                 ..., description="Текст для перевода.", title="текст для перевода",
                 media_type="text/plain", ),
-            prompt: str = Query(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
+            prompt: str = Field(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
             proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
             writer: Writers = Query(None, description="Типовые правила перевода"),
             langs: str = Query(
@@ -77,7 +78,7 @@ class VllmRouter(LightRouter):
            возвращает:
         """
         try:
-            result = await self.VLLMservice.get_translate_prompt(phrase, prompt, proption, writer, langs, session)
+            result = await self.VLLMservice.get_translate2(phrase, prompt, proption, writer, langs, session)
             return result
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
