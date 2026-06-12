@@ -2,6 +2,7 @@
 import time
 from typing import List
 
+from fastapi import HTTPException
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,10 +37,9 @@ class VLLMService:
     async def get_datas(self, phrase: str, prompt: str, proption: str, writer: str, language: str,
                         session: AsyncSession):
         langs = [lang.strip() for lang in language.split(',')]
-        logger.warning(f'{langs=}')
         lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs, 'iso_639_1', ISOLanguage,
                                                                                                   session)
-        logger.warning(f'{lang_response=}')
+
         language_set = {lang.iso_639_1 for lang in lang_response}
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
@@ -97,10 +97,24 @@ class VLLMService:
                              session: AsyncSession,
                              **kwargs):
         # phrase, prompt, preset, writer, langs, session
+        # собираем payload
         payload: dict = await self.get_payload(prompt, proption, writer, session)
+        lang = await self.get_lang(langs, session)
         from app.core.utils.common_utils import jprint
         jprint(payload)
-        return payload
+        result = await self.performing(lang, phrase, payload)
+        return result
+
+    async def get_lang(self, langs: str, session: AsyncSession):
+        """
+            получение одного языка для перевода
+        """
+        langs = [lang.strip() for lang in language.split(',')]
+        lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs, 'iso_639_1', ISOLanguage,
+                                                                                                  session)
+        if lang_response:
+            return lang_response[0].iso_639_1
+        raise HTTPException(detail='language not found', status_code=404)
 
     async def get_payload(self, prompt: str, proption: str, writer: str,
                           session: AsyncSession):
