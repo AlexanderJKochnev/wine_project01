@@ -25,6 +25,10 @@ class VllmRouter(LightRouter):
                                   methods=["POST"],
                                   # response_model=List[LlmResponseSchema],
                                   openapi_extra={'x-request-schema': None})
+        self.router.add_api_route(
+            "/translate2", self.get_translate_prompt, methods=["POST"],
+            openapi_extra={'x-request-schema': None}
+        )
         # super().setup_routes()
 
     async def get_translate(
@@ -33,7 +37,7 @@ class VllmRouter(LightRouter):
                 media_type="text/plain", ),
             # llmodel: LLmodel = Query('translategemma:latest', description="Имя модели в базе данных"),
             prompt: Prompts = Query('universal_translator', description="Имя промпта в базе данных"),
-            preset: Preset = Query(None, description="Типовые настройки качество/скорость"),
+            proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
             writer: Writers = Query(None, description="Типовые правила перевода"),
             langs: str = Query(
                 'ru, en', description="Язык (языки) перевода двух-значные коды через "
@@ -48,7 +52,32 @@ class VllmRouter(LightRouter):
            возвращает:
         """
         try:
-            result = await self.VLLMservice.get_translate(phrase, prompt, preset, writer, langs, session)
+            result = await self.VLLMservice.get_translate(phrase, prompt, proption, writer, langs, session)
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=501, detail=e)
+
+    async def get_translate_prompt(
+            self, phrase: str = Body(
+                ..., description="Текст для перевода.", title="текст для перевода",
+                media_type="text/plain", ),
+            prompt: str = Query(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
+            proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
+            writer: Writers = Query(None, description="Типовые правила перевода"),
+            langs: str = Query(
+                'ru, en', description="Язык (языки) перевода двух-значные коды через "
+                "запятую, например 'ru, fr, zh'"
+            ), session: AsyncSession = Depends(get_db)
+    ):
+        """
+           тестирование prompts (роли) для перевода:
+           1. фраза для перевода
+           2. prompt
+           3. язык/языки для перевода
+           возвращает:
+        """
+        try:
+            result = await self.VLLMservice.get_translate_prompt(phrase, prompt, proption, writer, langs, session)
             return result
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
