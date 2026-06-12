@@ -73,6 +73,7 @@ class PromptUpdate(BaseModel):
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
     role: Optional[str] = Field(None, min_length=2, max_length=50)
+    system_prompt: str = Field(..., min_length=10)
 
     model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
 
