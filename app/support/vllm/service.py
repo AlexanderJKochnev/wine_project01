@@ -99,9 +99,10 @@ class VLLMService:
         # phrase, prompt, preset, writer, langs, session
         # собираем payload
         payload: dict = await self.get_payload(prompt, proption, writer, session)
-        lang = await self.get_lang(langs, session)
         from app.core.utils.common_utils import jprint
         jprint(payload)
+        lang = await self.get_lang(langs, session)
+        logger.warning(f'{lang}')
         result = await self.performing(lang, phrase, payload)
         return result
 
@@ -109,7 +110,7 @@ class VLLMService:
         """
             получение одного языка для перевода
         """
-        langs = [lang.strip() for lang in language.split(',')]
+        langs = [lang.strip() for lang in langs.split(',')]
         lang_response: List[ISOLanguage] = await ISOLanguageRepository.search_by_list_value_exact(langs, 'iso_639_1', ISOLanguage,
                                                                                                   session)
         if lang_response:
