@@ -128,7 +128,8 @@ class VLLMService:
         payload: dict = {}
         for key, val in dataset.items():
             model, repo, field_name, field_out, search = val
-            if '{lang}' in search:
+            # if '{lang}' in search:
+            if key in ('prompt', 'writer'):
                 payload[key] = search
             else:
                 tmp: ModelType = await repo.get_by_field(field_name, search, model, session)
