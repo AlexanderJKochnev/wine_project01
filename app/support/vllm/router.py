@@ -2,7 +2,7 @@
 
 # app.suport.ollama.router.py
 # from loguru import logger
-from fastapi import Depends, HTTPException, Query, Body  # , BackgroundTasks
+from fastapi import Depends, Form, HTTPException, Query, Body  # , BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers  # , LLmodel, Languages, Writers
 from app.core.config.database.db_async import get_db
@@ -83,10 +83,18 @@ class VllmRouter(LightRouter):
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
 
-    async def get_translate_prompts(self,
-                                    request: PromptsModel,
-                                    session: AsyncSession = Depends(get_db)
-                                    ):
+    async def get_translate_prompts(
+        self,
+        phrase: str = Form(...,
+                           description="Текст для перевода."),
+        prompt: str = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
+        proption: Preset = Form(None, description="Типовые настройки качество/скорость"),
+        writer: Writers = Form(None, description="Типовые правила перевода"),
+        langs: str = Form('ru, en',
+                          description="Язык (языки) перевода двух-значные коды через "
+                                      "запятую, например 'ru, fr, zh'"),
+        session: AsyncSession = Depends(get_db)
+    ):
         """
            тестирование prompts (роли) для перевода:
            1. фраза для перевода
@@ -95,11 +103,11 @@ class VllmRouter(LightRouter):
            возвращает:
         """
         try:
-            result = await self.VLLMservice.get_translate2(request.phrase,
-                                                           request.prompt,
-                                                           request.proption,
-                                                           request.writer,
-                                                           request.langs, session)
+            result = await self.VLLMservice.get_translate2(phrase,
+                                                           prompt,
+                                                           proption,
+                                                           writer,
+                                                           langs, session)
             return result
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
