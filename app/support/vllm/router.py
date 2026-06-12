@@ -89,7 +89,7 @@ class VllmRouter(LightRouter):
                            description="Текст для перевода."),
         prompt: str = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
         proption: Preset = Form(None, description="Типовые настройки качество/скорость"),
-        writer: Writers = Form(None, description="Типовые правила перевода"),
+        writer: str = Form(None, description="Типовые правила перевода. Должны содержать ключевое слово {lang}"),
         langs: str = Form('ru, en',
                           description="Язык (языки) перевода двух-значные коды через "
                                       "запятую, например 'ru, fr, zh'"),
