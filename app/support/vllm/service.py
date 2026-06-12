@@ -101,7 +101,8 @@ class VLLMService:
         payload: dict = await self.get_payload(prompt, proption, writer, session)
         lang = await self.get_lang(langs, session)
         result = await self.performing2(lang, phrase, payload)
-        return result
+        result['original'] = phrase
+        return
 
     async def get_lang(self, langs: str, session: AsyncSession):
         """
