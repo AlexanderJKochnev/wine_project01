@@ -133,7 +133,7 @@ class VLLMService:
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption)}
         payload: dict = {}
-        
+        logger.warning('get_payloadd')
         for key, val in dataset.items():
             model, repo, field_name, field_out, search = val
             if '{lang}' in search:
@@ -144,4 +144,5 @@ class VLLMService:
                     payload[key] = getattr(tmp, field_out)
                 else:
                     payload[key] = tmp.to_dict()
+        logger.warning('get_payloaddd')
         return payload
