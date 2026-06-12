@@ -149,5 +149,6 @@ class VLLMService:
                 else:
                     logger.warning(f'tmp_get_payloadd6 {key=}')
                     payload[key] = tmp.to_dict()
+            logger.warning(f'end of round {key=}')
         logger.warning('get_payloaddd')
         return payload
