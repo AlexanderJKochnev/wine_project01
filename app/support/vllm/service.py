@@ -135,17 +135,19 @@ class VLLMService:
         payload: dict = {}
         logger.warning('get_payloadd')
         for key, val in dataset.items():
-            logger.warning('get_payloadd4')
+            logger.warning(f'get_payloadd4 {key=}')
             model, repo, field_name, field_out, search = val
             logger.warning('get_payloadd5')
             if '{lang}' in search:
                 payload[key] = search
             else:
                 tmp: ModelType = await repo.get_by_field(field_name, search, model, session)
-                logger.warning('get_payloadd6')
+                logger.warning(f'get_payloadd6 {key=}')
                 if field_out:
+                    logger.warning(f'field_out get_payloadd6 {key=}')
                     payload[key] = getattr(tmp, field_out)
                 else:
+                    logger.warning(f'tmp_get_payloadd6 {key=}')
                     payload[key] = tmp.to_dict()
         logger.warning('get_payloaddd')
         return payload
