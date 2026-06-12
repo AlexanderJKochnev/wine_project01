@@ -92,8 +92,6 @@ class VLLMService:
         # phrase, prompt, preset, writer, langs, session
         payload: dict = await self.get_payload(prompt, proption, writer, session)
         return payload
-        return {'response': True if result else False,
-                'answer': result}
 
     async def get_translate2(self, phrase, prompt: str, proption: str, writer: str, langs: str,
                              session: AsyncSession,
