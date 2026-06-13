@@ -23,21 +23,35 @@ class TranslationService:
     def _prepare_params(self, **kwargs) -> Dict[str, Any]:
         """Подготавливает параметры для vLLM"""
         params = {"model": self.model_name, "temperature": kwargs.get('temperature', 0.1),
-                  "top_p": kwargs.get('top_p', 0.85), "top_k": kwargs.get('top_k', 50) or None,
-                  "max_tokens": kwargs.get('max_tokens', 2048), "frequency_penalty": kwargs.get('frequency_penalty', 0.2),
-                  "presence_penalty": kwargs.get('presence_penalty', 0.1), "seed": kwargs.get('seed', 42),
-                  "stop": kwargs.get('stop', None) or None, }
+                  "top_p": kwargs.get('top_p', 0.85),
+                  # "top_k": kwargs.get('top_k', 50) or None,
+                  "max_tokens": kwargs.get('max_tokens', 2048),
+                  "frequency_penalty": kwargs.get('frequency_penalty', 0.2),
+                  "presence_penalty": kwargs.get('presence_penalty', 0.1),
+                  "seed": kwargs.get('seed', 42),
+                  # "stop": kwargs.get('stop', None) or None,
+                  }
 
-        # extra_body для специфичных параметров vLLM
-        extra = {}
-        if (rp := kwargs.get('repeat_penalty', 1.1)) != 1.1:
-            extra['repeat_penalty'] = rp
-        if (mp := kwargs.get('min_p', 0.04)) != 0.04:
-            extra['min_p'] = mp
-        if (tp := kwargs.get('typical_p', 0.92)) != 0.92:
-            extra['typical_p'] = tp
-        if extra:
-            params['extra_body'] = extra
+        # extra_body для параметров vLLM, которых нет в OpenAI SDK
+        extra_body = {}
+
+        if (top_k := kwargs.get('top_k', 50)) > 0:
+            extra_body['top_k'] = top_k
+
+        if (repeat_penalty := kwargs.get('repeat_penalty', 1.1)) != 1.1:
+            extra_body['repeat_penalty'] = repeat_penalty
+
+        if (min_p := kwargs.get('min_p', 0.04)) != 0.04:
+            extra_body['min_p'] = min_p
+
+        if (typical_p := kwargs.get('typical_p', 0.92)) != 0.92:
+            extra_body['typical_p'] = typical_p
+
+        if kwargs.get('stop'):
+            params['stop'] = kwargs['stop']
+
+        if extra_body:
+            params['extra_body'] = extra_body
 
         return params
 
