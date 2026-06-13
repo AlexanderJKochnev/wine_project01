@@ -2,7 +2,7 @@
 import json
 from typing import List
 from loguru import logger
-from fastapi import BackgroundTasks, Depends, HTTPException, Query, Body
+from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Languages, Writers
 from app.core.config.database.db_async import get_db
@@ -180,12 +180,17 @@ class PromptRouter(BaseRouter):
                                   )
         super().setup_routes()
 
-    async def create(self, data: PromptCreate, session: AsyncSession = Depends(get_db)) -> PromptRead:
+    # async def create(self, data: PromptCreate, session: AsyncSession = Depends(get_db)) -> PromptRead:
+    async def create(self,
+                     role: str = Form(..., description='роль'),
+                     system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
+                     session: AsyncSession = Depends(get_db)) -> PromptRead:
         # from app.core.utils.common_utils import jprint
         # jprint(data.get("system_prompt"))
         # data["system_prompt"] = json.dumps(data.get("system_prompt"))[1:-1]
         # logger.warning('dd----------------')
         # jprint(data.get("system_prompt"))
+        data = PromptCreate(role=role, system_prompt=system_prompt)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: PromptUpdate,
