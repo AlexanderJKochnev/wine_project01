@@ -185,33 +185,38 @@ class VllmRouter(LightRouter):
 
         return result
 
-    async def get_translate_precise2(
-            phrase: str = Form(..., description="Текст для перевода на английском языке."),
-            prompt: str = Form(
-                ..., description="Системный промпт. Должен содержать ключевое слово {lang} для подстановки языка."
-            ),
-            writer: Optional[str] = Form(
-                None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
-            ), langs: str = Form(
-                'ru',
-                description="Язык перевода. Поддерживаются двух-значные коды... Можно указать несколько через запятую: 'ru, fr, zh'"
-            ), temperature: float = Form(0.1, ge=0.0, le=2.0, description="Температура генерации..."),
-            top_p: float = Form(0.85, ge=0.0, le=1.0, description="Nucleus sampling..."), top_k: int = Form(
-                50, ge=0, le=200, description="Ограничение выборки K наиболее вероятных токенов..."
-            ),
-            frequency_penalty: float = Form(0.2, ge=-2.0, le=2.0, description="Штраф за повторение токенов..."),
-            presence_penalty: float = Form(0.1, ge=-2.0, le=2.0, description="Штраф за повторение тем..."),
-            repeat_penalty: float = Form(
-                1.1, ge=0.5, le=2.0, description="Экспоненциальный штраф за повторение..."
-            ),
-            max_tokens: int = Form(2048, ge=1, le=4096, description="Максимальное количество токенов..."),
-            seed: Optional[int] = Form(None, ge=0, le=2147483647, description="Сид для воспроизводимости..."),
-            min_p: float = Form(0.04, ge=0.0, le=1.0, description="Минимальная вероятность токена..."),
-            typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."), stop: str = Form(
-                "",
-                description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
-            ), translation_service: TranslationService = Depends(get_translation_service)
-    ):
+    async def get_translate_precise2(self,
+                                     phrase: str = Form(..., description="Текст для перевода на английском языке."),
+                                     prompt: str = Form(
+                                         ..., description="Системный промпт. Должен содержать ключевое слово {lang} для подстановки языка."
+                                     ),
+                                     writer: Optional[str] = Form(
+                                         None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
+                                     ), langs: str = Form(
+                                         'ru',
+                                         description="Язык перевода. Поддерживаются двух-значные коды... Можно указать несколько через запятую: 'ru, fr, zh'"
+                                     ), temperature: float = Form(0.1, ge=0.0, le=2.0, description="Температура генерации..."),
+                                     top_p: float = Form(0.85, ge=0.0, le=1.0, description="Nucleus sampling..."), top_k: int = Form(
+                                         50, ge=0, le=200, description="Ограничение выборки K наиболее вероятных токенов..."
+                                     ),
+                                     frequency_penalty: float = Form(
+                                         0.2, ge=-2.0, le=2.0, description="Штраф за повторение токенов..."),
+                                     presence_penalty: float = Form(
+                                         0.1, ge=-2.0, le=2.0, description="Штраф за повторение тем..."),
+                                     repeat_penalty: float = Form(
+                                         1.1, ge=0.5, le=2.0, description="Экспоненциальный штраф за повторение..."
+                                     ),
+                                     max_tokens: int = Form(2048, ge=1, le=4096,
+                                                            description="Максимальное количество токенов..."),
+                                     seed: Optional[int] = Form(None, ge=0, le=2147483647,
+                                                                description="Сид для воспроизводимости..."),
+                                     min_p: float = Form(0.04, ge=0.0, le=1.0,
+                                                         description="Минимальная вероятность токена..."),
+                                     typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."), stop: str = Form(
+                                         "",
+                                         description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
+                                     ), translation_service: TranslationService = Depends(get_translation_service)
+                                     ):
         # Преобразуем stop из строки в список (если строка не пуста)
         stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
 
