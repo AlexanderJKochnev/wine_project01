@@ -28,7 +28,6 @@ class VLLMService:
     def __init__(self):
         # vLLM по умолчанию работает на http://localhost:8000/v1
         self.client = AsyncOpenAI(
-            # base_url=settings.VLLM_URL,  # "http://localhost:8000/v1"),
             base_url='http://vllm-node:8000/v1/',
             api_key="token-not-needed"
         )
