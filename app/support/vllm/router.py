@@ -199,3 +199,14 @@ class VllmRouter(LightRouter):
         """
              подбор параметров перевода
         """
+        result = await translation_service.translate(
+            phrase=phrase, system_prompt=prompt, user_prompt=writer, lang_code=langs,
+            temperature=temperature, top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
+            frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
+            repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p, stop=stop if stop else None
+        )
+
+        # Сохранение в БД (опционально)
+        # await save_translation(session, phrase, result['content'], langs)
+
+        return result
