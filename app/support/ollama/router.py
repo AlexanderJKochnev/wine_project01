@@ -1,4 +1,5 @@
 # app.suport.ollama.router.py
+import json
 from typing import List
 from loguru import logger
 from fastapi import BackgroundTasks, Depends, HTTPException, Query, Body
@@ -180,16 +181,19 @@ class PromptRouter(BaseRouter):
         super().setup_routes()
 
     async def create(self, data: PromptCreate, session: AsyncSession = Depends(get_db)) -> PromptRead:
+        data.system_prompt = json.dumps(data.system_prompt)[1:-1]
         return await super().create(data, session)
 
     async def patch(self, id: int, data: PromptUpdate,
                     background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)) -> PromptRead:
+        data.system_prompt = json.dumps(data.system_prompt)[1:-1]
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(self, data: PromptCreate,
                                background_tasks: BackgroundTasks,
                                session: AsyncSession = Depends(get_db)) -> PromptRead:
+        data.system_prompt = json.dumps(data.system_prompt)[1:-1]
         return await super().update_or_create(data, background_tasks, session)
 
     async def get_generate(self, translate_it: str = Query(None, description='текст, который нужно перевести'),
@@ -224,15 +228,18 @@ class WriterRuleRouter(BaseRouter):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
     async def create(self, data: WriterRuleCreate, session: AsyncSession = Depends(get_db)) -> WriterRuleRead:
+        data.prompt = json.dumps(data.prompt)[1:-1]
         return await super().create(data, session)
 
     async def patch(
         self, id: int, data: WriterRuleUpdate, background_tasks: BackgroundTasks,
         session: AsyncSession = Depends(get_db)
     ) -> WriterRuleRead:
+        data.prompt = json.dumps(data.prompt)[1:-1]
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(
         self, data: WriterRuleCreate, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db)
     ) -> WriterRuleRead:
+        data.prompt = json.dumps(data.prompt)[1:-1]
         return await super().update_or_create(data, background_tasks, session)
