@@ -185,24 +185,20 @@ class PromptRouter(BaseRouter):
                      role: str = Form(..., description='роль'),
                      system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
                      session: AsyncSession = Depends(get_db)) -> PromptRead:
-        # from app.core.utils.common_utils import jprint
-        # jprint(data.get("system_prompt"))
-        # data["system_prompt"] = json.dumps(data.get("system_prompt"))[1:-1]
-        # logger.warning('dd----------------')
-        # jprint(data.get("system_prompt"))
         data = PromptCreate(role=role, system_prompt=system_prompt)
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: PromptUpdate,
-                    background_tasks: BackgroundTasks,
+    async def patch(self,
+                    id: int, background_tasks: BackgroundTasks,
+                    role: str = Form(..., description='роль'),
+                    system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
                     session: AsyncSession = Depends(get_db)) -> PromptRead:
-        data.system_prompt = json.dumps(data.system_prompt)[1:-1]
+        data = PromptUpdate(role=role, system_prompt=system_prompt)
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(self, data: PromptCreate,
                                background_tasks: BackgroundTasks,
                                session: AsyncSession = Depends(get_db)) -> PromptRead:
-        data.system_prompt = json.dumps(data.system_prompt)[1:-1]
         return await super().update_or_create(data, background_tasks, session)
 
     async def get_generate(self, translate_it: str = Query(None, description='текст, который нужно перевести'),
@@ -236,19 +232,21 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self, data: WriterRuleCreate, session: AsyncSession = Depends(get_db)) -> WriterRuleRead:
-        data.prompt = json.dumps(data.prompt)[1:-1]
+    async def create(self,
+                     name: str = Form(..., description='name'),
+                     prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
+                     session: AsyncSession = Depends(get_db)) -> WriterRuleRead:
+        data = WriterRuleCreate(name=name, prompt=prompt)
         return await super().create(data, session)
 
-    async def patch(
-        self, id: int, data: WriterRuleUpdate, background_tasks: BackgroundTasks,
-        session: AsyncSession = Depends(get_db)
-    ) -> WriterRuleRead:
-        data.prompt = json.dumps(data.prompt)[1:-1]
+    async def patch(self, id: int, background_tasks: BackgroundTasks,
+                    name: str = Form(..., description='name'),
+                    prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
+                    session: AsyncSession = Depends(get_db)) -> WriterRuleRead:
+        data = WriterRuleUpdate(name=name, prompt=prompt)
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(
         self, data: WriterRuleCreate, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db)
     ) -> WriterRuleRead:
-        data.prompt = json.dumps(data.prompt)[1:-1]
         return await super().update_or_create(data, background_tasks, session)

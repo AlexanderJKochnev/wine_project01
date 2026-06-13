@@ -7,6 +7,7 @@ from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.benchmarks import get_metrics
 from app.core.utils.common_utils import clean_string
@@ -92,15 +93,28 @@ class VLLMService:
         result = await self.get_datas(phrase, prompt, proption, writer, langs, session)
         return {'response': True if result else False, 'answer': result}
 
-    async def get_translate2(self, phrase, prompt: str, proption: str, writer: str, langs: str,
-                             session: AsyncSession,
+    async def get_translate2(self, phrase, prompt: str, proption: str, writer: str, lang: str,
+                             session: AsyncSession, translation_service: TranslationService,
                              **kwargs):
-        # phrase, prompt, preset, writer, langs, session
+        # получаем phrase, prompt, preset, writer, langs, session
         # собираем payload
-        payload: dict = await self.get_payload(prompt, proption, writer, session)
-        lang = await self.get_lang(langs, session)
-        result = await self.performing2(lang, phrase, payload)
-        result['original'] = phrase
+        dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
+                   'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
+                   'proption': (Proption, ProptionRepository, 'preset', None, proption),
+                   # 'lang': (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang )
+                   }
+        payload: dict = {}
+        payload["lang"] = lang
+        for key, val in dataset.items():
+            model, repo, field_name, field_out, search = val
+            tmp: ModelType = await repo.get_by_field(field_name, search, model, session)
+            if field_out:
+                payload[key] = getattr(tmp, field_out)
+            else:
+                payload.update(tmp.to_dict())
+        from app.core.utils.common_utils import jprint
+        jprint(payload)
+        result = await translation_service.translate(**payload)
         return result
 
     async def get_lang(self, langs: str, session: AsyncSession):

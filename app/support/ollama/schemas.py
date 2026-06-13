@@ -73,7 +73,7 @@ class PromptUpdate(BaseModel):
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
     role: Optional[str] = Field(None, min_length=2, max_length=50)
-    system_prompt: str = Field(..., min_length=10)
+    system_prompt: Optional[str] = Field(..., min_length=10)
 
     model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
 
@@ -187,10 +187,10 @@ class ISOLanguageCreate(BaseModel):
 
 
 class ISOLanguageUpdate(BaseModel):
-    iso_639_3: Optional[str]
+    iso_639_3: Optional[str] = None
     iso_639_1: Optional[str] = None
-    name_en: Optional[str]
-    name_ru: Optional[str]
+    name_en: Optional[str] = None
+    name_ru: Optional[str] = None
 
 
 class ISOLanguageRead(ISOLanguageCreate):

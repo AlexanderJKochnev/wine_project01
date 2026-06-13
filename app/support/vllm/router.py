@@ -5,7 +5,7 @@ from typing import List
 # from loguru import logger
 from fastapi import Depends, Form, HTTPException, Query, Body  # , BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enum import Preset, Prompts, Writers  # , LLmodel, Languages, Writers
+from app.core.enum import Preset, Prompts, Writers, Languages
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import LightRouter
 from app.core.services.translate_service import TranslationService
@@ -64,45 +64,19 @@ class VllmRouter(LightRouter):
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
 
-    async def get_translate_prompt(
-            self, phrase: str = Body(
-                ..., description="Текст для перевода.", title="текст для перевода",
-                media_type="text/plain", ),
-            prompt: str = Body(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
-            proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
-            writer: Writers = Query(None, description="Типовые правила перевода"),
-            langs: str = Query(
-                'ru', description="Язык (языки) перевода двух-значные коды через "
-                "запятую, например 'ru, fr, zh'"
-            ),
-            # temperature:
-            session: AsyncSession = Depends(get_db)
-    ):
-        """
-           тестирование prompts (роли) для перевода:
-           1. фраза для перевода
-           2. prompt
-           3. язык/языки для перевода
-           возвращает:
-        """
-        try:
-            result = await self.VLLMservice.get_translate2(phrase, prompt, proption, writer, langs, session)
-            return result
-        except Exception as e:
-            raise HTTPException(status_code=501, detail=e)
-
     async def get_translate_prompts(
         self,
         phrase: str = Form(...,
                            description="Текст для перевода."),
-        prompt: str = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
+        prompt: Prompts = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
         proption: Preset = Form(None, description="Типовые настройки качество/скорость"),
-        writer: str = Form(None, description="Типовые правила перевода. "
-                                             "Должны содержать ключевые слова {lang} и {phrase}"),
-        langs: str = Form('ru, en',
-                          description="Язык (языки) перевода двух-значные коды через "
-                                      "запятую, например 'ru, fr, zh'"),
-        session: AsyncSession = Depends(get_db)
+        writer: Writers = Form(None, description="Типовые правила перевода. "
+                               "Должны содержать ключевые слова {lang} и {phrase}"),
+        langs: Languages = Form('ru',
+                                description="Язык (языки) перевода двух-значные коды через "
+                                "запятую, например 'ru, fr, zh'"),
+        session: AsyncSession = Depends(get_db),
+        translation_service: TranslationService = Depends(get_translation_service)
     ):
         """
            тестирование prompts (роли) для перевода:
