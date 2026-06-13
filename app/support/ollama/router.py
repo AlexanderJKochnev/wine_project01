@@ -181,7 +181,11 @@ class PromptRouter(BaseRouter):
         super().setup_routes()
 
     async def create(self, data: PromptCreate, session: AsyncSession = Depends(get_db)) -> PromptRead:
+        from app.core.utils.common_utils import jprint
+        jprint(data.system_prompt)
         data.system_prompt = json.dumps(data.system_prompt)[1:-1]
+        logger.warning('dd----------------')
+        jprint(data.system_prompt)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: PromptUpdate,
