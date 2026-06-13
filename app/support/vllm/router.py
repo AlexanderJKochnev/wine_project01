@@ -118,12 +118,12 @@ class VllmRouter(LightRouter):
             raise HTTPException(status_code=501, detail=e)
 
     async def get_translate_precise(self,
-                                    phrase: str = Body(
+                                    phrase: str = Query(
                                         ..., description="Текст для перевода на английском языке.", media_type="text/plain", ),
-                                    prompt: str = Body(
+                                    prompt: str = Query(
                                         ..., description="Системный промпт. Должен содержать ключевое слово {lang} для подстановки языка."
                                     ),
-                                    writer: Writers = Query(
+                                    writer: str = Query(
                                         None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
                                     ),
                                     langs: str = Query(
