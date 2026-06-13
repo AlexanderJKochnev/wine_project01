@@ -1,5 +1,5 @@
 # app.support.router.py
-from typing import List
+from typing import List, Optional
 
 # app.suport.ollama.router.py
 # from loguru import logger
@@ -185,13 +185,12 @@ class VllmRouter(LightRouter):
 
         return result
 
-    from fastapi import Form, Depends, HTTPException  # Form вместо Query
-    from typing import List, Optional
-
     async def get_translate_precise2(
-            phrase: str = Form(..., description="Текст для перевода на английском языке."), prompt: str = Form(
+            phrase: str = Form(..., description="Текст для перевода на английском языке."),
+            prompt: str = Form(
                 ..., description="Системный промпт. Должен содержать ключевое слово {lang} для подстановки языка."
-            ), writer: Optional[str] = Form(
+            ),
+            writer: Optional[str] = Form(
                 None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
             ), langs: str = Form(
                 'ru',
