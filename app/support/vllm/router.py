@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers  # , LLmodel, Languages, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import LightRouter
-from app.core.services.translate_service import TranslationServiceAdapter
+from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
@@ -193,7 +193,7 @@ class VllmRouter(LightRouter):
                                         [], description="Стоп-последовательности. Генерация останавливается при появлении любой из строк. "
                                         'Пример: ["\\n\\n", ".</s>"]'
                                     ),
-                                    translation_service: TranslationServiceAdapter = Depends(get_translation_service)
+                                    translation_service: TranslationService = Depends(get_translation_service)
                                     # session: AsyncSession = Depends(get_db)
                                     ):
         """
