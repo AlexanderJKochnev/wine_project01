@@ -84,7 +84,8 @@ class VllmRouter(LightRouter):
                                                            prompt,
                                                            proption,
                                                            writer,
-                                                           langs, session)
+                                                           langs, session,
+                                                           translation_service)
             return result
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
