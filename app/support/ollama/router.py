@@ -4,10 +4,12 @@ from typing import List
 from loguru import logger
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enum import Preset, Prompts, Languages, Writers
+from app.core.enum import Categories, Preset, Prompts, Languages, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.core.utils.common_utils import compare_lists_compact, jprint
+from app.support import Category
+from app.support.category.repository import CategoryRepository
 from app.support.ollama.model import Ollama, Prompt, ISOLanguage, Proption, WriterRule
 from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptCreate,
                                         PromptRead, PromptUpdate, WriterRuleRead, WriterRuleCreate, WriterRuleUpdate,
@@ -184,8 +186,11 @@ class PromptRouter(BaseRouter):
     async def create(self,
                      role: str = Form(..., description='роль'),
                      system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
+                     category: Categories = Form(..., description='категория к которой применен prompt'),
                      session: AsyncSession = Depends(get_db)) -> PromptRead:
-        data = PromptCreate(role=role, system_prompt=system_prompt)
+        response = await CategoryRepository.get_by_field('name', category, Category, session)
+        category_id = response.id
+        data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id)
         return await super().create(data, session)
 
     async def patch(self,

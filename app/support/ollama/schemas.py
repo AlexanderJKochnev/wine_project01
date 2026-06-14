@@ -3,21 +3,36 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import model_validator, ConfigDict, Field, field_validator, computed_field
 from app.core.schemas.base import PkSchema, BaseModel
+from app.support import CategoryRead
+
+
 # from app.support.ollama.model import Prompt
 
 
-class WriterRuleCreate(BaseModel):
+class CustomCreate:
+    category_id: int
+
+
+class CustomRead:
+    category: CategoryRead
+
+
+class CustomUpdate:
+    category_id: Optional[int]
+
+
+class WriterRuleCreate(BaseModel, CustomCreate):
     name: str
     prompt: str
 
 
-class WriterRuleRead(BaseModel):
+class WriterRuleRead(BaseModel, CustomRead):
     id: int
     name: str
     prompt: str
 
 
-class WriterRuleUpdate(BaseModel):
+class WriterRuleUpdate(BaseModel, CustomUpdate):
     name: Optional[str] = None
     prompt: Optional[str] = None
 
@@ -50,25 +65,25 @@ class ProptionCustom(BaseModel):
         return v
 
 
-class ProptionCreate(ProptionCustom):
+class ProptionCreate(ProptionCustom, CustomCreate):
     preset: str = Field(..., min_length=2, max_length=50, pattern=r"^[a-zа-я0-9_-]+$")
 
 
-class ProptionUpdate(ProptionCustom):
+class ProptionUpdate(ProptionCustom, CustomUpdate):
     preset: Optional[str] = Field(..., min_length=2, max_length=50, pattern=r"^[a-zа-я0-9_-]+$")
 
 
-class ProptionRead(PkSchema, ProptionCreate):
+class ProptionRead(PkSchema, ProptionCreate, CustomRead):
     id: int
 
 
-class PromptCreate(BaseModel):
+class PromptCreate(BaseModel, CustomCreate):
     """Модель для POST запроса: role и system_prompt обязательны"""
     role: str = Field(..., min_length=2, max_length=50, pattern=r"^[a-zа-я0-9_-]+$")
     system_prompt: str = Field(..., min_length=10)
 
 
-class PromptUpdate(BaseModel):
+class PromptUpdate(BaseModel, CustomUpdate):
     """Модель для PATCH запроса: все поля необязательны"""
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
@@ -78,7 +93,7 @@ class PromptUpdate(BaseModel):
     model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
 
 
-class PromptRead(PkSchema, PromptCreate):
+class PromptRead(PkSchema, PromptCreate, CustomRead):
     id: int
 
 

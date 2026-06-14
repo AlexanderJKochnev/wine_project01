@@ -2,6 +2,7 @@
 from enum import Enum
 from sqlalchemy import select
 from app.core.config.database.db_sync import SessionLocalSync
+from app.support import Category
 from app.support.ollama.model import Prompt, Proption, ISOLanguage, WriterRule
 
 
@@ -29,12 +30,17 @@ def fetch_all_startup_data() -> dict:
         # Запрос 5: WriterRules
         writer = session.scalars(select(WriterRule.name).order_by(WriterRule.name.asc())).all()
         data['writer'] = [c for c in writer] or ["translate"]
+
+        # Запрос 6: Categories
+        category = session.scalars(select(Category.name).order_by(Category.name.asc())).all()
+        data['category'] = [c for c in category] or ["wine"]
     return data
 
 
 # data вызовется автоматически при импорте модулей в main.py
 data = fetch_all_startup_data()
 
+Categories = Enum("category", {v: v for v in data['category']}, type=str)
 Preset = Enum("Preset", {v: v for v in data['presets']}, type=str)
 # LLmodel = Enum("Llmodel", {v: v for v in data['models']}, type=str)
 Prompts = Enum("Prompts", {v: v for v in data['prompts']}, type=str)
@@ -42,6 +48,7 @@ Languages = Enum("Languages", {v: v for v in data['language']}, type=str)
 Writers = Enum("writer", {v: v for v in data['writer']}, type=str)
 CliSearchMode = Enum("mode", {v: v for v in ['auto', 'ranked', 'word',
                      'and', 'or', 'phrase', 'fuzzy', 'fuzzy2', 'like']}, type=str)
+
 rag = {"wine", "whisky", "beer", "spirits", "vodka", "gin", "schnapps",
        "brandy", "rum", "tequila", "ready-to-drink", "baijiu",
        "sparkling wine", "red wine", "white wine", "rose wine",
