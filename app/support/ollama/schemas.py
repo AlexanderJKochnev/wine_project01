@@ -66,11 +66,11 @@ class ProptionCustom(BaseModel):
 
 
 class ProptionCreate(ProptionCustom, CustomCreate):
-    preset: str = Field(..., min_length=2, max_length=50, pattern=r"^[a-zа-я0-9_-]+$")
+    preset: str = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
 
 
 class ProptionUpdate(ProptionCustom, CustomUpdate):
-    preset: Optional[str] = Field(..., min_length=2, max_length=50, pattern=r"^[a-zа-я0-9_-]+$")
+    preset: Optional[str] = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
 
 
 class ProptionRead(PkSchema, ProptionCreate, CustomRead):
@@ -79,7 +79,7 @@ class ProptionRead(PkSchema, ProptionCreate, CustomRead):
 
 class PromptCreate(BaseModel, CustomCreate):
     """Модель для POST запроса: role и system_prompt обязательны"""
-    role: str = Field(..., min_length=2, max_length=50, pattern=r"^[a-zа-я0-9_-]+$")
+    role: str = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
     system_prompt: str = Field(..., min_length=10)
 
 

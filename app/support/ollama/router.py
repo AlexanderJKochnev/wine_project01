@@ -190,7 +190,7 @@ class PromptRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)) -> PromptRead:
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
-        data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id)
+        data = PromptCreate(role=role.lower(), system_prompt=system_prompt, category_id=category_id)
         return await super().create(data, session)
 
     async def patch(self,
