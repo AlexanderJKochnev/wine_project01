@@ -80,7 +80,9 @@ class TranslationService:
 
         completion_tokens = response.usage.completion_tokens
 
-        return {"original": phrase,  # Изменился парсинг ответа: теперь текст лежит в .message.content
+        return {"system_prompt": system_prompt,
+                "user_prompt": user_prompt,
+                "original": phrase,  # Изменился парсинг ответа: теперь текст лежит в .message.content
                 "content": response.choices[0].message.content.strip(),
                 "performance": {"total_sec": total_duration_sec, "gpu_s": gpu_duration_sec, "tokens": completion_tokens,
                                 "speed_tok_per_sec": round(
