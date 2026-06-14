@@ -112,7 +112,9 @@ class VLLMService:
             if field_out:
                 payload[key] = getattr(tmp, field_out)
             else:
+                # payload['params'] = tmp.to_dict()
                 payload.update(tmp.to_dict())
+        payload.pop('category_id')
         from app.core.utils.common_utils import jprint
         jprint(payload)
         result = await translation_service.translate(**payload)
