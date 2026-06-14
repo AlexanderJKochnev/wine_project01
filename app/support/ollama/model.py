@@ -1,10 +1,14 @@
 # app.suport.ollama.model.py
 from datetime import datetime
-from typing import Optional, List
-from sqlalchemy import String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float
+from typing import Optional, List, TYPE_CHECKING
+from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float
 # from sqlalchemy.dialects.postgresql import JSONB  # Если используете PostgreSQL
-from sqlalchemy.orm import Mapped, mapped_column
-from app.core.models.base_model import Base, BaseAt
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.core.models.base_model import Base, BaseAt, plural
+from app.core.config.project_config import settings
+
+if TYPE_CHECKING:
+    from app.support.category.model import Category
 
 
 class Ollama(Base, BaseAt):
@@ -38,26 +42,16 @@ class Ollama(Base, BaseAt):
 class Prompt(Base, BaseAt):
     """
         модель для хранения ролей:
-        translator: переводчик
-        author: автор
-        и др. (можно назвать как нибудь поинтересней чехов, полиглот
-        {
-          "model": "llama3",
-          "prompt": "Translate the following...",
-          "options": {
-            "temperature": 0.1,
-            "top_p": 0.1,
-            "seed": 42,
-            "num_ctx": 4096,
-            "repeat_penalty": 1.0,
-            "num_predict": 1000,
-            "min_p": 0.05,                // новый параметр qwen3.5
-            "typical_p": 0.9,             // баланс типичности и креативности
-            "frequency_penalty": 0.3,      // легкий штраф за частые слова
-            "presence_penalty": 0.2        // поощрение новых тем
-          }
-        }
+        известный писатель по произведениям которого наверняка обучалась модель
     """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'prompt'
+    plural_name = plural(single_name)
+
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
+    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # название промпта
     role: Mapped[str] = mapped_column(String(50), unique=True, index=True)
@@ -72,6 +66,14 @@ class Proption(Base, BaseAt):
     """
         параметры настройки Prompt
     """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'proption'
+    plural_name = plural(single_name)
+
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
+    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
+
     # наименовение настройки
     preset: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     # Параметры Ollama (Options)
@@ -199,9 +201,16 @@ class WriterRule(Base, BaseAt):
         можно немного подумать про себя и сразу переходи к ответу,
         не анализируй запрос вслух, Пиши только финальный текст
     """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'writerule'
+    plural_name = plural(single_name)
+
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
+    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(String)
-    
+
     def __str__(self):
         return self.name or ""

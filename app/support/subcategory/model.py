@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 @registers_search_update("drink.item")
 class Subcategory(ColorMixin, BaseFullFree):
-
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'subcategory'
