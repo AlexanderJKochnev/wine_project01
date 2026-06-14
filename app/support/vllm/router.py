@@ -42,7 +42,6 @@ class VllmRouter(LightRouter):
             self, phrase: str = Body(
                 ..., description="Текст для перевода.", title="текст для перевода",
                 media_type="text/plain", ),
-            # llmodel: LLmodel = Query('translategemma:latest', description="Имя модели в базе данных"),
             prompt: Prompts = Query('universal_translator', description="Имя промпта в базе данных"),
             proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
             writer: Writers = Query(None, description="Типовые правила перевода"),
@@ -73,13 +72,12 @@ class VllmRouter(LightRouter):
         writer: Writers = Form(None, description="Типовые правила перевода. "
                                "Должны содержать ключевые слова {lang} и {phrase}"),
         langs: Languages = Form('ru',
-                                description="Язык (языки) перевода двух-значные коды через "
-                                "запятую, например 'ru, fr, zh'"),
+                                description="Язык перевода"),
         session: AsyncSession = Depends(get_db),
         translation_service: TranslationService = Depends(get_translation_service)
     ):
         """
-           тестирование prompts (роли) для перевода:
+           тестирование промптов для перевода:
         """
         try:
             result = await self.VLLMservice.get_translate2(phrase,
@@ -100,10 +98,8 @@ class VllmRouter(LightRouter):
                                     writer: str = Query(
                                         None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
                                     ),
-                                    langs: str = Query(
-                                        'ru', description="Язык перевода. Поддерживаются двух-значные коды (ru, en, de, fr, es, it, zh, ja). "
-                                        "Можно указать несколько через запятую: 'ru, fr, zh'"
-                                    ),
+                                    langs: Languages = Form('ru', description="Язык перевода"
+                                                            ),
                                     temperature: float = Query(
                                         0.1, ge=0.0, le=2.0,
                                         description="Температура генерации (0.0 - 2.0). Контролирует случайность ответа. "
@@ -179,10 +175,6 @@ class VllmRouter(LightRouter):
             frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
             repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p, stop=stop if stop else None
         )
-
-        # Сохранение в БД (опционально)
-        # await save_translation(session, phrase, result['content'], langs)
-
         return result
 
     async def get_translate_precise2(self,
@@ -218,7 +210,10 @@ class VllmRouter(LightRouter):
                                          description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
                                      ), translation_service: TranslationService = Depends(get_translation_service)
                                      ):
-        # Преобразуем stop из строки в список (если строка не пуста)
+        """
+            тестирование перевода - тонкие настройки
+            Form применяется потому что query не вывозит размер данных
+        """
         stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
 
         result = await translation_service.translate(

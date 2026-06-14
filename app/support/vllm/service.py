@@ -96,12 +96,12 @@ class VLLMService:
     async def get_translate2(self, phrase, prompt: str, proption: str, writer: str, lang: str,
                              session: AsyncSession, translation_service: TranslationService,
                              **kwargs):
-        # получаем phrase, prompt, preset, writer, langs, session
+        # получаем phrase, prompt, preset, writer, lang, session
         # собираем payload
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
-                   'proption': (Proption, ProptionRepository, 'preset', None, proption)
-                   # 'lang': (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang )
+                   'proption': (Proption, ProptionRepository, 'preset', None, proption),
+                   'lang': (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang)
                    }
         payload: dict = {}
         payload["lang"] = lang
