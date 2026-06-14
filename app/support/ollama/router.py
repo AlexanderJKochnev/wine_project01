@@ -1,10 +1,9 @@
 # app.suport.ollama.router.py
-import json
-from typing import List
+from typing import List, Optional
 from loguru import logger
-from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body, Request
+from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enum import Categories, Preset, Prompts, Languages, Writers
+from app.core.enum import Categories, Preset, Prompts, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.core.utils.common_utils import compare_lists_compact, jprint
@@ -182,7 +181,6 @@ class PromptRouter(BaseRouter):
                                   )
         super().setup_routes()
 
-    # async def create(self, data: PromptCreate, session: AsyncSession = Depends(get_db)) -> PromptRead:
     async def create(self,
                      role: str = Form(..., description='роль'),
                      system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
@@ -190,15 +188,21 @@ class PromptRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)) -> PromptRead:
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
-        data = PromptCreate(role=role.lower(), system_prompt=system_prompt, category_id=category_id)
+        data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id)
         return await super().create(data, session)
 
     async def patch(self,
                     id: int, background_tasks: BackgroundTasks,
                     role: str = Form(..., description='роль'),
                     system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
+                    category: Categories = Form(..., description='категория к которой применен prompt'),
                     session: AsyncSession = Depends(get_db)) -> PromptRead:
-        data = PromptUpdate(role=role, system_prompt=system_prompt)
+        if category:
+            response = await CategoryRepository.get_by_field('name', category, Category, session)
+            category_id = response.id
+            data = PromptUpdate(role=role, system_prompt=system_prompt, category_id=category_id)
+        else:
+            data = PromptUpdate(role=role, system_prompt=system_prompt)
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(self, data: PromptCreate,
@@ -219,7 +223,43 @@ class ProptionRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=Proption, prefix="/proption")
 
-    async def create(self, data: ProptionCreate, session: AsyncSession = Depends(get_db)) -> ProptionRead:
+    async def create(self,
+                     preset: str = Form(..., description='уникальное название настройки'),
+                     category: Categories = Form(..., description='категория к которой применен proption'),
+                     temperature: float = Form(0.1, ge=0.0, le=2.0, description="Температура генерации..."),
+                     top_p: float = Form(0.85, ge=0.0, le=1.0, description="Nucleus sampling..."),
+                     top_k: int = Form(50, ge=0, le=200,
+                                       description="Ограничение выборки K наиболее вероятных токенов..."
+                                       ),
+                     frequency_penalty: float = Form(
+                         0.2, ge=-2.0, le=2.0, description="Штраф за повторение токенов..."),
+                     presence_penalty: float = Form(
+                         0.1, ge=-2.0, le=2.0, description="Штраф за повторение тем..."),
+                     repeat_penalty: float = Form(
+                         1.1, ge=0.5, le=2.0, description="Экспоненциальный штраф за повторение..."
+                     ),
+                     max_tokens: int = Form(2048, ge=1, le=4096,
+                                            description="Максимальное количество токенов..."),
+                     seed: Optional[int] = Form(None, ge=0, le=2147483647,
+                                                description="Сид для воспроизводимости..."),
+                     min_p: float = Form(0.04, ge=0.0, le=1.0,
+                                         description="Минимальная вероятность токена..."),
+                     typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."), stop: str = Form(
+                         "",
+                         description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
+                     ), session: AsyncSession = Depends(get_db)
+                     ) -> ProptionRead:
+        # Преобразуем stop из строки в список (если строка не пуста)
+        stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
+        response = await CategoryRepository.get_by_field('name', category, Category, session)
+        category_id = response.id
+        data = PromptCreate(preset=preset,
+                            category_id=category_id,
+                            temperature=temperature,
+                            top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
+                            frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
+                            repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
+                            stop=stop_list if stop_list else None)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: ProptionUpdate,
@@ -240,15 +280,26 @@ class WriterRuleRouter(BaseRouter):
     async def create(self,
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
-                     session: AsyncSession = Depends(get_db)) -> WriterRuleRead:
-        data = WriterRuleCreate(name=name, prompt=prompt)
+                     category: Categories = Form(..., description='категория к которой применен prompt'),
+                     session: AsyncSession = Depends(get_db)
+                     ) -> PromptRead:
+        response = await CategoryRepository.get_by_field('name', category, Category, session)
+        category_id = response.id
+        data = WriterRuleCreate(name=name, prompt=prompt, category_id=category_id)
         return await super().create(data, session)
 
     async def patch(self, id: int, background_tasks: BackgroundTasks,
                     name: str = Form(..., description='name'),
                     prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
-                    session: AsyncSession = Depends(get_db)) -> WriterRuleRead:
-        data = WriterRuleUpdate(name=name, prompt=prompt)
+                    category: Categories = Form(..., description='категория к которой применен prompt'),
+                    session: AsyncSession = Depends(get_db)
+                    ) -> PromptRead:
+        if category:
+            response = await CategoryRepository.get_by_field('name', category, Category, session)
+            category_id = response.id
+            data = WriterRuleUpdate(name=name, prompt=prompt, category_id=category_id)
+        else:
+            data = WriterRuleUpdate(name=name, prompt=prompt)
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(

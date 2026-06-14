@@ -194,7 +194,8 @@ class VllmRouter(LightRouter):
                                          None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
                                      ), langs: str = Form(
                                          'ru',
-                                         description="Язык перевода. Поддерживаются двух-значные коды... Можно указать несколько через запятую: 'ru, fr, zh'"
+                                         description="Язык перевода. Поддерживаются двух-значные коды... "
+                                                     "Можно указать несколько через запятую: 'ru, fr, zh'"
                                      ), temperature: float = Form(0.1, ge=0.0, le=2.0, description="Температура генерации..."),
                                      top_p: float = Form(0.85, ge=0.0, le=1.0, description="Nucleus sampling..."), top_k: int = Form(
                                          50, ge=0, le=200, description="Ограничение выборки K наиболее вероятных токенов..."
