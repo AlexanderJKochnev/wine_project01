@@ -1,7 +1,9 @@
 # app.core.services.translate_service.py
 import time
+import re
 from typing import Dict, Any
 from openai import AsyncOpenAI
+from loguru import logger
 
 
 class TranslationService:
@@ -63,7 +65,9 @@ class TranslationService:
     ) -> Dict[str, Any]:
         """Основной метод перевода, адаптированный под Qwen (Chat API)"""
         start_ms = time.time() * 1000
-
+        # упрощаем phrase
+        phrase = pre_process_wine_text(phrase)
+        logger.warning(f'{phrase=}')
         # Вместо текстовой строки генерируем массив ролей (System / User)
         messages = self._build_messages(system_prompt, user_prompt, lang_code, phrase)
         request_params = self._prepare_params(**params)
@@ -90,3 +94,32 @@ class TranslationService:
                                 )},
                 "params": params
                 }
+
+
+def pre_process_wine_text(text):
+    # Глобальный статический глоссарий "Мин и Калек"
+    # Мы заменяем абстрактные идиомы на их простые английские аналоги ДУМАТЬ КАК 8B МОДЕЛЬ
+    wine_glossary = {  # 1. Текстура и танины (Самый частый сбой моделей)
+        r"\bmouthfeel\b": "texture", r"\bpalate\b": "taste structure",
+        r"\bfine-grained tannins\b": "smooth fine tannins", r"\bvelveteen tannins\b": "velvety tannins",
+        r"\btaut tannins\b": "firm strict tannins", r"\bchewy tannins\b": "dense heavy tannins",
+
+        # 2. Фрукты и Специи (Защита от клюквы и яблок)
+        r"\bPlummy\b": "Rich with notes of plum", r"\bplummy\b": "with notes of plum",
+        r"\bblack cherry\b": "dark sweet cherry",  # Ликвидируем триггер слова Cherry
+        r"\bBlack cherry\b": "Dark sweet cherry", r"\bstone fruits\b": "stone fruits like peaches",
+        # Подсказка в скобках
+        r"\bstone fruit\b": "stone fruit like peach", r"\bwild berries\b": "forest berries",
+        r"\bkicks of pepper\b": "hints of pepper",
+
+        # 3. Бочка, выдержка и дефекты перевода
+        r"\bchar\b": "smoky oak notes",  # Защита от перевода "ЖАР"
+        r"\bmaturation\b": "barrel aging", r"\bnew French oak\b": "new French oak barrels",
+        r"\bcandied citrus\b": "sweet candied citrus",  # Защита от "вареного цитруса"
+        r"\bfinish\b": "aftertaste",  # Намертво вырезаем "финал/finale"
+        r"\bthis wine\b": "this high-quality wine", r"\bthis effort\b": "this wine production", }
+    # Применяем автозамену с сохранением регистра (для начала предложений)
+    for pattern, replacement in wine_glossary.items():
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+
+    return text
