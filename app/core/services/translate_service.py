@@ -66,7 +66,7 @@ class TranslationService:
         """Основной метод перевода, адаптированный под Qwen (Chat API)"""
         start_ms = time.time() * 1000
         # упрощаем phrase
-        # phrase = pre_process_wine_text(phrase)
+        phrase = pre_process_wine_text(phrase)
         logger.warning(f'{phrase=}')
         # Вместо текстовой строки генерируем массив ролей (System / User)
         messages = self._build_messages(system_prompt, user_prompt, lang_code, phrase)
