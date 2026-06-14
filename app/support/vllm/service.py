@@ -93,7 +93,7 @@ class VLLMService:
         result = await self.get_datas(phrase, prompt, proption, writer, langs, session)
         return {'response': True if result else False, 'answer': result}
 
-    async def get_translate2(self, phrase, prompt: str, proption: str, writer: str, lang: str,
+    async def get_translate2(self, phrase: str, prompt: str, proption: str, writer: str, lang: str,
                              session: AsyncSession, translation_service: TranslationService,
                              **kwargs):
         # получаем phrase, prompt, preset, writer, lang, session
@@ -117,7 +117,9 @@ class VLLMService:
         payload.pop('category_id')
         from app.core.utils.common_utils import jprint
         jprint(payload)
-        result = await translation_service.translate(**payload)
+        result = await translation_service.translate(phrase, payload.pop('prompt'),
+                                                     payload.pop('writer'), payload.pop('lang'),
+                                                     **payload)
         return result
 
     async def get_lang(self, langs: str, session: AsyncSession):
