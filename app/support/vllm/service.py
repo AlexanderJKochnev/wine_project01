@@ -98,6 +98,7 @@ class VLLMService:
                              **kwargs):
         # получаем phrase, prompt, preset, writer, lang, session
         # собираем payload
+        logger.warning('=================5==================')
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption),
