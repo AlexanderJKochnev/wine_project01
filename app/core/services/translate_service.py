@@ -85,4 +85,6 @@ class TranslationService:
                 "performance": {"total_sec": total_duration_sec, "gpu_s": gpu_duration_sec, "tokens": completion_tokens,
                                 "speed_tok_per_sec": round(
                                     completion_tokens / max(gpu_duration_sec, 0.001), 1
-                                )}}
+                                )},
+                "params": params
+                }
