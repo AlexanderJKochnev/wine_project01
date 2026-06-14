@@ -175,10 +175,6 @@ class PromptRouter(BaseRouter):
         self.LLMservice = LLMService()
 
     def setup_routes(self):
-        self.router.add_api_route("/translate", self.get_generate,
-                                  methods=["GET"],
-                                  # response_model=List[LlmResponseSchema]
-                                  )
         super().setup_routes()
 
     async def create(self,
@@ -253,13 +249,13 @@ class ProptionRouter(BaseRouter):
         stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
-        data = PromptCreate(preset=preset,
-                            category_id=category_id,
-                            temperature=temperature,
-                            top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
-                            frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
-                            repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
-                            stop=stop_list if stop_list else None)
+        data = ProptionCreate(preset=preset,
+                              category_id=category_id,
+                              temperature=temperature,
+                              top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
+                              frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
+                              repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
+                              stop=stop_list if stop_list else None)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: ProptionUpdate,
