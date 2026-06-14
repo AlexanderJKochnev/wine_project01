@@ -203,7 +203,7 @@ class WriterRule(Base, BaseAt):
     """
     lazy = settings.LAZY
     cascade = settings.CASCADE
-    single_name = 'writerule'
+    single_name = 'writerrule'
     plural_name = plural(single_name)
 
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
