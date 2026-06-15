@@ -18,7 +18,7 @@ class CustomRead:
 
 
 class CustomUpdate:
-    category_id: Optional[int]
+    category_id: Optional[int] = None
 
 
 class WriterRuleCreate(BaseModel, CustomCreate):
