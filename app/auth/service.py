@@ -1,10 +1,12 @@
 # app.auth.service.py
-from typing import List, Tuple
+from typing import Dict, List, Tuple
+
+from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.repository import UserRepository
 from app.auth.models import User
 from app.core.services.service import Service
-from app.auth.schemas import UserInDB
+from app.auth.schemas import UserInDB, UserUpdate
 from app.core.types import ModelType
 
 
@@ -29,3 +31,15 @@ class UserService(Service):
                 return result, True
         except Exception as e:
             print(f'UserService.get_or_create: {e}')
+
+    @classmethod
+    async def patch(cls, id: int, data: UserUpdate,
+                    repository: UserRepository,
+                    model: User,
+                    background_tasks: BackgroundTasks,
+                    session: AsyncSession) -> Dict:
+        data_dict = data.model_dump(exclude_unset=True)
+        verified_data = UserInDB(**data_dict)
+        result = super().patch(id, verified_data, repository, model, background_tasks, session)
+        return result
+

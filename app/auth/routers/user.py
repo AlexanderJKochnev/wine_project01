@@ -20,7 +20,7 @@ model = User
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register_user(user: UserCreate, session: AsyncSession = Depends(get_db)):
+async def register_user(user: UserCreate, session: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     #   Создание нового пользователя с проверкой, существует ли пользователь с таким именем
     try:
         db_user, exist = await service.get_or_create(user, repository, model, session, default=('username',))
@@ -34,7 +34,7 @@ async def register_user(user: UserCreate, session: AsyncSession = Depends(get_db
 
 
 @router.get("/get_full", response_model=List[UserResponse], status_code=status.HTTP_200_OK)
-async def get_users(session: AsyncSession = Depends(get_db)):
+async def get_users(session: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """ получениее списка пользователей """
     result = await service.get_full(repository, model, session)
     return result
@@ -65,12 +65,12 @@ async def read_user(id: int, db: AsyncSession = Depends(get_db),
 @router.put("/{id}", response_model=UserResponse)
 async def update_user(
     id: int, user_update: UserUpdate, background_task: BackgroundTasks, db: AsyncSession = Depends(get_db),
-    # current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """ Обновление данных пользователя """
-    # if current_user.id != id and current_user.is_superuser is False:
+    if current_user.id != id and current_user.is_superuser is False:
         # только super или сам пользователь менять свои данные
-    #     raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     result: dict = await service.patch(id, user_update, repository, model, background_task, db)
     user: User = result.get('data')
