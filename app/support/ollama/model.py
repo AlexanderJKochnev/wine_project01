@@ -180,7 +180,7 @@ class Proption(Base, BaseAt):
 
 
 class ISOLanguage(Base, BaseAt):
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    # id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # ISO 639-3 (3 буквы) — отличный первичный ключ, так как он уникален и постоянен
     iso_639_3: Mapped[str] = mapped_column(String(3), primary_key=True)
     # ISO 639-1 (2 буквы) — может быть NULL для редких языков
