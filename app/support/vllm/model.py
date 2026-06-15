@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
@@ -29,10 +29,21 @@ class TranslateRawData(Base, BaseAt):
     isolanguage: Mapped["ISOLanguage"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
     prompt_id: Mapped[int] = mapped_column(ForeignKey("prompts.id"), nullable=False, index=True)
     prompt: Mapped["Prompt"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
-    writerrule_id = Mapped[int] = mapped_column(ForeignKey("writerrules.id"), nullable=False, index=True)
+    writerrule_id: Mapped[int] = mapped_column(ForeignKey("writerrules.id"), nullable=False, index=True)
     writerrule: Mapped["WriterRule"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
     proption_id: Mapped[int] = mapped_column(ForeignKey("proptions.id"), nullable=False, index=True)
     proption: Mapped["Proption"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
     subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
     subcategory: Mapped["Subcategory"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    result: Mapped[str] = mapped_column(Text)
     rate: Mapped[int_null_index]  # оценка перевода
+
+    def __str__(self):
+        # переоопределять в особенных формах
+        # or "" на всякий случай если обязательное поле вдруг окажется необязательным и пустым
+        return str(self.name) or ""
+
+    __table_args__ = (UniqueConstraint(
+        'drink_id', 'lang_origin', 'isolanguage_id', 'prompt_id', 'writerrule_id', 'proption_id',
+        name='uq_translate_raw_data_unique_combo'
+    ),)
