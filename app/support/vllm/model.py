@@ -44,6 +44,6 @@ class TranslateRawData(Base, BaseAt):
         return str(self.name) or ""
 
     __table_args__ = (UniqueConstraint(
-        'drink_id', 'lang_origin', 'isolanguage_id', 'prompt_id', 'writerrule_id', 'proption_id',
+        'drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id', 'subcategory_id',
         name='uq_translate_raw_data_unique_combo'
     ),)
