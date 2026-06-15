@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
-from app.auth.dependencies import get_active_user_or_internal
+from app.auth.dependencies import get_active_user_or_internal, get_current_api_user
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging, settings
 from app.core.utils.common_utils import back_to_the_future, delta_data
@@ -49,7 +49,8 @@ class BaseRouter:
         self,
         model: Type[Any],
         prefix: str,
-        auth_dependency: Callable = get_active_user_or_internal,
+        # auth_dependency: Callable = get_active_user_or_internal,
+        auth_dependency: Callable = get_current_api_user,
         **kwargs
     ):
         self.model = model
@@ -397,9 +398,11 @@ class LightRouter:
         include_in_schema = kwargs.get('include_in_schema', True)
         self.router = APIRouter(prefix=prefix,
                                 tags=self.tags,
-                                dependencies=[Depends(get_active_user_or_internal)],
+                                dependencies=[Depends(get_current_api_user)],
+                                # dependencies = [Depends(get_active_user_or_internal)],
                                 include_in_schema=include_in_schema
                                 )
+        # auth_dependency: Callable = get_current_api_user,
         self.setup_routes()
 
     def setup_routes(self):

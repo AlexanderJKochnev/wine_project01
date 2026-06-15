@@ -1,4 +1,6 @@
 # app/admin/create_superuser.py
+# python -m app.admin.create_superuser
+
 import asyncio
 import getpass
 
@@ -36,11 +38,11 @@ async def create_superuser_interactive():
             print("Пароли не совпадают! Попробуйте еще раз.")
             continue
         break
-    
+
     # Создаем отдельный engine для скрипта
     engine = create_async_engine(settings_db.database_url, echo = False)
     AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit = False)
-    
+
     async with AsyncSessionLocal() as session:
         # Проверяем, существует ли уже пользователь с таким именем
         stmt = select(User).where(User.username == username)
