@@ -18,7 +18,11 @@ if TYPE_CHECKING:
     # from app.support.food.model import Food
     from app.support import (Source, Sweetness, Subcategory, Food, Producer, VintageConfig,
                              Classification, Designation, Site, Parcel, TastingNote,
-                             BaseIngredient, Glassware, Scale, Body)
+                             BaseIngredient, Glassware, Scale, Body, Item, Varietal)
+
+
+lazy = settings.LAZY
+cascade = settings.CASCADE
 
 
 class Lang:
@@ -124,7 +128,6 @@ class ForeignOneToMany:
     glassware_id: Mapped[int | None] = mapped_column(ForeignKey("glasswares.id"), nullable=True, index=True)
     scale_id: Mapped[int | None] = mapped_column(ForeignKey("scales.id"), nullable=True, index=True)
     body_id: Mapped[int | None] = mapped_column(ForeignKey("bodies.id"), nullable=True, index=True)
-    ch_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
     sweetness_id: Mapped[int | None] = mapped_column(ForeignKey("sweetness.id"), nullable=True, index=True)
 
@@ -168,6 +171,14 @@ class ForeignOneToMany:
     def body(cls) -> Mapped["Body"]:
         return relationship(back_populates="drinks")
 
+    @declared_attr
+    def subcategory(cls) -> Mapped["Subcategory"]:
+        return relationship(back_populates="drinks")
+
+    @declared_attr
+    def sweetness(cls) -> Mapped["Sweetness"]:
+        return relationship(back_populates="drinks")
+
 
 class Vintage:
     __abstract__ = True
@@ -209,8 +220,33 @@ class DisplayName:
     )
 
 
+class BackRelation:
+    __abstract__ = True
+
+    @declared_attr
+    def items(cls) -> Mapped[List["Item"]]:
+        return relationship(back_populates="drink", cascade=cascade, lazy=lazy)
+
+    @declared_attr
+    def food_associations(cls) -> Mapped[List["DrinkFood"]]:
+        return relationship(back_populates="drink", cascade="all, delete-orphan",
+                            lazy="selectin")
+
+    @declared_attr
+    def varietal_associations(cls) -> Mapped[List["DrinkVarietal"]]:
+        return relationship("DrinkVarietal", back_populates="drink", cascade="all, delete-orphan",
+                            lazy="selectin")
+
+    @declared_attr
+    def varietals(cls) -> Mapped["Varietal"]:
+        return relationship("Varietal",
+                            secondary="drink_varietal_associations",
+                            back_populates="drinks",
+                            lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
+
+
 @registers_search_update("item")
-class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, DisplayName):
+class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage, Lwn, DisplayName):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'drink'
@@ -219,33 +255,30 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, Display
     sugar: Mapped[Decimal | None] = mapped_column(DECIMAL(6, 2), nullable=True)  # , default = 0.0)
     age: Mapped[str_null_true]
     sparkling: Mapped[boolnone]
-
-    # Relationships fields (
-    subcategory: Mapped["Subcategory"] = relationship(back_populates="drinks")
-    # subregion: Mapped["Subregion"] = relationship(back_populates="drinks")
-    sweetness: Mapped["Sweetness"] = relationship(back_populates="drinks")
-
+    ch_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    """
     # обратная связь
     items = relationship("Item", back_populates=single_name,
                          cascade=cascade,
                          lazy=lazy)
-
-    # Связь через промежуточную модель NEW
-    # 1. Связь через промежуточную таблицу
+    """
+    """
     food_associations: Mapped[List["DrinkFood"]] = relationship(
-        back_populates="drink",
+        back_populates=single_name,
         cascade="all, delete-orphan",
         lazy="selectin"
     )
-
+    """
     # 2. Прямая связь Many-to-Many
+    """
     varietal_associations = relationship(
         "DrinkVarietal",
-        back_populates="drink",
+        back_populates=single_name,
         cascade="all, delete-orphan",
         # overlaps="varietals"
         lazy="selectin"
     )
+    """
     varietals = relationship("Varietal",
                              secondary="drink_varietal_associations",
                              back_populates="drinks",
