@@ -98,7 +98,6 @@ class VLLMService:
                              **kwargs):
         # получаем phrase, prompt, preset, writer, lang, session
         # собираем payload
-        logger.warning('=================5==================')
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption),
@@ -115,8 +114,6 @@ class VLLMService:
                 # payload['params'] = tmp.to_dict()
                 payload.update(tmp.to_dict())
         payload.pop('category_id')
-        from app.core.utils.common_utils import jprint
-        jprint(payload)
         result = await translation_service.translate(phrase, payload.pop('prompt'),
                                                      payload.pop('writer'), payload.pop('lang'),
                                                      **payload)
