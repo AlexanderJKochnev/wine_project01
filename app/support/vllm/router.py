@@ -3,13 +3,14 @@ from typing import List, Optional
 
 # app.suport.ollama.router.py
 # from loguru import logger
-from fastapi import Depends, Form, HTTPException, Query, Body  # , BackgroundTasks
+from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body  # , BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers, Languages
 from app.core.config.database.db_async import get_db
-from app.core.routers.base import LightRouter
+from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
+from app.support.vllm.schemas import TranslateRawDataCreate, TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
 from app.support.vllm.service import VLLMService
@@ -143,4 +144,25 @@ class VllmRouter(LightRouter):
             repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
             stop=stop_list if stop_list else None
         )
+        return result
+
+
+class TranslateRawData(BaseRouter):
+    def __init__(self):
+        super().__init__(
+            model=TranslateRawData,
+            prefix="/translaterawdata",
+        )
+
+    async def create(self, data: TranslateRawDataCreate,
+                     session: AsyncSession = Depends(get_db)):
+        return await super().create(data, session)
+
+    async def patch(self, id: int, data: TranslateRawDataUpdate, background_tasks: BackgroundTasks,
+                    session: AsyncSession = Depends(get_db)):
+        return await super().patch(id, data, background_tasks, session)
+
+    async def create_relation(self, data: TranslateRawDataCreate,
+                              session: AsyncSession = Depends(get_db)):
+        result = await super().create_relation(data, session)
         return result

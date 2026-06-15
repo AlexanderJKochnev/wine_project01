@@ -11,7 +11,7 @@ from app.core.models.base_model import Base, BaseAt, int_null_index, plural, str
 
 if TYPE_CHECKING:
     from app.support.drink.model import Drink
-    from app.support.ollama.model import ISOLanguage, Prompt, WriterRule, Proption
+    from app.support.ollama.model import Prompt, WriterRule, Proption
     from app.support.subcategory.model import Subcategory
 
 
@@ -32,8 +32,8 @@ class TranslateRawData(Base, BaseAt):
     writerrule: Mapped["WriterRule"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
     proption_id: Mapped[int] = mapped_column(ForeignKey("proptions.id"), nullable=False, index=True)
     proption: Mapped["Proption"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
-    subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
-    subcategory: Mapped["Subcategory"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    # subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
+    # subcategory: Mapped["Subcategory"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
     # isolanguage_id: Mapped[int] = mapped_column(ForeignKey("isolanguages.id"), nullable = False, index = True)
     # isolanguage: Mapped["ISOLanguage"] = relationship(back_populates = plural_name, cascade = cascade, lazy = lazy)
     result: Mapped[str] = mapped_column(Text)
@@ -46,6 +46,5 @@ class TranslateRawData(Base, BaseAt):
 
     __table_args__ = (UniqueConstraint(
         'drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id', # 'isolanguage_id',
-        'subcategory_id',
         name='uq_translate_raw_data_unique_combo'
     ),)

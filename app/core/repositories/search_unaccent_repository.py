@@ -1,5 +1,5 @@
 # доработать если поналобится
-from loguru import logger
+# from loguru import logger
 from typing import List, Optional, Tuple, Type
 from sqlalchemy import select, func, text
 from sqlalchemy.dialects import postgresql

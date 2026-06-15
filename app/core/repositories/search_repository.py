@@ -1,13 +1,15 @@
 # app.core.repository.search_repository.py
 from typing import List
 from sqlalchemy import and_, desc, or_, select, func
-from sqlalchemy.dialects import postgresql
+# from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.types import ModelType
 
 
 class SearchRepository:
-
+    """
+    не используется
+    """
     @classmethod
     async def search_all(cls, query_data,
                          model: ModelType,

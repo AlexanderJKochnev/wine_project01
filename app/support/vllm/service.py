@@ -7,6 +7,7 @@ from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.benchmarks import get_metrics
@@ -24,6 +25,7 @@ class VLLMService:
     3. подготовка запроса
     4. запрос/ответ
     5. encoding
+    ПРОВЕРИТЬ - ТОЛЬКО TRANSLATE2 использеется остальнео deprecated
     """
 
     def __init__(self):
@@ -195,3 +197,7 @@ class VLLMService:
         except Exception as x:
             logger.error(f'base_url "http://172.60.0.10/v1", error: {x}')
             return {'result': False}
+
+
+class TranslateRawDataService(Service):
+    defaault = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']
