@@ -3,16 +3,17 @@ import asyncio
 import getpass
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.auth.models import User
 from app.auth.repository import UserRepository
-from app.core.config.database.db_async import DatabaseManager
+from app.core.config.database.db_config import settings_db
 
 
 async def create_superuser_interactive():
     """Интерактивное создание суперпользователя"""
     print("=== Создание суперпользователя ===")
-
+    
     # Ввод данных
     username = input("Введите имя пользователя: ").strip()
     if not username:
@@ -36,7 +37,11 @@ async def create_superuser_interactive():
             continue
         break
     
-    async with DatabaseManager.session_maker() as session:
+    # Создаем отдельный engine для скрипта
+    engine = create_async_engine(settings_db.database_url, echo = False)
+    AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit = False)
+    
+    async with AsyncSessionLocal() as session:
         # Проверяем, существует ли уже пользователь с таким именем
         stmt = select(User).where(User.username == username)
         result = await session.execute(stmt)
@@ -58,6 +63,7 @@ async def create_superuser_interactive():
                 print(f"Пользователь '{username}' обновлен до суперпользователя!")
             else:
                 print("Операция отменена.")
+            await engine.dispose()
             return
         
         # Создаем суперпользователя
@@ -67,16 +73,23 @@ async def create_superuser_interactive():
         
         try:
             user = await user_repo.create(user_data, session)
+            await session.commit()
             print(f"✅ Суперпользователь '{user.username}' успешно создан!")
         except Exception as e:
             print(f"❌ Ошибка при создании пользователя: {e}")
+        finally:
+            await engine.dispose()
 
 
 async def create_superuser(
         login: str = 'admin', email: str = 'admin@example.com', password: str = 'admin'
         ):
     """Создание суперпользователя с заданными параметрами"""
-    async with DatabaseManager.session_maker() as session:
+    # Создаем отдельный engine для скрипта
+    engine = create_async_engine(settings_db.database_url, echo = False)
+    AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit = False)
+    
+    async with AsyncSessionLocal() as session:
         # Проверяем, существует ли уже пользователь с таким именем
         stmt = select(User).where(User.username == login)
         result = await session.execute(stmt)
@@ -84,6 +97,12 @@ async def create_superuser(
         
         if existing_user:
             print(f"Пользователь '{login}' уже существует!")
+            if not existing_user.is_superuser:
+                existing_user.is_superuser = True
+                existing_user.is_active = True
+                await session.commit()
+                print(f"✅ Пользователь '{login}' обновлен до суперпользователя!")
+            await engine.dispose()
             return
         
         # Создаем суперпользователя
@@ -93,26 +112,23 @@ async def create_superuser(
         
         try:
             user = await user_repo.create(user_data, session)
+            await session.commit()
             print(f"✅ Суперпользователь '{user.username}' успешно создан!")
         except Exception as e:
             print(f"❌ Ошибка при создании пользователя: {e}")
+        finally:
+            await engine.dispose()
 
 
 def main():
     import sys
-
-    # Инициализация DatabaseManager как в main.py
-    DatabaseManager.__init__()
-
+    
     if len(sys.argv) > 1 and sys.argv[1] == '--interactive':
-        # Интерактивный режим
         asyncio.run(create_superuser_interactive())
     elif len(sys.argv) == 4:
-        # Режим с аргументами
         login, email, password = sys.argv[1], sys.argv[2], sys.argv[3]
         asyncio.run(create_superuser(login, email, password))
     else:
-        # По умолчанию - интерактивный режим
         asyncio.run(create_superuser_interactive())
 
 
