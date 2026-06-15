@@ -37,6 +37,7 @@ from app.support import Source
 from app.support.producer.model import Producer, ProducerTitle
 from app.support.parcel.model import Site, Parcel
 from app.support.tasting.model import Glassware, TastingNote, Scale, Body, BaseIngredient
+from app.support.vllm.model import TranslateRawData
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
