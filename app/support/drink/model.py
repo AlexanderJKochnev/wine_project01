@@ -244,6 +244,14 @@ class BackRelation:
                             back_populates="drinks",
                             lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
 
+    @declared_attr
+    def tastingnote_associations(cls) -> Mapped[List["DrinkTastingNote"]]:
+        return relationship(back_populates="drink", cascade="all, delete-orphan", lazy="selectin")
+
+    @declared_attr
+    def baseingredient_associations(cls) -> Mapped[List["DrinkBaseIngredient"]]:
+        return relationship(back_populates="drink", cascade="all, delete-orphan", lazy="selectin")
+
 
 @registers_search_update("item")
 class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage, Lwn, DisplayName):
@@ -279,17 +287,20 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage
         lazy="selectin"
     )
     """
+    """
     varietals = relationship("Varietal",
                              secondary="drink_varietal_associations",
                              back_populates="drinks",
                              lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
-
+    """
+    """
     tastingnote_associations: Mapped[List["DrinkTastingNote"]] = relationship(
         back_populates="drink", cascade="all, delete-orphan", lazy="selectin"
     )
     baseingredient_associations: Mapped[List["DrinkBaseIngredient"]] = relationship(
         back_populates="drink", cascade="all, delete-orphan", lazy="selectin"
     )
+    """
 
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
     __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
