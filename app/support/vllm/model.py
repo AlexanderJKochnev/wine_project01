@@ -22,18 +22,18 @@ class TranslateRawData(Base, BaseAt):
     plural_name = plural(single_name)
     # источник drink
     drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), nullable=False, index=True)
-    drink: Mapped["Drink"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    drink: Mapped["Drink"] = relationship(cascade=cascade, lazy=lazy)
     # язык оригинала - суффикс поля
     lang_origin: Mapped[str_null_false]
     lang_result: Mapped[str_null_false]
     prompt_id: Mapped[int] = mapped_column(ForeignKey("prompts.id"), nullable=False, index=True)
-    prompt: Mapped["Prompt"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    prompt: Mapped["Prompt"] = relationship(cascade=cascade, lazy=lazy)
     writerrule_id: Mapped[int] = mapped_column(ForeignKey("writerrules.id"), nullable=False, index=True)
-    writerrule: Mapped["WriterRule"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    writerrule: Mapped["WriterRule"] = relationship(cascade=cascade, lazy=lazy)
     proption_id: Mapped[int] = mapped_column(ForeignKey("proptions.id"), nullable=False, index=True)
-    proption: Mapped["Proption"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    proption: Mapped["Proption"] = relationship(cascade=cascade, lazy=lazy)
     # subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
-    # subcategory: Mapped["Subcategory"] = relationship(back_populates=plural_name, cascade=cascade, lazy=lazy)
+    # subcategory: Mapped["Subcategory"] = relationship(cascade=cascade, lazy=lazy)
     # isolanguage_id: Mapped[int] = mapped_column(ForeignKey("isolanguages.id"), nullable = False, index = True)
     # isolanguage: Mapped["ISOLanguage"] = relationship(back_populates = plural_name, cascade = cascade, lazy = lazy)
     result: Mapped[str] = mapped_column(Text)

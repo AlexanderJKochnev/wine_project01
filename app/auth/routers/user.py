@@ -65,12 +65,12 @@ async def read_user(id: int, db: AsyncSession = Depends(get_db),
 @router.put("/{id}", response_model=UserResponse)
 async def update_user(
     id: int, user_update: UserUpdate, background_task: BackgroundTasks, db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    # current_user: User = Depends(get_current_active_user)
 ):
     """ Обновление данных пользователя """
-    if current_user.id != id and current_user.is_superuser is False:
+    # if current_user.id != id and current_user.is_superuser is False:
         # только super или сам пользователь менять свои данные
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+    #     raise HTTPException(status_code=403, detail="Not enough permissions")
 
     result = await service.patch(id, user_update, repository, model, background_task, db)
     user: User = result.get('data')
