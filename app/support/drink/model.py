@@ -124,6 +124,9 @@ class ForeignOneToMany:
     glassware_id: Mapped[int | None] = mapped_column(ForeignKey("glasswares.id"), nullable=True, index=True)
     scale_id: Mapped[int | None] = mapped_column(ForeignKey("scales.id"), nullable=True, index=True)
     body_id: Mapped[int | None] = mapped_column(ForeignKey("bodies.id"), nullable=True, index=True)
+    ch_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
+    sweetness_id: Mapped[int | None] = mapped_column(ForeignKey("sweetness.id"), nullable=True, index=True)
 
     @declared_attr
     def source(cls) -> Mapped["Source"]:
@@ -216,12 +219,6 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, Vintage, Lwn, Display
     sugar: Mapped[Decimal | None] = mapped_column(DECIMAL(6, 2), nullable=True)  # , default = 0.0)
     age: Mapped[str_null_true]
     sparkling: Mapped[boolnone]
-    # поля для связи с clickhouse data
-    ch_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
-    # Foreign Keys on-to-many
-    subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
-    # subregion_id: Mapped[int] = mapped_column(ForeignKey("subregions.id"), nullable=False, index=True)
-    sweetness_id: Mapped[int | None] = mapped_column(ForeignKey("sweetness.id"), nullable=True, index=True)
 
     # Relationships fields (
     subcategory: Mapped["Subcategory"] = relationship(back_populates="drinks")
