@@ -187,18 +187,10 @@ class PromptRouter(BaseRouter):
         data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id)
         return await super().create(data, session)
 
-    async def patch(self,
-                    id: int, background_tasks: BackgroundTasks,
-                    role: str = Form(..., description='роль'),
-                    system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
-                    category: Categories = Form(..., description='категория к которой применен prompt'),
+    async def patch(self, id: int,
+                    data: PromptUpdate,
+                    background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)) -> PromptRead:
-        if category:
-            response = await CategoryRepository.get_by_field('name', category, Category, session)
-            category_id = response.id
-            data = PromptUpdate(role=role, system_prompt=system_prompt, category_id=category_id)
-        else:
-            data = PromptUpdate(role=role, system_prompt=system_prompt)
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(self, data: PromptCreate,
@@ -285,17 +277,9 @@ class WriterRuleRouter(BaseRouter):
         return await super().create(data, session)
 
     async def patch(self, id: int, background_tasks: BackgroundTasks,
-                    name: str = Form(..., description='name'),
-                    prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
-                    category: Categories = Form(..., description='категория к которой применен prompt'),
+                    data: WriterRuleUpdate,
                     session: AsyncSession = Depends(get_db)
                     ) -> PromptRead:
-        if category:
-            response = await CategoryRepository.get_by_field('name', category, Category, session)
-            category_id = response.id
-            data = WriterRuleUpdate(name=name, prompt=prompt, category_id=category_id)
-        else:
-            data = WriterRuleUpdate(name=name, prompt=prompt)
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(

@@ -94,6 +94,7 @@ class VLLMService:
         return {'response': True if result else False, 'answer': result}
 
     async def get_translate2(self, phrase: str, prompt: str, proption: str, writer: str, lang: str,
+                             drink,
                              session: AsyncSession, translation_service: TranslationService,
                              **kwargs):
         # получаем phrase, prompt, preset, writer, lang, session
@@ -116,6 +117,7 @@ class VLLMService:
         payload.pop('category_id')
         result = await translation_service.translate(phrase, payload.pop('prompt'),
                                                      payload.pop('writer'), payload.pop('lang'),
+                                                     drink,
                                                      **payload)
         return result
 
