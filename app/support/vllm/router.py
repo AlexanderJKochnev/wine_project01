@@ -10,6 +10,7 @@ from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
+from app.support.vllm.model import TranslateRawData
 from app.support.vllm.schemas import TranslateRawDataCreate, TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
@@ -147,7 +148,7 @@ class VllmRouter(LightRouter):
         return result
 
 
-class TranslateRawData(BaseRouter):
+class TranslateRawDataRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=TranslateRawData,
