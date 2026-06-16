@@ -678,6 +678,8 @@ class Repository(Background, metaclass=RepositoryMeta):
             case _:
                 query = select(model)
         query = query.join(related_model).filter_by(**filters)
+        compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        print('==========', compiled_pg)
         result = cls.pagination(query, skip, limit, session)
         # result = await session.scalars(query)
         return result.all()
