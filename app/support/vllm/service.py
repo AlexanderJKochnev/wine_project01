@@ -1,6 +1,6 @@
 # app.support.vllm.service.py
 from typing import List, Tuple
-
+from app.core.utils.common_utils import jprint
 from fastapi import BackgroundTasks
 from loguru import logger
 from openai import AsyncOpenAI
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
-from app.core.utils.pydantic_utils import list_dict
+from app.core.utils.pydantic_utils import inst_dict, list_dict
 from app.support import Drink, DrinkService, Subcategory
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
@@ -85,7 +85,6 @@ class VLLMService:
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
-        from app.core.utils.common_utils import jprint
         logger.warning(f'{language=}, {subcategory=}')
         jprint(system_prompts)
         logger.warning('system_prompt')
@@ -135,7 +134,10 @@ class VLLMService:
         # 1 суффикс языка - берем русский
         model, repo = Subcategory, SubcategoryRepository
         response: Subcategory = await repo.get_by_field_v2(filters, model, session)
+        jprint(inst_dict(response))
+        
         return response.name_ru or response.name or response.name_fr
+        
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
                        chunk: int  # размер тестовой выборки
