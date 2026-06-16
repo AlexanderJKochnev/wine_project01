@@ -668,6 +668,7 @@ class Service(metaclass=ServiceMeta):
         result = make_paginated_response(items_dict, total, page, page_size)
         return result
 
+    @classmethod
     async def get_with_filter_complex(cls, background_tasks: BackgroundTasks, session: AsyncSession,
                                       model: ModelType, related_model_name: ModelType,
                                       repository: Type[Repository],

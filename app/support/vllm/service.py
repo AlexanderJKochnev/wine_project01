@@ -82,7 +82,7 @@ class VLLMService:
         result = await service.get_with_filter_complex(background_tasks, session, model,
                                                        related_model_name, repository,
                                                        filters, root_filter, 1, 20, 0)
-
+        result = await service.get_with_filter_complex(background_tasks, )
         return result
 
 
