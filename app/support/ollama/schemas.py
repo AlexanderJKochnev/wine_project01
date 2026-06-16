@@ -31,8 +31,8 @@ class WriterRuleCreate(BaseModel, CustomCreate):
 
 class WriterRuleRead(BaseModel, CustomRead):
     id: int
-    name: str
-    prompt: str
+    name: Optional[str] = None
+    prompt: Optional[str] = None
 
 
 class WriterRuleUpdate(BaseModel, CustomUpdate):
@@ -91,9 +91,9 @@ class PromptUpdate(BaseModel, CustomUpdate):
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
     role: Optional[str] = Field(None, min_length=2, max_length=50)
-    system_prompt: Optional[str] = Field(..., min_length=10)
+    system_prompt: Optional[str] = Field(None, min_length=10)
 
-    model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
+    # model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
 
 
 class PromptRead(PkSchema, PromptCreate, CustomRead):
