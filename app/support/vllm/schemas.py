@@ -13,11 +13,9 @@ class CreateSchema:
     drink_id: int
     lang_origin: str
     lang_result: str
-    prompt_id: id
-    writerrule_id: id
-    proption_id: id
-    proption: id
-    subcategory_id: id
+    prompt_id: int
+    writerrule_id: int
+    proption_id: int
     result: str
     rate: int
     duration: float = Field(..., ge=0.5, description="Продолжительность в секундах (шаг 0.5)")
