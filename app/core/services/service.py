@@ -647,7 +647,7 @@ class Service(metaclass=ServiceMeta):
     async def get_with_filter_simple(cls, background_tasks: BackgroundTasks, session: AsyncSession,
                                      model: ModelType, related_model_name: ModelType,
                                      repository: Type[Repository],
-                                     filters: Dict[str: Any],
+                                     filters: Dict,
                                      page: int = 1,
                                      page_size: int = 20,
                                      query_type: int = 0
