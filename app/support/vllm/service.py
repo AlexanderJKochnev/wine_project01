@@ -66,11 +66,13 @@ class VLLMService:
         """
         тестирование
         """
+        logger.warning('2---------------')
         service = DrinkService
         filters = {'name': subcat}
         repository = DrinkRepository
         related_model_name = 'Subcategory'
         model = Drink
+        logger.warning('3---------------')
         result = await service.get_with_filter_simple(background_tasks, session, model,
                                                       related_model_name, repository,
                                                       filters, 1, 20, 1)

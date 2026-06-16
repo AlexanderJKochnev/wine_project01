@@ -2,7 +2,7 @@
 from typing import Optional
 
 # app.suport.ollama.router.py
-# from loguru import logger
+from loguru import logger
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers, Languages
@@ -124,6 +124,7 @@ class VllmRouter(LightRouter):
         """
         тестирование массового перевода
         """
+        logger.warning('1---------------')
         result = await self.service.bulk_test(background_tasks, session, translation_service, subcat)
         return result
 

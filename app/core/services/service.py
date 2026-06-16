@@ -660,8 +660,11 @@ class Service(metaclass=ServiceMeta):
             1 - short
             2 - full
         """
+        logger.warning('4---------------')
         related_model = get_model_by_name(related_model_name)
         skip = (page - 1) * page_size
+        logger.warning(f'5----------{related_model.__name__}-----')
         result = await repository.get_with_filter_simple(session, model, related_model,
                                                          filters, skip, page_size, query_type)
+        logger.warning('5---------------')
         return list_dict(result)

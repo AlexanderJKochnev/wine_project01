@@ -668,6 +668,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             1 - short
             2 - full
         """
+        logger.warning('4.1---------------')
         match query_type:
             case 0:
                 query = select(model)
@@ -677,9 +678,12 @@ class Repository(Background, metaclass=RepositoryMeta):
                 query = select(cls.get_query(model))
             case _:
                 query = select(model)
+        logger.warning('4.2---------------')
         query = query.join(related_model).filter_by(**filters)
+        logger.warning('4.3---------------')
         compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         print('==========', compiled_pg)
+        logger.warning('4.4---------------')
         result = cls.pagination(query, skip, limit, session)
         # result = await session.scalars(query)
         return result.all()
