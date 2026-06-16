@@ -16,6 +16,7 @@ from app.support.vllm.schemas import TranslateRawDataCreate, TranslateRawDataUpd
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
 from app.support.vllm.service import VLLMService
+from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
 
 
 class VllmRouter(LightRouter):
