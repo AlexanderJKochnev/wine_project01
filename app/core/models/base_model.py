@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Annotated, Optional, Type
 
 # from sqlalchemy.dialects.postgresql import MONEY
-from sqlalchemy import DateTime, DECIMAL, func, inspect, String, text, Text
+from sqlalchemy import Boolean, DateTime, DECIMAL, func, inspect, String, text, Text
 # from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
@@ -347,6 +347,11 @@ class BaseFullFree(ClickId, Base, BaseIntFree, BaseAt, BaseLang):
 class ColorMixin:
     """ поле цвета подложки """
     color: Mapped[str] = mapped_column(String(9), nullable=True)
+
+
+class ActiveMixin:
+    """ поле признака активности """
+    active: Mapped[bool] = mapped_column(Boolean, nullable=True)
 
 
 def plural(single: str) -> str:

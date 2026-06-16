@@ -121,12 +121,14 @@ class VllmRouter(LightRouter):
     async def bulk_test(self, background_tasks: BackgroundTasks,
                         session: AsyncSession = Depends(get_db),
                         translation_service: TranslationService = Depends(get_translation_service),
-                        subcat: str = Query(..., description='значение субкатегории')):
+                        subcat: str = Query(..., description='значение субкатегории - либо id либо имя на анг (нужно '
+                                                             'угадать)'),
+                        chunk: int = Query(20, description='размер выборки для тестирования'),
+                        lang: Languages = Form('ru', description="Язык перевода")):
         """
-        тестирование массового перевода
+            тестирование массового перевода
         """
-        logger.warning('1---------------')
-        result = await self.service.bulk_test(background_tasks, session, translation_service, subcat)
+        result = await self.service.bulk_test(background_tasks, session, translation_service, subcat, chunk, lang)
         return result
 
 

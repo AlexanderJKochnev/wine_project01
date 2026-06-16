@@ -4,7 +4,7 @@ from typing import Optional, List, TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float
 # from sqlalchemy.dialects.postgresql import JSONB  # Если используете PostgreSQL
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.core.models.base_model import Base, BaseAt, plural
+from app.core.models.base_model import Base, BaseAt, plural, ActiveMixin
 from app.core.config.project_config import settings
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ class Ollama(Base, BaseAt):
     #     return f"<LLModel(model={self.model}, size={self.size})>"
 
 
-class Prompt(Base, BaseAt):
+class Prompt(ActiveMixin, BaseAt, Base):
     """
         модель для хранения ролей:
         известный писатель по произведениям которого наверняка обучалась модель
@@ -62,7 +62,7 @@ class Prompt(Base, BaseAt):
         return self.role or ""
 
 
-class Proption(Base, BaseAt):
+class Proption(ActiveMixin, BaseAt, Base):
     """
         параметры настройки Prompt
     """
@@ -191,7 +191,7 @@ class ISOLanguage(Base, BaseAt):
         return f"{self.iso_639_3} {self.name_en}" or ""
 
 
-class WriterRule(Base, BaseAt):
+class WriterRule(ActiveMixin, BaseAt, Base):
     """
         правила написания текста для каждой категории пример:
         Напиши статью о "{phrase}" (3-4 предложения) на {lang} языке.

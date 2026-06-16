@@ -11,14 +11,17 @@ from app.support import CategoryRead
 
 class CustomCreate:
     category_id: int
+    active: bool = True
 
 
 class CustomRead:
     category: CategoryRead
+    active: Optional[bool] = None
 
 
 class CustomUpdate:
     category_id: Optional[int] = None
+    active: Optional[bool] = None
 
 
 class WriterRuleCreate(BaseModel, CustomCreate):

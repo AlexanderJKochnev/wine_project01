@@ -54,7 +54,6 @@ class GeneralMixin:
 
 
 class Search(GeneralMixin):
-    """ поисковое поле для  """
     """Миксин полнотекстового поиска (FTS)"""
 
     @declared_attr

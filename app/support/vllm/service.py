@@ -1,8 +1,12 @@
 # app.support.vllm.service.py
+from typing import Any, List
+
 from fastapi import BackgroundTasks
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
+
+from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
@@ -19,9 +23,6 @@ class VLLMService:
     1. получение даннных
     2. загрузка: prompt, preset, langs, proption
     3. подготовка запроса
-    4. запрос/ответ
-    5. encoding
-    ПРОВЕРИТЬ - ТОЛЬКО TRANSLATE2 использеется остальнео deprecated
     """
 
     def __init__(self):
@@ -62,10 +63,34 @@ class VLLMService:
 
     async def bulk_test(self, background_tasks: BackgroundTasks,
                         session: AsyncSession, translation_service: TranslationService,
-                        subcat: str):
+                        subcat: str, chunk: int, lang: str):
         """
-        тестирование
+            это тестирование качества перевода
+            по катерогриям/субкатегориям напитков
+            по результатам тестирования будут выбраны лучшие авторы для каждой субкатегории напитков
+            поэтому сейчас их привязка к категориям не учитывается
         """
+        (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang)
+        data = await self.get_data(background_tasks, session, subcat, chunk)
+        return data
+
+    @staticmethod
+    async def get_source(model: ModelType, repo: Repository,
+                         session: AsyncSession, id_field: str = None, out_field: str = None,
+                         value: Any = None):
+        """ получение данных из базы данных:
+            if all args are not null: return Tuple[id: out_filed.value]
+            if value is null: return List[Tuple[id, out_filed.value]]
+            if all args are null: return Tuple
+            если все данные is null - return list of dict
+        """
+        if value:
+            filter = {id_field: value}
+            tmp: ModelType = await repo.get_by_field_v2(filter=filter, model=model, session=session)
+
+    async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: str,
+                       chunk: int  # размер тестовой выборки
+                       ) -> dict:
         service = DrinkService
         if subcat.isnumeric():
             filters = {'id': int(subcat)}
@@ -80,10 +105,10 @@ class VLLMService:
                                                        filters, root_filter, 1, 20, 0)
         items = result.get('items')
         if not items:
-            return result
-        source = {key.get('id'): key.get('description') for key in items}
-        result['items'] = source
-        return result
+            return None
+        source: dict = {key.get('id'): key.get('description') for key in items}
+        # {id: description, ...}
+        return source
 
 
 class TranslateRawDataService(Service):
