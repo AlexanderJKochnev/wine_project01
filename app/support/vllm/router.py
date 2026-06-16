@@ -124,7 +124,7 @@ class VllmRouter(LightRouter):
                         subcat: str = Query(..., description='значение субкатегории - либо id либо имя на анг (нужно '
                                                              'угадать)'),
                         chunk: int = Query(20, description='размер выборки для тестирования'),
-                        lang: Languages = Form('ru', description="Язык перевода")):
+                        lang: Languages = Query(..., description="Язык перевода")):
         """
             тестирование массового перевода
         """
