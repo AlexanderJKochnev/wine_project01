@@ -1,15 +1,16 @@
 # app.support.router.py
-from typing import List, Optional
+from typing import Optional
 
 # app.suport.ollama.router.py
 # from loguru import logger
-from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body  # , BackgroundTasks
+from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers, Languages
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
+from app.support import DrinkService
 from app.support.vllm.model import TranslateRawData
 from app.support.vllm.schemas import TranslateRawDataCreate, TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
@@ -22,14 +23,9 @@ class VllmRouter(LightRouter):
 
     def __init__(self):
         super().__init__(prefix="/vllm")
-        self.VLLMservice = VLLMService()
-        # self.service = VLLMService
+        self.service = VLLMService()
 
     def setup_routes(self):
-        self.router.add_api_route("/translate", self.get_translate,
-                                  methods=["POST"],
-                                  # response_model=List[LlmResponseSchema],
-                                  openapi_extra={'x-request-schema': None})
         self.router.add_api_route(
             "/translate2", self.get_translate_prompts, methods=["POST"],
             openapi_extra={'x-request-schema': None}
@@ -38,32 +34,11 @@ class VllmRouter(LightRouter):
             "/translate3", self.get_translate_precise2, methods=["POST"],
             openapi_extra={'x-request-schema': None}
         )
+        self.router.add_api_route(
+            "/bulk_test", self.bulk_test, methods=["GET"],
+            openapi_extra={'x-request-schema': None}
+        )
         # super().setup_routes()
-
-    async def get_translate(
-            self, phrase: str = Body(
-                ..., description="Текст для перевода.", title="текст для перевода",
-                media_type="text/plain", ),
-            prompt: Prompts = Query('universal_translator', description="Имя промпта в базе данных"),
-            proption: Preset = Query(None, description="Типовые настройки качество/скорость"),
-            writer: Writers = Query(None, description="Типовые правила перевода"),
-            langs: str = Query(
-                'ru, en', description="Язык (языки) перевода двух-значные коды через "
-                "запятую, например 'ru, fr, zh'"
-            ), session: AsyncSession = Depends(get_db)
-    ):
-        """
-           тестирование моделей для перевода:
-           1. фраза для перевода
-           2. prompt
-           3. язык/языки для перевода
-           возвращает:
-        """
-        try:
-            result = await self.VLLMservice.get_translate(phrase, prompt, proption, writer, langs, session)
-            return result
-        except Exception as e:
-            raise HTTPException(status_code=501, detail=e)
 
     async def get_translate_prompts(
         self,
@@ -83,15 +58,10 @@ class VllmRouter(LightRouter):
            тестирование промптов для перевода:
         """
         try:
-            result = await self.VLLMservice.get_translate2(phrase,
-                                                           prompt,
-                                                           proption,
-                                                           writer,
-                                                           langs,
-                                                           subcategory,
-                                                           session,
-                                                           translation_service,
-                                                           )
+            result = await self.service.get_translate2(phrase, prompt, proption,
+                                                       writer, langs, subcategory,
+                                                       session, translation_service,
+                                                       )
             return result
         except Exception as e:
             raise HTTPException(status_code=501, detail=e)
@@ -145,6 +115,16 @@ class VllmRouter(LightRouter):
             repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
             stop=stop_list if stop_list else None
         )
+        return result
+
+    async def bulk_test(self, background_tasks: BackgroundTasks,
+                        session: AsyncSession = Depends(get_db),
+                        translation_service: TranslationService = Depends(get_translation_service),
+                        subcat: str = Query(..., description='значение субкатегории')):
+        """
+        тестирование массового перевода
+        """
+        result = await self.service.bulk_test(background_tasks, session, translation_service, subcat)
         return result
 
 

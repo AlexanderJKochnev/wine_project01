@@ -1,22 +1,22 @@
 # app/core/routers/base.py
 
-from typing import Any, List, Optional, Type, TypeVar, Callable
 # from dateutil.relativedelta import relativedelta
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any, Callable, List, Type, TypeVar
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from loguru import logger
-from app.auth.dependencies import get_active_user_or_internal, get_current_api_user
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.dependencies import get_current_api_user
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging, settings
-from app.core.utils.common_utils import back_to_the_future, delta_data
-from app.core.services.service import Service
-from app.core.schemas.base import (DeleteResponse, PaginatedResponse, ReadSchema,
-                                   CreateResponse, UpdateSchema, CreateSchema)
 from app.core.exceptions import exception_to_http
-from app.core.utils.pydantic_utils import get_repo, get_service, get_pyschema, orresponse
-from loguru import logger
-
+from app.core.schemas.base import (CreateResponse, CreateSchema, DeleteResponse, PaginatedResponse, ReadSchema,
+                                   UpdateSchema)
+from app.core.services.service import Service
+from app.core.utils.common_utils import back_to_the_future, delta_data
+from app.core.utils.pydantic_utils import get_pyschema, get_repo, get_service, orresponse
 
 paging = get_paging
 TCreateSchema = TypeVar("TCreateSchema", bound=CreateSchema)
@@ -259,6 +259,17 @@ class BaseRouter:
         response = await self.service.get_by_id(id, self.repo, self.model, session)
         return orresponse(response)
 
+    async def get_by_field(self,
+                           field: str = Query(..., description='имя поля'),
+                           value: Any = Query(..., description='значение поля'),
+                           session: AsyncSession = Depends(get_db)):
+        """
+            Получение одной записи по значению поля
+        """
+        filter = {field: value}
+        response = await self.service.get_by_field(filter, self.repo, self.model, session)
+        return orresponse(response)
+
     async def get(self, request: Request,
                   after_date: datetime = Query(delta,
                                                description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
@@ -333,9 +344,10 @@ class BaseRouter:
         # result = self.paginated_response(**response)
         # return result
 
-    async def search(self, request: Request, search: str = Query(None, description="Поисковый запрос. "
-                                               "В случае пустого запроса будут "
-                                               "выведены все данные "),
+    async def search(self, request: Request,
+                     search: str = Query(None, description="Поисковый запрос. "
+                                         "В случае пустого запроса будут "
+                                         "выведены все данные "),
                      page: int = Query(1, ge=1),
                      page_size: int = Query(paging.get('def', 20),
                                             ge=paging.get('min', 1),

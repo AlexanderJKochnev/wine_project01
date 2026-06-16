@@ -12,7 +12,6 @@ from app.core.models.base_model import Base, BaseAt, int_null_index, plural, str
 if TYPE_CHECKING:
     from app.support.drink.model import Drink
     from app.support.ollama.model import Prompt, WriterRule, Proption
-    from app.support.subcategory.model import Subcategory
 
 
 class TranslateRawData(Base, BaseAt):
@@ -45,6 +44,6 @@ class TranslateRawData(Base, BaseAt):
         return str(self.name) or ""
 
     __table_args__ = (UniqueConstraint(
-        'drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id', # 'isolanguage_id',
+        'drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id',
         name='uq_translate_raw_data_unique_combo'
     ),)

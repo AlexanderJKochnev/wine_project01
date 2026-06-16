@@ -632,3 +632,36 @@ class Service(metaclass=ServiceMeta):
             return result
         else:
             return []
+
+    @classmethod
+    async def get_by_field(cls, filter: dict, repository: Type[Repository], model: ModelType,
+                           session: AsyncSession) -> Optional[dict]:
+        """
+            поиск единственного значения по уникальному полю/полям
+            на входе {'field_name': value, ...}
+        """
+        response = await repository.get_by_field_v2(filter, model, session)
+        return inst_dict(response)
+
+    @classmethod
+    async def get_with_filter_simple(cls, background_tasks: BackgroundTasks, session: AsyncSession,
+                                     model: ModelType, related_model_name: ModelType,
+                                     repository: Type[Repository],
+                                     filters: Dict[str: Any],
+                                     page: int = 1,
+                                     page_size: int = 20,
+                                     query_type: int = 0
+                                     ) -> List[dict]:
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        related_model = get_model_by_name(related_model_name)
+        skip = (page - 1) * page_size
+        result = await repository.get_with_filter_simple(session, model, related_model,
+                                                         filters, skip, page_size, query_type)
+        return list_dict(result)

@@ -16,26 +16,34 @@ class TokenData(BaseModel):
 
 
 class UserBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     username: str
     email: Optional[EmailStr] = None
     is_active: bool = True
     is_superuser: bool = False
 
 
+class UserFree(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    username: Optional[str]
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+
+
 class UserCreate(UserBase):
     password: str
 
 
-class UserUpdate(UserBase):
+class UserUpdate(UserFree):
     password: Optional[str] = None
 
 
 class UserRead(UserBase):
     id: int
-    model_config = ConfigDict(from_attributes=True)
 
 
-class UserInDB(UserBase):
+class UserInDB(UserFree):
     password: Optional[str] = Field(default=None, exclude=True)
 
     @computed_field(return_type=str)

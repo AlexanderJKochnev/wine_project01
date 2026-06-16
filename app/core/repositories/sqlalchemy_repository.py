@@ -136,8 +136,8 @@ class Repository(Background, metaclass=RepositoryMeta):
             return None, total
         stmt = stmt.offset(skip).limit(limit)
         # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        result = await session.execute(stmt)
-        items = result.scalars().all()
+        result = await session.scalars(stmt)
+        items = result.all()
         return items, total
 
     @classmethod
@@ -146,9 +146,9 @@ class Repository(Background, metaclass=RepositoryMeta):
             получает запрос
             возвращает список instances
         """
-        result = await session.execute(stmt)
+        result = await session.scalars(stmt)
         if result:
-            items = result.scalars().all()
+            items = result.all()
             return items
         else:
             return None
@@ -339,6 +339,15 @@ class Repository(Background, metaclass=RepositoryMeta):
             return result.scalar_one_or_none()
         except Exception as e:
             raise AppBaseException(message=str(e), status_code=404)
+
+    @classmethod
+    async def get_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession):
+        """
+            поиск единственного значения по уникальному полю/полям
+            на входе {'field_name': value}
+        """
+        stmt = cls.get_query(model).filter_by(**filter)
+        return session.scalars(stmt)
 
     @classmethod
     async def get_by_fields(cls, filter: dict, model: ModelType, session: AsyncSession):
@@ -641,6 +650,36 @@ class Repository(Background, metaclass=RepositoryMeta):
         # Сортировка по score, затем по id для стабильности
         stmt = stmt.order_by(desc(model.id)).limit(limit)
         result = await session.execute(stmt)
+        return result.all()
+
+    @classmethod
+    async def get_with_filter_simple(cls,
+                                     session: AsyncSession,
+                                     model: ModelType,  # основная модель
+                                     related_model: ModelType,  # Модель, по которой фильтруем
+                                     filters: Dict[str, Any],  # {field_name: value, ...}
+                                     skip: int, limit: int,
+                                     query_type: int = 0):
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        match query_type:
+            case 0:
+                query = select(model)
+            case 1:
+                query = select(cls.get_short_query(model))
+            case 2:
+                query = select(cls.get_query(model))
+            case _:
+                query = select(model)
+        query = query.join(related_model).filter_by(**filters)
+        result = cls.pagination(query, skip, limit, session)
+        # result = await session.scalars(query)
         return result.all()
 
 
