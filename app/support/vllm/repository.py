@@ -29,4 +29,4 @@ class TranslateRawDataRepository(Repository):
             Обратить внимание! для последовательной загрузки использовать точку.
             параллельно запятая
         """
-        return select(Drink).options(*cls.get_selectin())
+        return select(TranslateRawData).options(*cls.get_selectin())
