@@ -146,7 +146,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             возвращает список instances
         """
         result = await session.scalars(stmt)
-        items = result.all()
+        return result.all()
 
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
@@ -354,6 +354,8 @@ class Repository(Background, metaclass=RepositoryMeta):
              session.scalars(stmtp) -> result.all() -> List[ModelType]
         """
         stmt = cls.get_query(model).filter_by(**filter)
+        compiled_pg = stmt.compile(dialect=postgresql.dialect())
+        print(compiled_pg)
         # return session.scalars(stmt)
         return await cls.nonpagination(stmt, session)
 
