@@ -2,7 +2,7 @@
 from fastapi import BackgroundTasks
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from loguru import logger
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
