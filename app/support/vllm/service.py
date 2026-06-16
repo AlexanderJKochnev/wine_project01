@@ -69,7 +69,7 @@ class VLLMService:
         logger.warning('2---------------')
         service = DrinkService
         filters = {'name': subcat}
-        root_filter = {'description': None}
+        root_filter = {'description_ru': None}
         repository = DrinkRepository
         related_model_name = 'Subcategory'
         model = Drink
