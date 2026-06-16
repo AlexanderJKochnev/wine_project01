@@ -203,7 +203,6 @@ class WriterRule(Base, BaseAt):
     cascade = settings.CASCADE
     single_name = 'writerrule'
     plural_name = plural(single_name)
-
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
     category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
