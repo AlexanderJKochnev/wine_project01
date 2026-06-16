@@ -673,9 +673,9 @@ class Repository(Background, metaclass=RepositoryMeta):
             case 0:
                 query = select(model)
             case 1:
-                query = select(cls.get_short_query(model))
+                query = cls.get_short_query(model)
             case 2:
-                query = select(cls.get_query(model))
+                query = cls.get_query(model)
             case _:
                 query = select(model)
         logger.warning('4.2---------------')
