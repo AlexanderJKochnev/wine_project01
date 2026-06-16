@@ -18,12 +18,3 @@ class Category(ColorMixin, BaseFull):
     subcategories = relationship(
         "Subcategory", back_populates=single_name, cascade=cascade, lazy=lazy
     )
-    prompts = relationship(
-        "Prompt", back_populates=single_name, cascade=cascade, lazy=lazy
-    )
-    writerrules = relationship(
-        "WriterRule", back_populates=single_name, cascade=cascade, lazy=lazy
-    )
-    proptions = relationship(
-        "Proption", back_populates=single_name, cascade=cascade, lazy=lazy
-    )

@@ -50,7 +50,7 @@ class Prompt(Base, BaseAt):
     plural_name = plural(single_name)
 
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
-    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
+    category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # название промпта
@@ -72,7 +72,7 @@ class Proption(Base, BaseAt):
     plural_name = plural(single_name)
 
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
-    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
+    category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
 
     # наименовение настройки
     preset: Mapped[str] = mapped_column(String(50), unique=True, index=True)
@@ -205,7 +205,7 @@ class WriterRule(Base, BaseAt):
     plural_name = plural(single_name)
 
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
-    category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
+    category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(String)
