@@ -660,13 +660,36 @@ class Service(metaclass=ServiceMeta):
             1 - short
             2 - full
         """
-        logger.warning('4---------------')
         related_model = get_model_by_name(related_model_name)
         skip = (page - 1) * page_size
-        logger.warning(f'5----------{related_model.__name__}-----')
         items, total = await repository.get_with_filter_simple(session, model, related_model,
                                                                filters, skip, page_size, query_type)
         items_dict = list_dict(items)
         result = make_paginated_response(items_dict, total, page, page_size)
-        logger.warning('5---------------')
+        return result
+
+    async def get_with_filter_complex(cls, background_tasks: BackgroundTasks, session: AsyncSession,
+                                      model: ModelType, related_model_name: ModelType,
+                                      repository: Type[Repository],
+                                      filters: Dict,
+                                      root_filter: Dict,
+                                      page: int = 1,
+                                      page_size: int = 20,
+                                      query_type: int = 0
+                                      ) -> List[dict]:
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        related_model = get_model_by_name(related_model_name)
+        skip = (page - 1) * page_size
+        items, total = await repository.get_with_filter_complex(session, model, related_model,
+                                                                filters, root_filter, skip,
+                                                                page_size, query_type)
+        items_dict = list_dict(items)
+        result = make_paginated_response(items_dict, total, page, page_size)
         return result

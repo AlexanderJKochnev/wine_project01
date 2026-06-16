@@ -67,7 +67,6 @@ class Repository(Background, metaclass=RepositoryMeta):
         """
             получение связанных завписей из related model
         """
-        logger.warning(f'get_related_model_instances {model.__name__}, {add=}')
         related_model = cls.get_related_model(model)
         if not related_model:
             logger.warning(f'{model.__name__} no more related model')
@@ -394,8 +393,6 @@ class Repository(Background, metaclass=RepositoryMeta):
             query = cls.get_short_query(model)
             id_query, count_query = get_sql_search(query, search, limit=limit, offset=skip)
             # 1. Получаем список ID:
-            compiled = id_query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-            logger.warning(str(compiled))
             response = await session.execute(id_query)
             ids = response.scalars().all()
             # 2. Получаем общее кол-во:
@@ -668,7 +665,6 @@ class Repository(Background, metaclass=RepositoryMeta):
             1 - short
             2 - full
         """
-        logger.warning('4.1---------------')
         match query_type:
             case 0:
                 query = select(model)
@@ -678,12 +674,41 @@ class Repository(Background, metaclass=RepositoryMeta):
                 query = cls.get_query(model)
             case _:
                 query = select(model)
-        logger.warning('4.2---------------')
         query = query.join(related_model).filter_by(**filters)
-        logger.warning('4.3---------------')
+        items, total = await cls.pagination(query, skip, limit, session)
+        # result = await session.scalars(query)
+        return items, total
+
+    @classmethod
+    async def get_with_filter_complex(
+            cls, session: AsyncSession, model: ModelType,  # основная модель
+            related_model: ModelType,  # Модель, по которой фильтруем
+            filters: Dict[str, Any],  # {field_name: value, ...}
+            root_filter: Dict[str, Any],
+            skip: int, limit: int, query_type: int = 0
+            ):
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            +root_filter by root level
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        match query_type:
+            case 0:
+                query = select(model)
+            case 1:
+                query = cls.get_short_query(model)
+            case 2:
+                query = cls.get_query(model)
+            case _:
+                query = select(model)
+        query = query.filter_by(**root_filter)
+        query = query.join(related_model).filter_by(**filters)
         compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         print('==========', compiled_pg)
-        logger.warning('4.4---------------')
         items, total = await cls.pagination(query, skip, limit, session)
         # result = await session.scalars(query)
         return items, total
