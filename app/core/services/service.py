@@ -664,7 +664,9 @@ class Service(metaclass=ServiceMeta):
         related_model = get_model_by_name(related_model_name)
         skip = (page - 1) * page_size
         logger.warning(f'5----------{related_model.__name__}-----')
-        result = await repository.get_with_filter_simple(session, model, related_model,
-                                                         filters, skip, page_size, query_type)
+        items, total = await repository.get_with_filter_simple(session, model, related_model,
+                                                               filters, skip, page_size, query_type)
+        items_dict = list_dict(items)
+        result = make_paginated_response(items_dict, total, page, page_size)
         logger.warning('5---------------')
         return list_dict(result)
