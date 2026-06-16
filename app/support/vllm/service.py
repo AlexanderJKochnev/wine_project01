@@ -134,7 +134,7 @@ class VLLMService:
         """
         # 1 суффикс языка - берем русский
         model, repo = Subcategory, SubcategoryRepository
-        response: Subcategory = repo.get_by_field_v2(filters, model, session)
+        response: Subcategory = await repo.get_by_field_v2(filters, model, session)
         return response.name_ru or response.name or response.name_fr
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
