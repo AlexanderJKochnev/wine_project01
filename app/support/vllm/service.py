@@ -72,8 +72,16 @@ class VLLMService:
             поэтому сейчас их привязка к категориям не учитывается
         """
         # список данных для перевода
+        def get_subcat_filter(subcat: str):
+            if subcat.isnumeric():
+                filters = {'id': int(subcat)}
+            else:
+                filters = {'name': subcat}
+            return filters
+
+        subcat_dict = get_subcat_filter(subcat)
         language: str = lang
-        data: List[Tuple] = await self.get_data(background_tasks, session, subcat, chunk)
+        data: List[Tuple] = await self.get_data(background_tasks, session, subcat_dict, chunk)
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
@@ -119,14 +127,11 @@ class VLLMService:
         if response:
             return list_dict(response)
 
-    async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: str,
+    async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
                        chunk: int  # размер тестовой выборки
                        ) -> List[Tuple]:
         service = DrinkService
-        if subcat.isnumeric():
-            filters = {'id': int(subcat)}
-        else:
-            filters = {'name': subcat}
+        filters = subcat
         root_filter = {'description_ru': None}
         repository = DrinkRepository
         related_model_name = 'Subcategory'
