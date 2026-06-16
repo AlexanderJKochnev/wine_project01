@@ -343,7 +343,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             session.scalar(stmtp) -> ModelType
         """
         stmt = cls.get_query(model).filter_by(**filter)
-        result: ModelType = session.scalar(stmt)
+        result: ModelType = await session.scalar(stmt)
         return result
 
     @classmethod
@@ -355,7 +355,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         """
         stmt = cls.get_query(model).filter_by(**filter)
         # return session.scalars(stmt)
-        return cls.nonpagination(stmt, session)
+        return await cls.nonpagination(stmt, session)
 
     @classmethod
     async def get_by_fields(cls, filter: dict, model: ModelType, session: AsyncSession):
