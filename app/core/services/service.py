@@ -644,6 +644,17 @@ class Service(metaclass=ServiceMeta):
         return inst_dict(response)
 
     @classmethod
+    async def get_list_by_field_v2(cls, filter: dict, repository: Type[Repository],
+                                   model: ModelType, session: AsyncSession):
+        """
+            возвращает список без пагинации instances по фильтру НЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ
+            на входе {'field_name': value, ...}
+            session.scalars(stmtp) -> result.all() -> List[ModelType]
+        """
+        response = await repository.get_list_by_field_v2(filter, model, session)
+        return list_dict(response)
+
+    @classmethod
     async def get_with_filter_simple(cls, background_tasks: BackgroundTasks, session: AsyncSession,
                                      model: ModelType, related_model_name: ModelType,
                                      repository: Type[Repository],

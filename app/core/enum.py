@@ -24,7 +24,7 @@ def fetch_all_startup_data() -> dict:
         data['presets'] = [c for c in presets] or ["balanced"]
 
         # Запрос 4: Languages
-        language = session.scalars(select(ISOLanguage.iso_639_1).order_by(ISOLanguage.iso_639_1.asc())).all()
+        language = session.scalars(select(ISOLanguage.name_en).order_by(ISOLanguage.name_en.asc())).all()
         data['language'] = [c for c in language] or ["ru"]
 
         # Запрос 5: WriterRules

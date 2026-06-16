@@ -46,10 +46,10 @@ class VllmRouter(LightRouter):
         phrase: str = Form(...,
                            description="Текст для перевода."),
         prompt: Prompts = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
-        proption: Preset = Form(None, description="Типовые настройки качество/скорость"),
-        writer: Writers = Form(None, description="Типовые правила перевода. "
+        proption: Preset = Form(..., description="Типовые настройки качество/скорость"),
+        writer: Writers = Form(..., description="Типовые правила перевода. "
                                "Должны содержать ключевые слова {lang} и {phrase}"),
-        langs: Languages = Form('ru',
+        langs: Languages = Form(...,
                                 description="Язык перевода"),
         subcategory: str = Form('wine', description='категория напитка'),
         session: AsyncSession = Depends(get_db),

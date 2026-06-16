@@ -42,7 +42,7 @@ class VLLMService:
         dataset = {'prompt': (Prompt, PromptRepository, 'role', 'system_prompt', prompt),
                    'writer': (WriterRule, WriterRuleRepository, 'name', 'prompt', writer),
                    'proption': (Proption, ProptionRepository, 'preset', None, proption),
-                   'lang': (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang)
+                   # 'lang': (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang)
                    }
         payload: dict = {}
         payload["lang"] = lang

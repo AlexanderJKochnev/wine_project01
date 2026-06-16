@@ -146,11 +146,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             возвращает список instances
         """
         result = await session.scalars(stmt)
-        if result:
-            items = result.all()
-            return items
-        else:
-            return None
+        items = result.all()
 
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
@@ -340,13 +336,26 @@ class Repository(Background, metaclass=RepositoryMeta):
             raise AppBaseException(message=str(e), status_code=404)
 
     @classmethod
-    async def get_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession):
+    async def get_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession) -> ModelType:
         """
             поиск единственного значения по уникальному полю/полям
-            на входе {'field_name': value}
+            на входе {'field_name': value, ...}
+            session.scalar(stmtp) -> ModelType
         """
         stmt = cls.get_query(model).filter_by(**filter)
-        return session.scalars(stmt)
+        result: ModelType = session.scalar(stmt)
+        return result
+
+    @classmethod
+    async def get_list_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession):
+        """
+             возвращает список без пагинации instances по фильтру НЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ
+             на входе {'field_name': value, ...}
+             session.scalars(stmtp) -> result.all() -> List[ModelType]
+        """
+        stmt = cls.get_query(model).filter_by(**filter)
+        # return session.scalars(stmt)
+        return cls.nonpagination(stmt, session)
 
     @classmethod
     async def get_by_fields(cls, filter: dict, model: ModelType, session: AsyncSession):
@@ -709,8 +718,8 @@ class Repository(Background, metaclass=RepositoryMeta):
         description_column = getattr(model, "description")
         query = query.filter_by(**root_filter).where(description_column.is_not(None))
         query = query.join(related_model).filter_by(**filters)
-        compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        print('==========', compiled_pg)
+        # compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print('==========', compiled_pg)
         items, total = await cls.pagination(query, skip, limit, session)
         # result = await session.scalars(query)
         return items, total
