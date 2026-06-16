@@ -684,7 +684,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         print('==========', compiled_pg)
         logger.warning('4.4---------------')
-        result = cls.pagination(query, skip, limit, session)
+        result = await cls.pagination(query, skip, limit, session)
         # result = await session.scalars(query)
         return result.all()
 
