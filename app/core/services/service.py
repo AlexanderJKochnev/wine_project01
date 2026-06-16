@@ -669,4 +669,4 @@ class Service(metaclass=ServiceMeta):
         items_dict = list_dict(items)
         result = make_paginated_response(items_dict, total, page, page_size)
         logger.warning('5---------------')
-        return list_dict(result)
+        return result

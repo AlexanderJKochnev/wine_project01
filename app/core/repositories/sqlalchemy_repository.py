@@ -138,8 +138,6 @@ class Repository(Background, metaclass=RepositoryMeta):
         # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         result = await session.scalars(stmt)
         items = result.all()
-        for item in items:
-            print(f'{type(item)=}   {item}')
         return items, total
 
     @classmethod
