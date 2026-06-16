@@ -1,7 +1,7 @@
 # app.suport.ollama.schemas.py
 from datetime import datetime
 from typing import Optional, List
-from pydantic import model_validator, ConfigDict, Field, field_validator, computed_field
+from pydantic import model_validator, Field, field_validator, computed_field
 from app.core.schemas.base import PkSchema, BaseModel
 from app.support import CategoryRead
 
@@ -73,7 +73,7 @@ class ProptionCreate(ProptionCustom, CustomCreate):
 
 
 class ProptionUpdate(ProptionCustom, CustomUpdate):
-    preset: Optional[str] = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
+    preset: Optional[str] = Field(None, min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
 
 
 class ProptionRead(PkSchema, ProptionCreate, CustomRead):
