@@ -74,9 +74,9 @@ class VLLMService:
         # список данных для перевода
         language: str = lang
         data: List[Tuple] = await self.get_data(background_tasks, session, subcat, chunk)
-        system_prompts: List[Tuple] = self.get_system_prompts(session)
-        user_prompts: List[Tuple] = self.get_user_prompt(session)
-        proption: List[dict] = self.get_proption(session)
+        system_prompts: List[Tuple] = await self.get_system_prompts(session)
+        user_prompts: List[Tuple] = await self.get_user_prompt(session)
+        proption: List[dict] = await self.get_proption(session)
         from app.core.utils.common_utils import jprint
         logger.warning(f'{language=}')
         jprint(system_prompts)
