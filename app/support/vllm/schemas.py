@@ -1,6 +1,8 @@
 # app.support.vllm.schemas.py
 from typing import Optional
 
+from pydantic import Field, field_validator
+
 from app.core.schemas.base import PkSchema, BaseModel
 from app.support.drink.schemas import DrinkReadRelation
 from app.support.ollama.schemas import PromptRead, ProptionRead, WriterRuleRead
@@ -18,6 +20,15 @@ class CreateSchema:
     subcategory_id: id
     result: str
     rate: int
+    duration: float = Field(..., ge=0.5, description="Продолжительность в секундах (шаг 0.5)")
+
+    @field_validator("duration")
+    @classmethod
+    def round_to_half_second(cls, v: float) -> float:
+        # Умножаем на 2, округляем до целого, делим на 2
+        # Например: 1.23 -> 2.46 -> 2.0 -> 1.0
+        # Например: 1.45 -> 2.90 -> 3.0 -> 1.5
+        return round(v * 2) / 2.0
 
 
 class UpdateSchema:
@@ -54,8 +65,8 @@ class TranslateRawDataUpdate(UpdateSchema, BaseModel):
 
 
 class TranslateRawDataRead(UpdateSchema, PkSchema):
-    pass
+    duration: Optional[float] = None
 
 
 class TranslateRawDataReadRelation(RelationSchema, PkSchema):
-    pass
+    duration: Optional[float] = None
