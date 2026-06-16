@@ -20,8 +20,7 @@ class TranslateRawDataRepository(Repository):
         return (selectinload(TranslateRawData.drink).selectinload(Drink.subcategory),
                 selectinload(TranslateRawData.prompt),
                 selectinload(TranslateRawData.writerrule),
-                selectinload(TranslateRawData.proption),
-                selectinload(TranslateRawData.writerrule))
+                selectinload(TranslateRawData.proption))
 
     @classmethod
     def get_query(cls, model: ModelType):
