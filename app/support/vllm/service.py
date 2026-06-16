@@ -87,4 +87,4 @@ class VLLMService:
 
 
 class TranslateRawDataService(Service):
-    defaault = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']
+    default = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']

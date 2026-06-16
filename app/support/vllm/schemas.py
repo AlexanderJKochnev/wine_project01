@@ -18,7 +18,7 @@ class CreateSchema:
     proption_id: int
     result: str
     rate: int
-    duration: float = Field(..., ge=0.5, description="Продолжительность в секундах (шаг 0.5)")
+    duration: float = Field(..., ge=0.1, description="Продолжительность в секундах (шаг 0.5)")
 
     @field_validator("duration")
     @classmethod

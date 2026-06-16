@@ -138,6 +138,9 @@ class TranslateRawDataRouter(BaseRouter):
 
     async def create(self, data: TranslateRawDataCreate,
                      session: AsyncSession = Depends(get_db)):
+        from app.core.utils.common_utils import jprint
+        print(type(data))
+        jprint(data)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: TranslateRawDataUpdate, background_tasks: BackgroundTasks,
