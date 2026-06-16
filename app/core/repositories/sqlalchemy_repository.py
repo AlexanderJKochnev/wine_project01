@@ -705,6 +705,7 @@ class Repository(Background, metaclass=RepositoryMeta):
                 query = cls.get_query(model)
             case _:
                 query = select(model)
+        # description is None hardcoded
         description_column = getattr(model, "description")
         query = query.filter_by(**root_filter).where(description_column.is_not(None))
         query = query.join(related_model).filter_by(**filters)
