@@ -1,5 +1,5 @@
 # app.support.vllm.service.py
-from typing import Any, List
+from typing import Any, List, Tuple
 
 from fastapi import BackgroundTasks
 from openai import AsyncOpenAI
@@ -10,6 +10,7 @@ from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
+from app.core.utils.pydantic_utils import list_dict
 from app.support import Drink, DrinkService
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
@@ -70,27 +71,57 @@ class VLLMService:
             по результатам тестирования будут выбраны лучшие авторы для каждой субкатегории напитков
             поэтому сейчас их привязка к категориям не учитывается
         """
-        (ISOLanguage, ISOLanguageRepository, 'iso_639_1', 'name_en', lang)
-        data = await self.get_data(background_tasks, session, subcat, chunk)
+        # список данных для перевода
+        language: str = lang
+        data: List[Tuple] = await self.get_data(background_tasks, session, subcat, chunk)
+        system_prompts: List[Tuple] = self.get_system_prompts(session)
+        user_prompts: List[Tuple] = self.get_user_prompt(session)
+        proption: List[dict] = self.get_proption(session)
+        from app.core.utils.common_utils import jprint
+        logger.warning(f'{language=}')
+        jprint(system_prompts)
+        logger.warning('system_prompt')
+        jprint(user_prompts)
+        logger.warning('user_prompt')
+        jprint(proption)
         return data
 
     @staticmethod
-    async def get_source(model: ModelType, repo: Repository,
-                         session: AsyncSession, id_field: str = None, out_field: str = None,
-                         value: Any = None):
-        """ получение данных из базы данных:
-            if all args are not null: return Tuple[id: out_filed.value]
-            if value is null: return List[Tuple[id, out_filed.value]]
-            if all args are null: return Tuple
-            если все данные is null - return list of dict
+    async def get_system_prompts(session: AsyncSession):
         """
-        if value:
-            filter = {id_field: value}
-            tmp: ModelType = await repo.get_by_field_v2(filter=filter, model=model, session=session)
+            получение списка промптов
+        """
+        model, repo = Prompt, PromptRepository
+        filter = {'active': True}
+        response: List[Prompt] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
+        if response:
+            return [(inst.id, inst.system_prompt) for inst in response]
+
+    @staticmethod
+    async def get_user_prompt(session: AsyncSession) -> List[Tuple]:
+        """
+            получение списка промптов
+        """
+        model, repo = WriterRule, WriterRuleRepository
+        filter = {'active': True}
+        response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
+        if response:
+            return [(inst.id, inst.prompt) for inst in response]
+
+    @staticmethod
+    async def get_proption(session: AsyncSession) -> List[dict]:
+        """
+            получение списка настроек
+        """
+        model, repo = Proption, ProptionRepository
+        filter = {'active': True}
+        response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
+        if response:
+            return list_dict(response)
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: str,
                        chunk: int  # размер тестовой выборки
-                       ) -> dict:
+                       ) -> List[Tuple]:
         service = DrinkService
         if subcat.isnumeric():
             filters = {'id': int(subcat)}
@@ -106,7 +137,7 @@ class VLLMService:
         items = result.get('items')
         if not items:
             return None
-        source: dict = {key.get('id'): key.get('description') for key in items}
+        source: List = [(key.get('id'), key.get('description')) for key in items]
         # {id: description, ...}
         return source
 

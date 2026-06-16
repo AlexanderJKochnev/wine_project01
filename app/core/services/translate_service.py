@@ -22,7 +22,6 @@ class TranslationService:
         Формирует структурированный массив сообщений для Chat Completions API.
         vLLM автоматически применит к нему ChatML шаблоны для Qwen.
         """
-        logger.warning(f'{lang_code=}')
         if len(lang_code) == 2:
             target_lang = self.lang_map.get(lang_code[:2], 'German')
         else:
@@ -74,7 +73,6 @@ class TranslationService:
         start_ms = time.time() * 1000
         # упрощаем phrase
         # phrase = pre_process_wine_text(phrase)
-        logger.warning(f'{phrase=}')
         # Вместо текстовой строки генерируем массив ролей (System / User)
         messages = self._build_messages(system_prompt, user_prompt, lang_code, phrase, drink)
         request_params = self._prepare_params(**params)
