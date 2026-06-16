@@ -56,7 +56,7 @@ class RelationSchema:
     rate: Optional[int] = None
 
 
-class TranslateRawDataCreate(CreateSchema, PkSchema):
+class TranslateRawDataCreate(CreateSchema, BaseModel):
     pass
 
 
