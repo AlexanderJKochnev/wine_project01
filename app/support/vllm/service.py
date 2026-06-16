@@ -1,22 +1,21 @@
 # app.support.vllm.service.py
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 from fastapi import BackgroundTasks
+from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
-from loguru import logger
 
-from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.pydantic_utils import list_dict
-from app.support import Drink, DrinkService
+from app.support import Drink, DrinkService, Subcategory
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
-from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
-from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
-    WriterRuleRepository
+from app.support.ollama.model import Prompt, Proption, WriterRule
+from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
+from app.support.subcategory.repository import SubcategoryRepository
 
 
 class VLLMService:
@@ -81,12 +80,13 @@ class VLLMService:
 
         subcat_dict = get_subcat_filter(subcat)
         language: str = lang
+        subcategory: str = await self.get_subcategiory(subcat_dict, session)
         data: List[Tuple] = await self.get_data(background_tasks, session, subcat_dict, chunk)
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
         from app.core.utils.common_utils import jprint
-        logger.warning(f'{language=}')
+        logger.warning(f'{language=}, {subcategory=}')
         jprint(system_prompts)
         logger.warning('system_prompt')
         jprint(user_prompts)
@@ -126,6 +126,16 @@ class VLLMService:
         response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
             return list_dict(response)
+
+    @staticmethod
+    async def get_subcategiory(filters: dict, session: AsyncSession) -> str:
+        """
+        получение субкатегории на языке перевода
+        """
+        # 1 суффикс языка - берем русский
+        model, repo = Subcategory, SubcategoryRepository
+        response: Subcategory = repo.get_by_field_v2(filters, model, session)
+        return response.name_ru or response.name or response.name_fr
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
                        chunk: int  # размер тестовой выборки
