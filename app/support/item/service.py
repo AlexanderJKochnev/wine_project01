@@ -343,14 +343,14 @@ class ItemService(ArrayService, SearchService, Service):
                     drink_dict = item.drink.to_dict()
                     content = extract_text_ultra_fast(drink_dict, cls.skip_keys)
 
-                    # Твоя логика
+                    # логика
                     item.search_content = content.lower()
                     batch_count += 1
 
                 # Коммитим каждые 1500 записей
                 if batch_count >= cls.BATCH_SIZE:
                     await session.commit()
-                    logger.info(f"Зафикисирован батч: {cls.BATCH_SIZE} записей")
+                    logger.info(f"run_reindex_worker. Зафикисирован батч: {cls.BATCH_SIZE} записей")
                     batch_count = 0
                     # После коммита объекты в сессии инвалидируются,
                     # стрим продолжит работу со следующими

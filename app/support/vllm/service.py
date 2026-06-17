@@ -1,5 +1,7 @@
 # app.support.vllm.service.py
 from typing import List, Tuple
+
+from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint
 from fastapi import BackgroundTasks
 from loguru import logger
@@ -62,8 +64,9 @@ class VLLMService:
                                                      **payload)
         return result
 
+    @background_unique
     async def bulk_test(self, background_tasks: BackgroundTasks,
-                        session: AsyncSession, translation_service: TranslationService,
+                        session_factory, translation_service: TranslationService,
                         subcat: str, chunk: int, lang: str):
         """
             это тестирование качества перевода
@@ -81,17 +84,18 @@ class VLLMService:
 
         subcat_dict = get_subcat_filter(subcat)
         language: str = lang
-        drink: str = await self.get_subcategiory(subcat_dict, session)
-        system_prompts: List[Tuple] = await self.get_system_prompts(session)
-        user_prompts: List[Tuple] = await self.get_user_prompt(session)
-        proption: List[dict] = await self.get_proption(session)
-        payload = {'system_prompts': system_prompts,
-                   'user_prompts': user_prompts,
-                   'lang': language,
-                   'drink': drink,
-                   'params': proption}
-        data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, payload, translation_service)
-        return data
+        async with session_factory() as session:
+            drink: str = await self.get_subcategiory(subcat_dict, session)
+            system_prompts: List[Tuple] = await self.get_system_prompts(session)
+            user_prompts: List[Tuple] = await self.get_user_prompt(session)
+            proption: List[dict] = await self.get_proption(session)
+            payload = {'system_prompts': system_prompts,
+                       'user_prompts': user_prompts,
+                       'lang': language,
+                       'drink': drink,
+                       'params': proption}
+            data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, payload, translation_service)
+            return data
 
     @staticmethod
     async def get_system_prompts(session: AsyncSession):
