@@ -173,7 +173,7 @@ class VLLMService:
         repository = DrinkRepository
         related_model_name = 'Subcategory'
         model = Drink
-        result = await service.get_with_filter_complex(background_tasks, session, model,
+        result = await service.get_with_filter_complex(session, model,
                                                        related_model_name, repository,
                                                        filters, root_filter, 1, chunk, 0)
         items = result.get('items')

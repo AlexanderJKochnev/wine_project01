@@ -687,7 +687,7 @@ class Service(metaclass=ServiceMeta):
         return result
 
     @classmethod
-    async def get_with_filter_complex(cls, background_tasks: BackgroundTasks, session: AsyncSession,
+    async def get_with_filter_complex(cls, session: AsyncSession,
                                       model: ModelType, related_model_name: ModelType,
                                       repository: Type[Repository],
                                       filters: Dict,
