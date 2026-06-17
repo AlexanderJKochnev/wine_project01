@@ -81,7 +81,8 @@ class VllmRouter(LightRouter):
                                      ),
                                      subcategory: str = Form('wine', description='категория напитка (красное вино, '
                                                                                  'абсент, ром ...)'),
-                                     temperature: float = Form(0.1, ge=0.0, le=2.0, description="Температура генерации..."),
+                                     temperature: float = Form(
+                                         0.1, ge=0.0, le=2.0, description="Температура генерации..."),
                                      top_p: float = Form(0.85, ge=0.0, le=1.0, description="Nucleus sampling..."), top_k: int = Form(
                                          50, ge=0, le=200, description="Ограничение выборки K наиболее вероятных токенов..."
                                      ),
@@ -126,11 +127,16 @@ class VllmRouter(LightRouter):
                         chunk: int = Query(20, description='размер выборки для тестирования'),
                         lang: Languages = Query(..., description="Язык перевода")):
         """
-            тестирование массового перевода
+            тестирование массового перевода background_tasks
         """
-        await self.service.bulk_test(background_tasks, DatabaseManager.session_maker, translation_service, subcat, chunk, lang.value)
+        await self.service.bulk_test(session_factory=DatabaseManager.session_maker,
+                                     translation_service=translation_service,
+                                     subcat=subcat,
+                                     chunk=chunk,
+                                     lang=lang.value,
+                                     background_tasks=background_tasks)
         return {'result': 'Reindexation started in backgound taska'}
-        
+
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):

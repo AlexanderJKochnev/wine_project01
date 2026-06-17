@@ -66,8 +66,7 @@ class VLLMService:
         return result
 
     @background_unique
-    async def bulk_test(self, background_tasks: BackgroundTasks,
-                        session_factory, translation_service: TranslationService,
+    async def bulk_test(self, session_factory, translation_service: TranslationService,
                         subcat: str, chunk: int, lang: str):
         """
             это тестирование качества перевода
