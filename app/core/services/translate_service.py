@@ -142,11 +142,10 @@ class TranslationService:
         total_tasks = len(system_prompts) * len(params) * len(phrases) * len(user_prompts)
         remain_tasks = total_tasks
         logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
-
+        start_time = time.time()
         for s_id, s_prompt in system_prompts:
             for single_params in params:
                 # Для конкретного системного промпта и параметров собираем пачку задач
-                start_time = time.time()
                 group_tasks = []
                 # Внутренние циклы выполняются конкурентно (у них общие s_prompt и params)
                 for c, (p_id, phrase) in enumerate(phrases):
