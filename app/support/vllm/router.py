@@ -128,7 +128,7 @@ class VllmRouter(LightRouter):
         """
             тестирование массового перевода
         """
-        result = await self.service.bulk_test(background_tasks, session, translation_service, subcat, chunk, lang)
+        result = await self.service.bulk_test(background_tasks, session, translation_service, subcat, chunk, lang.value)
         return result
 
 
