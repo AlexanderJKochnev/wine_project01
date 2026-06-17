@@ -3,7 +3,6 @@ import time
 import re
 from typing import Dict, Any
 from openai import AsyncOpenAI
-from loguru import logger
 
 
 class TranslationService:
