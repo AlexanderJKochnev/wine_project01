@@ -85,12 +85,14 @@ class VLLMService:
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
+        """
         logger.warning(f'{language=}, {subcategory=}')
         jprint(system_prompts)
         logger.warning('system_prompt')
         jprint(user_prompts)
         logger.warning('user_prompt')
         jprint(proption)
+        """
         return data
 
     @staticmethod
@@ -135,9 +137,10 @@ class VLLMService:
         model, repo = Subcategory, SubcategoryRepository
         response: Subcategory = await repo.get_by_field_v2(filters, model, session)
         jprint(inst_dict(response))
-        
-        return response.name_ru or response.name or response.name_fr
-        
+        cat = response.category.name_ru or response.category.name or response.category.name_fr
+        subc = response.name_ru or response.name or response.name_fr
+        print(f'{subc} {cat}')
+        return (f'{subc} {cat}')
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
                        chunk: int  # размер тестовой выборки
