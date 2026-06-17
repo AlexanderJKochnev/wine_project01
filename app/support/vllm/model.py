@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, SmallInteger, Text, UniqueConstraint
+from sqlalchemy import Float, ForeignKey, SmallInteger, Text, UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,7 +38,7 @@ class TranslateRawData(Base, BaseAt):
     # isolanguage: Mapped["ISOLanguage"] = relationship(back_populates = plural_name, cascade = cascade, lazy = lazy)
     result: Mapped[str] = mapped_column(Text)
     rate: Mapped[int_null_index]  # оценка перевода
-    duration: Mapped[float] = mapped_column(Float, nullable = False)
+    duration: Mapped[float] = mapped_column(Float, nullable=False)
 
     def __str__(self):
         # переоопределять в особенных формах
