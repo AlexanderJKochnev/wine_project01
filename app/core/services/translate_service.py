@@ -5,6 +5,7 @@ import time
 import re
 from typing import Dict, Any, List, Tuple
 from openai import AsyncOpenAI
+from loguru import logger  # noqa: F401
 
 
 class TranslationService:
@@ -145,6 +146,8 @@ class TranslationService:
 
         # Используем itertools.product для генерации всех возможных комбинаций
         # Порядок элементов в product строго соответствует вашему вложенному циклу
+        logger.warning(f'{system_prompts=}')
+        logger.warning(f'{user_prompts=}')
         combinations = itertools.product(system_prompts, params, phrases, user_prompts)
 
         for s_item, single_params, p_item, u_item in combinations:

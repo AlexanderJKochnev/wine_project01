@@ -177,8 +177,8 @@ class VLLMService:
         """
         result: List[Dict]
         """
-        result = await translation_service.translate_batch(source, payload.get('system_prompt'),
-                                                           payload.get('user_prompt'),
+        result = await translation_service.translate_batch(source, payload.get('system_prompts'),
+                                                           payload.get('user_prompts'),
                                                            payload.get('params'),
                                                            payload.get('lang'),
                                                            payload.get('drink'))
