@@ -56,5 +56,5 @@ class TranslateRawDataRead(UpdateSchema, PkSchema):
     duration: Optional[float] = None
 
 
-class TranslateRawDataReadRelation(RelationSchema, PkSchema):
-    duration: Optional[float] = None
+# class TranslateRawDataReadRelation(RelationSchema, PkSchema):
+#     duration: Optional[float] = None
