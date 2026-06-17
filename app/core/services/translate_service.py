@@ -110,27 +110,27 @@ class TranslationService:
         messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
         request_params = self._prepare_params(**single_params)
         request_params["messages"] = messages
-        async with semaphore:
-            try:
+        try:
+            async with semaphore:
                 start_time = time.time()
                 response = await self.client.chat.completions.create(**request_params)
                 duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
-            except Exception as e:
-                # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
-                content = f"ERROR: {str(e)}"
-            finally:
-                if xcounter % 10 == 0:
-                    logger.info(f"Это {xcounter} запись из {total_tasks}")
+        except Exception as e:
+            # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
+            content = f"ERROR: {str(e)}"
+        finally:
+            if xcounter % 10 == 0:
+                logger.info(f"Это {xcounter} запись из {total_tasks}")
 
-            return {'drink_id': p_id,
-                    'lang_origin': f'{drink=}',
-                    'lang_result': lang,
-                    'prompt_id': s_id,
-                    'writerrule_id': u_id,
-                    'proption_id': single_params.get('id'),
-                    'result': content,
-                    'duration': round(duration_s, 4)}
+        return {'drink_id': p_id,
+                'lang_origin': f'{drink=}',
+                'lang_result': lang,
+                'prompt_id': s_id,
+                'writerrule_id': u_id,
+                'proption_id': single_params.get('id'),
+                'result': content,
+                'duration': round(duration_s, 4)}
 
     async def translate_batch(
             self, phrases: List[Tuple[int, str]], system_prompts: List[Tuple[int, str]],
