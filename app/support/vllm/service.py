@@ -85,12 +85,12 @@ class VLLMService:
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
-        result = {'system_prompts': system_prompts,
-                  'user_prompts': user_prompts,
-                  'lang': language,
-                  'drink': drink,
-                  'params': proption}
-        data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, translation_service)
+        payload = {'system_prompts': system_prompts,
+                   'user_prompts': user_prompts,
+                   'lang': language,
+                   'drink': drink,
+                   'params': proption}
+        data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, payload, translation_service)
         return data
 
     @staticmethod
@@ -151,7 +151,10 @@ class VLLMService:
         # logger.critical(f'{result=}')
         return result
 
-    async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
+    async def get_data(self,
+                       background_tasks: BackgroundTasks,
+                       session: AsyncSession,
+                       subcat: dict,
                        chunk: int,  # размер тестовой выборки
                        payload: dict,
                        translation_service: TranslationService
