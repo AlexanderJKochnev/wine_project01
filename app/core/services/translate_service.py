@@ -104,24 +104,25 @@ class TranslationService:
 
     async def _translate_single_task(
             self, semaphore: asyncio.Semaphore, p_id: int, phrase: str, s_id: int, s_prompt: str, u_id: int,
-            u_prompt: str, lang: str, drink: str, single_params: dict
+            u_prompt: str, lang: str, drink: str, single_params: dict, xcounter: int, total_tasks: int
     ) -> Dict[str, Any]:
         """Обработка одной конкретной комбинации параметров и текстов"""
         async with semaphore:
-            start_time = time.time()
-
             messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
             request_params = self._prepare_params(**single_params)
             request_params["messages"] = messages
 
             try:
+                start_time = time.time()
                 response = await self.client.chat.completions.create(**request_params)
+                duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
             except Exception as e:
                 # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
                 content = f"ERROR: {str(e)}"
-
-            duration_s = time.time() - start_time
+            finally:
+                if xcounter % 10 == 0:
+                    logger.info(f"Это {xcounter} запись из {total_tasks}")
 
             return {'drink_id': p_id,
                     'lang_origin': f'{drink=}',
@@ -144,20 +145,17 @@ class TranslationService:
         semaphore = asyncio.Semaphore(max_concurrent_requests)
         tasks = []
 
-        # Используем itertools.product для генерации всех возможных комбинаций
-        # Порядок элементов в product строго соответствует вашему вложенному циклу
-        logger.warning(f'{system_prompts=}')
-        logger.warning(f'{user_prompts=}')
         combinations = itertools.product(system_prompts, params, phrases, user_prompts)
-
-        for s_item, single_params, p_item, u_item in combinations:
+        total_tasks = len(system_prompts) * len(params) * len(phrases) * len(user_prompts)
+        logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
+        for n, (s_item, single_params, p_item, u_item) in enumerate(combinations):
             s_id, s_prompt = s_item
             p_id, phrase = p_item
             u_id, u_prompt = u_item
 
             # Создаем независимый асинхронный таск для каждой комбинации
             task = self._translate_single_task(
-                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params
+                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params, n, total_tasks
             )
             tasks.append(task)
 
