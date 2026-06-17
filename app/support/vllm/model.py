@@ -38,19 +38,7 @@ class TranslateRawData(Base, BaseAt):
     # isolanguage: Mapped["ISOLanguage"] = relationship(back_populates = plural_name, cascade = cascade, lazy = lazy)
     result: Mapped[str] = mapped_column(Text)
     rate: Mapped[int_null_index]  # оценка перевода
-    _duration_half_secs: Mapped[int] = mapped_column(
-        "duration_half_secs", SmallInteger, nullable=False
-    )
-
-    # Гибридное свойство для удобной работы в Python (в секундах)
-    @hybrid_property
-    def duration(self) -> float:
-        return self._duration_half_secs / 2.0
-
-    @duration.setter
-    def duration(self, value: float) -> None:
-        # Округляем до ближайших 0.5 секунды и переводим в целое
-        self._duration_half_secs = int(round(value * 2))
+    duration: Mapped[float] = mapped_column(Float, nullable = False)
 
     def __str__(self):
         # переоопределять в особенных формах

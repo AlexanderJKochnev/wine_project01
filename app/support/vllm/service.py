@@ -107,6 +107,7 @@ class VLLMService:
             language, drink
         )
         # запуск второй сессии
+        jprint(result)
         async with session_factory() as session:
             trservice = TranslateRawDataService
             trrepo = TranslateRawDataRepository
