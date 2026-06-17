@@ -6,7 +6,7 @@ from loguru import logger
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Preset, Prompts, Writers, Languages
-from app.core.config.database.db_async import get_db
+from app.core.config.database.db_async import DatabaseManager, get_db
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
@@ -128,9 +128,9 @@ class VllmRouter(LightRouter):
         """
             тестирование массового перевода
         """
-        result = await self.service.bulk_test(background_tasks, session, translation_service, subcat, chunk, lang.value)
-        return result
-
+        await self.service.bulk_test(background_tasks, DatabaseManager.session_maker, translation_service, subcat, chunk, lang.value)
+        return {'result': 'Reindexation started in backgound taska'}
+        
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):

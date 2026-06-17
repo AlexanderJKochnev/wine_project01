@@ -1,4 +1,5 @@
 # app.support.vllm.service.py
+from datetime import time
 from typing import List, Tuple
 
 from app.core.utils.backgound_tasks import background_unique
@@ -84,6 +85,8 @@ class VLLMService:
 
         subcat_dict = get_subcat_filter(subcat)
         language: str = lang
+        logger.info('run bulk_test in background')
+        start_time = time.time()
         async with session_factory() as session:
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: List[Tuple] = await self.get_system_prompts(session)
@@ -95,6 +98,8 @@ class VLLMService:
                        'drink': drink,
                        'params': proption}
             data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, payload, translation_service)
+            duration_s = time.time() - start_time
+            logger.info(f'bulk_test in background finished. total duration is {duration_s}')
             return data
 
     @staticmethod
