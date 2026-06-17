@@ -139,8 +139,18 @@ class VLLMService:
         # jprint(inst_dict(response))
         cat = response.category.name_ru or response.category.name or response.category.name_fr or ""
         subc = response.name_ru or response.name or response.name_fr or ""
-        result = f'{subc} {cat}'.strip().lower().capitalize()
-        print(f'{result=}')
+        # subcat is empty:
+        if subc == "":
+            result = cat.strip().lower()
+        elif cat.lower().strip() in subc.lower():
+            result = subc.strip().lower()
+        else:
+            exclude_list = ('brandy', 'other')
+            if response.category.name in exclude_list:
+                result = subc.strip().lower()
+            else:
+                result = f'{subc} {cat}'.strip().lower()
+        logger.critical(f'{result=}')
         return result
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,

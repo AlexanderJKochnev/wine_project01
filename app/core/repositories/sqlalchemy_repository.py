@@ -697,7 +697,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             filters: Dict[str, Any],  # {field_name: value, ...}
             root_filter: Dict[str, Any],
             skip: int, limit: int, query_type: int = 0
-            ):
+    ):
         """
             фильтрация по relationships model fields
             если связи model - related_model не существует - будет ошибка
