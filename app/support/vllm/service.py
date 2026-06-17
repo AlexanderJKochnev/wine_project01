@@ -177,9 +177,7 @@ class VLLMService:
     async def get_data(self,
                        session: AsyncSession,
                        subcat: dict,
-                       chunk: int,  # размер тестовой выборки
-                       payload: dict,
-                       translation_service: TranslationService
+                       chunk: int  # размер тестовой выборки
                        ) -> List[Tuple]:
         service = DrinkService
         filters = subcat
