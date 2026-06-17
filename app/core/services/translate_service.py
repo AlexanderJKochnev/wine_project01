@@ -145,7 +145,7 @@ class TranslationService:
         tasks = []
 
         combinations = itertools.product(system_prompts, params, phrases, user_prompts)
-        combinations = itertools.product(params, system_prompts, user_prompts, phrases)
+        # combinations = itertools.product(params, system_prompts, user_prompts, phrases)
         total_tasks = len(system_prompts) * len(params) * len(phrases) * len(user_prompts)
         logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
         for n, (s_item, single_params, p_item, u_item) in enumerate(combinations):
