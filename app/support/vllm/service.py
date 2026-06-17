@@ -81,6 +81,8 @@ class VLLMService:
 
         subcat_dict = get_subcat_filter(subcat)
         language: str = lang
+        logger.critical(f'{language}')
+        return {'result': language}
         drink: str = await self.get_subcategiory(subcat_dict, session)
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
