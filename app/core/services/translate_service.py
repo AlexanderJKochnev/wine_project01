@@ -65,7 +65,7 @@ class TranslationService:
         return params
 
     async def translate(
-            self, phrase: str, system_prompt: str, user_prompt: str, lang_code: str,
+            self, phrase: str, system_prompt: str, user_prompt: str, lang: str,
             drink: str,
             **params
     ) -> Dict[str, Any]:
@@ -74,7 +74,7 @@ class TranslationService:
         # упрощаем phrase
         # phrase = pre_process_wine_text(phrase)
         # Вместо текстовой строки генерируем массив ролей (System / User)
-        messages = self._build_messages(system_prompt, user_prompt, lang_code, phrase, drink)
+        messages = self._build_messages(system_prompt, user_prompt, lang, phrase, drink)
         request_params = self._prepare_params(**params)
         request_params["messages"] = messages
 

@@ -80,20 +80,18 @@ class VLLMService:
 
         subcat_dict = get_subcat_filter(subcat)
         language: str = lang
-        subcategory: str = await self.get_subcategiory(subcat_dict, session)
+        drink: str = await self.get_subcategiory(subcat_dict, session)
         data: List[Tuple] = await self.get_data(background_tasks, session, subcat_dict, chunk)
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
-        """
-        logger.warning(f'{language=}, {subcategory=}')
-        jprint(system_prompts)
-        logger.warning('system_prompt')
-        jprint(user_prompts)
-        logger.warning('user_prompt')
-        jprint(proption)
-        """
-        return data
+        result = {'phrases': data,
+                  'system_prompts': system_prompts,
+                  'user_prompts': user_prompts,
+                  'lang': language,
+                  'drink': drink,
+                  'proption': proption}
+        return result
 
     @staticmethod
     async def get_system_prompts(session: AsyncSession):
@@ -150,7 +148,7 @@ class VLLMService:
                 result = subc.strip().lower()
             else:
                 result = f'{subc} {cat}'.strip().lower()
-        logger.critical(f'{result=}')
+        # logger.critical(f'{result=}')
         return result
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
