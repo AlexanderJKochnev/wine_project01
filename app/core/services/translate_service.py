@@ -104,7 +104,7 @@ class TranslationService:
 
     async def _translate_single_task(
             self, semaphore: asyncio.Semaphore, p_id: int, phrase: str, s_id: int, s_prompt: str, u_id: int,
-            u_prompt: str, lang: str, drink: str, single_params: dict, xcounter: int, total_tasks: int
+            u_prompt: str, lang: str, drink: str, single_params: dict
     ) -> Dict[str, Any]:
         """Обработка одной конкретной комбинации параметров и текстов"""
         messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
@@ -119,10 +119,6 @@ class TranslationService:
         except Exception as e:
             # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
             content = f"ERROR: {str(e)}"
-        finally:
-            if xcounter % 10 == 0:
-                logger.info(f"Это {xcounter} запись из {total_tasks}")
-
         return {'drink_id': p_id,
                 'lang_origin': f'{drink=}',
                 'lang_result': lang,
@@ -142,26 +138,31 @@ class TranslationService:
         Порядок обхода: system_prompt -> param -> phrase -> user_prompt
         """
         semaphore = asyncio.Semaphore(max_concurrent_requests)
-        tasks = []
-
-        combinations = itertools.product(system_prompts, params, phrases, user_prompts)
-        # combinations = itertools.product(params, system_prompts, user_prompts, phrases)
+        results = []
         total_tasks = len(system_prompts) * len(params) * len(phrases) * len(user_prompts)
+        remain_tasks = total_tasks
         logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
-        for n, (s_item, single_params, p_item, u_item) in enumerate(combinations):
-            s_id, s_prompt = s_item
-            p_id, phrase = p_item
-            u_id, u_prompt = u_item
 
-            # Создаем независимый асинхронный таск для каждой комбинации
-            task = self._translate_single_task(
-                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params, n, total_tasks
-            )
-            tasks.append(task)
-
-        # Запускаем конкурентное выполнение всех сгенерированных комбинаций.
-        # Результаты вернутся в том же порядке, в каком были добавлены задачи.
-        return await asyncio.gather(*tasks)
+        for s_id, s_prompt in system_prompts:
+            for single_params in params:
+                # Для конкретного системного промпта и параметров собираем пачку задач
+                start_time = time.time()
+                group_tasks = []
+                # Внутренние циклы выполняются конкурентно (у них общие s_prompt и params)
+                for c, (p_id, phrase) in enumerate(phrases):
+                    for u_id, u_prompt in user_prompts:
+                        task = self._translate_single_task(
+                            semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params,
+                        )
+                        group_tasks.append(task)
+                        remain_tasks -= 1
+                # Ждем выполнение текущей группы. vLLM считает s_prompt ОДИН раз для всей группы
+                group_results = await asyncio.gather(*group_tasks)
+                duration_s = time.time() - start_time
+                logger.info(f'обработано {total_tasks - remain_tasks} записей из {total_tasks} за {duration_s} сек')
+                results.extend(group_results)
+        logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
+        return results
 
 
 def pre_process_wine_text(text):
