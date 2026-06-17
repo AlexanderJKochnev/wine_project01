@@ -96,7 +96,7 @@ class VLLMService:
                        'lang': language,
                        'drink': drink,
                        'params': proption}
-            data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, payload, translation_service)
+            data: List = await self.get_data(session, subcat_dict, chunk, payload, translation_service)
             duration_s = time.time() - start_time
             logger.info(f'bulk_test in background finished. total duration is {duration_s}')
             return data
@@ -160,7 +160,7 @@ class VLLMService:
         return result
 
     async def get_data(self,
-                       background_tasks: BackgroundTasks,
+                       # background_tasks: BackgroundTasks,
                        session: AsyncSession,
                        subcat: dict,
                        chunk: int,  # размер тестовой выборки
