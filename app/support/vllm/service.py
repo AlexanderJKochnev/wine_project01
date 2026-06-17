@@ -136,11 +136,12 @@ class VLLMService:
         # 1 суффикс языка - берем русский
         model, repo = Subcategory, SubcategoryRepository
         response: Subcategory = await repo.get_by_field_v2(filters, model, session)
-        jprint(inst_dict(response))
-        cat = response.category.name_ru or response.category.name or response.category.name_fr
-        subc = response.name_ru or response.name or response.name_fr
-        print(f'{subc} {cat}')
-        return (f'{subc} {cat}')
+        # jprint(inst_dict(response))
+        cat = response.category.name_ru or response.category.name or response.category.name_fr or ""
+        subc = response.name_ru or response.name or response.name_fr or ""
+        result = f'{subc} {cat}'.strip().lower().capitalize()
+        print(f'{result=}')
+        return result
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
                        chunk: int  # размер тестовой выборки
