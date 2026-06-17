@@ -17,7 +17,7 @@ class CreateSchema:
     writerrule_id: int
     proption_id: int
     result: str
-    rate: int
+    rate: Optional[int] = None
     duration: float = Field(..., ge=0.1, description="Продолжительность в секундах (шаг 0.5)")
 
     @field_validator("duration")

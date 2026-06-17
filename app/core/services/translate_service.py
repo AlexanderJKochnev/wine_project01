@@ -1,7 +1,9 @@
 # app.core.services.translate_service.py
+import asyncio
+import itertools
 import time
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 from openai import AsyncOpenAI
 
 
@@ -98,6 +100,67 @@ class TranslationService:
                                 )},
                 "params": params
                 }
+
+    async def _translate_single_task(
+            self, semaphore: asyncio.Semaphore, p_id: int, phrase: str, s_id: int, s_prompt: str, u_id: int,
+            u_prompt: str, lang: str, drink: str, single_params: dict
+    ) -> Dict[str, Any]:
+        """Обработка одной конкретной комбинации параметров и текстов"""
+        async with semaphore:
+            start_time = time.time()
+
+            messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
+            request_params = self._prepare_params(**single_params)
+            request_params["messages"] = messages
+
+            try:
+                response = await self.client.chat.completions.create(**request_params)
+                content = response.choices[0].message.content.strip()
+            except Exception as e:
+                # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
+                content = f"ERROR: {str(e)}"
+
+            duration_s = time.time() - start_time
+
+            return {'drink_id': p_id,
+                    'lang_origin': f'{drink=}',
+                    'lang_result': lang,
+                    'prompt_id': s_id,
+                    'writerrule_id': u_id,
+                    'proption_id': single_params.get('id'),
+                    'result': content,
+                    'duration': round(duration_s, 4)}
+
+    async def translate_batch(
+            self, phrases: List[Tuple[int, str]], system_prompts: List[Tuple[int, str]],
+            user_prompts: List[Tuple[int, str]], params: List[dict], lang: str, drink: str,
+            max_concurrent_requests: int = 128
+    ) -> List[Dict[str, Any]]:
+        """
+        Метод группового перевода всех комбинаций (Декартово произведение).
+        Порядок обхода: system_prompt -> param -> phrase -> user_prompt
+        """
+        semaphore = asyncio.Semaphore(max_concurrent_requests)
+        tasks = []
+
+        # Используем itertools.product для генерации всех возможных комбинаций
+        # Порядок элементов в product строго соответствует вашему вложенному циклу
+        combinations = itertools.product(system_prompts, params, phrases, user_prompts)
+
+        for s_item, single_params, p_item, u_item in combinations:
+            s_id, s_prompt = s_item
+            p_id, phrase = p_item
+            u_id, u_prompt = u_item
+
+            # Создаем независимый асинхронный таск для каждой комбинации
+            task = self._translate_single_task(
+                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params
+            )
+            tasks.append(task)
+
+        # Запускаем конкурентное выполнение всех сгенерированных комбинаций.
+        # Результаты вернутся в том же порядке, в каком были добавлены задачи.
+        return await asyncio.gather(*tasks)
 
 
 def pre_process_wine_text(text):

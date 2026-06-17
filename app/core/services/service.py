@@ -130,8 +130,15 @@ class Service(metaclass=ServiceMeta):
     @classmethod
     async def create_bulk(cls, data_list: List[dict], repository: Repository, model: ModelType,
                           session: AsyncSession, **kwargs) -> dict:
-        """ быстрое массовое добавление записей из словарей
-            без relations
+        """
+            быстрое массовое добавление записей из словаря БЕЗ RELATIONS
+            обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
+            поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
+            data = [
+                {"email": "user1@example.com", "username": "user1", "status": "active"},
+                {"email": "user2@example.com", "username": "user2", "status": "pending"},
+                {"email": "user3@example.com", "username": "user3", "status": "active"},
+            ]
         """
         # instance_list = [model(**data) for data in data_list]
         result = await repository.bulk_create(data_list, model, session)

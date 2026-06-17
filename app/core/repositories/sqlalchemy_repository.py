@@ -161,7 +161,9 @@ class Repository(Background, metaclass=RepositoryMeta):
     @classmethod
     async def bulk_create(cls, data: List[Dict], model: ModelType,
                           session: AsyncSession) -> List[ModelType] | None:
-        """ быстрое массовое добавление записей из словаре may be not work
+        """ быстрое массовое добавление записей из словаря
+            обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
+            поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
             data = [
                 {"email": "user1@example.com", "username": "user1", "status": "active"},
                 {"email": "user2@example.com", "username": "user2", "status": "pending"},

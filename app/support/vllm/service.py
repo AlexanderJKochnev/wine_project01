@@ -10,12 +10,13 @@ from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.pydantic_utils import inst_dict, list_dict
-from app.support import Drink, DrinkService, Subcategory
+from app.support import Drink, DrinkService, Subcategory, TranslateRawData
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
 from app.support.ollama.model import Prompt, Proption, WriterRule
 from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
+from app.support.vllm.repository import TranslateRawDataRepository
 
 
 class VLLMService:
@@ -81,17 +82,16 @@ class VLLMService:
         subcat_dict = get_subcat_filter(subcat)
         language: str = lang
         drink: str = await self.get_subcategiory(subcat_dict, session)
-        data: List[Tuple] = await self.get_data(background_tasks, session, subcat_dict, chunk)
         system_prompts: List[Tuple] = await self.get_system_prompts(session)
         user_prompts: List[Tuple] = await self.get_user_prompt(session)
         proption: List[dict] = await self.get_proption(session)
-        result = {'phrases': data,
-                  'system_prompts': system_prompts,
+        result = {'system_prompts': system_prompts,
                   'user_prompts': user_prompts,
                   'lang': language,
                   'drink': drink,
-                  'proption': proption}
-        return result
+                  'params': proption}
+        data: List = await self.get_data(background_tasks, session, subcat_dict, chunk, translation_service)
+        return data
 
     @staticmethod
     async def get_system_prompts(session: AsyncSession):
@@ -152,7 +152,9 @@ class VLLMService:
         return result
 
     async def get_data(self, background_tasks: BackgroundTasks, session: AsyncSession, subcat: dict,
-                       chunk: int  # размер тестовой выборки
+                       chunk: int,  # размер тестовой выборки
+                       payload: dict,
+                       translation_service: TranslationService
                        ) -> List[Tuple]:
         service = DrinkService
         filters = subcat
@@ -162,13 +164,27 @@ class VLLMService:
         model = Drink
         result = await service.get_with_filter_complex(background_tasks, session, model,
                                                        related_model_name, repository,
-                                                       filters, root_filter, 1, 20, 0)
+                                                       filters, root_filter, 1, chunk, 0)
         items = result.get('items')
         if not items:
+            #  остановка
             return None
         source: List = [(key.get('id'), key.get('description')) for key in items]
-        # {id: description, ...}
-        return source
+        payload['phrases'] = source
+        """
+        result: List[Dict]
+        """
+        result = await translation_service.translate_batch(source, payload.get('system_prompt'),
+                                                           payload.get('user_prompt'),
+                                                           payload.get('params'),
+                                                           payload.get('lang'),
+                                                           payload.get('drink'))
+        jprint(result)
+        trservice = TranslateRawDataService
+        trrepo = TranslateRawDataRepository
+        trmodel = TranslateRawData
+        response = await trservice.create_bulk(result, trrepo, trmodel, session)
+        return response
 
 
 class TranslateRawDataService(Service):
