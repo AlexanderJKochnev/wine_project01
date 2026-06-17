@@ -146,7 +146,7 @@ class VLLMService:
             result = subc.strip().lower()
         else:
             exclude_list = ('brandy', 'other')
-            if response.category.name in exclude_list:
+            if response.category.name.lower().strip() in exclude_list:
                 result = subc.strip().lower()
             else:
                 result = f'{subc} {cat}'.strip().lower()
