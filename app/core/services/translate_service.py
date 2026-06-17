@@ -107,11 +107,10 @@ class TranslationService:
             u_prompt: str, lang: str, drink: str, single_params: dict, xcounter: int, total_tasks: int
     ) -> Dict[str, Any]:
         """Обработка одной конкретной комбинации параметров и текстов"""
+        messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
+        request_params = self._prepare_params(**single_params)
+        request_params["messages"] = messages
         async with semaphore:
-            messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
-            request_params = self._prepare_params(**single_params)
-            request_params["messages"] = messages
-
             try:
                 start_time = time.time()
                 response = await self.client.chat.completions.create(**request_params)
