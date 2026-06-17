@@ -86,20 +86,35 @@ class VLLMService:
         language: str = lang
         logger.info('run bulk_test in background')
         start_time = time.time()
+        # запуск сессии
         async with session_factory() as session:
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: List[Tuple] = await self.get_system_prompts(session)
             user_prompts: List[Tuple] = await self.get_user_prompt(session)
-            proption: List[dict] = await self.get_proption(session)
+            params: List[dict] = await self.get_proption(session)
+            """
             payload = {'system_prompts': system_prompts,
                        'user_prompts': user_prompts,
                        'lang': language,
                        'drink': drink,
-                       'params': proption}
-            data: List = await self.get_data(session, subcat_dict, chunk, payload, translation_service)
-            duration_s = time.time() - start_time
-            logger.info(f'bulk_test in background finished. total duration is {duration_s}')
-            return data
+                       'params': params}
+            """
+            data: List = await self.get_data(session, subcat_dict, chunk)
+            await session.commit()
+        # запуск перевода
+        result = await translation_service.translate_batch(
+            data, system_prompts, user_prompts, params,
+            language, drink
+        )
+        # запуск второй сессии
+        async with session_factory() as session:
+            trservice = TranslateRawDataService
+            trrepo = TranslateRawDataRepository
+            trmodel = TranslateRawData
+            await trservice.create_bulk(result, trrepo, trmodel, session)
+            await session.commit()
+        duration_s = time.time() - start_time
+        logger.info(f'bulk_test in background finished. total duration is {duration_s}')
 
     @staticmethod
     async def get_system_prompts(session: AsyncSession):
@@ -160,7 +175,6 @@ class VLLMService:
         return result
 
     async def get_data(self,
-                       # background_tasks: BackgroundTasks,
                        session: AsyncSession,
                        subcat: dict,
                        chunk: int,  # размер тестовой выборки
@@ -178,24 +192,10 @@ class VLLMService:
                                                        filters, root_filter, 1, chunk, 0)
         items = result.get('items')
         if not items:
-            #  остановка
             return None
         source: List = [(key.get('id'), key.get('description')) for key in items]
-        payload['phrases'] = source
-        """
-        result: List[Dict]
-        """
-        result = await translation_service.translate_batch(source, payload.get('system_prompts'),
-                                                           payload.get('user_prompts'),
-                                                           payload.get('params'),
-                                                           payload.get('lang'),
-                                                           payload.get('drink'))
-        jprint(result)
-        trservice = TranslateRawDataService
-        trrepo = TranslateRawDataRepository
-        trmodel = TranslateRawData
-        response = await trservice.create_bulk(result, trrepo, trmodel, session)
-        return response
+        return source
+
 
 
 class TranslateRawDataService(Service):
