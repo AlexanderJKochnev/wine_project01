@@ -1,8 +1,6 @@
 # app.support.vllm.schemas.py
 from typing import Optional
 
-from pydantic import Field, field_validator
-
 from app.core.schemas.base import PkSchema, BaseModel
 from app.support.drink.schemas import DrinkReadRelation
 from app.support.ollama.schemas import PromptRead, ProptionRead, WriterRuleRead
