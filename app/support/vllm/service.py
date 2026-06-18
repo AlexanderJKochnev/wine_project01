@@ -258,12 +258,15 @@ class VLLMService:
         # экспертная оценка
         evaluated = await translation_service.evaluate_translations_batch(result)
         best_configs = translation_service.rank_translation_configs(evaluated)
+        best_config = best_configs[0]
+        best_config['prompt_id'] = next((item[2]
+                                         for item in system_prompts if item[0] == best_config.get('prompt_id')), None)
         # {'prompt_id': 17,
         #  'writerrule_id': 13,
         #  'proption_id': 6,
         #  'avg_total_score': 4.12,
         #  'total_phrases_evaluated': 4}
-        logger.info(f"Лучший конфиг: {best_configs[0]}")
+        logger.info(f"Лучший конфиг: {best_config}")
         jprint(best_configs)
         drink_ids = set(a for a, b, c in distill)
         for id in drink_ids:
