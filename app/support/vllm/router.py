@@ -48,7 +48,7 @@ class VllmRouter(LightRouter):
         prompt: Prompts = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
         proption: Preset = Form(..., description="Типовые настройки качество/скорость"),
         writer: List[Writers] = Form(..., description="Типовые правила перевода. "
-                               "Должны содержать ключевые слова {lang} и {phrase}"),
+                                "Должны содержать ключевые слова {lang} и {phrase}"),
         langs: Languages = Form(...,
                                 description="Язык перевода"),
         subcategory: str = Form('wine', description='категория напитка'),
@@ -59,6 +59,7 @@ class VllmRouter(LightRouter):
            тестирование промптов для перевода:
         """
         try:
+            print(writer, '================================================')
             result = await self.service.get_translate2(phrase, prompt, proption,
                                                        writer, langs, subcategory,
                                                        session, translation_service,
