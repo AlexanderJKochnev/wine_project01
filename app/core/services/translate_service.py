@@ -2,7 +2,6 @@
 import asyncio
 import json
 import time
-import re
 from typing import Dict, Any, List, Tuple
 from openai import AsyncOpenAI
 from loguru import logger  # noqa: F401
@@ -222,9 +221,9 @@ class TranslationService:
             reasoning = f"ERROR: {str(e)}"
             logger.error(f"Ошибка при оценке drink_id={row['drink_id']}: {e}")
         finally:
-            xcounter += 1
-            if xcounter % 10 == 0:
-                logger.info(f"Оценено {xcounter} из {total_tasks} переводов")
+            xcounter[0] += 1
+            if xcounter[0] % 10 == 0:
+                logger.info(f"Оценено {xcounter[0]} из {total_tasks} переводов")
 
         # Обогащаем исходный словарь оценками (удобно для сохранения всей строки в Postgres)
         evaluated_row = row.copy()
