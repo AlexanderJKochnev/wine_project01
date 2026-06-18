@@ -397,7 +397,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             raise ValueError(
                 f"Модель {model.__name__} не имеет поля '{field_name}'"
             )
-        stmt = cls.get_query().where(model_field.in_(values))
+        stmt = cls.get_query(model).where(model_field.in_(values))
         return await cls.nonpagination(stmt, session)
 
     @classmethod
