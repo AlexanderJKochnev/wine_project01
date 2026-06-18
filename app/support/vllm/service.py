@@ -136,7 +136,7 @@ class VLLMService:
             filter = {'active': True}
             response: Sequence[Prompt] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
-            return [(inst.id, inst.system_prompt) for inst in response]
+            return [(inst.id, inst.system_prompt, inst.role) for inst in response]
 
     @staticmethod
     async def get_user_prompt(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
@@ -234,6 +234,7 @@ class VLLMService:
         start_time = time.time()
         # запуск сессии
         async with session_factory() as session:
+            # словесное обозначение субкатегории
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: Sequence[Tuple] = await self.get_system_prompts(session, author)
             user_prompts: Sequence[Tuple] = await self.get_user_prompt(session, user_prompt)
@@ -257,6 +258,11 @@ class VLLMService:
         # экспертная оценка
         evaluated = await translation_service.evaluate_translations_batch(result)
         best_configs = translation_service.rank_translation_configs(evaluated)
+        # {'prompt_id': 17,
+        #  'writerrule_id': 13,
+        #  'proption_id': 6,
+        #  'avg_total_score': 4.12,
+        #  'total_phrases_evaluated': 4}
         logger.info(f"Лучший конфиг: {best_configs[0]}")
         drink_ids = set(a for a, b, c in distill)
         for id in drink_ids:
@@ -264,11 +270,12 @@ class VLLMService:
             best_result_text = top_translations[0]['result']  # Текст для подстановки в базу
             logger.warning(f'{id}: {best_result_text}')
         # запуск второй сессии
-        # jprint(result)
         duration_s = time.time() - start_time
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         return
         async with session_factory() as session:
+            
+            
             trservice = TranslateRawDataService
             trrepo = TranslateRawDataRepository
             trmodel = TranslateRawData

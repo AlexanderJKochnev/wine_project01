@@ -162,7 +162,7 @@ class TranslationService:
         remain_tasks = total_tasks
         logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
         start_time = time.time()
-        for s_id, s_prompt in system_prompts:
+        for s_id, s_prompt, _ in system_prompts:
             for single_params in params:
                 # Для конкретного системного промпта и параметров собираем пачку задач
                 group_tasks = []
