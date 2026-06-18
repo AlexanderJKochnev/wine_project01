@@ -1,5 +1,5 @@
 # app.support.router.py
-from typing import Optional
+from typing import List, Optional
 
 # app.suport.ollama.router.py
 from loguru import logger
@@ -47,7 +47,7 @@ class VllmRouter(LightRouter):
                            description="Текст для перевода."),
         prompt: Prompts = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
         proption: Preset = Form(..., description="Типовые настройки качество/скорость"),
-        writer: Writers = Form(..., description="Типовые правила перевода. "
+        writer: List[Writers] = Form(..., description="Типовые правила перевода. "
                                "Должны содержать ключевые слова {lang} и {phrase}"),
         langs: Languages = Form(...,
                                 description="Язык перевода"),
