@@ -349,7 +349,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         return result
 
     @classmethod
-    async def get_list_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession):
+    async def get_list_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession) -> Sequence[ModelType]:
         """
              возвращает список без пагинации instances по фильтру НЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ
              на входе {'field_name': value, ...}
@@ -382,6 +382,23 @@ class Repository(Background, metaclass=RepositoryMeta):
             return result.scalar_one_or_none()
         except Exception as e:
             raise AppBaseException(message=str(e), status_code=404)
+
+    @classmethod
+    async def get_by_field_values(cls, model: Type[ModelType], session: AsyncSession, field_name: str, values: List[Any]
+                                  ) -> Sequence[ModelType]:
+        """
+        фильтр по нескольким значениям поля (IN)
+        """
+        # Безопасно получаем атрибут модели по его строковому имени
+        model_field = getattr(model, field_name, None)
+
+        # Защита от передачи несуществующего поля
+        if model_field is None:
+            raise ValueError(
+                f"Модель {model.__name__} не имеет поля '{field_name}'"
+            )
+        stmt = cls.get_query().where(model_field.in_(values))
+        return await cls.nonpagination(stmt, session)
 
     @classmethod
     async def get_all_count(cls, model: ModelType, session: AsyncSession) -> int:

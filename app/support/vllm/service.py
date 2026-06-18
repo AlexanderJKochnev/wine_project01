@@ -1,6 +1,6 @@
 # app.support.vllm.service.py
 import time
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint
@@ -35,7 +35,18 @@ class VLLMService:
             base_url='http://vllm-node:8000/v1/',
             api_key="token-not-needed"
         )
-        self.model_name = "/model"  # "Qwen/Qwen2.5-7B-Instruct-GPTQ"
+        self.model_name = "/model"
+
+    @staticmethod
+    def get_subcat_filter(subcat: str) -> dict | list:
+        if subcat.isnumeric():
+            filters = {'id': int(subcat)}
+        else:
+            try:
+                filters = tuple(int(item.strip()) for item in subcat.split(','))
+            except Exception:
+                filters = {'name': subcat}
+        return filters
 
     async def get_translate2(self, phrase: str, prompt: str, proption: str, writer: str, lang: str,
                              drink,
@@ -75,19 +86,14 @@ class VLLMService:
             поэтому сейчас их привязка к категориям не учитывается
         """
         # список данных для перевода
-        def get_subcat_filter(subcat: str):
-            if subcat.isnumeric():
-                filters = {'id': int(subcat)}
-            else:
-                filters = {'name': subcat}
-            return filters
 
-        subcat_dict = get_subcat_filter(subcat)
+        subcat_dict = self.get_subcat_filter(subcat)
         language: str = lang
         logger.info('run bulk_test in background')
         start_time = time.time()
         # запуск сессии
         async with session_factory() as session:
+            # наименовние подкатегории напитка
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: List[Tuple] = await self.get_system_prompts(session)
             user_prompts: List[Tuple] = await self.get_user_prompt(session)
@@ -118,47 +124,61 @@ class VLLMService:
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
 
     @staticmethod
-    async def get_system_prompts(session: AsyncSession):
+    async def get_system_prompts(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
         """
             получение списка промптов
         """
         model, repo = Prompt, PromptRepository
-        filter = {'active': True}
-        response: List[Prompt] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
+        if values:
+            response: Sequence[Prompt] = await repo.get_by_field_values(model=model, session=session, field_name='role',
+                                                                        values=values)
+        else:
+            filter = {'active': True}
+            response: Sequence[Prompt] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
             return [(inst.id, inst.system_prompt) for inst in response]
 
     @staticmethod
-    async def get_user_prompt(session: AsyncSession) -> List[Tuple]:
+    async def get_user_prompt(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
         """
             получение списка промптов
         """
         model, repo = WriterRule, WriterRuleRepository
-        filter = {'active': True}
-        response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
+        if values:
+            response: Sequence[WriterRule] = await repo.get_by_field_values(model=model, session=session,
+                                                                            field_name='prompt',
+                                                                            values=values)
+        else:
+            filter = {'active': True}
+            response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
             return [(inst.id, inst.prompt) for inst in response]
 
     @staticmethod
-    async def get_proption(session: AsyncSession) -> List[dict]:
+    async def get_proption(session: AsyncSession, values: List[str] = None) -> Sequence[dict]:
         """
             получение списка настроек
         """
         model, repo = Proption, ProptionRepository
-        filter = {'active': True}
-        response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
+        if values:
+            response: Sequence[WriterRule] = await repo.get_by_field_values(model=model, session=session,
+                                                                            field_name='preset',
+                                                                            values=values)
+        else:
+            filter = {'active': True}
+            response: Sequence[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
             return list_dict(response)
 
     @staticmethod
-    async def get_subcategiory(filters: dict, session: AsyncSession) -> str:
+    async def get_subcategiory(filters: dict | tuple, session: AsyncSession) -> str:
         """
         получение субкатегории на языке перевода
+        пока на одну субкатегорию и русский язык
+        нужно будет додедлать под несколько субкат и язык промпта
         """
-        # 1 суффикс языка - берем русский
         model, repo = Subcategory, SubcategoryRepository
         response: Subcategory = await repo.get_by_field_v2(filters, model, session)
-        # jprint(inst_dict(response))
         cat = response.category.name_ru or response.category.name or response.category.name_fr or ""
         subc = response.name_ru or response.name or response.name_fr or ""
         # subcat is empty:
@@ -195,6 +215,43 @@ class VLLMService:
         source: List = [(key.get('id'), key.get('description')) for key in items]
         return source
 
+    async def adv_test(self, session_factory, translation_service: TranslationService,
+                       author: List[str],
+                       user_prompt: List[str],
+                       params: List[str],
+                       subcat: str,
+                       chunk: int,
+                       lang: str):
+        """
+        тестирование функции перевода
+        """
+        # получение отфильтрованных списков
+
+        subcat_dict = self.get_subcat_filter(subcat)
+        language: str = lang
+        logger.info('run bulk_test in background')
+        start_time = time.time()
+        # запуск сессии
+        async with session_factory() as session:
+            drink: str = await self.get_subcategiory(subcat_dict, session)
+            system_prompts: Sequence[Tuple] = await self.get_system_prompts(session, author)
+            user_prompts: Sequence[Tuple] = await self.get_user_prompt(session, user_prompt)
+            params: Sequence[dict] = await self.get_proption(session, params)
+            data: List = await self.get_data(session, subcat_dict, chunk)
+            await session.commit()  # запуск перевода
+        result = await translation_service.translate_batch(
+            data, system_prompts, user_prompts, params, language, drink
+        )
+        # запуск второй сессии
+        jprint(result)
+        async with session_factory() as session:
+            trservice = TranslateRawDataService
+            trrepo = TranslateRawDataRepository
+            trmodel = TranslateRawData
+            await trservice.create_bulk(result, trrepo, trmodel, session)
+            await session.commit()
+        duration_s = time.time() - start_time
+        logger.info(f'bulk_test in background finished. total duration is {duration_s}')
 
 
 class TranslateRawDataService(Service):

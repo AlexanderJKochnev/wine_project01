@@ -1,7 +1,12 @@
 # app.core.types.py
-from typing import TypeVar
-# from sqlalchemy.orm import DeclarativeMeta
+from typing import Type, TypeVar
+from sqlalchemy.orm import DeclarativeBase
 # from app.core.models.base_model import Base
 
+
+class Base(DeclarativeBase):
+    pass
+
+
 # ModelType = TypeVar("ModelType", bound=Base)
-ModelType = TypeVar("ModelType")
+ModelType = TypeVar("ModelType", bound=Base)

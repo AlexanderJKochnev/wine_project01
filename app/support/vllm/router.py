@@ -150,11 +150,15 @@ class VllmRouter(LightRouter):
                        params: List[Preset] = Query(...,
                                                     descrition='для выбора нескольких значений используй Alt'),
                        subcat: str = Query(...,
-                                           description='id субкатегорий через запятую'),
+                                           description='id субкатегориии'),
                        chunk: int = Query(1, description='размер выборки для тестирования'),
                        lang: Languages = Query(..., description="Язык перевода")):
         """
-            тестирование перевода не нужно выбирать большое количество chunk -
+            тестирование перевода:
+            в зависимости от цели:
+            - сравнить двух (или более) авторов: выбрать двух или более авторов, остальное в по одному
+            - сравнить user_prompt: выбрать два или более user_prompt, остальное по одному
+            и так далее
         """
         author = [item.value for item in author]
         user_prompt = [item.value for item in user_prompt]
@@ -162,6 +166,7 @@ class VllmRouter(LightRouter):
         for k in [author, user_prompt, params]:
             print(f'{k=}')
         return None
+
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):
