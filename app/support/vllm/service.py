@@ -245,11 +245,23 @@ class VLLMService:
         logger.warning(f'{user_prompts=} {user_prompt}')
         logger.warning(f'{params=} {param}')
         logger.warning(f'{data=} {chunk}')
+        # запускаем перевод
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
         )
+        distill = [(v.drink_id, v.origin, v.result) for v in result]
+        jprint(distill)
+        # экспертная оценка
+        evaluated = await translation_service.evaluate_translations_batch(result)
+        best_configs = translation_service.rank_translation_configs(evaluated)
+        logger.info(f"Лучший конфиг: {best_configs[0]}")
+        drink_ids = set(a for a, b, c in distill)
+        for id in drink_ids:
+            top_translations = translation_service.get_best_translations_for_phrase(evaluated, drink_id=42)
+            best_result_text = top_translations[0]['result']  # Текст для подстановки в базу
+            logger.warning(f'{id}: {best_result_text}')
         # запуск второй сессии
-        jprint(result)
+        # jprint(result)
         duration_s = time.time() - start_time
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         return

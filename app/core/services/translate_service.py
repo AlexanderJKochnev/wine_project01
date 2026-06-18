@@ -1,5 +1,6 @@
 # app.core.services.translate_service.py
 import asyncio
+import json
 import time
 import re
 from typing import Dict, Any, List, Tuple
@@ -16,6 +17,25 @@ class TranslationService:
         self.model_name = "/model"
         self.lang_map = {'ru': 'Russian', 'en': 'English', 'de': 'German', 'fr': 'French', 'es': 'Spanish',
                          'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese'}
+        self.EXPERT_SYSTEM_PROMPT = """You are an expert wine writer and professional translator.
+        Your task is to critically evaluate the quality of the translation provided.
+
+        Compare the Original Text and the Translated Text based on two criteria:
+        1. translation_quality (1-5): How accurately does it convey the meaning, terminology, and nuances of the original winemaking text?
+        2. text_quality (1-5): How natural, fluent, and stylistically correct does the translated text sound in the target language ({lang})?
+
+        You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
+        JSON schema:
+        {{
+          "translation_score": int,
+          "text_score": int,
+          "reasoning": "Short explanation of your choice in English"
+        }}"""
+        self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
+        Original Text: "{origin}"
+        Translated Text: "{result}"
+
+        Evaluate the translation now."""
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
                         drink: str) -> list:
@@ -163,31 +183,112 @@ class TranslationService:
         logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
         return results
 
+    async def _evaluate_single_task(
+            self, semaphore: asyncio.Semaphore, row: dict,  # Принимает ваш словарь из памяти
+            xcounter: list, total_tasks: int
+    ) -> dict:
+        """Оценка одного перевода моделью-критиком по вашей структуре полей"""
+        target_lang = self.lang_map.get(row['lang_result'][:2], row['lang_result'])
 
-def pre_process_wine_text(text):
-    # Глобальный статический глоссарий "Мин и Калек"
-    # Мы заменяем абстрактные идиомы на их простые английские аналоги ДУМАТЬ КАК 8B МОДЕЛЬ
-    wine_glossary = {  # 1. Текстура и танины (Самый частый сбой моделей)
-        r"\bmouthfeel\b": "texture", r"\bpalate\b": "taste structure",
-        r"\bfine-grained tannins\b": "smooth fine tannins", r"\bvelveteen tannins\b": "velvety tannins",
-        r"\btaut tannins\b": "firm strict tannins", r"\bchewy tannins\b": "dense heavy tannins",
+        system_content = self.EXPERT_SYSTEM_PROMPT.format(lang=target_lang)
+        user_content = self.EXPERT_USER_PROMPT.format(
+            drink_info=row['lang_origin'],  # содержит f'{drink=}'
+            origin=row['origin'], result=row['result']
+        )
 
-        # 2. Фрукты и Специи (Защита от клюквы и яблок)
-        r"\bPlummy\b": "Rich with notes of plum", r"\bplummy\b": "with notes of plum",
-        r"\bblack cherry\b": "dark sweet cherry",  # Ликвидируем триггер слова Cherry
-        r"\bBlack cherry\b": "Dark sweet cherry", r"\bstone fruits\b": "stone fruits like peaches",
-        # Подсказка в скобках
-        r"\bstone fruit\b": "stone fruit like peach", r"\bwild berries\b": "forest berries",
-        r"\bkicks of pepper\b": "hints of pepper",
+        # Для экспертной оценки всегда используем температуру 0.0
+        request_params = self._prepare_params(temperature=0.0)
+        request_params["messages"] = [{"role": "system", "content": system_content},
+                                      {"role": "user", "content": user_content}]
 
-        # 3. Бочка, выдержка и дефекты перевода
-        r"\bchar\b": "smoky oak notes",  # Защита от перевода "ЖАР"
-        r"\bmaturation\b": "barrel aging", r"\bnew French oak\b": "new French oak barrels",
-        r"\bcandied citrus\b": "sweet candied citrus",  # Защита от "вареного цитруса"
-        r"\bfinish\b": "aftertaste",  # Намертво вырезаем "финал/finale"
-        r"\bthis wine\b": "this high-quality wine", r"\bthis effort\b": "this wine production", }
-    # Применяем автозамену с сохранением регистра (для начала предложений)
-    for pattern, replacement in wine_glossary.items():
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        try:
+            async with semaphore:
+                start_time = time.time()
+                response = await self.client.chat.completions.create(**request_params)
+                duration_s = time.time() - start_time
 
-    return text
+            raw_content = response.choices.message.content.strip()
+            clean_json = raw_content.replace("```json", "").replace("```", "").strip()
+            parsed_eval = json.loads(clean_json)
+
+            t_score = parsed_eval.get("translation_score", 0)
+            text_score = parsed_eval.get("text_score", 0)
+            reasoning = parsed_eval.get("reasoning", "")
+
+        except Exception as e:
+            duration_s = 0
+            t_score, text_score = 0, 0
+            reasoning = f"ERROR: {str(e)}"
+            logger.error(f"Ошибка при оценке drink_id={row['drink_id']}: {e}")
+        finally:
+            xcounter += 1
+            if xcounter % 10 == 0:
+                logger.info(f"Оценено {xcounter} из {total_tasks} переводов")
+
+        # Обогащаем исходный словарь оценками (удобно для сохранения всей строки в Postgres)
+        evaluated_row = row.copy()
+        evaluated_row.update(
+            {'translation_score': t_score, 'text_score': text_score,
+             'total_score': round((t_score + text_score) / 2, 2),  # Средний балл
+             'expert_reasoning': reasoning, 'eval_duration': round(duration_s, 4)}
+        )
+        return evaluated_row
+
+    async def evaluate_translations_batch(
+            self, translated_records: list[dict], max_concurrent_requests: int = 64
+    ) -> list[dict]:
+        """Массовая оценка пула выполненных переводов"""
+        semaphore = asyncio.Semaphore(max_concurrent_requests)
+        total_tasks = len(translated_records)
+
+        logger.info(f"Запуск процесса экспертизы. Всего записей на оценку: {total_tasks}")
+
+        xcounter = [0]
+        tasks = []
+        for row in translated_records:
+            task = self._evaluate_single_task(semaphore, row, xcounter, total_tasks)
+            tasks.append(task)
+
+        return await asyncio.gather(*tasks)
+
+    def rank_translation_configs(self, evaluated_records: list[dict]) -> list[dict]:
+        """
+        Ранжирование комбинаций настроек по среднему баллу всех фраз.
+        Помогает выбрать лучший конфиг для заданной subcat.
+        """
+        configs = {}
+
+        for row in evaluated_records:
+            # Уникальный ключ комбинации настроек
+            key = (row['prompt_id'], row['writerrule_id'], row['proption_id'])
+
+            if key not in configs:
+                configs[key] = {'scores': [], 'prompt_id': row['prompt_id'], 'writerrule_id': row['writerrule_id'],
+                                'proption_id': row['proption_id']}
+
+            configs[key]['scores'].append(row['total_score'])
+
+        ranking = []
+        for key, data in configs.items():
+            avg_score = sum(data['scores']) / len(data['scores']) if data['scores'] else 0
+            ranking.append(
+                {'prompt_id': data['prompt_id'], 'writerrule_id': data['writerrule_id'],
+                 'proption_id': data['proption_id'], 'avg_total_score': round(avg_score, 2),
+                 'total_phrases_evaluated': len(data['scores'])}
+            )
+
+        # Сортируем: сверху самые высокие средние баллы
+        ranking.sort(key=lambda x: x['avg_total_score'], reverse=True)
+        return ranking
+
+    def get_best_translations_for_phrase(self, evaluated_records: list[dict], drink_id: int) -> list[dict]:
+        """
+        Возвращает отранжированный список всех вариантов перевода для конкретной фразы (drink_id).
+        Первый элемент списка [0] — самый идеальный кандидат для вставки в основную БД.
+        """
+        # Фильтруем только варианты для нужной фразы
+        phrase_variants = [row for row in evaluated_records if row['drink_id'] == drink_id]
+
+        # Сортируем по качеству (сначала лучшие)
+        phrase_variants.sort(key=lambda x: x['total_score'], reverse=True)
+        return phrase_variants
