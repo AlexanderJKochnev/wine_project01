@@ -1,5 +1,5 @@
 # app.support.router.py
-from typing import List, Optional
+from typing import List, Optional, Set
 
 # app.suport.ollama.router.py
 from loguru import logger
@@ -125,19 +125,20 @@ class VllmRouter(LightRouter):
                         subcat: str = Query(..., description='значение субкатегории - либо id либо имя на анг (нужно '
                                                              'угадать)'),
                         chunk: int = Query(20, description='размер выборки для тестирования'),
-                        lang: List[Languages] = Query(..., description="Язык перевода")):
+                        lang: Set[Languages] = Query(..., description="Язык перевода")):
         """
             тестирование массового перевода background_tasks
         """
         print(f'================{lang}, {type(lang)}')
-        lang = lang[0]
+        lang = list(lang)[0]
+        return None
         await self.service.bulk_test(session_factory=DatabaseManager.session_maker,
                                      translation_service=translation_service,
                                      subcat=subcat,
                                      chunk=chunk,
                                      lang=lang.value,
                                      background_tasks=background_tasks)
-        return {'result': 'Reindexation started in backgound taska'}
+        return {'result': 'Translation started in backgound taska'}
 
 
 class TranslateRawDataRouter(BaseRouter):
