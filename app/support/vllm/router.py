@@ -39,6 +39,9 @@ class VllmRouter(LightRouter):
             "/bulk_test", self.bulk_test, methods=["GET"],
             openapi_extra={'x-request-schema': None}
         )
+        self.router.add_api_route(
+                "/adv_test", self.adv_test, methods = ["POST"], openapi_extra = {'x-request-schema': None}
+                )
         # super().setup_routes()
 
     async def get_translate_prompts(
@@ -48,7 +51,7 @@ class VllmRouter(LightRouter):
         prompt: Prompts = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
         proption: Preset = Form(..., description="Типовые настройки качество/скорость"),
         writer: Writers = Form(..., description="Типовые правила перевода. "
-                                "Должны содержать ключевые слова {lang} и {phrase}"),
+                               "Должны содержать ключевые слова {lang} и {phrase}"),
         langs: Languages = Form(...,
                                 description="Язык перевода"),
         subcategory: str = Form('wine', description='категория напитка'),
@@ -125,13 +128,10 @@ class VllmRouter(LightRouter):
                         subcat: str = Query(..., description='значение субкатегории - либо id либо имя на анг (нужно '
                                                              'угадать)'),
                         chunk: int = Query(20, description='размер выборки для тестирования'),
-                        lang: Set[Languages] = Query(..., description="Язык перевода")):
+                        lang: Languages = Query(..., description="Язык перевода")):
         """
             тестирование массового перевода background_tasks
         """
-        print(f'================{lang}, {type(lang)}')
-        lang = list(lang)[0]
-        return None
         await self.service.bulk_test(session_factory=DatabaseManager.session_maker,
                                      translation_service=translation_service,
                                      subcat=subcat,
@@ -140,6 +140,28 @@ class VllmRouter(LightRouter):
                                      background_tasks=background_tasks)
         return {'result': 'Translation started in backgound taska'}
 
+    async def adv_test(self, background_tasks: BackgroundTasks,
+                       session: AsyncSession = Depends(get_db),
+                       translation_service: TranslationService = Depends(get_translation_service),
+                       author: List[Prompts] = Form(...,
+                                                     descrition='для выбора нескольких значений используй Alt'),
+                       user_prompt: List[Writers] = Query(...,
+                                                          descrition='для выбора нескольких значений используй Alt'),
+                       params: List[Preset] = Form(...,
+                                                    descrition='для выбора нескольких значений используй Alt'),
+                       subcat: str = Form(...,
+                                           description='id субкатегорий через запятую'),
+                       chunk: int = Form(1, description='размер выборки для тестирования'),
+                       lang: Languages = Query(..., description="Язык перевода")):
+        """
+            тестирование перевода не нужно выбирать большое количество chunk -
+        """
+        author = [item.value for item in author]
+        user_prompt = [item.value for item in user_prompt]
+        params = [item.value for item in params]
+        for k in [author, user_prompt, params]:
+            print(f'{k=}')
+        return None
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):
