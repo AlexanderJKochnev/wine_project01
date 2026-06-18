@@ -136,7 +136,7 @@ class VLLMService:
             filter = {'active': True}
             response: Sequence[Prompt] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
-            return [(inst.id, inst.system_prompt, inst.role) for inst in response]
+            return [(inst.id, inst.system_prompt, inst.role ) for inst in response]
 
     @staticmethod
     async def get_user_prompt(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
@@ -264,6 +264,7 @@ class VLLMService:
         #  'avg_total_score': 4.12,
         #  'total_phrases_evaluated': 4}
         logger.info(f"Лучший конфиг: {best_configs[0]}")
+        jprint(best_configs)
         drink_ids = set(a for a, b, c in distill)
         for id in drink_ids:
             top_translations = translation_service.get_best_translations_for_phrase(evaluated, drink_id=id)
