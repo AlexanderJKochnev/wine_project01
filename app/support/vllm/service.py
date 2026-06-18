@@ -249,6 +249,7 @@ class VLLMService:
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
         )
+        jprint(result)
         distill = [(v.drink_id, v.origin, v.result) for v in result]
         jprint(distill)
         # экспертная оценка
