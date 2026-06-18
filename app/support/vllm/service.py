@@ -249,10 +249,10 @@ class VLLMService:
             data, system_prompts, user_prompts, params, language, drink
         )
         # запуск второй сессии
+        jprint(result)
         duration_s = time.time() - start_time
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         return
-        jprint(result)
         async with session_factory() as session:
             trservice = TranslateRawDataService
             trrepo = TranslateRawDataRepository
