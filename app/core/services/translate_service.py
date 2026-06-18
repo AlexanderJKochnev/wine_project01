@@ -296,7 +296,7 @@ class TranslationService:
         phrase_variants.sort(key=lambda x: x['total_score'], reverse=True)
         return phrase_variants
 
-    def rank_translation_configs_v2(evaluated_records: list[dict]) -> list[dict]:
+    def rank_translation_configs_v2(self, evaluated_records: list[dict]) -> list[dict]:
         """Ранжирование конфигураций с расчетом среднего, лучшего и худшего баллов"""
         configs = {}
         for row in evaluated_records:
