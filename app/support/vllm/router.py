@@ -166,7 +166,7 @@ class VllmRouter(LightRouter):
         await self.service.adv_test(
             session_factory=DatabaseManager.session_maker, translation_service=translation_service,
             author=author, user_prompt=user_prompt,
-            param=params, subcat=subcat, chunk=chunk, lang=lang,
+            param=params, subcat=subcat, chunk=chunk, lang=lang.value,
             background_tasks=background_tasks)
         return {'result': 'Translation started in backgound taska'}
 
