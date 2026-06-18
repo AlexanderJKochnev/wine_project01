@@ -240,16 +240,18 @@ class VLLMService:
             params: Sequence[dict] = await self.get_proption(session, param)
             data: List = await self.get_data(session, subcat_dict, chunk)
             await session.commit()  # запуск перевода
-        logger.warning(f'{drink=}')
-        logger.warning(f'{system_prompts=} {author}')
-        logger.warning(f'{user_prompts=} {user_prompt}')
-        logger.warning(f'{params=} {param}')
-        logger.warning(f'{data=} {chunk}')
+        # logger.warning(f'{drink=}')
+        # logger.warning(f'{system_prompts=} {author}')
+        # logger.warning(f'{user_prompts=} {user_prompt}')
+        # logger.warning(f'{params=} {param}')
+        # logger.warning(f'{data=} {chunk}')
         # запускаем перевод
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
         )
         jprint(result)
+        keys = [k.keys() for k in result]
+        jprint(keys)
         distill = [(v.drink_id, v.origin, v.result) for v in result]
         jprint(distill)
         # экспертная оценка
