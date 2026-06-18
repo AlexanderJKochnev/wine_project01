@@ -259,14 +259,26 @@ class VLLMService:
             best_config['proption'] = next((item.get('preset')
                                             for item in params
                                             if item.get('id') == best_config.get('proption_id')), None)
-        # {'prompt_id': 17,
-        #  'writerrule_id': 13,
-        #  'proption_id': 6,
-        #  'avg_total_score': 4.12,
-        #  'total_phrases_evaluated': 4}
+            best_config['result'] = (f"{best_config.get('prompt')} & {best_config.get('writerrule')}: "
+                                     f"avg_score = {best_config.get('avg_score')} / "
+                                     f"min/max = {best_config.get('min_score')} / {best_config.get('max_score')}")
+            logger.info(best_config['result'])
+        """
+        'prompt_id': 24,
+         'writerrule_id': 13,
+         'proption_id': 6,
+         'avg_score': 7.0,
+         'min_score': 7.0,
+         'max_score': 7.0,
+         'total_phrases': 1,
+         'prompt': 'Маркес',
+         'writerrule': 'Wine',
+         'proption': 'wine_warm'
+            }
+        """
         best_config = best_configs[0]
         logger.info(f"Лучший конфиг: {best_config}")
-        jprint(best_configs)
+        # jprint(best_configs)
         drink_ids = set(a for a, b, c in distill)
         for id in drink_ids:
             top_translations = translation_service.get_best_translations_for_phrase(evaluated, drink_id=id)
