@@ -47,7 +47,7 @@ class VllmRouter(LightRouter):
                            description="Текст для перевода."),
         prompt: Prompts = Form(..., description="системный prompt. Должен содержать ключевое слово {lang}"),
         proption: Preset = Form(..., description="Типовые настройки качество/скорость"),
-        writer: List[Writers] = Form(..., description="Типовые правила перевода. "
+        writer: Writers = Form(..., description="Типовые правила перевода. "
                                 "Должны содержать ключевые слова {lang} и {phrase}"),
         langs: Languages = Form(...,
                                 description="Язык перевода"),
@@ -59,7 +59,6 @@ class VllmRouter(LightRouter):
            тестирование промптов для перевода:
         """
         try:
-            print(writer, '================================================')
             result = await self.service.get_translate2(phrase, prompt, proption,
                                                        writer, langs, subcategory,
                                                        session, translation_service,
@@ -126,10 +125,12 @@ class VllmRouter(LightRouter):
                         subcat: str = Query(..., description='значение субкатегории - либо id либо имя на анг (нужно '
                                                              'угадать)'),
                         chunk: int = Query(20, description='размер выборки для тестирования'),
-                        lang: Languages = Query(..., description="Язык перевода")):
+                        lang: List[Languages] = Query(..., description="Язык перевода")):
         """
             тестирование массового перевода background_tasks
         """
+        print(f'================{lang}, {type(lang)}')
+        lang = lang[0]
         await self.service.bulk_test(session_factory=DatabaseManager.session_maker,
                                      translation_service=translation_service,
                                      subcat=subcat,
