@@ -252,7 +252,7 @@ class VLLMService:
         jprint(result)
         keys = [k.keys() for k in result]
         jprint(keys)
-        distill = [(v.drink_id, v.origin, v.result) for v in result]
+        distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
         jprint(distill)
         # экспертная оценка
         evaluated = await translation_service.evaluate_translations_batch(result)
