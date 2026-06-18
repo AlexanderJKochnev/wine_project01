@@ -146,7 +146,7 @@ class VLLMService:
         model, repo = WriterRule, WriterRuleRepository
         if values:
             response: Sequence[WriterRule] = await repo.get_by_field_values(model=model, session=session,
-                                                                            field_name='prompt',
+                                                                            field_name='name',
                                                                             values=values)
         else:
             filter = {'active': True}
