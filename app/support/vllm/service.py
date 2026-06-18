@@ -257,7 +257,7 @@ class VLLMService:
                                               for item in user_prompts
                                               if item[0] == best_config.get('writerrule_id')), None)
             best_config['proption'] = next((item.get('preset')
-                                            for item in user_prompts
+                                            for item in params
                                             if item.get('id') == best_config.get('proption_id')), None)
         # {'prompt_id': 17,
         #  'writerrule_id': 13,
