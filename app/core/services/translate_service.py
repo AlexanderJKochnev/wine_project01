@@ -207,7 +207,8 @@ class TranslationService:
                 response = await self.client.chat.completions.create(**request_params)
                 duration_s = time.time() - start_time
 
-            raw_content = response.choices.message.content.strip()
+            # raw_content = response.choices.message.content.strip()
+            raw_content = response.choices[0].message.content.strip()
             clean_json = raw_content.replace("```json", "").replace("```", "").strip()
             parsed_eval = json.loads(clean_json)
 
