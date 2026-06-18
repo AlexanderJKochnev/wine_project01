@@ -40,8 +40,8 @@ class VllmRouter(LightRouter):
             openapi_extra={'x-request-schema': None}
         )
         self.router.add_api_route(
-                "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
-                )
+            "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
+        )
         # super().setup_routes()
 
     async def get_translate_prompts(
@@ -141,7 +141,7 @@ class VllmRouter(LightRouter):
         return {'result': 'Translation started in backgound taska'}
 
     async def adv_test(self, background_tasks: BackgroundTasks,
-                       session: AsyncSession = Depends(get_db),
+                       # session: AsyncSession = Depends(get_db),
                        translation_service: TranslationService = Depends(get_translation_service),
                        author: List[Prompts] = Query(...,
                                                      descrition='для выбора нескольких значений используй Alt'),
@@ -163,9 +163,12 @@ class VllmRouter(LightRouter):
         author = [item.value for item in author]
         user_prompt = [item.value for item in user_prompt]
         params = [item.value for item in params]
-        for k in [author, user_prompt, params]:
-            print(f'{k=}')
-        return None
+        await self.service.adv_test(
+            session_factory=DatabaseManager.session_maker, translation_service=translation_service,
+            author=author, user_prompt=user_prompt,
+            params=params, subcat=subcat, chunk=chunk, lang=lang,
+            background_tasks=background_tasks)
+        return {'result': 'Translation started in backgound taska'}
 
 
 class TranslateRawDataRouter(BaseRouter):

@@ -214,7 +214,8 @@ class VLLMService:
             return None
         source: List = [(key.get('id'), key.get('description')) for key in items]
         return source
-
+    
+    @background_unique
     async def adv_test(self, session_factory, translation_service: TranslationService,
                        author: List[str],
                        user_prompt: List[str],
