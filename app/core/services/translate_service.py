@@ -1,6 +1,5 @@
 # app.core.services.translate_service.py
 import asyncio
-import itertools
 import time
 import re
 from typing import Dict, Any, List, Tuple
@@ -125,6 +124,7 @@ class TranslationService:
                 'prompt_id': s_id,
                 'writerrule_id': u_id,
                 'proption_id': single_params.get('id'),
+                'origin': phrase,
                 'result': content,
                 'duration': round(duration_s, 4)}
 
