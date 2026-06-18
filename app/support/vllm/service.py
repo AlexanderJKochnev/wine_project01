@@ -214,12 +214,12 @@ class VLLMService:
             return None
         source: List = [(key.get('id'), key.get('description')) for key in items]
         return source
-    
+
     @background_unique
     async def adv_test(self, session_factory, translation_service: TranslationService,
                        author: List[str],
                        user_prompt: List[str],
-                       params: List[str],
+                       param: List[str],
                        subcat: str,
                        chunk: int,
                        lang: str):
@@ -237,9 +237,14 @@ class VLLMService:
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: Sequence[Tuple] = await self.get_system_prompts(session, author)
             user_prompts: Sequence[Tuple] = await self.get_user_prompt(session, user_prompt)
-            params: Sequence[dict] = await self.get_proption(session, params)
+            params: Sequence[dict] = await self.get_proption(session, param)
             data: List = await self.get_data(session, subcat_dict, chunk)
             await session.commit()  # запуск перевода
+        logger.warning(f'{drink=}')
+        logger.warning(f'{system_prompts=} {author}')
+        logger.warning(f'{user_prompts=} {user_prompt}')
+        logger.warning(f'{params=} {param}')
+        logger.warning(f'{data=} {chunk}')
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
         )
