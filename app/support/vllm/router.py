@@ -40,7 +40,7 @@ class VllmRouter(LightRouter):
             openapi_extra={'x-request-schema': None}
         )
         self.router.add_api_route(
-                "/adv_test", self.adv_test, methods = ["POST"], openapi_extra = {'x-request-schema': None}
+                "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
                 )
         # super().setup_routes()
 
@@ -143,15 +143,15 @@ class VllmRouter(LightRouter):
     async def adv_test(self, background_tasks: BackgroundTasks,
                        session: AsyncSession = Depends(get_db),
                        translation_service: TranslationService = Depends(get_translation_service),
-                       author: List[Prompts] = Form(...,
+                       author: List[Prompts] = Query(...,
                                                      descrition='для выбора нескольких значений используй Alt'),
                        user_prompt: List[Writers] = Query(...,
                                                           descrition='для выбора нескольких значений используй Alt'),
-                       params: List[Preset] = Form(...,
+                       params: List[Preset] = Query(...,
                                                     descrition='для выбора нескольких значений используй Alt'),
-                       subcat: str = Form(...,
+                       subcat: str = Query(...,
                                            description='id субкатегорий через запятую'),
-                       chunk: int = Form(1, description='размер выборки для тестирования'),
+                       chunk: int = Query(1, description='размер выборки для тестирования'),
                        lang: Languages = Query(..., description="Язык перевода")):
         """
             тестирование перевода не нужно выбирать большое количество chunk -
