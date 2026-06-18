@@ -136,7 +136,7 @@ class VLLMService:
             filter = {'active': True}
             response: Sequence[Prompt] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
-            return [(inst.id, inst.system_prompt, inst.role ) for inst in response]
+            return [(inst.id, inst.system_prompt, inst.role) for inst in response]
 
     @staticmethod
     async def get_user_prompt(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
@@ -152,7 +152,7 @@ class VLLMService:
             filter = {'active': True}
             response: List[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
-            return [(inst.id, inst.prompt) for inst in response]
+            return [(inst.id, inst.prompt, inst.name) for inst in response]
 
     @staticmethod
     async def get_proption(session: AsyncSession, values: List[str] = None) -> Sequence[dict]:
@@ -241,31 +241,30 @@ class VLLMService:
             params: Sequence[dict] = await self.get_proption(session, param)
             data: List = await self.get_data(session, subcat_dict, chunk)
             await session.commit()  # запуск перевода
-        # logger.warning(f'{drink=}')
-        # logger.warning(f'{system_prompts=} {author}')
-        # logger.warning(f'{user_prompts=} {user_prompt}')
-        # logger.warning(f'{params=} {param}')
-        # logger.warning(f'{data=} {chunk}')
-        # запускаем перевод
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
         )
-        jprint(result)
-        keys = [k.keys() for k in result]
-        jprint(keys)
         distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
-        jprint(distill)
         # экспертная оценка
         evaluated = await translation_service.evaluate_translations_batch(result)
-        best_configs = translation_service.rank_translation_configs(evaluated)
-        best_config = best_configs[0]
-        best_config['prompt_id'] = next((item[2]
-                                         for item in system_prompts if item[0] == best_config.get('prompt_id')), None)
+        # best_configs = translation_service.rank_translation_configs(evaluated)
+        best_configs = translation_service.rank_translation_configs_v2(evaluated)
+        for best_config in best_configs:
+            best_config['prompt'] = next((item[2]
+                                          for item in system_prompts
+                                          if item[0] == best_config.get('prompt_id')), None)
+            best_config['writerrule'] = next((item[2]
+                                              for item in user_prompts
+                                              if item[0] == best_config.get('writerrule_id')), None)
+            best_config['proption'] = next((item.get('preset')
+                                            for item in user_prompts
+                                            if item.get('id') == best_config.get('proption_id')), None)
         # {'prompt_id': 17,
         #  'writerrule_id': 13,
         #  'proption_id': 6,
         #  'avg_total_score': 4.12,
         #  'total_phrases_evaluated': 4}
+        best_config = best_configs[0]
         logger.info(f"Лучший конфиг: {best_config}")
         jprint(best_configs)
         drink_ids = set(a for a, b, c in distill)
@@ -278,8 +277,7 @@ class VLLMService:
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         return
         async with session_factory() as session:
-            
-            
+
             trservice = TranslateRawDataService
             trrepo = TranslateRawDataRepository
             trmodel = TranslateRawData

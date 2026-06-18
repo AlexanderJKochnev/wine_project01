@@ -20,8 +20,10 @@ class TranslationService:
         Your task is to critically evaluate the quality of the translation provided.
 
         Compare the Original Text and the Translated Text based on two criteria:
-        1. translation_quality (1-5): How accurately does it convey the meaning, terminology, and nuances of the original winemaking text?
-        2. text_quality (1-5): How natural, fluent, and stylistically correct does the translated text sound in the target language ({lang})?
+        1. translation_quality (1-10): How accurately does it convey the meaning, terminology, and nuances of the
+        original winemaking text?
+        2. text_quality (1-10): How natural, fluent, and stylistically correct does the translated text sound in the
+        target language ({lang})?
 
         You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
         JSON schema:
@@ -30,6 +32,7 @@ class TranslationService:
           "text_score": int,
           "reasoning": "Short explanation of your choice in English"
         }}"""
+
         self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
         Original Text: "{origin}"
         Translated Text: "{result}"
@@ -168,7 +171,7 @@ class TranslationService:
                 group_tasks = []
                 # Внутренние циклы выполняются конкурентно (у них общие s_prompt и params)
                 for c, (p_id, phrase) in enumerate(phrases):
-                    for u_id, u_prompt in user_prompts:
+                    for u_id, u_prompt, _ in user_prompts:
                         task = self._translate_single_task(
                             semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params,
                         )
@@ -292,3 +295,27 @@ class TranslationService:
         # Сортируем по качеству (сначала лучшие)
         phrase_variants.sort(key=lambda x: x['total_score'], reverse=True)
         return phrase_variants
+
+    def rank_translation_configs_v2(evaluated_records: list[dict]) -> list[dict]:
+        """Ранжирование конфигураций с расчетом среднего, лучшего и худшего баллов"""
+        configs = {}
+        for row in evaluated_records:
+            key = (row['prompt_id'], row['writerrule_id'], row['proption_id'])
+            if key not in configs:
+                configs[key] = {'scores': [], 'prompt_id': row['prompt_id'], 'writerrule_id': row['writerrule_id'],
+                                'proption_id': row['proption_id']}
+            configs[key]['scores'].append(row['total_score'])
+
+        ranking = []
+        for key, data in configs.items():
+            scores = data['scores']
+            ranking.append(
+                {'prompt_id': data['prompt_id'], 'writerrule_id': data['writerrule_id'],
+                 'proption_id': data['proption_id'],
+                 'avg_score': round(sum(scores) / len(scores), 2) if scores else 0.0,
+                 'min_score': min(scores) if scores else 0.0, 'max_score': max(scores) if scores else 0.0,
+                 'total_phrases': len(scores)}
+            )
+
+        ranking.sort(key=lambda x: x['avg_score'], reverse=True)
+        return ranking
