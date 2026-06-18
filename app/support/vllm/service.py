@@ -260,7 +260,7 @@ class VLLMService:
         logger.info(f"Лучший конфиг: {best_configs[0]}")
         drink_ids = set(a for a, b, c in distill)
         for id in drink_ids:
-            top_translations = translation_service.get_best_translations_for_phrase(evaluated, drink_id=42)
+            top_translations = translation_service.get_best_translations_for_phrase(evaluated, drink_id=id)
             best_result_text = top_translations[0]['result']  # Текст для подстановки в базу
             logger.warning(f'{id}: {best_result_text}')
         # запуск второй сессии
