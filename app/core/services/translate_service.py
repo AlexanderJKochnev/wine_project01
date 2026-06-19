@@ -20,7 +20,8 @@ class TranslationService:
         Your task is to critically evaluate the quality of the translation provided.
 
         Compare the Original Text and the Translated Text based on two criteria:
-        1. text_quality (1-5) [HIGHEST PRIORITY]: Evaluate the target language ({lang}). It must sound like natural, fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
+        1. text_quality (1-10) [HIGH PRIORITY]: Evaluate the target language ({lang}). It must sound like natural,
+        fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
            - Flawless grammar, proper gender/case agreements, and natural sentence structures.
            - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper", or "wine's body" translated literally must be heavily penalized.
            - It must sound like it was originally written by a native {lang} writer, not a machine.

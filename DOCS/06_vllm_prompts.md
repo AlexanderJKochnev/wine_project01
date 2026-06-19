@@ -20,7 +20,7 @@ self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
 # критик вариант 2
 self.EXPERT_SYSTEM_PROMPT = """You are an uncompromising, high-end alcohol guide editor and professional translation auditor. Your task is to critically evaluate the provided translation against the English original.
 You must score the translation on a 1-10 scale based on two strict criteria:
-1. text_quality (1-5) [HIGHEST PRIORITY]: Evaluate the target language ({lang}). It must sound like natural, fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
+1. text_quality (1-10) [HIGHEST PRIORITY]: Evaluate the target language ({lang}). It must sound like natural, fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
    - Flawless grammar, proper gender/case agreements, and natural sentence structures.
    - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper", or "wine's body" translated literally must be heavily penalized.
    - It must sound like it was originally written by a native {lang} writer, not a machine.

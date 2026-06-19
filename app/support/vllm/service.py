@@ -4,7 +4,7 @@ from typing import List, Sequence, Tuple
 
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint
-from fastapi import BackgroundTasks
+from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
-from app.core.utils.pydantic_utils import inst_dict, list_dict
+from app.core.utils.pydantic_utils import list_dict
 from app.support import Drink, DrinkService, Subcategory, TranslateRawData
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
@@ -206,13 +206,14 @@ class VLLMService:
         repository = DrinkRepository
         related_model_name = 'Subcategory'
         model = Drink
-        result = await service.get_with_filter_complex(session, model,
-                                                       related_model_name, repository,
-                                                       filters, root_filter, 1, chunk, 0)
-        items = result.get('items')
-        if not items:
-            return None
-        source: List = [(key.get('id'), key.get('description')) for key in items]
+        try:
+            result = await service.get_with_filter_complex(session, model,
+                                                           related_model_name, repository,
+                                                           filters, root_filter, 1, chunk, 0)
+            items = result.get('items')
+            source: List = [(key.get('id'), key.get('description')) for key in items]
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=f'No records suitable. {e}')
         return source
 
     @background_unique
@@ -235,11 +236,11 @@ class VLLMService:
         # запуск сессии
         async with session_factory() as session:
             # словесное обозначение субкатегории
+            data: List = await self.get_data(session, subcat_dict, chunk)
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: Sequence[Tuple] = await self.get_system_prompts(session, author)
             user_prompts: Sequence[Tuple] = await self.get_user_prompt(session, user_prompt)
             params: Sequence[dict] = await self.get_proption(session, param)
-            data: List = await self.get_data(session, subcat_dict, chunk)
             await session.commit()  # запуск перевода
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
