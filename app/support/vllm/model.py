@@ -56,7 +56,7 @@ class TmpTranslate(Base):
     """
     __tablename__ = 'tmptranslates'
     # id переводимой записи
-    id: Mapped[int] = mapped_column(Integer, index=True, nullable=False, unique=False)
+    guid: Mapped[int] = mapped_column(Integer, index=True, nullable=False, unique=False)
     # имя таблицы
     table: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
     # имя переводимого поля
