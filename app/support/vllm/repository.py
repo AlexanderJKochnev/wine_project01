@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.types import ModelType
 from app.support import Drink
-from app.support.vllm.model import TranslateRawData
+from app.support.vllm.model import TmpTranslate, TranslateRawData
 
 
 class VllmRepository:
@@ -29,3 +29,7 @@ class TranslateRawDataRepository(Repository):
             параллельно запятая
         """
         return select(TranslateRawData).options(*cls.get_selectin())
+
+
+class TmpTranslateRepository(Repository):
+    model = TmpTranslate

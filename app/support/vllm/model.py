@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, SmallInteger, Text, UniqueConstraint
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
@@ -49,3 +48,22 @@ class TranslateRawData(Base, BaseAt):
         'drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id',
         name='uq_translate_raw_data_unique_combo'
     ),)
+
+
+class TmpTranslate(Base):
+    """
+        модель для временного хранения переводов
+    """
+    __tablename__ = 'tmptranslates'
+    # id переводимой записи
+    id: Mapped[int] = mapped_column(Integer, index=True, nullable=False, unique=False)
+    # имя таблицы
+    table: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
+    # имя переводимого поля
+    field: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
+    lang: Mapped[str] = mapped_column(String(2), index=True, nullable=False, unique=False)
+    origin: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
+    translate: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
+
+    __table_args__ = (UniqueConstraint('id', 'table', 'field', 'lang',
+                                       name='uq_tmp_translate_id_table_field_lang'),)

@@ -55,6 +55,26 @@ class TranslateRawDataUpdate(UpdateSchema, BaseModel):
 class TranslateRawDataRead(UpdateSchema, PkSchema):
     duration: Optional[float] = None
 
+# ------ TmpTranslate -----
 
-# class TranslateRawDataReadRelation(RelationSchema, PkSchema):
-#     duration: Optional[float] = None
+
+class TmpTranslateCreate(BaseModel):
+    id: int
+    table: str
+    field: str
+    lang: str
+    origin: str
+    translate: str
+
+
+class TmpTranslateUpdate(BaseModel):
+    id: Optional[int] = None
+    table: Optional[str] = None
+    field: Optional[str] = None
+    lang: Optional[str] = None
+    origin: Optional[str] = None
+    translate: Optional[str] = None
+
+
+class TmpTranslateRead(TmpTranslateUpdate):
+    pass

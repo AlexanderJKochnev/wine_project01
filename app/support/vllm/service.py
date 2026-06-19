@@ -302,3 +302,7 @@ class VLLMService:
 
 class TranslateRawDataService(Service):
     default = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']
+
+
+class TmpTranslateService(Service):
+    default = ['id', 'table', 'field']
