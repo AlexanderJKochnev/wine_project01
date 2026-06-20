@@ -381,6 +381,7 @@ class VLLMService:
                 jprint(data)
                 logger.warning(f'-{last_id}-----------------------------------')
                 session.commit
+                logger.warning(f'-{last_id} 3-----------------------------------')
                 if not last_id:
                     break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
