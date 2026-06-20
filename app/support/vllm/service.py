@@ -195,7 +195,7 @@ class VLLMService:
             получение суффикса 2-х символьного кода языка
         """
         model, repo = ISOLanguage, ISOLanguageRepository
-        response: ISOLanguage = await repo.repo.get_by_field_v2(filters, model, session)
+        response: ISOLanguage = await repo.get_by_field_v2(filters, model, session)
         default_lang: str = settings.DEFAULT_LANG
         lang: str = response.iso_639_1
         return '' if lang == default_lang else f'_{lang}'
