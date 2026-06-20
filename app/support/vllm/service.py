@@ -391,10 +391,19 @@ class VLLMService:
         """
         получение данных
         """
-        raw_sql = ("SELECT id, {origin} FROM {handbook} WHERE {dest} IS NULL AND {origin} IS NOT NULL "
-                   "AND id > {last_id} ORDER BY id LIMIT {chunk};")
-        stmt = text(raw_sql.format(origin=source_field, dest=target_field, handbook=handbook,
-                                   chunk=chunk, last_id=last_id))
+        raw_sql = """
+        SELECT id, {origin} FROM {handbook}
+        WHERE {dest} IS NULL AND {origin} IS NOT NULL
+        AND id > :last_id
+        ORDER BY id
+        LIMIT {chunk};
+        """
+        sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook)
+        stmt = text(sql).bindparams(
+            last_id=last_id,  # число
+            chunk=chunk  # число
+        )
+
         result = await session.execute(stmt)
         rows = result.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)
