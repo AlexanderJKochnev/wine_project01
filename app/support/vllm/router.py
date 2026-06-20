@@ -191,8 +191,13 @@ class VllmRouter(LightRouter):
         """
             перевод справочников
         """
-        return {1: handbook, 2: author, 3: language_origin, 4: language_destination, 5: user_prompt, 6: params,
-                7: chunk}
+        response = await self.service.handbook_translate(DatabaseManager.session_maker,
+                                                         translation_service,
+                                                         handbook,
+                                                         author,
+                                                         language_origin, language_destination,
+                                                         user_prompt, params, chunk)
+        return response
 
 
 class TranslateRawDataRouter(BaseRouter):
