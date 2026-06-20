@@ -1,22 +1,21 @@
 # app.support.router.py
-from typing import List, Optional, Set
+from typing import List, Optional
 
 # app.suport.ollama.router.py
-from loguru import logger
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enum import Handbooks, Preset, Prompts, Writers, Languages
+
 from app.core.config.database.db_async import DatabaseManager, get_db
+from app.core.enum import Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
-from app.support import DrinkService
 from app.support.vllm.model import TranslateRawData
+from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
 from app.support.vllm.schemas import TranslateRawDataCreate, TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
 from app.support.vllm.service import VLLMService
-from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
 
 
 class VllmRouter(LightRouter):
