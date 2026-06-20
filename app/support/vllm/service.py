@@ -376,8 +376,8 @@ class VLLMService:
         last_id = 0
         while True:  # бесконеый цикл пока есть записи handbooks
             async with session_factory() as session:
-                data, lastt_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
-                                                             last_id)
+                data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
+                                                            last_id)
                 jprint(data)
                 logger.warning(f'-{last_id}-----------------------------------')
                 session.commit
