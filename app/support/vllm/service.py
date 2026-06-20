@@ -373,13 +373,13 @@ class VLLMService:
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
             session.commit
-            last_id = 0
-            while True:  # бесконеый цикл пока есть записи handbooks
-                async with session_factory() as session:
-                    data, lastt_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
-                                                                 last_id)
-                    jprint(data)
-                    logger.warning(f'-{last_id}-----------------------------------')
+        last_id = 0
+        while True:  # бесконеый цикл пока есть записи handbooks
+            async with session_factory() as session:
+                data, lastt_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
+                                                             last_id)
+                jprint(data)
+                logger.warning(f'-{last_id}-----------------------------------')
                 session.commit
                 if not last_id:
                     break
