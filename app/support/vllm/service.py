@@ -373,11 +373,11 @@ class VLLMService:
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
             session.commit
+            last_id = 0
             while True:  # бесконеый цикл пока есть записи handbooks
-                last_id = 0
                 async with session_factory() as session:
-                    data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
-                                                                last_id)
+                    data, lastt_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
+                                                                 last_id)
                     jprint(data)
                     logger.warning(f'-{last_id}-----------------------------------')
                 session.commit
@@ -395,18 +395,12 @@ class VLLMService:
         raw_sql = """
         SELECT id, {origin} FROM {handbook}
         WHERE {dest} IS NULL AND {origin} IS NOT NULL
-        AND id > :last_id
+        AND id > {last_id}
         ORDER BY id
-        LIMIT :chunk;
+        LIMIT {chunk};
         """
-        sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook)
-        stmt = text(sql).bindparams(
-            last_id=last_id,  # число
-            chunk=chunk  # число
-        )
-        compiled = stmt.compile(dialect = postgresql.dialect(), compile_kwargs = {"literal_binds": True})
-        print(str(compiled))
-        
+        sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook, last_id=last_id, chunk=chunk)
+        stmt = text(sql)
         result = await session.execute(stmt)
         rows = result.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)
@@ -414,7 +408,7 @@ class VLLMService:
             last_id = None
         else:
             last_id = result[-1][0]
-        return result, None  # last_id
+        return result, last_id
 
 
 class TranslateRawDataService(Service):
