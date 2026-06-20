@@ -113,7 +113,6 @@ class VLLMService:
             language, drink
         )
         # запуск второй сессии
-        jprint(result)
         async with session_factory() as session:
             trservice = TranslateRawDataService
             trrepo = TranslateRawDataRepository
@@ -248,6 +247,8 @@ class VLLMService:
         distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
         # экспертная оценка
         evaluated = await translation_service.evaluate_translations_batch(result)
+        logger.warning(evaluated)
+        jprint(evaluated)
         # best_configs = translation_service.rank_translation_configs(evaluated)
         best_configs = translation_service.rank_translation_configs_v2(evaluated)
         for best_config in best_configs:
@@ -279,7 +280,6 @@ class VLLMService:
         """
         best_config = best_configs[0]
         logger.info(f"Лучший конфиг: {best_config}")
-        # jprint(best_configs)
         drink_ids = set(a for a, b, c in distill)
         for id in drink_ids:
             top_translations = translation_service.get_best_translations_for_phrase(evaluated, drink_id=id)
