@@ -3,6 +3,7 @@ import time
 from typing import List, Sequence, Tuple
 
 from sqlalchemy import text
+from sqlalchemy.dialects import postgresql
 
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint
@@ -403,7 +404,9 @@ class VLLMService:
             last_id=last_id,  # число
             chunk=chunk  # число
         )
-
+        compiled = stmt.compile(dialect = postgresql.dialect(), compile_kwargs = {"literal_binds": True})
+        print(str(compiled))
+        
         result = await session.execute(stmt)
         rows = result.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)
@@ -411,7 +414,7 @@ class VLLMService:
             last_id = None
         else:
             last_id = result[-1][0]
-        return result, last_id
+        return result, None  # last_id
 
 
 class TranslateRawDataService(Service):
