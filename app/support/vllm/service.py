@@ -380,7 +380,7 @@ class VLLMService:
                                                             last_id)
                 jprint(data)
                 logger.warning(f'-{last_id}-----------------------------------')
-                session.commit()
+                await session.commit()
                 logger.warning(f'-{last_id} 3-----------------------------------')
                 if not last_id:
                     break
