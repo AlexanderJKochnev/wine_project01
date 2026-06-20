@@ -396,7 +396,7 @@ class VLLMService:
         WHERE {dest} IS NULL AND {origin} IS NOT NULL
         AND id > :last_id
         ORDER BY id
-        LIMIT {chunk};
+        LIMIT :chunk;
         """
         sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook)
         stmt = text(sql).bindparams(
