@@ -350,7 +350,7 @@ class VLLMService:
             4. отправляем на перевод
             5. получаеv -> передаем на сохранение (update)
         """
-        with session_factory() as session:
+        async with session_factory() as session:
             # 0.
             origin: str = await self.get_lang({'name_en': language_origin}, session)
             dest: str = self.get_lang({'name_en': language_destination}, session)
