@@ -43,7 +43,7 @@ class VllmRouter(LightRouter):
             "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
         )
         self.router.add_api_route(
-            "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
+            "/handbooks_translate", self.handbook_translate, methods=["POST"], openapi_extra={'x-request-schema': None}
         )
         # super().setup_routes()
 
@@ -191,7 +191,8 @@ class VllmRouter(LightRouter):
         """
             перевод справочников
         """
-        pass
+        return {1: handbook, 2: author, 3: language_origin, 4: language_destination, 5: user_prompt, 6: params,
+                7: chunk}
 
 
 class TranslateRawDataRouter(BaseRouter):
