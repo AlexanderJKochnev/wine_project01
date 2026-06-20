@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
-from app.core.utils.pydantic_utils import list_dict
+from app.core.utils.pydantic_utils import inst_dict, list_dict
 from app.support import Drink, DrinkService, Subcategory, TranslateRawData
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
@@ -99,7 +99,7 @@ class VLLMService:
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: List[Tuple] = await self.get_system_prompts(session)
             user_prompts: List[Tuple] = await self.get_user_prompts(session)
-            params: List[dict] = await self.get_proption(session)
+            params: List[dict] = await self.get_proptions(session)
             """
             payload = {'system_prompts': system_prompts,
                        'user_prompts': user_prompts,
@@ -174,7 +174,16 @@ class VLLMService:
             return [(inst.id, inst.prompt, inst.name) for inst in response]
 
     @staticmethod
-    async def get_proption(session: AsyncSession, values: List[str] = None) -> Sequence[dict]:
+    async def get_proption(session: AsyncSession, value: str) -> Tuple:
+        """
+            получение одного proption
+        """
+        model, repo = Proption, ProptionRepository
+        result: Proption = await repo.get_by_field_v2({'preset': value}, model, session)
+        return inst_dict(result)
+
+    @staticmethod
+    async def get_proptions(session: AsyncSession, values: List[str] = None) -> Sequence[dict]:
         """
             получение списка настроек
         """
@@ -270,7 +279,7 @@ class VLLMService:
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: Sequence[Tuple] = await self.get_system_prompts(session, author)
             user_prompts: Sequence[Tuple] = await self.get_user_prompts(session, user_prompt)
-            params: Sequence[dict] = await self.get_proption(session, param)
+            params: Sequence[dict] = await self.get_proptions(session, param)
             await session.commit()  # запуск перевода
         result = await translation_service.translate_batch(
             data, system_prompts, user_prompts, params, language, drink
@@ -353,13 +362,17 @@ class VLLMService:
         async with session_factory() as session:
             # 0.
             origin: str = await self.get_lang({'name_en': language_origin}, session)
-            dest: str = self.get_lang({'name_en': language_destination}, session)
-            # 1
-            # 1.1. (id, system_prompt, role)
+            dest: str = await self.get_lang({'name_en': language_destination}, session)
+            # 1.
             system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
             user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
+            params: dict = await self.get_proption(session, params)
+            # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
-            logger.warning(f'{system_prompt=}, {user_prompt=}, {source_field=}, {target_field=}')
+            # 3.
+
+            logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
+                           f'{handbook=}, \n\n {params}')
             return None
 
 
