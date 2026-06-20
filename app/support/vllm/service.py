@@ -338,7 +338,7 @@ class VLLMService:
                                  language_origin: str,
                                  language_destination: str,
                                  user_prompt: str,
-                                 params: str ,
+                                 params: str,
                                  chunk: int
                                  ):
         """
@@ -361,6 +361,7 @@ class VLLMService:
             source_field, target_field = f'name{origin}', f'name{dest}'
             logger.warning(f'{system_prompt=}, {user_prompt=}, {source_field=}, {target_field=}')
             return None
+
 
 class TranslateRawDataService(Service):
     default = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']
