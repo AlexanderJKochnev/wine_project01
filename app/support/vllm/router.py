@@ -193,7 +193,7 @@ class VllmRouter(LightRouter):
         """
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
-                                                         handbook=handbook.values,
+                                                         handbook=handbook.value,
                                                          system_prompt=author,
                                                          language_origin=language_origin,
                                                          language_destination=language_destination,
