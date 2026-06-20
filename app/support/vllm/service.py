@@ -372,9 +372,11 @@ class VLLMService:
             # 3.
             raw_sql = "SELECT id, {origin} FROM {handbook} WHERE {dest} IS NULL AND {origin} IS NOT NULL;"
             custom_sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook)
+            response = await session.execute(custom_sql)
+            logger.warning(f'{type(response)=}')
             print(f'{custom_sql=}')
-            logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
-                           f'{handbook=}, \n\n {params}')
+            # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
+            #                f'{handbook=}, \n\n {params}')
             return None
 
 
