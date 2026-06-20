@@ -376,7 +376,7 @@ class VLLMService:
             stmt = text(raw_sql.format(origin=source_field, dest=target_field, handbook=handbook))
             result = await session.execute(stmt)
             rows = result.all()
-            data = tuple((row.id, row._mapping(source_field)) for row in rows)
+            data = tuple((row.id, row._mapping[source_field]) for row in rows)
             jprint(data)
             logger.warning('-----------------------------------')
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
