@@ -371,7 +371,7 @@ class VLLMService:
             source_field, target_field = f'name{origin}', f'name{dest}'
             # 3.
             raw_sql = """
-            SELECT id, {orign}
+            SELECT id, {origin}
             FROM {handbook}
             WHERE {dest} IS NULL
             AND {origin} IS NOT NULL;
