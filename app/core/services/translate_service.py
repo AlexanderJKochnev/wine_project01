@@ -18,15 +18,15 @@ class TranslationService:
                          'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese'}
         self.EXPERT_SYSTEM_PROMPT = """You are an expert wine writer and professional translator.
         Your task is to critically evaluate the quality of the translation provided.
-
         Compare the Original Text and the Translated Text based on two criteria:
         1. text_quality (1-10) [HIGH PRIORITY]: Evaluate the target language ({lang}). It must sound like natural,
         fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
            - Flawless grammar, proper gender/case agreements, and natural sentence structures.
-           - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper", or "wine's body" translated literally must be heavily penalized.
+           - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper",
+            "wine's body" translated literally must be heavily penalized.
            - It must sound like it was originally written by a native {lang} writer, not a machine.
-        2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names), and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
-
+        2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names),
+        and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
         You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
         JSON schema:
         {{
@@ -34,7 +34,14 @@ class TranslationService:
           "text_score": int,
           "reasoning": "Short explanation of your choice in English"
         }}"""
+        self.hang = "Описание: «"
+        """
+        if raw_text.startswith("Описание: «"):
+            raw_text = raw_text.replace("Описание: «", "", 1)
 
+        # Отрезаем замыкающую кавычку, если модель просто продолжила фразу и закрыла её в конце
+        content = raw_text.rstrip('»').strip()
+        """
         self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
         Original Text: "{origin}"
         Translated Text: "{result}"
@@ -54,6 +61,9 @@ class TranslationService:
 
         system_content = system_prompt.format(lang=target_lang)
         user_content = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink)
+        # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
+        if not user_content.endswith(self.hang):
+            user_content = f'{user_content}. {self.hang}'
 
         return [{"role": "system", "content": system_content}, {"role": "user", "content": user_content}]
 
@@ -139,6 +149,9 @@ class TranslationService:
                 response = await self.client.chat.completions.create(**request_params)
                 duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
+                # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
+                if content.startswith(self.hang):
+                    content = content.replace(self.hang, '', 1)
         except Exception as e:
             # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
             content = f"ERROR: {str(e)}"

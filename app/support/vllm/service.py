@@ -246,7 +246,7 @@ class VLLMService:
         )
         distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
         # экспертная оценка
-        evaluated = await translation_service.evaluate_translations_batch(result)
+        evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
         logger.warning(evaluated)
         jprint(evaluated)
         # best_configs = translation_service.rank_translation_configs(evaluated)
