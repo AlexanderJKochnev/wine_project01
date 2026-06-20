@@ -285,6 +285,7 @@ class Settings(BaseSettings):
 
     @property
     def language_key(self) -> dict:
+        """ NOT USED IN REAL LIFE"""
         return strtodict(self.LANGUAGE_KEY)
 
     @property

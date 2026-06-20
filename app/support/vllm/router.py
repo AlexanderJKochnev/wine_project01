@@ -181,10 +181,10 @@ class VllmRouter(LightRouter):
             author: Prompts = Query(
                 ..., descrition='переводчик'
             ),
-            user_prompt: List[Writers] = Query(
+            user_prompt: Writers = Query(
                 ..., descrition='промпт'
             ),
-            params: List[Preset] = Query(
+            params: Preset = Query(
                 ..., descrition='настройки'
             ),
             chunk: int = Query(25, description='чанк')):

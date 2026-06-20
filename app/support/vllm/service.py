@@ -16,10 +16,12 @@ from app.core.utils.pydantic_utils import list_dict
 from app.support import Drink, DrinkService, Subcategory, TranslateRawData
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
-from app.support.ollama.model import Prompt, Proption, WriterRule
-from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
+from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
+from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
+    WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
 from app.support.vllm.repository import TranslateRawDataRepository
+from app.core.config.project_config import settings
 
 
 class VLLMService:
@@ -96,7 +98,7 @@ class VLLMService:
             # наименовние подкатегории напитка
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: List[Tuple] = await self.get_system_prompts(session)
-            user_prompts: List[Tuple] = await self.get_user_prompt(session)
+            user_prompts: List[Tuple] = await self.get_user_prompts(session)
             params: List[dict] = await self.get_proption(session)
             """
             payload = {'system_prompts': system_prompts,
@@ -138,7 +140,25 @@ class VLLMService:
             return [(inst.id, inst.system_prompt, inst.role) for inst in response]
 
     @staticmethod
-    async def get_user_prompt(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
+    async def get_system_prompt(session: AsyncSession, value: str) -> tuple:
+        """
+            получение одного системного промпта
+        """
+        model, repo = Prompt, PromptRepository
+        result: Prompt = await repo.get_by_field_v2({'role': value}, model, session)
+        return result.id, result.system_prompt, result.role
+
+    @staticmethod
+    async def get_user_prompt(session: AsyncSession, value: str) -> Tuple:
+        """
+            получение одного user_prompt
+        """
+        model, repo = WriterRule, WriterRuleRepository
+        result: WriterRule = await repo.get_by_field_v2({'name': value}, model, session)
+        return result.id, result.prompt, result.name
+
+    @staticmethod
+    async def get_user_prompts(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
         """
             получение списка промптов
         """
@@ -168,6 +188,17 @@ class VLLMService:
             response: Sequence[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
             return list_dict(response)
+
+    @staticmethod
+    async def get_lang(filters: dict, session: AsyncSession) -> str:
+        """
+            получение суффикса 2-х символьного кода языка
+        """
+        model, repo = ISOLanguage, ISOLanguageRepository
+        response: ISOLanguage = await repo.repo.get_by_field_v2(filters, model, session)
+        default_lang: str = settings.DEFAULT_LANG
+        lang: str = response.iso_639_1
+        return '' if lang == default_lang else f'_{lang}'
 
     @staticmethod
     async def get_subcategiory(filters: dict | tuple, session: AsyncSession) -> str:
@@ -238,7 +269,7 @@ class VLLMService:
             data: List = await self.get_data(session, subcat_dict, chunk)
             drink: str = await self.get_subcategiory(subcat_dict, session)
             system_prompts: Sequence[Tuple] = await self.get_system_prompts(session, author)
-            user_prompts: Sequence[Tuple] = await self.get_user_prompt(session, user_prompt)
+            user_prompts: Sequence[Tuple] = await self.get_user_prompts(session, user_prompt)
             params: Sequence[dict] = await self.get_proption(session, param)
             await session.commit()  # запуск перевода
         result = await translation_service.translate_batch(
@@ -289,6 +320,7 @@ class VLLMService:
         duration_s = time.time() - start_time
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         return
+        """
         async with session_factory() as session:
 
             trservice = TranslateRawDataService
@@ -298,7 +330,37 @@ class VLLMService:
             await session.commit()
         duration_s = time.time() - start_time
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
+        """
 
+    async def handbook_translate(self, session_factory, translation_service: TranslationService,
+                                 handbook: str,
+                                 system_prompt: str,
+                                 language_origin: str,
+                                 language_destination: str,
+                                 user_prompt: str,
+                                 params: str ,
+                                 chunk: int
+                                 ):
+        """
+            перевод справочников
+            0. язык двух символьный код
+            1. получаем prompts
+            2. определяем поля для источника и поля для перевода
+            3. отфильтровываем и получаем (id, value in name_{lang}) where name_{dest} is null
+            4. отправляем на перевод
+            5. получаеv -> передаем на сохранение (update)
+        """
+        with session_factory() as session:
+            # 0.
+            origin: str = await self.get_lang({'name_en': language_origin}, session)
+            dest: str = self.get_lang({'name_en': language_destination}, session)
+            # 1
+            # 1.1. (id, system_prompt, role)
+            system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
+            user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
+            source_field, target_field = f'name{origin}', f'name{dest}'
+            logger.warning(f'{system_prompt=}, {user_prompt=}, {source_field=}, {target_field=}')
+            return None
 
 class TranslateRawDataService(Service):
     default = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']
