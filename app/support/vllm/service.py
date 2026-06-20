@@ -376,7 +376,7 @@ class VLLMService:
                 last_id = 0
                 async with session_factory() as session:
                     data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
-                                                                 last_id)
+                                                                last_id)
                     jprint(data)
                     logger.warning(f'-{last_id}-----------------------------------')
                 session.commit
@@ -392,7 +392,7 @@ class VLLMService:
         получение данных
         """
         raw_sql = ("SELECT id, {origin} FROM {handbook} WHERE {dest} IS NULL AND {origin} IS NOT NULL "
-                   "AND id > {last_id} LIMIT {chunk};")
+                   "AND id > {last_id} ORDER BY id LIMIT {chunk};")
         stmt = text(raw_sql.format(origin=source_field, dest=target_field, handbook=handbook,
                                    chunk=chunk, last_id=last_id))
         result = await session.execute(stmt)
