@@ -101,3 +101,17 @@ EXTENDED_COLORS = {
 }
 
 Color = Enum('color', {color: color for color in COLORS.keys()})
+
+HANDBOOKS = {'countries': 'название государства или его административаня единица',
+             'regions': 'название административной единицы государства или винодельческого региона',
+             'subregions': 'винодельческий регион или административная единица государства',
+             'sites': 'винодельческий регион или его часть',
+             'sibcategories': 'категория или вид алкогольного напитка',
+             'foods': 'продукт питания',
+             'varietals': 'сорт винограда',
+             'baseingredients': 'ингридиент для производтсва алкогольных напитков',
+             'bodies': '',
+             'scales': '',
+             'tastingnotes': 'сравнительная характеристика вкуса'
+             }
+Handbooks = Enum('handbook', {handbook: handbook for handbook in HANDBOOKS.keys()})

@@ -5,7 +5,7 @@ from typing import List, Optional, Set
 from loguru import logger
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enum import Preset, Prompts, Writers, Languages
+from app.core.enum import Handbooks, Preset, Prompts, Writers, Languages
 from app.core.config.database.db_async import DatabaseManager, get_db
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
@@ -38,6 +38,9 @@ class VllmRouter(LightRouter):
         self.router.add_api_route(
             "/bulk_test", self.bulk_test, methods=["GET"],
             openapi_extra={'x-request-schema': None}
+        )
+        self.router.add_api_route(
+            "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
         )
         self.router.add_api_route(
             "/adv_test", self.adv_test, methods=["POST"], openapi_extra={'x-request-schema': None}
@@ -123,7 +126,6 @@ class VllmRouter(LightRouter):
         return result
 
     async def bulk_test(self, background_tasks: BackgroundTasks,
-                        session: AsyncSession = Depends(get_db),
                         translation_service: TranslationService = Depends(get_translation_service),
                         subcat: str = Query(..., description='значение субкатегории - либо id либо имя на анг (нужно '
                                                              'угадать)'),
@@ -143,16 +145,16 @@ class VllmRouter(LightRouter):
     async def adv_test(self, background_tasks: BackgroundTasks,
                        # session: AsyncSession = Depends(get_db),
                        translation_service: TranslationService = Depends(get_translation_service),
-                       author: List[Prompts] = Query(...,
-                                                     descrition='для выбора нескольких значений используй Alt'),
-                       user_prompt: List[Writers] = Query(...,
-                                                          descrition='для выбора нескольких значений используй Alt'),
-                       params: List[Preset] = Query(...,
+                       author: List[Prompts] = Form(...,
                                                     descrition='для выбора нескольких значений используй Alt'),
-                       subcat: str = Query(...,
-                                           description='id субкатегориии'),
-                       chunk: int = Query(1, description='размер выборки для тестирования'),
-                       lang: Languages = Query(..., description="Язык перевода")):
+                       user_prompt: List[Writers] = Form(...,
+                                                         descrition='для выбора нескольких значений используй Alt'),
+                       params: List[Preset] = Form(...,
+                                                   descrition='для выбора нескольких значений используй Alt'),
+                       subcat: str = Form(...,
+                                          description='id субкатегориии'),
+                       chunk: int = Form(1, description='размер выборки для тестирования'),
+                       lang: Languages = Form(..., description="Язык перевода")):
         """
             тестирование перевода:
             в зависимости от цели:
@@ -169,6 +171,27 @@ class VllmRouter(LightRouter):
             param=params, subcat=subcat, chunk=chunk, lang=lang.value,
             background_tasks=background_tasks)
         return {'result': 'Translation started in backgound taska'}
+
+    async def handbook_translate(
+            self, background_tasks: BackgroundTasks,
+            translation_service: TranslationService = Depends(get_translation_service),
+            handbook: Handbooks = Query(..., description='справочник'),
+            language_origin: Languages = Query(..., description='язык оригинала'),
+            language_destination: Languages = Query(..., description='язык оригинала'),
+            author: Prompts = Query(
+                ..., descrition='переводчик'
+            ),
+            user_prompt: List[Writers] = Query(
+                ..., descrition='промпт'
+            ),
+            params: List[Preset] = Query(
+                ..., descrition='настройки'
+            ),
+            chunk: int = Query(25, description='чанк')):
+        """
+            перевод справочников
+        """
+        pass
 
 
 class TranslateRawDataRouter(BaseRouter):
