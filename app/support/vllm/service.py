@@ -370,7 +370,14 @@ class VLLMService:
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
             # 3.
-
+            raw_sql = """
+            SELECT id, {orign}
+            FROM {handbook}
+            WHERE {dest} IS NULL
+            AND {origin} IS NOT NULL;
+            """
+            custom_sql = raw_sql.format(origin=origin, dest=dest, handbook=handbook)
+            print(f'{custom_sql=}')
             logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
                            f'{handbook=}, \n\n {params}')
             return None
