@@ -386,7 +386,7 @@ class VLLMService:
                     break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
             #                f'{handbook=}, \n\n {params}')
-            return None
+        return None
 
     async def fetch_data_chunk(self, session: AsyncSession, source_field: str, target_field: str,
                                handbook: str, chunk: int, last_id: int = 0) -> tuple:
