@@ -396,7 +396,7 @@ class VLLMService:
             # 5.0. ready to save
             distill = self.tmp_data_validate(result, handbook, target_field, dest)
             async with session_factory() as session:
-                response = tmp_repo.bulk_create(distill, tmp_model, session)
+                response = await tmp_repo.bulk_create(distill, tmp_model, session)
                 result_dict = list_dict(response)
                 jprint(result_dict)
                 session.commit()
