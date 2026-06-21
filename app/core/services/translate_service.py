@@ -352,8 +352,8 @@ class TranslationService:
         start_time = time.time()
         group_tasks = []
         for c, (p_id, phrase) in enumerate(phrases):
-            u_id, u_prompt = user_prompt
-            s_id, s_prompt = system_prompt
+            u_id, u_prompt, _ = user_prompt
+            s_id, s_prompt, _ = system_prompt
             single_params = param
             task = self._translate_single_task(
                 semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params,
