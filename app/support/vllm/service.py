@@ -390,7 +390,7 @@ class VLLMService:
             )
             # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             # 5. save to temporary file
-            distill = self.tmp_data_validate(result, handbook, target_field, language_destination)
+            distill = self.tmp_data_validate(result, handbook, target_field, dest)
             jprint(distill)
             logger.warning('--------')
             if not last_id:
