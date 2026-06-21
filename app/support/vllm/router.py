@@ -103,23 +103,19 @@ class VllmRouter(LightRouter):
                                      min_p: float = Form(0.04, ge=0.0, le=1.0,
                                                          description="Минимальная вероятность токена..."),
                                      typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."),
-                                     stop: List[str] = Form(
-                                         '\n\n',
-                                         description="Стоп-последовательности. Укажите через запятую (без пробелов)."
-                                     ), translation_service: TranslationService = Depends(get_translation_service)
+                                     translation_service: TranslationService = Depends(get_translation_service)
                                      ):
         """
             тестирование перевода - тонкие настройки
             Form применяется потому что query не вывозит размер данных
         """
-        stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
 
         result = await translation_service.translate(
             phrase=phrase, system_prompt=prompt, user_prompt=writer, lang=lang, drink=subcategory,
             temperature=temperature, top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
             frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
             repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
-            stop=stop_list if stop_list else None
+            stop=["<|im_end|>", "<|endoftext|>", "\n\n"]
         )
         return result
 
