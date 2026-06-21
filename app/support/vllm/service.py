@@ -403,7 +403,7 @@ class VLLMService:
         """
         raw_sql = """
         SELECT id, {origin} FROM {handbook}
-        WHERE {dest} IS NULL AND {origin} IS NOT NULL
+        WHERE COALESCE({dest},'') = '' AND COALESCE({origin}, '') != ''
         AND id > {last_id}
         ORDER BY id
         LIMIT {chunk};
