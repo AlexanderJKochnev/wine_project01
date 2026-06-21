@@ -360,10 +360,10 @@ class TranslationService:
             )
             group_tasks.append(task)
             remain_tasks -= 1
-            # Ждем выполнение текущей группы. vLLM считает s_prompt ОДИН раз для всей группы
-            group_results = await asyncio.gather(*group_tasks)
-            duration_s = time.time() - start_time
-            logger.info(f'обработано {total_tasks - remain_tasks} записей из {total_tasks} за {duration_s} сек')
-            results.extend(group_results)
+        # Ждем выполнение текущей группы. vLLM считает s_prompt ОДИН раз для всей группы
+        group_results = await asyncio.gather(*group_tasks)
+        duration_s = time.time() - start_time
+        logger.info(f'обработано {total_tasks - remain_tasks} записей из {total_tasks} за {duration_s} сек')
+        results.extend(group_results)
         logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
         return results
