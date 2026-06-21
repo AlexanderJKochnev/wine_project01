@@ -383,16 +383,16 @@ class VLLMService:
                 data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
                                                             last_id)
                 await session.commit()
+                # 4. translate
+                result = await translation_service.real_batch(
+                    data, system_prompt, user_prompt,
+                    param, language_destination, None  # subj
+                )
+                distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
+                jprint(distill)
+                logger.warning('--------')
                 if not last_id:
                     break
-            # 4. translate
-            result = await translation_service.real_batch(
-                data, system_prompt, user_prompt,
-                param, language_destination, None  # subj
-            )
-            distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
-            jprint(distill)
-            logger.warning('--------')
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
             #                f'{handbook=}, \n\n {params}')
         return None
