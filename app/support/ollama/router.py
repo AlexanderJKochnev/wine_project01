@@ -239,7 +239,7 @@ class ProptionRouter(BaseRouter):
                      ) -> ProptionRead:
 
         # Преобразуем stop из строки в список (если строка не пуста)
-        stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
+        # stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
         data = ProptionCreate(preset=preset,
@@ -248,7 +248,7 @@ class ProptionRouter(BaseRouter):
                               top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
                               frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
                               repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
-                              stop=stop_list if stop_list else None)
+                              stop=stop if stop else None)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: ProptionUpdate,
