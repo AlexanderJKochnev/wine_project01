@@ -79,11 +79,9 @@ class VllmRouter(LightRouter):
                                      ),
                                      writer: Optional[str] = Form(
                                          None, description="Типовые правила перевода (предустановленные шаблоны промптов)."
-                                     ), langs: str = Form(
-                                         'ru',
-                                         description="Язык перевода. Поддерживаются двух-значные коды... "
-                                                     "Можно указать несколько через запятую: 'ru, fr, zh'"
                                      ),
+                                     lang: Languages = Form(..., description="Язык перевода. Выбрать из списка"
+                                                            ),
                                      subcategory: str = Form('wine', description='категория напитка (красное вино, '
                                                                                  'абсент, ром ...)'),
                                      temperature: float = Form(
@@ -104,9 +102,10 @@ class VllmRouter(LightRouter):
                                                                 description="Сид для воспроизводимости..."),
                                      min_p: float = Form(0.04, ge=0.0, le=1.0,
                                                          description="Минимальная вероятность токена..."),
-                                     typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."), stop: str = Form(
-                                         "",
-                                         description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
+                                     typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."),
+                                     stop: List[str] = Form(
+                                         '\n\n',
+                                         description="Стоп-последовательности. Укажите через запятую (без пробелов)."
                                      ), translation_service: TranslationService = Depends(get_translation_service)
                                      ):
         """
@@ -116,7 +115,7 @@ class VllmRouter(LightRouter):
         stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
 
         result = await translation_service.translate(
-            phrase=phrase, system_prompt=prompt, user_prompt=writer, lang_code=langs, drink=subcategory,
+            phrase=phrase, system_prompt=prompt, user_prompt=writer, lang=lang, drink=subcategory,
             temperature=temperature, top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
             frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
             repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,

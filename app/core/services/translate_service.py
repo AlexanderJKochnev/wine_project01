@@ -54,20 +54,13 @@ class TranslationService:
         Формирует структурированный массив сообщений для Chat Completions API.
         vLLM автоматически применит к нему ChatML шаблоны для Qwen.
         """
-        if len(lang_code) == 2:
-            target_lang = self.lang_map.get(lang_code[:2], 'German')
-        else:
-            target_lang = lang_code
-
-        system_content = system_prompt.format(lang=target_lang)
-        if drink:
-            user_content = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink)
-        else:
-            user_content = user_prompt.format(lang=target_lang, phrase=phrase)
+        target_lang = lang_code
+        system_prompt = system_prompt.format(lang=target_lang)
+        user_prompt = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink)
         # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
-        if not user_content.endswith(self.hang):
-            user_content = f'{user_content}. {self.hang}'
-        return [{"role": "system", "content": system_content}, {"role": "user", "content": user_content}]
+        if not user_prompt.endswith(self.hang):
+            user_prompt = f'{user_prompt}. {self.hang}'
+        return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
     def _prepare_params(self, **kwargs) -> Dict[str, Any]:
         """Подготавливает параметры для vLLM (Chat Completions)"""
@@ -114,7 +107,7 @@ class TranslationService:
         messages = self._build_messages(system_prompt, user_prompt, lang, phrase, drink)
         request_params = self._prepare_params(**params)
         request_params["messages"] = messages
-
+        logger.warning(f'{messages=}')
         gpu_start = time.time() * 1000
 
         # Вызываем chat.completions вместо completions
