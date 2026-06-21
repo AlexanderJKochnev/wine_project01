@@ -233,11 +233,11 @@ class ProptionRouter(BaseRouter):
                      min_p: float = Form(0.04, ge=0.0, le=1.0,
                                          description="Минимальная вероятность токена..."),
                      typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."),
-                     stop: List[str] = Form(
-                         "",
-                         description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
-                     ), session: AsyncSession = Depends(get_db)
+                     stop: List[str] = Form(["<|im_end|>", "<|endoftext|>", "\n\n"],
+                                            description="Стоп-последовательности."),
+                     session: AsyncSession = Depends(get_db)
                      ) -> ProptionRead:
+
         # Преобразуем stop из строки в список (если строка не пуста)
         stop_list = [s.strip() for s in stop.split(',') if s.strip()] if stop else []
         response = await CategoryRepository.get_by_field('name', category, Category, session)
