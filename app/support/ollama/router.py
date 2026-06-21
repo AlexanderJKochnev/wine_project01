@@ -181,10 +181,11 @@ class PromptRouter(BaseRouter):
                      role: str = Form(..., description='роль'),
                      system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
+                     active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)) -> PromptRead:
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
-        data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id)
+        data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id, active=active)
         return await super().create(data, session)
 
     async def patch(self, id: int,
@@ -235,6 +236,7 @@ class ProptionRouter(BaseRouter):
                      typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."),
                      stop: List[str] = Form(["<|im_end|>", "<|endoftext|>", "\n\n"],
                                             description="Стоп-последовательности."),
+                     active: bool = Form(True, description = 'активировано'),
                      session: AsyncSession = Depends(get_db)
                      ) -> ProptionRead:
 
@@ -248,7 +250,8 @@ class ProptionRouter(BaseRouter):
                               top_p=top_p, top_k=top_k, max_tokens=max_tokens, seed=seed,
                               frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
                               repeat_penalty=repeat_penalty, min_p=min_p, typical_p=typical_p,
-                              stop=stop if stop else None)
+                              stop=stop if stop else None,
+                              active=active)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: ProptionUpdate,
@@ -270,11 +273,12 @@ class WriterRuleRouter(BaseRouter):
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
+                     active: bool = Form(True, description = 'активировано'),
                      session: AsyncSession = Depends(get_db)
                      ) -> PromptRead:
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
-        data = WriterRuleCreate(name=name, prompt=prompt, category_id=category_id)
+        data = WriterRuleCreate(name=name, prompt=prompt, category_id=category_id, active=active)
         return await super().create(data, session)
 
     async def patch(self, id: int, background_tasks: BackgroundTasks,
