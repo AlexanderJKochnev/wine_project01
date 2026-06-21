@@ -60,7 +60,7 @@ class TranslationService:
         # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
         # if not user_prompt.endswith(self.hang):
         #     user_prompt = f'{user_prompt}. {self.hang}'
-        # return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+        return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
     def _prepare_params(self, **kwargs) -> Dict[str, Any]:
         """Подготавливает параметры для vLLM (Chat Completions)"""
@@ -145,7 +145,6 @@ class TranslationService:
                 # duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
                 # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt УБИРАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
-                logger.warning(content)
                 if content.startswith(self.hang):
                     content = content.replace(self.hang, '', 1)
         except Exception as e:
