@@ -224,7 +224,7 @@ class ProptionRouter(BaseRouter):
                      presence_penalty: float = Form(
                          0.1, ge=-2.0, le=2.0, description="Штраф за повторение тем..."),
                      repeat_penalty: float = Form(
-                         1.1, ge=0.5, le=2.0, description="Экспоненциальный штраф за повторение..."
+                         1.1, ge=-2.0, le=2.0, description="Экспоненциальный штраф за повторение..."
                      ),
                      max_tokens: int = Form(2048, ge=1, le=4096,
                                             description="Максимальное количество токенов..."),
@@ -232,7 +232,8 @@ class ProptionRouter(BaseRouter):
                                                 description="Сид для воспроизводимости..."),
                      min_p: float = Form(0.04, ge=0.0, le=1.0,
                                          description="Минимальная вероятность токена..."),
-                     typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."), stop: str = Form(
+                     typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."),
+                     stop: List[str] = Form(
                          "",
                          description="Стоп-последовательности. Укажите через запятую (без пробелов). Пример: '\\n\\n,.</s>'"
                      ), session: AsyncSession = Depends(get_db)

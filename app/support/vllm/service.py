@@ -5,6 +5,7 @@ from typing import List, Sequence, Tuple
 from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 
+from app.core.enum import HANDBOOKS
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint
 from fastapi import HTTPException  # , BackgroundTasks,
@@ -177,7 +178,7 @@ class VLLMService:
             return [(inst.id, inst.prompt, inst.name) for inst in response]
 
     @staticmethod
-    async def get_proption(session: AsyncSession, value: str) -> Tuple:
+    async def get_proption(session: AsyncSession, value: str) -> dict:
         """
             получение одного proption
         """
@@ -369,21 +370,28 @@ class VLLMService:
             # 1.
             system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
             user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
-            params: dict = await self.get_proption(session, params)
+            param: dict = await self.get_proption(session, params)
+            subj: str = HANDBOOKS.get(handbook)
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
             session.commit
         last_id = 0
-        while True:  # бесконеый цикл пока есть записи handbooks
+        while True:  # бесконечый цикл пока есть записи handbooks
+            # 3.
             async with session_factory() as session:
                 data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
                                                             last_id)
-                jprint(data)
-                logger.warning(f'-{last_id}-----------------------------------')
                 await session.commit()
-                logger.warning(f'-{last_id} 3-----------------------------------')
                 if not last_id:
                     break
+            # 4. translate
+            result = await translation_service.translate_batch(
+                data, [system_prompt], [user_prompt],
+                [param], [language_destination], subj
+            )
+            distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
+            jprint(distill)
+            logger.warning('--------')
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
             #                f'{handbook=}, \n\n {params}')
         return None
