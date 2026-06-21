@@ -49,7 +49,7 @@ class TranslationService:
         Evaluate the translation now."""
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
-                        drink: str) -> list:
+                        drink: str = None) -> list:
         """
         Формирует структурированный массив сообщений для Chat Completions API.
         vLLM автоматически применит к нему ChatML шаблоны для Qwen.
@@ -60,11 +60,13 @@ class TranslationService:
             target_lang = lang_code
 
         system_content = system_prompt.format(lang=target_lang)
-        user_content = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink)
+        if drink:
+            user_content = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink)
+        else:
+            user_content = user_prompt.format(lang=target_lang, phrase=phrase)
         # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
         if not user_content.endswith(self.hang):
             user_content = f'{user_content}. {self.hang}'
-
         return [{"role": "system", "content": system_content}, {"role": "user", "content": user_content}]
 
     def _prepare_params(self, **kwargs) -> Dict[str, Any]:
@@ -150,8 +152,8 @@ class TranslationService:
                 duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
                 # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
+                logger.warning(content)
                 if content.startswith(self.hang):
-                    logger.warning(content)
                     content = content.replace(self.hang, '', 1)
         except Exception as e:
             # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
