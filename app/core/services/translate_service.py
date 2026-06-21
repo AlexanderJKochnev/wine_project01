@@ -151,6 +151,7 @@ class TranslationService:
                 content = response.choices[0].message.content.strip()
                 # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
                 if content.startswith(self.hang):
+                    logger.warning(content)
                     content = content.replace(self.hang, '', 1)
         except Exception as e:
             # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
