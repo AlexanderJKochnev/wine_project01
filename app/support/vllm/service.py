@@ -24,7 +24,8 @@ from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
 from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
     WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
-from app.support.vllm.repository import TranslateRawDataRepository
+from app.support.vllm.model import TmpTranslate
+from app.support.vllm.repository import TmpTranslateRepository, TranslateRawDataRepository
 from app.core.config.project_config import settings
 
 
@@ -375,6 +376,8 @@ class VLLMService:
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
             session.commit
+        tmp_model = TmpTranslate
+        tmp_repo = TmpTranslateRepository
         last_id = 0
         descr = HANDBOOKS.get(handbook)
         while True:  # бесконечый цикл пока есть записи handbooks
@@ -390,8 +393,13 @@ class VLLMService:
             )
             # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             # 5. save to temporary file
+            # 5.0. ready to save
             distill = self.tmp_data_validate(result, handbook, target_field, dest)
-            jprint(distill)
+            async with session_factory() as session:
+                response = tmp_repo.bulk_create(distill, tmp_model, session)
+                result_dict = list_dict(response)
+                jprint(result_dict)
+                session.commit()
             logger.warning('--------')
             if not last_id:
                 break

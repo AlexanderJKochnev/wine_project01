@@ -129,7 +129,7 @@ class Service(metaclass=ServiceMeta):
 
     @classmethod
     async def create_bulk(cls, data_list: List[dict], repository: Repository, model: ModelType,
-                          session: AsyncSession, **kwargs) -> dict:
+                          session: AsyncSession, **kwargs) -> List[dict]:
         """
             быстрое массовое добавление записей из словаря БЕЗ RELATIONS
             обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
