@@ -372,7 +372,6 @@ class VLLMService:
             system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
             user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
             param: dict = await self.get_proption(session, params)
-            subj: str = HANDBOOKS.get(handbook)
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
             session.commit
