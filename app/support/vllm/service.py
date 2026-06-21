@@ -376,6 +376,7 @@ class VLLMService:
             source_field, target_field = f'name{origin}', f'name{dest}'
             session.commit
         last_id = 0
+        descr = HANDBOOKS.get(handbook)
         while True:  # бесконечый цикл пока есть записи handbooks
             # 3.
             async with session_factory() as session:
@@ -385,7 +386,7 @@ class VLLMService:
                 # 4. translate
                 result = await translation_service.real_batch(
                     data, system_prompt, user_prompt,
-                    param, language_destination, None  # subj
+                    param, language_destination, descr  # subj
                 )
                 distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
                 jprint(distill)
