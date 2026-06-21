@@ -345,6 +345,7 @@ class VLLMService:
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         """
 
+    @background_unique
     async def handbook_translate(self, session_factory, translation_service: TranslationService,
                                  handbook: str,
                                  system_prompt: str,
@@ -385,9 +386,9 @@ class VLLMService:
                 if not last_id:
                     break
             # 4. translate
-            result = await translation_service.translate_batch(
-                data, [system_prompt], [user_prompt],
-                [param], [language_destination], subj
+            result = await translation_service.real_batch(
+                data, system_prompt, user_prompt,
+                param, language_destination, subj
             )
             distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             jprint(distill)

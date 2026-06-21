@@ -334,3 +334,36 @@ class TranslationService:
 
         ranking.sort(key=lambda x: x['avg_score'], reverse=True)
         return ranking
+
+    async def real_batch(
+            self, phrases: List[Tuple[int, str]], system_prompt: Tuple[int, str],
+            user_prompt: Tuple[int, str], param: dict, lang: str, drink: str,
+            max_concurrent_requests: int = 128
+    ) -> List[Dict[str, Any]]:
+        """
+        Метод группового перевода текстов.
+        Порядок обхода: system_prompt -> param -> phrase -> user_prompt
+        """
+        semaphore = asyncio.Semaphore(max_concurrent_requests)
+        results = []
+        total_tasks = len(phrases)
+        remain_tasks = total_tasks
+        logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
+        start_time = time.time()
+        group_tasks = []
+        for c, (p_id, phrase) in enumerate(phrases):
+            u_id, u_prompt = user_prompt
+            s_id, s_prompt = system_prompt
+            single_params = param
+            task = self._translate_single_task(
+                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params,
+            )
+            group_tasks.append(task)
+            remain_tasks -= 1
+            # Ждем выполнение текущей группы. vLLM считает s_prompt ОДИН раз для всей группы
+            group_results = await asyncio.gather(*group_tasks)
+            duration_s = time.time() - start_time
+            logger.info(f'обработано {total_tasks - remain_tasks} записей из {total_tasks} за {duration_s} сек')
+            results.extend(group_results)
+        logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
+        return results
