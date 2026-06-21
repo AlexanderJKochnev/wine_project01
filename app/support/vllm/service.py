@@ -378,7 +378,7 @@ class VLLMService:
         last_id = 0
         descr = HANDBOOKS.get(handbook)
         while True:  # бесконечый цикл пока есть записи handbooks
-            # 3.
+            # 3. get data
             async with session_factory() as session:
                 data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
                                                             last_id)
@@ -388,7 +388,9 @@ class VLLMService:
                 data, system_prompt, user_prompt,
                 param, language_destination, descr  # subj
             )
-            distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
+            # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
+            # 5. save to temporary file
+            distill = self.tmp_data_validate(result, handbook, target_field, language_destination)
             jprint(distill)
             logger.warning('--------')
             if not last_id:
@@ -419,6 +421,25 @@ class VLLMService:
         else:
             last_id = result[-1][0]
         return result, last_id
+
+    def tmp_data_validate(self, data: dict, handbook: str, target_field: str, language_destination) -> dict:
+        """
+            преобразование и валидация данных для добалвения во временную таблицу
+            return:
+            guid: int   id записи
+            table: str  имя таблицы
+            field: str  имя поля
+            lang: str
+            origin: str оригинал
+            translate: str перевод
+        """
+        distill = [{'guid': v.get('drink_id'),
+                    'table': handbook,
+                    'field': target_field,
+                    'lang': language_destination,
+                    'origin': v.get('origin'),
+                    'translate': v.get('result')} for v in data]
+        return distill
 
 
 class TranslateRawDataService(Service):

@@ -59,7 +59,7 @@ class TranslateRawDataRead(UpdateSchema, PkSchema):
 
 
 class TmpTranslateCreate(BaseModel):
-    id: int
+    guid: int
     table: str
     field: str
     lang: str
@@ -68,7 +68,7 @@ class TmpTranslateCreate(BaseModel):
 
 
 class TmpTranslateUpdate(BaseModel):
-    id: Optional[int] = None
+    guid: Optional[int] = None
     table: Optional[str] = None
     field: Optional[str] = None
     lang: Optional[str] = None
