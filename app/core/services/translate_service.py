@@ -140,9 +140,9 @@ class TranslationService:
         request_params["messages"] = messages
         try:
             async with semaphore:
-                start_time = time.time()
+                # start_time = time.time()
                 response = await self.client.chat.completions.create(**request_params)
-                duration_s = time.time() - start_time
+                # duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
                 # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt УБИРАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
                 logger.warning(content)
@@ -159,7 +159,8 @@ class TranslationService:
                 'proption_id': single_params.get('id'),
                 'origin': phrase,
                 'result': content,
-                'duration': round(duration_s, 4)}
+                # 'duration': round(duration_s, 4)
+                }
 
     async def translate_batch(
             self, phrases: List[Tuple[int, str]], system_prompts: List[Tuple[int, str]],
