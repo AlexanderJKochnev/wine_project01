@@ -9,7 +9,7 @@ from sqlalchemy.dialects import postgresql
 from app.core.enum import HANDBOOKS
 from app.core.utils.alchemy_utils import get_model_by_tablename
 from app.core.utils.backgound_tasks import background_unique
-from app.core.utils.common_utils import jprint
+from app.core.utils.common_utils import jprint, rich_print
 from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
@@ -412,7 +412,7 @@ class VLLMService:
             # 6.0 implementation to real database
             # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
         async with session_factory() as session:
-            await self.implementation_to_real_db(session)
+            await self.__stats__(session)
             await session.commit()
         return None
 
@@ -463,7 +463,7 @@ class VLLMService:
                     'score': evo.get(v.get('drink_id'))} for v in data]
         return distill
 
-    async def implementation_to_real_db(self, session: AsyncSession):
+    async def __stats__(self, session: AsyncSession):
         """
             сводка по качеству перевода
             удаление не качественного контента
@@ -477,9 +477,11 @@ class VLLMService:
                    func.count().filter(Tmp.score < 10).label('bad')
                    ).group_by(Tmp.table, Tmp.field)
         )
-        stats = {(row.table, row.field): (row.good, row.bad) for row in result}
-        logger.info('статистика перевода')
-        jprint(stats)
+        # stats = [(row.table, row.field): (row.good, row.bad) for row in result]
+        stats = [{key: value for key, value in row._mapping.items()} for row in result]
+        rich_print(stats, 'статистика перевода')
+        # logger.info('статистика перевода')
+        # jprint(stats)
         return
 
 

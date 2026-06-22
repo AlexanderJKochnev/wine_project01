@@ -15,6 +15,9 @@ from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty, selectinload
 from sqlalchemy.sql.selectable import Select
 from dateutil.relativedelta import relativedelta
 from app.core.types import ModelType
+from rich.progress import track
+from rich.console import Console
+from rich.table import Table
 
 
 def getter(obj: Any, item_name: str) -> Any | None:
@@ -992,3 +995,18 @@ def get_random_string(length) -> str:
     letters_and_digits = string.ascii_letters + string.digits
     # Генерируем список символов и склеиваем в строку
     return ''.join(random.choices(letters_and_digits, k=length)).lower()
+
+
+def rich_print(data: List[Dict], title: str):
+    """
+    красивая печать в логах
+    на входе список словарей
+    где ключи - названия колонок
+    """
+    console = Console()
+    table = Table(title=title)
+    for key in data[0].keys():
+        table.add_column(key.capitalize(), style="cyan", justify="left")
+    for val in data:
+        table.add_row(*val.values())
+    console.print(table)

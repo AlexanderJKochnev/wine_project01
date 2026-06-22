@@ -44,6 +44,9 @@ class VllmRouter(LightRouter):
         self.router.add_api_route(
             "/handbooks_translate", self.handbook_translate, methods=["POST"], openapi_extra={'x-request-schema': None}
         )
+        self.router.add_api_route(
+            "/test", self.test, methods=['GET'], openapi_extra={'x-request-schema': None}
+        )
         # super().setup_routes()
 
     async def get_translate_prompts(
@@ -196,6 +199,10 @@ class VllmRouter(LightRouter):
                                                          chunk=chunk,
                                                          background_tasks=background_tasks)
         return response
+
+    async def test(self, session: AsyncSession = Depends(get_db)):
+        await self.service.__stats__(session)
+        return None
 
 
 class TranslateRawDataRouter(BaseRouter):
