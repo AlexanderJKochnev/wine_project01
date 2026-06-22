@@ -1,8 +1,9 @@
 # app.support.vllm.service.py
 import time
+from collections import defaultdict
 from typing import List, Sequence, Tuple
 
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.dialects import postgresql
 
 from app.core.enum import HANDBOOKS
@@ -393,12 +394,13 @@ class VLLMService:
                 param, language_destination, descr  # subj
             )
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-            logger.warning('------------evaluated-----------')
+            logger.warning(f'----------- evaluated {len(evaluated)} записей -----------')
             # jprint(evaluated)
             # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             # 5. save to temporary file
             # 5.0. ready to save
             distill = self.tmp_data_validate(result, handbook, target_field, language_destination, evaluated)
+            # 5.1. save
             async with session_factory() as session:
                 await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
@@ -407,6 +409,11 @@ class VLLMService:
                 break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
             #                f'{handbook=}, \n\n {params}')
+            # 6.0 implementation to real database
+            # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
+        async with session_factory() as session:
+            await self.implementation_to_real_db(session)
+            await session.commit()
         return None
 
     async def fetch_data_chunk(self, session: AsyncSession, source_field: str, target_field: str,
@@ -456,18 +463,51 @@ class VLLMService:
                     'score': evo.get(v.get('drink_id'))} for v in data]
         return distill
 
-    def tmp_raw_bulk_update(self, handbook: str, target_field: str):
+    async def implementation_to_real_db(session: AsyncSession):
         """
-        массовое обновление записей в справочнике данными из временной таблицы
+            сводка по качеству перевода
+            удаление не качественного контента
+            добавление качественного контента по таблицам
+            очистка результата
         """
-        # 0. получение модели справочника
-        model: ModelType = get_model_by_tablename(handbook)
-        tmp_model: ModelType = TmpTranslate
-        """
-        unique_combinations = await session.execute(select(TmpTranslate.table, TmpTranslate.field).distinct()).all()
-        stmt = (update(model).where(model.id == update_values.c.id)  # Связываем по ID
-                               .values(value_field = update_values.c.value_field)  # Обновляем поле
-        )"""
+        Tmp = get_model_by_tablename('tmptranslates')
+        # 1. Статистика
+        stats = {r.table: (r.good, r.bad) for r in (await session.execute(
+            select(
+                Tmp.table, Tmp.field,
+                func.sum(func.case((Tmp.score == 100, 1), else_=0)).label('good'),
+                func.sum(func.case((Tmp.score < 10, 1), else_=0)).label('bad')
+            ).group_by(Tmp.table, Tmp.field)
+        ))}
+        logger.info('статистика перевода')
+        jprint(stats)
+        return
+        # 2. Удаление
+        # await session.execute(Tmp.__table__.delete().where(Tmp.score < 10))
+
+        # 3. Получение и группировка данных
+        updates = defaultdict(list)
+        for r in await session.execute(select(Tmp.table, Tmp.field, Tmp.guid, Tmp.translate).where(Tmp.score == 1)):
+            updates[(r.table, r.field)].append((r.guid, r.translate))
+
+        # 4. Обновление
+        for (table, field), items in updates.items():
+            if get_model_by_tablename(table):
+                params = {f'id_{i}': g for i, (g, _) in enumerate(items)} | {f'val_{i}': v for i, (_, v) in
+                                                                             enumerate(items)}
+                raw =
+                await session.execute(
+                    text(
+                        f"UPDATE {table} SET {field}=v.val FROM (VALUES {','.join([f'(:id_{i},:val_{i})' for i in range(
+                            len(items))])}) v(id,val) WHERE id=v.id"
+                    ), params
+                )
+
+        # 5. Очистка и коммит
+        await session.execute(Tmp.__table__.delete())
+        await session.commit()
+
+        return stats
 
 
 class TranslateRawDataService(Service):
