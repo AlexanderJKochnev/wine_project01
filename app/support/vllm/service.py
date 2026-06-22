@@ -472,17 +472,15 @@ class VLLMService:
         """
         Tmp = get_model_by_tablename('tmptranslates')
         # 1. Статистика
-        stats = {r.table: (r.good, r.bad) for r in (await session.execute(
-            select(
-                Tmp.table, Tmp.field,
-                func.sum(func.case((Tmp.score == 100, 1), else_=0)).label('good'),
-                func.sum(func.case((Tmp.score < 10, 1), else_=0)).label('bad')
-            ).group_by(Tmp.table, Tmp.field)
-        ))}
+        result = await session.execute(
+            select(Tmp.table, Tmp.field, func.count().filter(Tmp.score == 10).label('good'),  # или score == 100
+                   func.count().filter(Tmp.score < 10).label('bad')
+                   ).group_by(Tmp.table, Tmp.field)
+        )
+        stats = {(row.table, row.field): (row.good, row.bad) for row in result}
         logger.info('статистика перевода')
         jprint(stats)
         return
-        
 
 
 class TranslateRawDataService(Service):
