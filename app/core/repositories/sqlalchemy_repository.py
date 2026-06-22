@@ -174,7 +174,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             return
         stmt = insert(model).returning(model)
         compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        print(stmt)
+        print(compiled)
         result = await session.scalars(stmt, data)
         return result.all()
 
