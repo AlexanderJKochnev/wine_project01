@@ -1,7 +1,7 @@
 # app.support.vllm.service.py
 import time
 from collections import defaultdict
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple, Type
 
 from sqlalchemy import func, select, text
 from sqlalchemy.dialects import postgresql
@@ -416,10 +416,9 @@ class VLLMService:
         async with session_factory() as session:
             await self.__stats__(session)
             # 6.2. удалить плохие переводы
-            
+
             await session.commit()
-         
-        
+
         return None
 
     async def fetch_data_chunk(self, session: AsyncSession, source_field: str, target_field: str,
@@ -492,13 +491,15 @@ class VLLMService:
         """ удаление
             плохих отметок
         """
+
         for row in stats:
-            if row.get('bad') > 0:
+            if int(row.get('bad')) > 0:
                 model = get_model_by_tablename(row.get('table'))
-                repository: Repository = get_repo(model.__name__)
+                repository: Type[Repository] = get_repo(model.__name__)
                 result = await repository.bulk_delete(session, model, model.score < 10)
                 logger.info(f'deleted {result} records with bad score not suitable for {model.__name__}')
         return None
+
 
 class TranslateRawDataService(Service):
     default = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']
