@@ -211,9 +211,8 @@ def get_models() -> List[ModelType]:
 def get_model_by_tablename(tablename: str):
     # Получаем Table объект
     table = Base.metadata.tables.get(tablename)
-    if not table:
+    if table is None:
         return None
-    
     # Ищем класс, который маппится на эту таблицу
     for mapper in Base.registry.mappers:
         if mapper.local_table is table:
