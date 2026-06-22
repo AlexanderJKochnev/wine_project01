@@ -399,7 +399,7 @@ class VLLMService:
                 response = await tmp_repo.bulk_create(distill, tmp_model, session)
                 result_dict = list_dict(response)
                 jprint(result_dict)
-                session.commit()
+                await session.commit()
             logger.warning('--------')
             if not last_id:
                 break

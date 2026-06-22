@@ -173,8 +173,8 @@ class Repository(Background, metaclass=RepositoryMeta):
         if not data:
             return
         stmt = insert(model).returning(model)
-        compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        print(compiled)
+        # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print(compiled)
         result = await session.scalars(stmt, data)
         return result.all()
 
