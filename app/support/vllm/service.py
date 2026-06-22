@@ -494,8 +494,8 @@ class VLLMService:
 
         for row in stats:
             if int(row.get('bad')) > 0:
-                model = get_model_by_tablename(row.get('table'))
-                repository: Type[Repository] = get_repo(model.__name__)
+                model = TmpTranslate
+                repository = TmpTranslateRepository
                 result = await repository.bulk_delete(session, model, model.score < 10)
                 logger.info(f'deleted {result} records with bad score not suitable for {model.__name__}')
         return None
