@@ -64,6 +64,6 @@ class TmpTranslate(Base):
     lang: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
     origin: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
     translate: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
-
+    score: Mapped[int] = mapped_column(Integer, index=True, nullable=False, unique=False)
     __table_args__ = (UniqueConstraint('id', 'table', 'field', 'lang',
                                        name='uq_tmp_translate_id_table_field_lang'),)

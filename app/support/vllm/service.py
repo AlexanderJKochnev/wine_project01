@@ -394,11 +394,11 @@ class VLLMService:
             )
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             logger.warning('------------evaluated-----------')
-            jprint(evaluated)
+            # jprint(evaluated)
             # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             # 5. save to temporary file
             # 5.0. ready to save
-            distill = self.tmp_data_validate(result, handbook, target_field, language_destination)
+            distill = self.tmp_data_validate(result, handbook, target_field, language_destination, evaluated)
             async with session_factory() as session:
                 # await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
@@ -432,7 +432,9 @@ class VLLMService:
             last_id = result[-1][0]
         return result, last_id
 
-    def tmp_data_validate(self, data: dict, handbook: str, target_field: str, language_destination) -> dict:
+    def tmp_data_validate(self, data: dict, handbook: str,
+                          target_field: str, language_destination: str,
+                          evaluated: List[dict]) -> List[dict]:
         """
             преобразование и валидация данных для добалвения во временную таблицу
             return:
@@ -442,13 +444,16 @@ class VLLMService:
             lang: str
             origin: str оригинал
             translate: str перевод
+            score: int
         """
+        evo = {d.get('drink_id'): int(d.get('total_score')) for d in evaluated}
         distill = [{'guid': v.get('drink_id'),
                     'table': handbook,
                     'field': target_field,
                     'lang': language_destination,
                     'origin': v.get('origin'),
-                    'translate': v.get('result')} for v in data]
+                    'translate': v.get('result'),
+                    'score': evo.get(v.get('drink_id'))} for v in data]
         return distill
 
     def tmp_raw_bulk_update(self, handbook: str, target_field: str):
