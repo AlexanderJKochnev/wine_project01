@@ -376,7 +376,7 @@ class VLLMService:
             param: dict = await self.get_proption(session, params)
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
-            await session.commit
+            await session.commit()
         tmp_model = TmpTranslate
         tmp_repo = TmpTranslateRepository
         last_id = 0
