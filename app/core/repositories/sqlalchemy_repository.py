@@ -177,11 +177,11 @@ class Repository(Background, metaclass=RepositoryMeta):
         # print(compiled)
         result = await session.scalars(stmt, data)
         return result.all()
-    
+
     @classmethod
     async def bulk_create_no_return(
-            cls, data: List[Dict], model: ModelType, session: AsyncSession
-            ) -> bool:
+        cls, data: List[Dict], model: ModelType, session: AsyncSession
+    ) -> bool:
         """ быстрое массовое добавление записей из словаря
             обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
             поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
@@ -197,7 +197,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         stmt = insert(model)
         # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled)
-        await session.scalars(stmt, data)
+        session.excute(stmt, data)
         return True
 
     @classmethod
