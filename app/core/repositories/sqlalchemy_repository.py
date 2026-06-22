@@ -197,7 +197,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         stmt = insert(model)
         # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled)
-        session.excute(stmt, data)
+        await session.execute(stmt, data)
         return True
 
     @classmethod
