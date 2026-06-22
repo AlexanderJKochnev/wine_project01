@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from loguru import logger
-from sqlalchemy import (and_, desc, func, insert, inspect, or_, Row, RowMapping, select, Select, update)
+from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select, Select, update)
 from sqlalchemy.dialects import postgresql  # NOQA: F401
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -256,7 +256,25 @@ class Repository(Background, metaclass=RepositoryMeta):
         await session.delete(obj)
         # await session.expunge(obj)
         # можно отвязать и вернуть удаленный объект и проделать с ним вские штуки - например записать заново с новым ID
-        return True  # , None  # , obj
+        return True
+
+    @classmethod
+    async def bulk_delete(cls, session: AsyncSession, model: ModelType, *conditions: Any) -> int:
+        """
+        массовое удаление записей по условию
+        Универсальный метод для массового удаления по любым условиям.
+        :param session: Активная сессия SQLAlchemy
+        :param model: Класс модели (например, User)
+        :param conditions: Любое количество условий SQLAlchemy (*, >, <, like, in_)
+        например roduct.price > 5000
+        :return: Количество удаленных строк
+        """
+        if not conditions:
+            raise ValueError("Необходимо передать хотя бы одно условие для удаления.")
+        stmt = delete(model).where(*conditions)
+        result = session.execute(stmt)
+        session.commit()
+        return result.rowcount
 
     @classmethod
     async def get_by_id(cls, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:

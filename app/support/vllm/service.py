@@ -1,12 +1,13 @@
 # app.support.vllm.service.py
 import time
 from collections import defaultdict
-from typing import List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from sqlalchemy import func, select, text
 from sqlalchemy.dialects import postgresql
 
 from app.core.enum import HANDBOOKS
+from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.utils.alchemy_utils import get_model_by_tablename
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint, rich_print
@@ -19,6 +20,7 @@ from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.pydantic_utils import inst_dict, list_dict
+from app.service_registry import get_repo
 from app.support import Drink, DrinkService, Subcategory, TranslateRawData
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
@@ -409,11 +411,15 @@ class VLLMService:
                 break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
             #                f'{handbook=}, \n\n {params}')
-            # 6.0 implementation to real database
-            # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
+        # 6.0 implementation to real database
+        # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
         async with session_factory() as session:
             await self.__stats__(session)
+            # 6.2. удалить плохие переводы
+            
             await session.commit()
+         
+        
         return None
 
     async def fetch_data_chunk(self, session: AsyncSession, source_field: str, target_field: str,
@@ -463,7 +469,7 @@ class VLLMService:
                     'score': evo.get(v.get('drink_id'))} for v in data]
         return distill
 
-    async def __stats__(self, session: AsyncSession):
+    async def __stats__(self, session: AsyncSession) -> List[dict]:
         """
             сводка по качеству перевода
             удаление не качественного контента
@@ -480,10 +486,19 @@ class VLLMService:
         # stats = [(row.table, row.field): (row.good, row.bad) for row in result]
         stats = [{key: str(value) for key, value in row._mapping.items()} for row in result]
         rich_print(stats, 'статистика перевода')
-        # logger.info('статистика перевода')
-        # jprint(stats)
-        return
+        return stats
 
+    async def __del_bad_scores__(self, stats: List[Dict], session: AsyncSession):
+        """ удаление
+            плохих отметок
+        """
+        for row in stats:
+            if row.get('bad') > 0:
+                model = get_model_by_tablename(row.get('table'))
+                repository: Repository = get_repo(model.__name__)
+                result = await repository.bulk_delete(session, model, model.score < 10)
+                logger.info(f'deleted {result} records with bad score not suitable for {model.__name__}')
+        return None
 
 class TranslateRawDataService(Service):
     default = ['drink_id', 'lang_origin', 'prompt_id', 'writerrule_id', 'proption_id']

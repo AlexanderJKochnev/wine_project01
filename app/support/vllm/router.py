@@ -201,7 +201,8 @@ class VllmRouter(LightRouter):
         return response
 
     async def test(self, session: AsyncSession = Depends(get_db)):
-        await self.service.__stats__(session)
+        stats = await self.service.__stats__(session)
+        await self.service.__del_bad_scores__(stats, session)
         return None
 
 
