@@ -478,7 +478,7 @@ class VLLMService:
                    ).group_by(Tmp.table, Tmp.field)
         )
         # stats = [(row.table, row.field): (row.good, row.bad) for row in result]
-        stats = [{key: value for key, value in row._mapping.items()} for row in result]
+        stats = [{key: str(value) for key, value in row._mapping.items()} for row in result]
         rich_print(stats, 'статистика перевода')
         # logger.info('статистика перевода')
         # jprint(stats)
