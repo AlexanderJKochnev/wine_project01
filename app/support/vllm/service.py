@@ -394,7 +394,7 @@ class VLLMService:
             # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             # 5. save to temporary file
             # 5.0. ready to save
-            distill = self.tmp_data_validate(result, handbook, target_field, dest)
+            distill = self.tmp_data_validate(result, handbook, target_field, language_destination)
             async with session_factory() as session:
                 response = await tmp_repo.bulk_create(distill, tmp_model, session)
                 result_dict = list_dict(response)
@@ -444,7 +444,7 @@ class VLLMService:
         distill = [{'guid': v.get('drink_id'),
                     'table': handbook,
                     'field': target_field,
-                    # 'lang': language_destination[1:],
+                    'lang': language_destination[1:],
                     'origin': v.get('origin'),
                     'translate': v.get('result')} for v in data]
         return distill

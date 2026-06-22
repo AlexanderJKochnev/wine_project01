@@ -61,7 +61,7 @@ class TmpTranslate(Base):
     table: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
     # имя переводимого поля (уже с префиксом)
     field: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
-    # lang: Mapped[str] = mapped_column(String(2), index=True, nullable=False, unique=False)
+    lang: Mapped[str] = mapped_column(String, index=True, nullable=False, unique=False)
     origin: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
     translate: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
 
