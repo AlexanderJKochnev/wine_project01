@@ -177,6 +177,28 @@ class Repository(Background, metaclass=RepositoryMeta):
         # print(compiled)
         result = await session.scalars(stmt, data)
         return result.all()
+    
+    @classmethod
+    async def bulk_create_no_return(
+            cls, data: List[Dict], model: ModelType, session: AsyncSession
+            ) -> bool:
+        """ быстрое массовое добавление записей из словаря
+            обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
+            поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
+            data = [
+                {"email": "user1@example.com", "username": "user1", "status": "active"},
+                {"email": "user2@example.com", "username": "user2", "status": "pending"},
+                {"email": "user3@example.com", "username": "user3", "status": "active"},
+            ]
+            ВОЗВРАЩАЕТ  true or false ДЛЯ БОЛЬШОГО КОЛИЧЕСТВА ДАННЫХ
+        """
+        if not data:
+            return
+        stmt = insert(model)
+        # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print(compiled)
+        await session.scalars(stmt, data)
+        return True
 
     @classmethod
     async def bulk_update(cls, data: List[Dict], model: ModelType,

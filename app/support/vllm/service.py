@@ -396,11 +396,9 @@ class VLLMService:
             # 5.0. ready to save
             distill = self.tmp_data_validate(result, handbook, target_field, language_destination)
             async with session_factory() as session:
-                response = await tmp_repo.bulk_create(distill, tmp_model, session)
-                result_dict = list_dict(response)
-                jprint(result_dict)
+                await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
-            logger.warning('--------')
+            logger.warning(f'{len(distill)} записей добавлено')
             if not last_id:
                 break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
