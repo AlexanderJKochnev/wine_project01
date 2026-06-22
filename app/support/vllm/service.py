@@ -482,32 +482,7 @@ class VLLMService:
         logger.info('статистика перевода')
         jprint(stats)
         return
-        # 2. Удаление
-        # await session.execute(Tmp.__table__.delete().where(Tmp.score < 10))
-
-        # 3. Получение и группировка данных
-        updates = defaultdict(list)
-        for r in await session.execute(select(Tmp.table, Tmp.field, Tmp.guid, Tmp.translate).where(Tmp.score == 1)):
-            updates[(r.table, r.field)].append((r.guid, r.translate))
-
-        # 4. Обновление
-        for (table, field), items in updates.items():
-            if get_model_by_tablename(table):
-                params = {f'id_{i}': g for i, (g, _) in enumerate(items)} | {f'val_{i}': v for i, (_, v) in
-                                                                             enumerate(items)}
-                raw =
-                await session.execute(
-                    text(
-                        f"UPDATE {table} SET {field}=v.val FROM (VALUES {','.join([f'(:id_{i},:val_{i})' for i in range(
-                            len(items))])}) v(id,val) WHERE id=v.id"
-                    ), params
-                )
-
-        # 5. Очистка и коммит
-        await session.execute(Tmp.__table__.delete())
-        await session.commit()
-
-        return stats
+        
 
 
 class TranslateRawDataService(Service):
