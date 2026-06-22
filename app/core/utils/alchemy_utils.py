@@ -208,6 +208,19 @@ def get_models() -> List[ModelType]:
             isinstance(cls, type) and hasattr(cls, '__table__'))
 
 
+def get_model_by_tablename(tablename: str):
+    # Получаем Table объект
+    table = Base.metadata.tables.get(tablename)
+    if not table:
+        return None
+    
+    # Ищем класс, который маппится на эту таблицу
+    for mapper in Base.registry.mappers:
+        if mapper.local_table is table:
+            return mapper.class_
+    return None
+
+
 def parse_unique_violation(error_msg: str) -> Optional[Tuple[str, str]]:
     """
     Парсит сообщение об ошибке уникальности и извлекает:

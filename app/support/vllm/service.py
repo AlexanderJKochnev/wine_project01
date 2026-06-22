@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 
 from app.core.enum import HANDBOOKS
+from app.core.utils.alchemy_utils import get_model_by_tablename
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint
 from fastapi import HTTPException  # , BackgroundTasks,
@@ -375,7 +376,7 @@ class VLLMService:
             param: dict = await self.get_proption(session, params)
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
-            session.commit
+            await session.commit
         tmp_model = TmpTranslate
         tmp_repo = TmpTranslateRepository
         last_id = 0
@@ -391,12 +392,15 @@ class VLLMService:
                 data, system_prompt, user_prompt,
                 param, language_destination, descr  # subj
             )
+            evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+            logger.warning('------------evaluated-----------')
+            jprint(evaluated)
             # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
             # 5. save to temporary file
             # 5.0. ready to save
             distill = self.tmp_data_validate(result, handbook, target_field, language_destination)
             async with session_factory() as session:
-                await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
+                # await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
             logger.warning(f'{len(distill)} записей добавлено')
             if not last_id:
@@ -446,6 +450,19 @@ class VLLMService:
                     'origin': v.get('origin'),
                     'translate': v.get('result')} for v in data]
         return distill
+
+    def tmp_raw_bulk_update(self, handbook: str, target_field: str):
+        """
+        массовое обновление записей в справочнике данными из временной таблицы
+        """
+        # 0. получение модели справочника
+        model: ModelType = get_model_by_tablename(handbook)
+        tmp_model: ModelType = TmpTranslate
+        """
+        unique_combinations = await session.execute(select(TmpTranslate.table, TmpTranslate.field).distinct()).all()
+        stmt = (update(model).where(model.id == update_values.c.id)  # Связываем по ID
+                               .values(value_field = update_values.c.value_field)  # Обновляем поле
+        )"""
 
 
 class TranslateRawDataService(Service):
