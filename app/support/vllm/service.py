@@ -3,7 +3,7 @@ import time
 from typing import List, Sequence, Tuple
 
 from sqlalchemy import text
-# from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects import postgresql
 
 from app.core.enum import HANDBOOKS
 from app.core.utils.backgound_tasks import background_unique
