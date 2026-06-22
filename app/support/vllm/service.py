@@ -463,7 +463,7 @@ class VLLMService:
                     'score': evo.get(v.get('drink_id'))} for v in data]
         return distill
 
-    async def implementation_to_real_db(session: AsyncSession):
+    async def implementation_to_real_db(self, session: AsyncSession):
         """
             сводка по качеству перевода
             удаление не качественного контента
