@@ -444,7 +444,7 @@ class VLLMService:
         distill = [{'guid': v.get('drink_id'),
                     'table': handbook,
                     'field': target_field,
-                    'lang': language_destination[1:],
+                    'lang': language_destination,
                     'origin': v.get('origin'),
                     'translate': v.get('result')} for v in data]
         return distill
