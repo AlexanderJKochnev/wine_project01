@@ -181,7 +181,7 @@ class Repository(Background, metaclass=RepositoryMeta):
     @classmethod
     async def bulk_create_no_return(
         cls, data: List[Dict], model: ModelType, session: AsyncSession
-    ) -> bool:
+    ) -> int:
         """ быстрое массовое добавление записей из словаря
             обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
             поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
@@ -193,12 +193,12 @@ class Repository(Background, metaclass=RepositoryMeta):
             ВОЗВРАЩАЕТ  true or false ДЛЯ БОЛЬШОГО КОЛИЧЕСТВА ДАННЫХ
         """
         if not data:
-            return
+            return 0
         stmt = insert(model)
         # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled)
-        await session.execute(stmt, data)
-        return True
+        response = await session.execute(stmt, data)
+        return response.rowcount
 
     @classmethod
     async def bulk_update(cls, data: List[Dict], model: ModelType,

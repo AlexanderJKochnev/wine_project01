@@ -1003,6 +1003,8 @@ def rich_print(data: List[Dict], title: str):
     на входе список словарей
     где ключи - названия колонок
     """
+    if data is None:
+        return
     console = Console()
     table = Table(title=title)
     for key in data[0].keys():

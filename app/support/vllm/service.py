@@ -392,17 +392,15 @@ class VLLMService:
                 param, language_destination, descr  # subj
             )
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-            logger.warning(f'----------- evaluated {len(evaluated)} записей -----------')
-            # jprint(evaluated)
-            # distill = [(v.get('drink_id'), v.get('origin'), v.get('result')) for v in result]
+            logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
             # 5. save to temporary file
             # 5.0. ready to save
             distill = self.tmp_data_validate(result, handbook, target_field, language_destination, evaluated)
             # 5.1. save
             async with session_factory() as session:
-                await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
+                response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
-            logger.warning(f'{len(distill)} записей добавлено')
+            logger.success(f'{response} записей из {len(distill)} добавлено во временную таблицу')
             if not last_id:
                 break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
@@ -419,7 +417,6 @@ class VLLMService:
             await self.__clear_tmptable__(session)
             await session.commit()
             session.expire_all()
-
         return None
 
     async def fetch_data_chunk(self, session: AsyncSession, source_field: str, target_field: str,
@@ -436,9 +433,10 @@ class VLLMService:
         """
         sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook, last_id=last_id, chunk=chunk)
         stmt = text(sql)
-        result = await session.execute(stmt)
-        rows = result.all()
+        response = await session.execute(stmt)
+        rows = response.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)
+        logger.success(f'получено {len(result)} записей для перевода')
         if len(result) < chunk:
             last_id = None
         else:
