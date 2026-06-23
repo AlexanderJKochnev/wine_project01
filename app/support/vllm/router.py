@@ -203,7 +203,8 @@ class VllmRouter(LightRouter):
     async def test(self, session: AsyncSession = Depends(get_db)):
         stats = await self.service.__stats__(session)
         await self.service.__del_bad_scores__(stats, session)
-        return None
+        result = await self.service.__update_handbook__(stats, session)
+        return result
 
 
 class TranslateRawDataRouter(BaseRouter):

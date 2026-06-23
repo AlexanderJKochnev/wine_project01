@@ -5,7 +5,8 @@ from typing import Dict, List, Sequence, Tuple
 from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
@@ -409,8 +410,11 @@ class VLLMService:
         # 6.0 implementation to real database
         # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
         async with session_factory() as session:
-            await self.__stats__(session)
+            stats = await self.__stats__(session)
+
             # 6.2. удалить плохие переводы
+            await self.__del_bad_scores__(stats, session)
+            # 6.3. обновить таблицы переводами
 
             await session.commit()
 
@@ -486,14 +490,35 @@ class VLLMService:
         """ удаление
             плохих отметок
         """
-
-        for row in stats:
-            if int(row.get('bad')) > 0:
-                model = TmpTranslate
-                repository = TmpTranslateRepository
-                result = await repository.bulk_delete(session, model, model.score < 10)
-                logger.info(f'deleted {result} records with bad score not suitable for {model.__name__}')
+        model = TmpTranslate
+        repository = TmpTranslateRepository
+        result = await repository.bulk_delete(session, model, model.score < 10)
+        logger.info(f'deleted {result} records with bad score')
         return None
+
+    async def __update_handbook__(self, stats, session):
+        result: list = []
+        for row in stats:
+            table_name = row.get('table')
+            field_name = row.get('field')
+            model = get_model_by_tablename(table_name)
+            target_column = getattr(model, field_name)
+            stmt = (update(model)
+                    .where(model.id == TmpTranslate.guid)
+                    .where(TmpTranslate.table == table_name)
+                    .values({target_column: TmpTranslate.translate}))
+            compiled_pg = stmt.compile(dialect=postgresql.dialect())
+            print(compiled_pg)
+            # response = session.execute(stmt)
+            result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
+        session.commit()
+        rich_print(result, 'количество обновленных записей')
+        return result
+
+    async def __clear_tmptable__(self, session: AsyncSession):
+        """
+        очистка временной таблицы
+        """
 
 
 class TranslateRawDataService(Service):
