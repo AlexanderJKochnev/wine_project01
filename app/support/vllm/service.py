@@ -507,12 +507,12 @@ class VLLMService:
                     .where(model.id == TmpTranslate.guid)
                     .where(TmpTranslate.table == table_name)
                     .values({target_column: TmpTranslate.translate}))
-            compiled_pg = stmt.compile(dialect=postgresql.dialect())
+            compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
             print(compiled_pg)
             # response = session.execute(stmt)
             # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
             result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
-        session.commit()
+        await session.commit()
         rich_print(result, 'количество обновленных записей')
         return result
 
