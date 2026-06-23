@@ -209,6 +209,14 @@ class VllmRouter(LightRouter):
         session.expire_all()
         return result
 
+    async def drink_translate(self, background_tasks: BackgroundTasks,
+                              translation_service: TranslationService = Depends(get_translation_service),
+                              ):
+        """
+            сервис массового перевода
+        """
+
+
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):

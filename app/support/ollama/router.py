@@ -181,6 +181,7 @@ class PromptRouter(BaseRouter):
                      role: str = Form(..., description='роль'),
                      system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
+                     subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
                      active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)) -> PromptRead:
         response = await CategoryRepository.get_by_field('name', category, Category, session)
@@ -236,7 +237,7 @@ class ProptionRouter(BaseRouter):
                      typical_p: float = Form(0.92, ge=0.0, le=1.0, description="Typical sampling..."),
                      stop: List[str] = Form(["<|im_end|>", "<|endoftext|>", "\n\n"],
                                             description="Стоп-последовательности."),
-                     active: bool = Form(True, description = 'активировано'),
+                     active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
                      ) -> ProptionRead:
 
@@ -273,7 +274,8 @@ class WriterRuleRouter(BaseRouter):
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
-                     active: bool = Form(True, description = 'активировано'),
+                     subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
+                     active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
                      ) -> PromptRead:
         response = await CategoryRepository.get_by_field('name', category, Category, session)

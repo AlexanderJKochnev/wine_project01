@@ -9,6 +9,10 @@ from app.support import CategoryRead
 # from app.support.ollama.model import Prompt
 
 
+class Subcategories:
+    subcategory_ids: Optional[List[int]] = None
+
+
 class CustomCreate:
     category_id: int
     active: bool = True
@@ -24,18 +28,18 @@ class CustomUpdate:
     active: Optional[bool] = None
 
 
-class WriterRuleCreate(BaseModel, CustomCreate):
+class WriterRuleCreate(Subcategories, BaseModel, CustomCreate):
     name: str
     prompt: str
 
 
-class WriterRuleRead(BaseModel, CustomRead):
+class WriterRuleRead(Subcategories, BaseModel, CustomRead):
     id: int
     name: Optional[str] = None
     prompt: Optional[str] = None
 
 
-class WriterRuleUpdate(BaseModel, CustomUpdate):
+class WriterRuleUpdate(Subcategories, BaseModel, CustomUpdate):
     name: Optional[str] = None
     prompt: Optional[str] = None
 
@@ -80,13 +84,13 @@ class ProptionRead(PkSchema, ProptionCreate, CustomRead):
     id: int
 
 
-class PromptCreate(BaseModel, CustomCreate):
+class PromptCreate(Subcategories, BaseModel, CustomCreate):
     """Модель для POST запроса: role и system_prompt обязательны"""
     role: str = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
     system_prompt: str = Field(..., min_length=10)
 
 
-class PromptUpdate(BaseModel, CustomUpdate):
+class PromptUpdate(Subcategories, BaseModel, CustomUpdate):
     """Модель для PATCH запроса: все поля необязательны"""
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
@@ -96,36 +100,8 @@ class PromptUpdate(BaseModel, CustomUpdate):
     # model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
 
 
-class PromptRead(PkSchema, PromptCreate, CustomRead):
+class PromptRead(Subcategories, PkSchema, PromptCreate, CustomRead):
     id: int
-
-
-"""
-то что возвращает ollama.asyncclient.list()
-[
-  [
-    "models",
-    [
-      {
-        "model": "deepseek-r1:7b",
-        "modified_at": "2026-02-28T21:00:43.813787Z",
-        "digest": "755ced02ce7befdb13b7ca74e1e4d08cddba4986afdb63a480f2c93d3140383f",
-        "size": 4683075440,
-        "details": {
-          "parent_model": "",
-          "format": "gguf",
-          "family": "qwen2",
-          "families": [
-            "qwen2"
-          ],
-          "parameter_size": "7.6B",
-          "quantization_level": "Q4_K_M"
-        }
-      },
-    ]
-  ]
-]
-"""
 
 
 class LlmResponseSchema(BaseModel):

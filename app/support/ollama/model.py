@@ -57,6 +57,7 @@ class Prompt(ActiveMixin, BaseAt, Base):
     role: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     # промпт
     system_prompt: Mapped[str] = mapped_column(String)
+    subcategory_ids: Mapped[Optional[List[int]]] = mapped_column(JSON, nullable=True)
 
     def __str__(self):
         return self.role or ""
@@ -208,6 +209,7 @@ class WriterRule(ActiveMixin, BaseAt, Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(String)
+    subcategory_ids: Mapped[Optional[List[int]]] = mapped_column(JSON, nullable=True)
 
     def __str__(self):
         return self.name or ""

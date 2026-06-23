@@ -78,3 +78,23 @@ class TmpTranslateUpdate(BaseModel):
 
 class TmpTranslateRead(TmpTranslateUpdate):
     pass
+
+
+class DrinkTranslateScoreCreate(BaseModel):
+    guid: int
+    origin: str
+    destin: str
+    prompt_id: int
+    writerrule_id: int
+    proption_id: int
+    score: int
+
+
+class DrinkTranslateScoreUpdate(BaseModel):
+    guid: Optional[int] = None
+    origin: Optional[str] = None
+    destin: Optional[str] = None
+    prompt_id: Optional[int] = None
+    writerrule_id: Optional[int] = None
+    proption_id: Optional[int] = None
+    score: Optional[int] = None

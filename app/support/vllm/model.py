@@ -65,5 +65,35 @@ class TmpTranslate(Base):
     origin: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
     translate: Mapped[str] = mapped_column(Text, nullable=False, unique=False)
     score: Mapped[int] = mapped_column(Integer, index=True, nullable=False, unique=False)
-    __table_args__ = (UniqueConstraint('id', 'table', 'field', 'lang',
+    __table_args__ = (UniqueConstraint('guid', 'table', 'field', 'lang',
                                        name='uq_tmp_translate_id_table_field_lang'),)
+
+
+class DrinkTranslateScore(Base, BaseAt):
+    """
+        модель для хранения результатов перевода
+    """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    __tablename__ = 'drinktranslatescores'
+    # id переводимой записи
+    guid: Mapped[int] = mapped_column(Integer, index=True, nullable=False, unique=False)
+    # язык оригинала (суффикс - два символа)
+    origin: Mapped[str] = mapped_column(String(2), index=True, nullable=False, unique=False)
+    # язык перевода (суффикс - вда символа)
+    destin: Mapped[str] = mapped_column(String(2), index=True, nullable=False, unique=False)
+    # system_prompt
+    prompt_id: Mapped[int] = mapped_column(ForeignKey("prompts.id"), nullable=False, index=True)
+    prompt: Mapped["Prompt"] = relationship(cascade=cascade, lazy=lazy)
+    # user_prompt
+    writerrule_id: Mapped[int] = mapped_column(ForeignKey("writerrules.id"), nullable=False, index=True)
+    writerrule: Mapped["WriterRule"] = relationship(cascade=cascade, lazy=lazy)
+    # params
+    proption_id: Mapped[int] = mapped_column(ForeignKey("proptions.id"), nullable=False, index=True)
+    proption: Mapped["Proption"] = relationship(cascade=cascade, lazy=lazy)
+    # score
+    score: Mapped[int_null_index]  # оценка перевода
+    __table_args__ = (UniqueConstraint(
+        'guid', 'origin', 'destin', 'prompt_id', 'writerrule_id', 'proption_id',
+        name='drinktranslatescores_unique_constraint'
+    ),)
