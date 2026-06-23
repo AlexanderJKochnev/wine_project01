@@ -9,9 +9,8 @@ from app.support import CategoryRead
 # from app.support.ollama.model import Prompt
 
 
-class Subcategories:
-    # subcategory_ids: Optional[List[int]] = None
-    pass
+class SubcategoriesArray:
+    subcategory_ids: Optional[List[int]] = None
 
 
 class CustomCreate:
@@ -29,18 +28,18 @@ class CustomUpdate:
     active: Optional[bool] = None
 
 
-class WriterRuleCreate(Subcategories, BaseModel, CustomCreate):
+class WriterRuleCreate(BaseModel, CustomCreate):
     name: str
     prompt: str
 
 
-class WriterRuleRead(Subcategories, BaseModel, CustomRead):
+class WriterRuleRead(BaseModel, CustomRead):
     id: int
     name: Optional[str] = None
     prompt: Optional[str] = None
 
 
-class WriterRuleUpdate(Subcategories, BaseModel, CustomUpdate):
+class WriterRuleUpdate(BaseModel, CustomUpdate):
     name: Optional[str] = None
     prompt: Optional[str] = None
 
@@ -85,13 +84,13 @@ class ProptionRead(PkSchema, ProptionCreate, CustomRead):
     id: int
 
 
-class PromptCreate(Subcategories, BaseModel, CustomCreate):
+class PromptCreate(BaseModel, CustomCreate):
     """Модель для POST запроса: role и system_prompt обязательны"""
     role: str = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
     system_prompt: str = Field(..., min_length=10)
 
 
-class PromptUpdate(Subcategories, BaseModel, CustomUpdate):
+class PromptUpdate(BaseModel, CustomUpdate):
     """Модель для PATCH запроса: все поля необязательны"""
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
@@ -101,7 +100,7 @@ class PromptUpdate(Subcategories, BaseModel, CustomUpdate):
     # model_config = ConfigDict(extra='forbid')  # Запрещает передавать лишние поля
 
 
-class PromptRead(Subcategories, PkSchema, PromptCreate, CustomRead):
+class PromptRead(PkSchema, PromptCreate, CustomRead):
     id: int
 
 
