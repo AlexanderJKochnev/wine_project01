@@ -10,7 +10,8 @@ from app.support import CategoryRead
 
 
 class Subcategories:
-    subcategory_ids: Optional[List[int]] = None
+    # subcategory_ids: Optional[List[int]] = None
+    pass
 
 
 class CustomCreate:
