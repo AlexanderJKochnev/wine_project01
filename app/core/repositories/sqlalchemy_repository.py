@@ -198,7 +198,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled)
         response = await session.execute(stmt, data)
-        return response.rowcount
+        return response.cursor.rowcount
 
     @classmethod
     async def bulk_update(cls, data: List[Dict], model: ModelType,

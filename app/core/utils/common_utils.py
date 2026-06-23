@@ -1004,7 +1004,7 @@ def rich_print(data: List[Dict], title: str):
     где ключи - названия колонок
     """
     jprint(data)
-    if data is None:
+    if data is None or len(data) == 0:
         return
     console = Console()
     table = Table(title=title)
