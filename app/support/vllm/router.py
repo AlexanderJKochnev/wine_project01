@@ -232,7 +232,8 @@ class VllmRouter(LightRouter):
                                                       language_destination=language_destination,
                                                       user_prompt=user_prompt,
                                                       params=params,
-                                                      chunk=chunk)
+                                                      chunk=chunk,
+                                                      background_tasks=background_tasks)
         return response
 
 class TranslateRawDataRouter(BaseRouter):
