@@ -411,12 +411,14 @@ class VLLMService:
         # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
         async with session_factory() as session:
             stats = await self.__stats__(session)
-
             # 6.2. удалить плохие переводы
             await self.__del_bad_scores__(stats, session)
             # 6.3. обновить таблицы переводами
-
+            result = await self.__update_handbook__(stats, session)
+            # 6.4. очистка таблицы
+            await self.__clear_tmptable__(session)
             await session.commit()
+            session.expire_all()
 
         return None
 
@@ -506,20 +508,23 @@ class VLLMService:
             stmt = (update(model)
                     .where(model.id == TmpTranslate.guid)
                     .where(TmpTranslate.table == table_name)
+                    .where(TmpTranslate.score == 10)
                     .values({target_column: TmpTranslate.translate}))
-            compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-            print(compiled_pg)
-            # response = session.execute(stmt)
-            # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
-            result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
-        await session.commit()
+            # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            # print(compiled_pg)
+            response = session.execute(stmt)
+            result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
+            # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
         rich_print(result, 'количество обновленных записей')
+        # session.execute(text(f"TRUNCATE TABLE {Country.__tablename__} RESTART IDENTITY CASCADE;"))
+        # session.commit()
         return result
 
     async def __clear_tmptable__(self, session: AsyncSession):
         """
         очистка временной таблицы
         """
+        session.execute(text(f"TRUNCATE TABLE {TmpTranslate.__tablename__} RESTART IDENTITY CASCADE;"))
 
 
 class TranslateRawDataService(Service):

@@ -204,6 +204,9 @@ class VllmRouter(LightRouter):
         stats = await self.service.__stats__(session)
         await self.service.__del_bad_scores__(stats, session)
         result = await self.service.__update_handbook__(stats, session)
+        # await self.service.__clear_tmptable__(session)
+        await session.commit()
+        session.expire_all()
         return result
 
 

@@ -273,7 +273,6 @@ class Repository(Background, metaclass=RepositoryMeta):
             raise ValueError("Необходимо передать хотя бы одно условие для удаления.")
         stmt = delete(model).where(*conditions)
         result = await session.execute(stmt)
-        await session.commit()
         return result.rowcount
 
     @classmethod
