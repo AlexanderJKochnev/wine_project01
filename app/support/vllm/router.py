@@ -45,6 +45,9 @@ class VllmRouter(LightRouter):
             "/handbooks_translate", self.handbook_translate, methods=["POST"], openapi_extra={'x-request-schema': None}
         )
         self.router.add_api_route(
+            "/drink_translate", self.drink_translate, methods=["POST"], openapi_extra={'x-request-schema': None}
+        )
+        self.router.add_api_route(
             "/test", self.test, methods=['GET'], openapi_extra={'x-request-schema': None}
         )
         # super().setup_routes()
@@ -211,12 +214,26 @@ class VllmRouter(LightRouter):
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
                               translation_service: TranslationService = Depends(get_translation_service),
+                              user_prompt: Writers = Query(..., descrition='промпт'),
+                              author: Prompts = Query(..., descrition='переводчик'),
+                              params: Preset = Query(..., descrition='настройки'),
+                              language_origin: Languages = Query(..., description='язык оригинала'),
+                              language_destination: Languages = Query(..., description='язык оригинала'),
+                              chunk: int = Query(25, description='чанк')
                               ):
         """
-            сервис массового перевода
+            сервис массового перевода описаний
+            user_prompt привязан к подкатегориям
         """
-
-
+        response = await self.service.drink_translate(session_factory=DatabaseManager.session_maker,
+                                                      translation_service=translation_service,
+                                                      system_prompt=author,
+                                                      language_origin=language_origin,
+                                                      language_destination=language_destination,
+                                                      user_prompt=user_prompt,
+                                                      params=params,
+                                                      chunk=chunk)
+        return response
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):

@@ -154,13 +154,13 @@ class VLLMService:
         return result.id, result.system_prompt, result.role
 
     @staticmethod
-    async def get_user_prompt(session: AsyncSession, value: str) -> Tuple:
+    async def get_user_prompt(session: AsyncSession, value: str) -> WriterRule:
         """
             получение одного user_prompt
         """
         model, repo = WriterRule, WriterRuleRepository
         result: WriterRule = await repo.get_by_field_v2({'name': value}, model, session)
-        return result.id, result.prompt, result.name
+        return result  # result.id, result.prompt, result.name
 
     @staticmethod
     async def get_user_prompts(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
@@ -371,7 +371,8 @@ class VLLMService:
             dest: str = await self.get_lang({'name_en': language_destination}, session)
             # 1.
             system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
-            user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
+            tmp: WriterRule = await self.get_user_prompt(session, user_prompt)
+            user_prompt: tuple = tmp.id, tmp.prompt, tmp.name
             param: dict = await self.get_proption(session, params)
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
@@ -525,6 +526,29 @@ class VLLMService:
         очистка временной таблицы
         """
         await session.execute(text(f"TRUNCATE TABLE {TmpTranslate.__tablename__} RESTART IDENTITY CASCADE;"))
+
+    @background_unique
+    async def drink_translate(
+            self, session_factory, translation_service: TranslationService, system_prompt: str,
+            language_origin: str, language_destination: str, user_prompt: str, params: str, chunk: int
+    ):
+        """
+        1. 
+        """
+        async with session_factory() as session:
+            # 0. получение имен поелй источника - перевода
+            origin: str = await self.get_lang({'name_en': language_origin}, session)
+            dest: str = await self.get_lang({'name_en': language_destination}, session)
+            source_field, target_field = f'name{origin}', f'name{dest}'
+            # 1. промпты и настройки
+            system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
+            tmp: WriterRule = await self.get_user_prompt(session, user_prompt)
+            user_prompt: tuple = tmp.id, tmp.prompt, tmp.name
+            subcategory_ids = tmp.subcategory_ids
+            param: dict = await self.get_proption(session, params)
+            # 2.
+            await session.commit()
+            return {'sub': subcategory_ids, 'typ': type(subcategory_ids)}
 
 
 class TranslateRawDataService(Service):
