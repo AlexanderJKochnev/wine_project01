@@ -192,13 +192,13 @@ class Repository(Background, metaclass=RepositoryMeta):
             ]
             ВОЗВРАЩАЕТ  true or false ДЛЯ БОЛЬШОГО КОЛИЧЕСТВА ДАННЫХ
         """
-        if not data:
+        if not data or len(data) == 0:
             return 0
         stmt = insert(model)
         # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled)
         response = await session.execute(stmt, data)
-        return response.cursor.rowcount
+        return len(data)
 
     @classmethod
     async def bulk_update(cls, data: List[Dict], model: ModelType,

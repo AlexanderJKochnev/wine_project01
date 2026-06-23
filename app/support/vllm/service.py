@@ -400,7 +400,7 @@ class VLLMService:
             async with session_factory() as session:
                 response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
-            logger.success(f'{response} записей из {len(distill)} добавлено во временную таблицу')
+            logger.success(f'{response} записей добавлено во временную таблицу')
             if not last_id:
                 break
             # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
