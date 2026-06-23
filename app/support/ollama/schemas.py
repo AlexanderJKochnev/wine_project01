@@ -28,18 +28,18 @@ class CustomUpdate:
     active: Optional[bool] = None
 
 
-class WriterRuleCreate(BaseModel, CustomCreate):
+class WriterRuleCreate(BaseModel, SubcategoriesArray, CustomCreate):
     name: str
     prompt: str
 
 
-class WriterRuleRead(BaseModel, CustomRead):
+class WriterRuleRead(BaseModel, SubcategoriesArray, CustomRead):
     id: int
     name: Optional[str] = None
     prompt: Optional[str] = None
 
 
-class WriterRuleUpdate(BaseModel, CustomUpdate):
+class WriterRuleUpdate(BaseModel, SubcategoriesArray, CustomUpdate):
     name: Optional[str] = None
     prompt: Optional[str] = None
 
@@ -84,13 +84,13 @@ class ProptionRead(PkSchema, ProptionCreate, CustomRead):
     id: int
 
 
-class PromptCreate(BaseModel, CustomCreate):
+class PromptCreate(BaseModel, SubcategoriesArray, CustomCreate):
     """Модель для POST запроса: role и system_prompt обязательны"""
     role: str = Field(..., min_length=2, max_length=50, pattern=r"^[A-ZА-Яa-zа-я0-9_-]+$")
     system_prompt: str = Field(..., min_length=10)
 
 
-class PromptUpdate(BaseModel, CustomUpdate):
+class PromptUpdate(BaseModel, SubcategoriesArray, CustomUpdate):
     """Модель для PATCH запроса: все поля необязательны"""
     # Мы наследуем всё от Base, где поля уже Optional.
     # Поле role обычно не меняют через PATCH, но если нужно — добавим:
