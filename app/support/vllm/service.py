@@ -548,7 +548,7 @@ class VLLMService:
             param: dict = await self.get_proption(session, params)
             # 2.
             await session.commit()
-            return {'sub': subcategory_ids, 'typ': type(subcategory_ids)}
+            logger.info({'sub': subcategory_ids, 'typ': type(subcategory_ids)})
 
 
 class TranslateRawDataService(Service):
