@@ -433,6 +433,8 @@ class VLLMService:
         """
         sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook, last_id=last_id, chunk=chunk)
         stmt = text(sql)
+        compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        print(compiled_pg)
         response = await session.execute(stmt)
         rows = response.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)

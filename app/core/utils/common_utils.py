@@ -1003,6 +1003,7 @@ def rich_print(data: List[Dict], title: str):
     на входе список словарей
     где ключи - названия колонок
     """
+    jprint(data)
     if data is None:
         return
     console = Console()
