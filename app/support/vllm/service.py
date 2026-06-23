@@ -512,7 +512,7 @@ class VLLMService:
                     .values({target_column: TmpTranslate.translate}))
             # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
             # print(compiled_pg)
-            response = session.execute(stmt)
+            response = await session.execute(stmt)
             result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
             # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
         rich_print(result, 'количество обновленных записей')
@@ -524,7 +524,7 @@ class VLLMService:
         """
         очистка временной таблицы
         """
-        session.execute(text(f"TRUNCATE TABLE {TmpTranslate.__tablename__} RESTART IDENTITY CASCADE;"))
+        await session.execute(text(f"TRUNCATE TABLE {TmpTranslate.__tablename__} RESTART IDENTITY CASCADE;"))
 
 
 class TranslateRawDataService(Service):
