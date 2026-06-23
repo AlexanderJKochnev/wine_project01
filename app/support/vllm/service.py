@@ -510,7 +510,8 @@ class VLLMService:
             compiled_pg = stmt.compile(dialect=postgresql.dialect())
             print(compiled_pg)
             # response = session.execute(stmt)
-            result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
+            # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
+            result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
         session.commit()
         rich_print(result, 'количество обновленных записей')
         return result
