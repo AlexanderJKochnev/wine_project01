@@ -14,6 +14,8 @@ from sqlalchemy.dialects.postgresql import CITEXT  # если используе
 from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty, selectinload
 from sqlalchemy.sql.selectable import Select
 from dateutil.relativedelta import relativedelta
+
+from app.core.hash_norm import tokenize
 from app.core.types import ModelType
 from rich.progress import track
 from rich.console import Console
@@ -1015,11 +1017,12 @@ def rich_print(data: List[Dict], title: str):
     console.print(table)
 
 
-def distinct_glue(*args, blacklist=None) -> str:
+def distinct_glue(*args, blacklist: tuple | list = None) -> str:
     """
     склеивает аргументы в строку - удаляя повторы
-    args -
+    args - фразы
+    blacklist - stricktly lower case
     """
     blacklist = set(blacklist or [])
-    words = ' '.join((a for a in args if a)).capitalize().split()
-    return ' '.join(word for word in dict.fromkeys(words) if word not in blacklist and word.isalnum())
+    words: list = tokenize(' '.join((a for a in args if a)).lower())
+    return ' '.join(word.capitalize() for word in dict.fromkeys(words) if word not in blacklist)

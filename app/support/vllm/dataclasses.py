@@ -68,7 +68,7 @@ class DrinkTranslateData:
         drink: dict = {item.get('id'): (distinct_glue(item.get(target_name, item.get('name')),
                                         item['category'].get(target_name,
                                                              item['category'].get('name')),
-            blacklist=('Other', 'Brandy', 'Прочее', 'Бренди')
+            blacklist=('other', 'brandy', 'прочее', 'бренди')
         )) for item in subcat_dict}
         jprint(drink)
 
