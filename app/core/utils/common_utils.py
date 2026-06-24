@@ -1023,5 +1023,5 @@ def distinct_glue(*args, blacklist: tuple | list = None) -> str:
     blacklist - stricktly lower case
     """
     blacklist = set(blacklist or [])
-    words: list = tokenize(' '.join((a for a in args if a and a not in blacklist)).lower())
+    words: list = tokenize(' '.join((a for a in args if a and a.lower() not in blacklist)).lower())
     return ' '.join(word.capitalize() for word in dict.fromkeys(words))
