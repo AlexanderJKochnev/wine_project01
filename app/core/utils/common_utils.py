@@ -1060,7 +1060,7 @@ def replaceX(text: str, replacement: Union[dict, tuple, list, set]) -> str:
     """
         замена по словарю. если словаря нет замена по спсиску на ''
     """
-    if not isinstance(replacement):
+    if not isinstance(replacement, dict):
         replacement = dict.fromkeys(replacement, '')
     for key, val in replacement.items():
         text = text.replace(key, val)

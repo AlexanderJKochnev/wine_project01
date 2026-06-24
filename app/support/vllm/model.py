@@ -97,3 +97,16 @@ class DrinkTranslateScore(Base, BaseAt):
         'guid', 'origin', 'destin', 'prompt_id', 'writerrule_id', 'proption_id',
         name='drinktranslatescores_unique_constraint'
     ),)
+
+
+class TranslateHelper(Base, BaseAt):
+    """
+        словарь помощник переводчика
+        пары фраз/слов с которыми были трудности с переводом на любых языках
+        cow корова
+        собкак chien
+        stone fruits - косточковые фрукты
+        перед переводом текста если такие фразы встретятся - в user prompt будет добавлена подсказка как переводить
+    """
+    word: Mapped[str] = mapped_column(String, nullable=False)
+    word: Mapped[str] = mapped_column(String, nullable=False)
