@@ -1021,5 +1021,5 @@ def distinct_glue(*args, blacklist=None) -> str:
     args -
     """
     blacklist = set(blacklist or [])
-    words = ' '.join(args).split()
-    return ' '.join(word for word in dict.fromkeys(words) if word.capitalize() not in blacklist and word.isalnum())
+    words = ' '.join(args).capitalize().split()
+    return ' '.join(word for word in dict.fromkeys(words) if word not in blacklist and word.isalnum())
