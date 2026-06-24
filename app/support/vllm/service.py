@@ -538,7 +538,8 @@ class VLLMService:
         0. получение языковых суффиксов для полей description
         1. получение проптов по их имени
         """
-        return data
+        jprint(data)
+        
         async with session_factory() as session:
             # 0. получение имен полей источника - перевода
             origin: str = await self.get_lang({'name_en': data.language_origin}, session)
