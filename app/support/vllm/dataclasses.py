@@ -4,15 +4,17 @@
 """
 
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Dict, Tuple
 
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from app.core.config.project_config import settings
+from app.core.utils.common_utils import jprint
 from app.core.utils.pydantic_utils import inst_dict
+from app.support import Category, Subcategory
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
-from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
-    WriterRuleRepository
+from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
 
 
 @dataclass(slots=True)  # без __dict__ +скорость/меньше память
@@ -25,7 +27,7 @@ class DrinkTranslateData:
     chunk: int
     source_field: str   # destination_ru
     target_field: str   # destination_ru
-    subcategories: tuple
+    subcategories: Tuple[Dict[Any, str]]
 
     @classmethod
     async def load_from_db(cls,
@@ -43,6 +45,14 @@ class DrinkTranslateData:
         result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
         user_prompt = result.id, result.prompt, result.name
         subcategories = tuple(result.subcategory_ids)
+        # получение субкатегорий
+        model = Subcategory
+        parent = Category
+        query = select(model).options(joinedload(model.category)).where(model.id.in_(subcategories))
+        response = await session.scalars(query)
+        subcat_dict = [inst_dict(instance) for instance in response.all()]
+        jprint(subcat_dict)
+
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
         params = inst_dict(result)
         # получение двух суффиксов языков сразу

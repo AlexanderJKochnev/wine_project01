@@ -539,24 +539,6 @@ class VLLMService:
         1. получение проптов по их имени
         """
         return
-        
-        async with session_factory() as session:
-            # 0. получение имен полей источника - перевода
-            origin: str = await self.get_lang({'name_en': data.language_origin}, session)
-            dest: str = await self.get_lang({'name_en': data.language_destination}, session)
-            # 0.1. поля источник/результат перевода
-            source_field, target_field = f'name{origin}', f'name{dest}'
-            # 1. промпты и настройки
-            data.system_prompt: tuple = await self.get_system_prompt(session, data.system_prompt)
-            tmp: WriterRule = await self.get_user_prompt(session, user_prompt)
-            user_prompt: tuple = tmp.id, tmp.prompt, tmp.name
-            # список подкатегорий
-            subcategory_ids = tmp.subcategory_ids
-            # настройки
-            param: dict = await self.get_proption(session, params)
-            # 2.
-            await session.commit()
-            logger.info({'sub': subcategory_ids, 'typ': type(subcategory_ids)})
 
         tmp_model = TmpTranslate
         tmp_repo = TmpTranslateRepository
