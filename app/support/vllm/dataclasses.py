@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 from app.core.config.project_config import settings
 from app.core.utils.common_utils import jprint
 from app.core.utils.pydantic_utils import inst_dict
-from app.support import Category, Subcategory
+from app.support import Subcategory
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
 from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
 
@@ -66,10 +66,12 @@ class DrinkTranslateData:
         # получение описаний напитка на языке перевода (имена полей в subcat name name)
         # source_name: str = f'name{lang_dict.get(language_origin1)}'
         target_name: str = f'name{lang_dict.get(language_destination1)}'
-        drink: str = subcat_dict.get(target_name, subcat_dict.get('name'))
-        cat: dict = subcat_dict.get('category')
-        category: str = cat.get(target_name, subcat_dict.get('name'))
-        print(f'{drink=} {category=}')
+
+        drink: dict = {item.get('id'): (item.get(target_name, item.get('name')),
+                                        item['category'].get(target_name,
+                                                             item['category'].get('name'))
+                                        ) for item in subcat_dict}
+        jprint(drink)
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
