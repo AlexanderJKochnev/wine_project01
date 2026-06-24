@@ -547,7 +547,7 @@ class VLLMService:
                                                                       data.target_field, subcat_id,
                                                                       data.chunk, last_id
                                                                       )
-                    session.commit()
+                    await session.commit()
                 # 4. translate
                 result = await translation_service.real_batch(
                     datas, data.system_prompt, data.user_prompt, data.params, data.language_destination, drink  # subj
