@@ -548,8 +548,11 @@ class VLLMService:
                                                                       data.chunk, last_id
                                                                       )
                     session.commit()
-                jprint(datas)
-                logger.critical('----------------')
+                # 4. translate
+                result = await translation_service.real_batch(
+                    datas, data.system_prompt, data.user_prompt, data.params, data.language_destination, descr  # subj
+                )
+                
                 if not last_id:
                     break
         return

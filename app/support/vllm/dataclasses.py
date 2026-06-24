@@ -27,7 +27,7 @@ class DrinkTranslateData:
     chunk: int
     source_field: str   # destination_ru
     target_field: str   # destination_ru
-    subcategories: Tuple[Dict[Any, str]]
+    subcategories: Dict  # Tuple[Dict[Any, str]]
 
     @classmethod
     async def load_from_db(cls,
@@ -81,4 +81,4 @@ class DrinkTranslateData:
                    chunk=chunk1,
                    source_field=source_field,
                    target_field=target_field,
-                   subcategories=subcategories)
+                   subcategories=drink)
