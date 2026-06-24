@@ -543,10 +543,10 @@ class VLLMService:
             last_id = 0
             while True:
                 async with session_factory() as session:
-                    data, last_id = await self.__fetch_drink_chunk__(session, data.source_field,
-                                                                     data.target_field, subcat_id,
-                                                                     data.chunk, last_id
-                                                                     )
+                    datas, last_id = await self.__fetch_drink_chunk__(session, data.source_field,
+                                                                      data.target_field, subcat_id,
+                                                                      data.chunk, last_id
+                                                                      )
                 if not last_id:
                     break
         return
