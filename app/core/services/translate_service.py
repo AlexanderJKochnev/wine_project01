@@ -235,6 +235,7 @@ class TranslationService:
             t_score = parsed_eval.get("translation_score", 0)
             text_score = parsed_eval.get("text_score", 0)
             reasoning = parsed_eval.get("reasoning", "")
+            errors = parsed_eval.get("errors", "")
 
         except Exception as e:
             duration_s = 0
@@ -251,7 +252,8 @@ class TranslationService:
         evaluated_row.update(
             {'translation_score': t_score, 'text_score': text_score,
              'total_score': round((t_score + text_score) / 2, 2),  # Средний балл
-             'expert_reasoning': reasoning, 'eval_duration': round(duration_s, 4)}
+             'expert_reasoning': reasoning, 'eval_duration': round(duration_s, 4),
+             'errors': errors}
         )
         return evaluated_row
 
