@@ -392,6 +392,8 @@ class VLLMService:
                 data, system_prompt, user_prompt,
                 param, language_destination, descr  # subj
             )
+            jprint(result)
+            logger.critical('==========')
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             jprint(evaluated)
             logger.critical('==========')
