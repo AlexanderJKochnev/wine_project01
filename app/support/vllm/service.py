@@ -547,6 +547,9 @@ class VLLMService:
                                                                       data.target_field, subcat_id,
                                                                       data.chunk, last_id
                                                                       )
+                    session.commit()
+                jprint(datas)
+                logger.critical('----------------')
                 if not last_id:
                     break
         return
@@ -564,7 +567,7 @@ class VLLMService:
         raw_sql = """
         SELECT id, {source_field} FROM drinks
         WHERE COALESCE({target_field},'') = '' AND COALESCE({source_field}, '') != ''
-        AND category_id = {subcat_id}
+        AND subcategory_id = {subcat_id}
         AND id > {last_id}
         ORDER BY id
         LIMIT {chunk};
@@ -572,9 +575,7 @@ class VLLMService:
         sql = raw_sql.format(source_field=source_field, target_field=target_field,
                              subcat_id=subcat_id, last_id=last_id, chunk=chunk)
         stmt = text(sql)
-        compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        print(compiled_pg)
-        return None, None
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         response = await session.execute(stmt)
         rows = response.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)
