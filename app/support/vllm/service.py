@@ -539,8 +539,6 @@ class VLLMService:
         0. исходные данные: data: DrinkTranslateData
         1. Запуск цикла: первый tier - если средний балл низкий - прерывается
         """
-        jprint(data)
-        return
         for subcat_id, drink in data.subcategories.items():
             last_id = 0
             while True:
@@ -557,6 +555,7 @@ class VLLMService:
                 jprint(result)
                 if not last_id:
                     break
+            break
         return
 
         tmp_model = TmpTranslate
