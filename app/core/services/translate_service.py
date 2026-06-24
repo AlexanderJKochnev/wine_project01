@@ -212,7 +212,7 @@ class TranslationService:
 
         system_content = self.EXPERT_SYSTEM_PROMPT.format(lang=target_lang)
         user_content = self.EXPERT_USER_PROMPT.format(
-            drink_info=row['lang_origin'],  # содержит f'{drink=}'
+            drink_info=row['drink'],  # содержит f'{drink=}'
             origin=row['origin'], result=row['result']
         )
 
