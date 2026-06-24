@@ -47,7 +47,6 @@ class DrinkTranslateData:
         subcategories = tuple(result.subcategory_ids)
         # получение субкатегорий
         model = Subcategory
-        parent = Category
         query = select(model).options(joinedload(model.category)).where(model.id.in_(subcategories))
         response = await session.scalars(query)
         subcat_dict = [inst_dict(instance) for instance in response.all()]
@@ -64,6 +63,13 @@ class DrinkTranslateData:
         lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result}
         source_field: str = f'{field}{lang_dict.get(language_origin1)}'
         target_field: str = f'{field}{lang_dict.get(language_destination1)}'
+        # получение описаний напитка на языке перевода (имена полей в subcat name name)
+        # source_name: str = f'name{lang_dict.get(language_origin1)}'
+        target_name: str = f'name{lang_dict.get(language_destination1)}'
+        drink: str = subcat_dict.get(target_name, subcat_dict.get('name'))
+        cat: dict = subcat_dict.get('category')
+        category: str = cat.get(target_name, subcat_dict.get('name'))
+        print(f'{drink=} {category=}')
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
