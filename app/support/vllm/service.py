@@ -539,7 +539,7 @@ class VLLMService:
         0. исходные данные: data: DrinkTranslateData
         1. Запуск цикла: первый tier - если средний балл низкий - прерывается
         """
-        for subcat_id in data.subcategories:
+        for subcat_id, drink in data.subcategories.items():
             last_id = 0
             while True:
                 async with session_factory() as session:
@@ -550,9 +550,9 @@ class VLLMService:
                     session.commit()
                 # 4. translate
                 result = await translation_service.real_batch(
-                    datas, data.system_prompt, data.user_prompt, data.params, data.language_destination, descr  # subj
+                    datas, data.system_prompt, data.user_prompt, data.params, data.language_destination, drink  # subj
                 )
-                
+                jprint(result)
                 if not last_id:
                     break
         return
