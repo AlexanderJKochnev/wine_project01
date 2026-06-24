@@ -228,7 +228,7 @@ class VllmRouter(LightRouter):
             сервис массового перевода описаний
             user_prompt привязан к подкатегориям
         """
-        data = DrinkTranslateData.load_from_db(system=author,
+        data = await DrinkTranslateData.load_from_db(system=author,
                                                language_origin1=language_origin,
                                                language_destination1=language_destination,
                                                user=user_prompt,
