@@ -18,37 +18,41 @@ class TranslationService:
         self.model_name = "/model"
         self.lang_map = {'ru': 'Russian', 'en': 'English', 'de': 'German', 'fr': 'French', 'es': 'Spanish',
                          'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese'}
-        self.EXPERT_SYSTEM_PROMPT = """You are an expert wine writer and professional translator.
+        self.hang = ("Описание: «", "Перевод: «", "Описание: ", "Перевод: ")
+        self.EXPERT_SYSTEM_PROMPT = """
+        You are an expert wine writer and professional translator.
         Your task is to critically evaluate the quality of the translation provided.
         Compare the Original Text and the Translated Text based on two criteria:
         1. text_quality (1-10) [HIGH PRIORITY]: Evaluate the target language ({lang}). It must sound like natural,
-        fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
+        fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Maugham, or elite wine magazines). Check for:
            - Flawless grammar, proper gender/case agreements, and natural sentence structures.
            - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper",
             "wine's body" translated literally must be heavily penalized.
            - It must sound like it was originally written by a native {lang} writer, not a machine.
         2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names),
         and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
+
+        [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
+        For each issue, extract a tuple containing: (1) the exact original segment,
+        (2) the incorrect translation segment, and (3) your corrected version.
+        If there are no errors, return an empty list.
         You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
         JSON schema:
         {{
           "translation_score": int,
           "text_score": int,
-          "reasoning": "Short explanation of your choice in English"
-        }}"""
-        self.hang = ("Описание: «", "Перевод: «", "Описание: ", "Перевод: ")
+          "reasoning": "Short explanation of your choice in English",
+          "errors": [
+            ["original text segment", "incorrect translation segment", "correct translation segment"]
+          ]
+        }}
         """
-        if raw_text.startswith("Описание: «"):
-            raw_text = raw_text.replace("Описание: «", "", 1)
 
-        # Отрезаем замыкающую кавычку, если модель просто продолжила фразу и закрыла её в конце
-        content = raw_text.rstrip('»').strip()
-        """
         self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
         Original Text: "{origin}"
         Translated Text: "{result}"
 
-        Evaluate the translation now."""
+        Analyze the text, find all translation and stylistic errors, and evaluate the translation now."""
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
                         drink: str = None) -> list:

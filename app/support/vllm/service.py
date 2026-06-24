@@ -393,6 +393,8 @@ class VLLMService:
                 param, language_destination, descr  # subj
             )
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+            jprint(evaluated)
+            logger.critical('==========')
             logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
             # 5. save to temporary file
             # 5.0. ready to save

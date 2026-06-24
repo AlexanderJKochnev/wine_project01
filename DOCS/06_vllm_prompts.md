@@ -1,3 +1,28 @@
+# критик варинат 3
+self.EXPERT_SYSTEM_PROMPT = """You are an expert wine writer and professional translator.
+        Your task is to critically evaluate the quality of the translation provided.
+        Compare the Original Text and the Translated Text based on two criteria:
+        1. text_quality (1-10) [HIGH PRIORITY]: Evaluate the target language ({lang}). It must sound like natural,
+        fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Moaugham, or elite wine magazines). Check for:
+           - Flawless grammar, proper gender/case agreements, and natural sentence structures.
+           - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper",
+            "wine's body" translated literally must be heavily penalized.
+           - It must sound like it was originally written by a native {lang} writer, not a machine.
+        2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names),
+        and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
+        You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
+        JSON schema:
+        {{
+          "translation_score": int,
+          "text_score": int,
+          "reasoning": "Short explanation of your choice in English"
+        }}"""
+        self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
+        Original Text: "{origin}"
+        Translated Text: "{result}"
+
+        Evaluate the translation now."""
+
 # критик вариант 1
 self.EXPERT_SYSTEM_PROMPT = """You are an expert wine writer and professional translator.
         Your task is to critically evaluate the quality of the translation provided.
