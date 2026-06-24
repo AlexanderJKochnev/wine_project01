@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Float, ForeignKey, func, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
@@ -109,4 +109,7 @@ class TranslateHelper(Base, BaseAt):
         перед переводом текста если такие фразы встретятся - в user prompt будет добавлена подсказка как переводить
     """
     word: Mapped[str] = mapped_column(String, nullable=False)
-    word: Mapped[str] = mapped_column(String, nullable=False)
+    drow: Mapped[str] = mapped_column(String, nullable=False)
+    __table_args__ = (Index('index_word',
+                            func.public.immutable_unaccent(func.lower(word)), unique=True),
+                      )
