@@ -151,7 +151,7 @@ class TranslationService:
             # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
             content = f"ERROR: {str(e)}"
         return {'drink_id': p_id,
-                'lang_origin': f'{drink=}',
+                'drink': f'{drink}',
                 'lang_result': lang,
                 'prompt_id': s_id,
                 'writerrule_id': u_id,

@@ -229,8 +229,8 @@ class VllmRouter(LightRouter):
             user_prompt привязан к подкатегориям
         """
         data = await DrinkTranslateData.load_from_db(system=author,
-                                                     language_origin1=language_origin,
-                                                     language_destination1=language_destination,
+                                                     language_origin1=language_origin.value,
+                                                     language_destination1=language_destination.value,
                                                      user=user_prompt,
                                                      proption=params,
                                                      chunk1=chunk,
