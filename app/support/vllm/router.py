@@ -236,11 +236,12 @@ class VllmRouter(LightRouter):
                                                      chunk1=chunk,
                                                      field=fieldname.value,
                                                      session=session)
+        return data
         response = await self.service.drink_translate(session_factory=DatabaseManager.session_maker,
                                                       translation_service=translation_service,
                                                       data=data,
                                                       background_tasks=background_tasks)
-        return response
+        return {'result': 'backgound process running'}
 
 
 class TranslateRawDataRouter(BaseRouter):

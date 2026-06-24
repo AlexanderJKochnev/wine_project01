@@ -538,7 +538,7 @@ class VLLMService:
         0. получение языковых суффиксов для полей description
         1. получение проптов по их имени
         """
-        jprint(data)
+        return
         
         async with session_factory() as session:
             # 0. получение имен полей источника - перевода
