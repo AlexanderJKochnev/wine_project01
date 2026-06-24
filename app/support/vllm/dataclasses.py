@@ -25,6 +25,7 @@ class DrinkTranslateData:
     chunk: int
     source_field: str   # destination_ru
     target_field: str   # destination_ru
+    subcategories: tuple
 
     @classmethod
     async def load_from_db(cls,
@@ -41,6 +42,7 @@ class DrinkTranslateData:
         system_prompt = result.id, result.system_prompt, result.role
         result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
         user_prompt = result.id, result.prompt, result.name
+        subcategories = tuple(result.subcategory_ids)
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
         params = inst_dict(result)
         # получение двух суффиксов языков сразу
@@ -61,4 +63,5 @@ class DrinkTranslateData:
                    language_destination=language_destination1,
                    chunk=chunk1,
                    source_field=source_field,
-                   target_field=target_field)
+                   target_field=target_field,
+                   subcategories=subcategories)

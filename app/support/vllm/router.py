@@ -229,19 +229,18 @@ class VllmRouter(LightRouter):
             user_prompt привязан к подкатегориям
         """
         data = await DrinkTranslateData.load_from_db(system=author,
-                                               language_origin1=language_origin,
-                                               language_destination1=language_destination,
-                                               user=user_prompt,
-                                               proption=params,
-                                               chunk1=chunk,
-                                               field=fieldname,
-                                               session=session)
-        return data
+                                                     language_origin1=language_origin,
+                                                     language_destination1=language_destination,
+                                                     user=user_prompt,
+                                                     proption=params,
+                                                     chunk1=chunk,
+                                                     field=fieldname.value,
+                                                     session=session)
         response = await self.service.drink_translate(session_factory=DatabaseManager.session_maker,
                                                       translation_service=translation_service,
                                                       data=data,
                                                       background_tasks=background_tasks)
-        return data
+        return response
 
 
 class TranslateRawDataRouter(BaseRouter):
