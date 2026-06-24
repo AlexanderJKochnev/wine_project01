@@ -46,7 +46,7 @@ class DrinkTranslateData:
         # получение двух суффиксов языков сразу
         model = ISOLanguage
         query = (select(model.name_en, model.iso_639_1)
-                 .where(ISOLanguage.name_en.in_(language_origin1, language_destination1)))
+                 .where(ISOLanguage.name_en.in_((language_origin1, language_destination1))))
         result = await session.execute(query)
         def_lang: str = settings.DEFAULT_LANG
         lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result}
