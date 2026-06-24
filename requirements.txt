@@ -72,3 +72,4 @@ pymorphy3-dicts-ru
 # nltk
 # datasketch
 numpy
+pyahocorasick

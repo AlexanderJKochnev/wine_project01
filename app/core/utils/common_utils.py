@@ -4,6 +4,8 @@
 from datetime import datetime, timezone
 import random
 import string
+
+import ahocorasick
 from fastapi import HTTPException
 from typing import Any, Dict, List, Optional, Set, Union
 from rich.pretty import pprint
@@ -1025,3 +1027,41 @@ def distinct_glue(*args, blacklist: tuple | list = None) -> str:
     blacklist = set(blacklist or [])
     words: list = tokenize(' '.join((a for a in args if a and a.lower() not in blacklist)).lower())
     return ' '.join(word.capitalize() for word in dict.fromkeys(words))
+
+
+def aho_replace(text: str, replacements: dict) -> str:
+    """
+        быстрая замена по словарю replacement любой величины
+        replacements = {"Красный": "Зеленый", "синюю": "чистую"}
+        text = "Красный мяч упал в синюю реку."
+        print(aho_replace(text, replacements))
+    """
+    # 1. Создаем автомат Ахо-Корасик
+    A = ahocorasick.Automaton()
+    for old, new in replacements.items():
+        A.add_word(old, (old, new))
+    A.make_automaton()
+
+    # 2. Ищем все совпадения
+    matches = []
+    for end_idx, (old, new) in A.iter(text):
+        start_idx = end_idx - len(old) + 1
+        matches.append((start_idx, end_idx, new))
+
+    # 3. Собираем строку обратно (с конца, чтобы индексы не поехали)
+    text_list = list(text)
+    for start, end, new in sorted(matches, key=lambda x: x[0], reverse=True):
+        text_list[start:end + 1] = list(new)
+
+    return "".join(text_list)
+
+
+def replaceX(text: str, replacement: Union[dict, tuple, list, set]) -> str:
+    """
+        замена по словарю. если словаря нет замена по спсиску на ''
+    """
+    if not isinstance(replacement):
+        replacement = dict.fromkeys(replacement, '')
+    for key, val in replacement.items():
+        text = text.replace(key, val)
+    return text

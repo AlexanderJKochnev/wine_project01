@@ -6,6 +6,8 @@ from typing import Dict, Any, List, Tuple
 from openai import AsyncOpenAI
 from loguru import logger  # noqa: F401
 
+from app.core.utils.common_utils import replaceX
+
 
 class TranslationService:
     def __init__(self):
@@ -34,7 +36,7 @@ class TranslationService:
           "text_score": int,
           "reasoning": "Short explanation of your choice in English"
         }}"""
-        self.hang = ("Описание: «", "Перевод: «")
+        self.hang = ("Описание: «", "Перевод: «", "Описание: ", "Перевод: ")
         """
         if raw_text.startswith("Описание: «"):
             raw_text = raw_text.replace("Описание: «", "", 1)
@@ -144,9 +146,10 @@ class TranslationService:
                 response = await self.client.chat.completions.create(**request_params)
                 # duration_s = time.time() - start_time
                 content = response.choices[0].message.content.strip()
-                # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt УБИРАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
+                # В КОНЦЕ user_prompt УБИРАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
                 if content.startswith(self.hang):
-                    content = content.replace(self.hang, '', 1)
+                    content = replaceX(content, self.hang)
+                    # content = content.replace(self.hang, '', 1)
         except Exception as e:
             # Фиксируем ошибку, чтобы не ломать весь batch insert в БД
             content = f"ERROR: {str(e)}"

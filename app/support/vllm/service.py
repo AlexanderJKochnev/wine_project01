@@ -553,6 +553,7 @@ class VLLMService:
                     datas, data.system_prompt, data.user_prompt, data.params, data.language_destination, drink  # subj
                 )
                 jprint(result)
+                last_id = None
                 if not last_id:
                     break
             break
