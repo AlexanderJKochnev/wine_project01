@@ -6,10 +6,10 @@ from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy import func, select, text, update
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
+from app.support.vllm.dataclasses import DrinkTranslateData
 from app.core.enum import HANDBOOKS
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
@@ -154,13 +154,13 @@ class VLLMService:
         return result.id, result.system_prompt, result.role
 
     @staticmethod
-    async def get_user_prompt(session: AsyncSession, value: str) -> WriterRule:
+    async def get_user_prompt(session: AsyncSession, value: str) -> tuple:
         """
             получение одного user_prompt
         """
         model, repo = WriterRule, WriterRuleRepository
         result: WriterRule = await repo.get_by_field_v2({'name': value}, model, session)
-        return result  # result.id, result.prompt, result.name
+        return result.id, result.prompt, result.name
 
     @staticmethod
     async def get_user_prompts(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
@@ -371,8 +371,7 @@ class VLLMService:
             dest: str = await self.get_lang({'name_en': language_destination}, session)
             # 1.
             system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
-            tmp: WriterRule = await self.get_user_prompt(session, user_prompt)
-            user_prompt: tuple = tmp.id, tmp.prompt, tmp.name
+            user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
             param: dict = await self.get_proption(session, params)
             # 2.
             source_field, target_field = f'name{origin}', f'name{dest}'
@@ -380,7 +379,7 @@ class VLLMService:
         tmp_model = TmpTranslate
         tmp_repo = TmpTranslateRepository
         last_id = 0
-        descr = HANDBOOKS.get(handbook)
+        descr: str = HANDBOOKS.get(handbook)  # описание категории
         while True:  # бесконечый цикл пока есть записи handbooks
             # 3. get data
             async with session_factory() as session:
@@ -529,26 +528,65 @@ class VLLMService:
 
     @background_unique
     async def drink_translate(
-            self, session_factory, translation_service: TranslationService, system_prompt: str,
-            language_origin: str, language_destination: str, user_prompt: str, params: str, chunk: int
+            self, session_factory, translation_service: TranslationService,
+            data: DrinkTranslateData
+            # system_prompt: str,
+            # language_origin: str, language_destination: str, user_prompt: str, params: str, chunk: int,
+            # field_name: str = 'description'
     ):
         """
-        1. 
+        0. получение языковых суффиксов для полей description
+        1. получение проптов по их имени
         """
         async with session_factory() as session:
-            # 0. получение имен поелй источника - перевода
-            origin: str = await self.get_lang({'name_en': language_origin}, session)
-            dest: str = await self.get_lang({'name_en': language_destination}, session)
+            # 0. получение имен полей источника - перевода
+            origin: str = await self.get_lang({'name_en': data.language_origin}, session)
+            dest: str = await self.get_lang({'name_en': data.language_destination}, session)
+            # 0.1. поля источник/результат перевода
             source_field, target_field = f'name{origin}', f'name{dest}'
             # 1. промпты и настройки
-            system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
+            data.system_prompt: tuple = await self.get_system_prompt(session, data.system_prompt)
             tmp: WriterRule = await self.get_user_prompt(session, user_prompt)
             user_prompt: tuple = tmp.id, tmp.prompt, tmp.name
+            # список подкатегорий
             subcategory_ids = tmp.subcategory_ids
+            # настройки
             param: dict = await self.get_proption(session, params)
             # 2.
             await session.commit()
             logger.info({'sub': subcategory_ids, 'typ': type(subcategory_ids)})
+
+        tmp_model = TmpTranslate
+        tmp_repo = TmpTranslateRepository
+        last_id = 0
+        return None
+
+    async def __fetch_drink_chunk__(self, session: AsyncSession, source_field: str, target_field: str,
+                                    subcat_id: int, chunk: int, last_id: int = 0) -> tuple:
+        """
+        получение данных перевода
+        """
+        raw_sql = """
+        SELECT id, description FROM drinks
+        WHERE COALESCE(description_ru,'') = '' AND COALESCE(description, '') != ''
+        AND category_id = 1
+        AND id > {last_id}
+        ORDER BY id
+        LIMIT 25;
+        """
+        sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook, last_id=last_id, chunk=chunk)
+        stmt = text(sql)
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print(compiled_pg)
+        response = await session.execute(stmt)
+        rows = response.all()
+        result = tuple((row.id, row._mapping[source_field]) for row in rows)
+        logger.success(f'получено {len(result)} записей для перевода')
+        if len(result) < chunk:
+            last_id = None
+        else:
+            last_id = result[-1][0]
+        return result, last_id
 
 
 class TranslateRawDataService(Service):

@@ -115,3 +115,11 @@ HANDBOOKS = {'countries': 'География. Страны, континент�
              'tastingnotes': 'Дегустация. Сравнительные характеристика вкуса'
              }
 Handbooks = Enum('handbook', {handbook: handbook for handbook in HANDBOOKS.keys()})
+# текстовые поля drink для перевода
+DRINK_FIELD = {'description': 'описание напитка',
+               'title': 'наименование напитак',
+               'subtitle': 'дополнение к наименованию напитка, может содержать дополнительные признаки',
+               'recommendation': 'рекомендации к употреблению напитка',
+               'madeof': 'сырье для производства напитка',
+               'display_name': 'полное наименовение напитка, включает производителя, регион, аппеласьон'}
+Drinkfield = Enum('fieldname', {fieldname: fieldname for fieldname in DRINK_FIELD.keys()})

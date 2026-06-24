@@ -6,7 +6,8 @@ from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
-from app.core.enum import Handbooks, Languages, Preset, Prompts, Writers
+from app.support.vllm.dataclasses import DrinkTranslateData
+from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
@@ -213,28 +214,35 @@ class VllmRouter(LightRouter):
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
+                              session: AsyncSession = Depends(get_db),
                               translation_service: TranslationService = Depends(get_translation_service),
                               user_prompt: Writers = Query(..., descrition='промпт'),
                               author: Prompts = Query(..., descrition='переводчик'),
                               params: Preset = Query(..., descrition='настройки'),
                               language_origin: Languages = Query(..., description='язык оригинала'),
                               language_destination: Languages = Query(..., description='язык оригинала'),
-                              chunk: int = Query(25, description='чанк')
+                              chunk: int = Query(25, description='чанк'),
+                              fieldname: Drinkfield = Query('description', description='имя переводимого поля')
                               ):
         """
             сервис массового перевода описаний
             user_prompt привязан к подкатегориям
         """
+        data = DrinkTranslateData.load_from_db(system=author,
+                                               language_origin1=language_origin,
+                                               language_destination1=language_destination,
+                                               user=user_prompt,
+                                               proption=params,
+                                               chunk1=chunk,
+                                               field=fieldname,
+                                               session=session)
+        return data
         response = await self.service.drink_translate(session_factory=DatabaseManager.session_maker,
                                                       translation_service=translation_service,
-                                                      system_prompt=author,
-                                                      language_origin=language_origin,
-                                                      language_destination=language_destination,
-                                                      user_prompt=user_prompt,
-                                                      params=params,
-                                                      chunk=chunk,
+                                                      data=data,
                                                       background_tasks=background_tasks)
-        return response
+        return data
+
 
 class TranslateRawDataRouter(BaseRouter):
     def __init__(self):
