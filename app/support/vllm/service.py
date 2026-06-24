@@ -6,6 +6,7 @@ from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy import func, select, text, update
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
@@ -535,9 +536,19 @@ class VLLMService:
             # field_name: str = 'description'
     ):
         """
-        0. получение языковых суффиксов для полей description
-        1. получение проптов по их имени
+        0. исходные данные: data: DrinkTranslateData
+        1. Запуск цикла: первый tier - если средний балл низкий - прерывается
         """
+        for subcat_id in data.subcategories:
+            last_id = 0
+            while True:
+                async with session_factory() as session:
+                    data, last_id = await self.__fetch_drink_chunk__(session, data.source_field,
+                                                                     data.target_field, subcat_id,
+                                                                     data.chunk, last_id
+                                                                     )
+                if not last_id:
+                    break
         return
 
         tmp_model = TmpTranslate
@@ -551,17 +562,19 @@ class VLLMService:
         получение данных перевода
         """
         raw_sql = """
-        SELECT id, description FROM drinks
-        WHERE COALESCE(description_ru,'') = '' AND COALESCE(description, '') != ''
-        AND category_id = 1
+        SELECT id, {source_field} FROM drinks
+        WHERE COALESCE({target_field},'') = '' AND COALESCE({source_field}, '') != ''
+        AND category_id = {subcat_id}
         AND id > {last_id}
         ORDER BY id
-        LIMIT 25;
+        LIMIT {chunk};
         """
-        sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook, last_id=last_id, chunk=chunk)
+        sql = raw_sql.format(source_field=source_field, target_field=target_field,
+                             subcat_id=subcat_id, last_id=last_id, chunk=chunk)
         stmt = text(sql)
-        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        # print(compiled_pg)
+        compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        print(compiled_pg)
+        return None, None
         response = await session.execute(stmt)
         rows = response.all()
         result = tuple((row.id, row._mapping[source_field]) for row in rows)
