@@ -17,7 +17,6 @@ from dateutil.relativedelta import relativedelta
 
 from app.core.hash_norm import tokenize
 from app.core.types import ModelType
-from rich.progress import track
 from rich.console import Console
 from rich.table import Table
 
@@ -1024,5 +1023,5 @@ def distinct_glue(*args, blacklist: tuple | list = None) -> str:
     blacklist - stricktly lower case
     """
     blacklist = set(blacklist or [])
-    words: list = tokenize(' '.join((a for a in args if a)).lower())
-    return ' '.join(word.capitalize() for word in dict.fromkeys(words) if word not in blacklist)
+    words: list = tokenize(' '.join((a for a in args if a and a not in blacklist)).lower())
+    return ' '.join(word.capitalize() for word in dict.fromkeys(words))
