@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from app.core.config.project_config import settings
-from app.core.utils.common_utils import jprint
+from app.core.utils.common_utils import distinct_glue, jprint
 from app.core.utils.pydantic_utils import inst_dict
 from app.support import Subcategory
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
@@ -50,8 +50,6 @@ class DrinkTranslateData:
         query = select(model).options(joinedload(model.category)).where(model.id.in_(subcategories))
         response = await session.scalars(query)
         subcat_dict = [inst_dict(instance) for instance in response.all()]
-        jprint(subcat_dict)
-
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
         params = inst_dict(result)
         # получение двух суффиксов языков сразу
@@ -67,10 +65,11 @@ class DrinkTranslateData:
         # source_name: str = f'name{lang_dict.get(language_origin1)}'
         target_name: str = f'name{lang_dict.get(language_destination1)}'
 
-        drink: dict = {item.get('id'): (item.get(target_name, item.get('name')),
+        drink: dict = {item.get('id'): (distinct_glue(item.get(target_name, item.get('name')),
                                         item['category'].get(target_name,
-                                                             item['category'].get('name'))
-                                        ) for item in subcat_dict}
+                                                             item['category'].get('name')),
+            blacklist=('Other', 'Brandy', 'Прочее', 'Бренди')
+        )) for item in subcat_dict}
         jprint(drink)
 
         # 2. Возвращаем уже заполненный датакласс

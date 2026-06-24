@@ -1013,3 +1013,13 @@ def rich_print(data: List[Dict], title: str):
     for val in data:
         table.add_row(*val.values())
     console.print(table)
+
+
+def distinct_glue(*args, blacklist=None) -> str:
+    """
+    склеивает аргументы в строку - удаляя повторы
+    args -
+    """
+    blacklist = set(blacklist or [])
+    words = ' '.join(args).split()
+    return ' '.join(word for word in dict.fromkeys(words) if word not in blacklist and word.isalnum())
