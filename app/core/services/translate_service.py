@@ -7,6 +7,7 @@ from openai import AsyncOpenAI
 from loguru import logger  # noqa: F401
 
 from app.core.utils.common_utils import replaceX
+from app.support.vllm.dataclasses import HandbookTranslateData
 
 
 class TranslationService:
@@ -341,8 +342,10 @@ class TranslationService:
         return ranking
 
     async def real_batch(
-            self, phrases: List[Tuple[int, str]], system_prompt: Tuple[int, str],
-            user_prompt: Tuple[int, str], param: dict, lang: str, drink: str,
+            self, phrases: List[Tuple[int, str]],
+            d: HandbookTranslateData,
+            # system_prompt: Tuple[int, str],
+            # user_prompt: Tuple[int, str], param: dict, lang: str, drink: str,
             max_concurrent_requests: int = 128
     ) -> List[Dict[str, Any]]:
         """
@@ -357,11 +360,12 @@ class TranslationService:
         start_time = time.time()
         group_tasks = []
         for c, (p_id, phrase) in enumerate(phrases):
-            u_id, u_prompt, _ = user_prompt
-            s_id, s_prompt, _ = system_prompt
-            single_params = param
+            u_id, u_prompt, _ = d.user_prompt
+            s_id, s_prompt, _ = d.system_prompt
+            single_params = d.params
             task = self._translate_single_task(
-                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, lang, drink, single_params,
+                semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, d.language_destination,
+                    d.descr, single_params,
             )
             group_tasks.append(task)
             remain_tasks -= 1

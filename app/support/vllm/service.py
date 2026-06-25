@@ -10,7 +10,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
-from app.support.vllm.dataclasses import DrinkTranslateData
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import HANDBOOKS
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
@@ -349,14 +349,7 @@ class VLLMService:
 
     @background_unique
     async def handbook_translate(self, session_factory, translation_service: TranslationService,
-                                 handbook: str,
-                                 system_prompt: str,
-                                 language_origin: str,
-                                 language_destination: str,
-                                 user_prompt: str,
-                                 params: str,
-                                 chunk: int
-                                 ):
+                                 dataclass: HandbookTranslateData):
         """
             перевод справочников
             0. язык двух символьный код
@@ -366,32 +359,17 @@ class VLLMService:
             4. отправляем на перевод
             5. получаеv -> передаем на сохранение (update)
         """
-        async with session_factory() as session:
-            # 0.
-            origin: str = await self.get_lang({'name_en': language_origin}, session)
-            dest: str = await self.get_lang({'name_en': language_destination}, session)
-            # 1.
-            system_prompt: tuple = await self.get_system_prompt(session, system_prompt)
-            user_prompt: tuple = await self.get_user_prompt(session, user_prompt)
-            param: dict = await self.get_proption(session, params)
-            # 2.
-            source_field, target_field = f'name{origin}', f'name{dest}'
-            await session.commit()
         tmp_model = TmpTranslate
         tmp_repo = TmpTranslateRepository
         last_id = 0
-        descr: str = HANDBOOKS.get(handbook)  # описание категории
         while True:  # бесконечый цикл пока есть записи handbooks
             # 3. get data
             async with session_factory() as session:
-                data, last_id = await self.fetch_data_chunk(session, source_field, target_field, handbook, chunk,
+                phrases, last_id = await self.fetch_data_chunk(session, dataclass,
                                                             last_id)
                 await session.commit()
             # 4. translate
-            result = await translation_service.real_batch(
-                data, system_prompt, user_prompt,
-                param, language_destination, descr  # subj
-            )
+            result = await translation_service.real_batch(phrases, dataclass)
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
             jprint(evaluated)
@@ -423,8 +401,7 @@ class VLLMService:
             session.expire_all()
         return None
 
-    async def fetch_data_chunk(self, session: AsyncSession, source_field: str, target_field: str,
-                               handbook: str, chunk: int, last_id: int = 0) -> tuple:
+    async def fetch_data_chunk(self, session: AsyncSession, d: HandbookTranslateData, last_id: int) -> tuple:
         """
         получение данных
         """
@@ -435,15 +412,16 @@ class VLLMService:
         ORDER BY id
         LIMIT {chunk};
         """
-        sql = raw_sql.format(origin=source_field, dest=target_field, handbook=handbook, last_id=last_id, chunk=chunk)
+        sql = raw_sql.format(origin=d.source_field, dest=d.target_field, handbook=d.handbook, last_id=last_id,
+                             chunk=d.chunk)
         stmt = text(sql)
         # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled_pg)
         response = await session.execute(stmt)
         rows = response.all()
-        result = tuple((row.id, row._mapping[source_field]) for row in rows)
+        result = tuple((row.id, row._mapping[d.source_field]) for row in rows)
         logger.success(f'получено {len(result)} записей для перевода')
-        if len(result) < chunk:
+        if len(result) < d.chunk:
             last_id = None
         else:
             last_id = result[-1][0]

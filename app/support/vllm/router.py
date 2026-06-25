@@ -204,19 +204,10 @@ class VllmRouter(LightRouter):
                                                         handbook1=handbook.value,
                                                         session=session
                                                         )
-        jprint(data)
-        return None
-
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
-                                                         handbook=handbook.value,
-                                                         system_prompt=author,
-                                                         language_origin=language_origin.value,
-                                                         language_destination=language_destination.value,
-                                                         user_prompt=user_prompt,
-                                                         params=params,
-                                                         chunk=chunk,
-                                                         background_tasks=background_tasks)
+                                                         dataclas=data, background_tasks = background_tasks
+                                                         )
         return response
 
     async def test(self, session: AsyncSession = Depends(get_db)):

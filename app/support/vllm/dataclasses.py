@@ -93,12 +93,13 @@ class HandbookTranslateData:
     system_prompt: tuple  # result.id, result.system_prompt, result.role
     user_prompt: tuple    # result.id, result.prompt, result.name
     language_origin: str  # English
-    language_destination: str  # English
+    language_destination: str  # Russian
     params: dict
     chunk: int
     source_field: str   # destination_ru
     target_field: str   # destination_ru
-    handbook: str  # описание (drink)
+    handbook: str  # handbook table
+    descr: str  # описание (drink)
 
     @classmethod
     async def load_from_db(cls,
@@ -116,7 +117,7 @@ class HandbookTranslateData:
         system_prompt = result.id, result.system_prompt, result.role
         result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
         user_prompt = result.id, result.prompt, result.name
-        handbook = HANDBOOKS.get(handbook1)
+        descr = HANDBOOKS.get(handbook1)
         # получение params
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
         params = inst_dict(result)
@@ -139,4 +140,5 @@ class HandbookTranslateData:
                    chunk=chunk1,
                    source_field=source_field,
                    target_field=target_field,
-                   handbook=handbook)
+                   handbook=handbook1,
+                   descr=descr)
