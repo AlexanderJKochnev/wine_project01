@@ -29,6 +29,7 @@ class DrinkTranslateData:
     source_field: str   # destination_ru
     target_field: str   # destination_ru
     subcategories: Dict  # Tuple[Dict[Any, str]]
+    score_threshold: int  # приемлемая оценка
 
     @classmethod
     async def load_from_db(cls,
@@ -39,6 +40,7 @@ class DrinkTranslateData:
                            language_destination1: str,
                            chunk1: int,
                            field: str,
+                           score: int,
                            session):
         """Асинхронный фабричный метод для создания объекта."""
         result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
@@ -82,7 +84,8 @@ class DrinkTranslateData:
                    chunk=chunk1,
                    source_field=source_field,
                    target_field=target_field,
-                   subcategories=drink)
+                   subcategories=drink,
+                   score_threshold=score)
 
 
 @dataclass(slots=True)
@@ -100,6 +103,7 @@ class HandbookTranslateData:
     target_field: str   # destination_ru
     handbook: str  # handbook table
     descr: str  # описание (drink)
+    score_threshold: int
 
     @classmethod
     async def load_from_db(cls,
@@ -111,6 +115,7 @@ class HandbookTranslateData:
                            chunk1: int,
                            field: str,
                            handbook1: str,
+                           score: int,
                            session):
         """Асинхронный фабричный метод для создания объекта."""
         result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
@@ -141,4 +146,5 @@ class HandbookTranslateData:
                    source_field=source_field,
                    target_field=target_field,
                    handbook=handbook1,
-                   descr=descr)
+                   descr=descr,
+                   score_threshold=score)

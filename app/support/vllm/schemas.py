@@ -1,5 +1,7 @@
 # app.support.vllm.schemas.py
-from typing import Optional
+from typing import List, Optional
+
+from pydantic import Field
 
 from app.core.schemas.base import PkSchema, BaseModel
 from app.support.drink.schemas import DrinkReadRelation
@@ -102,12 +104,12 @@ class DrinkTranslateScoreUpdate(BaseModel):
 
 class TranslateHelperCreate(BaseModel):
     word: str
-    drow: str
+    drow: List[str] = Field(default=[])
 
 
 class TranslateHelperUpdate(BaseModel):
     word: Optional[str] = None
-    drow: Optional[str] = None
+    drow: Optional[List[str]] = Field(default=[])
 
 
 class TranslateHelperRead(TranslateHelperUpdate):

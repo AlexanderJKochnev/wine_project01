@@ -6,12 +6,10 @@ from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy import func, select, text, update
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
-from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
-from app.core.enum import HANDBOOKS
+from app.core.services.array_service import ArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
@@ -26,6 +24,7 @@ from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
 from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
     WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.support.vllm.model import TmpTranslate
 from app.support.vllm.repository import TmpTranslateRepository, TranslateRawDataRepository
 
@@ -146,24 +145,6 @@ class VLLMService:
             return [(inst.id, inst.system_prompt, inst.role) for inst in response]
 
     @staticmethod
-    async def get_system_prompt(session: AsyncSession, value: str) -> tuple:
-        """
-            получение одного системного промпта
-        """
-        model, repo = Prompt, PromptRepository
-        result: Prompt = await repo.get_by_field_v2({'role': value}, model, session)
-        return result.id, result.system_prompt, result.role
-
-    @staticmethod
-    async def get_user_prompt(session: AsyncSession, value: str) -> tuple:
-        """
-            получение одного user_prompt
-        """
-        model, repo = WriterRule, WriterRuleRepository
-        result: WriterRule = await repo.get_by_field_v2({'name': value}, model, session)
-        return result.id, result.prompt, result.name
-
-    @staticmethod
     async def get_user_prompts(session: AsyncSession, values: List[str] = None) -> Sequence[tuple]:
         """
             получение списка промптов
@@ -180,15 +161,6 @@ class VLLMService:
             return [(inst.id, inst.prompt, inst.name) for inst in response]
 
     @staticmethod
-    async def get_proption(session: AsyncSession, value: str) -> dict:
-        """
-            получение одного proption
-        """
-        model, repo = Proption, ProptionRepository
-        result: Proption = await repo.get_by_field_v2({'preset': value}, model, session)
-        return inst_dict(result)
-
-    @staticmethod
     async def get_proptions(session: AsyncSession, values: List[str] = None) -> Sequence[dict]:
         """
             получение списка настроек
@@ -203,17 +175,6 @@ class VLLMService:
             response: Sequence[WriterRule] = await repo.get_list_by_field_v2(filter=filter, model=model, session=session)
         if response:
             return list_dict(response)
-
-    @staticmethod
-    async def get_lang(filters: dict, session: AsyncSession) -> str:
-        """
-            получение суффикса 2-х символьного кода языка
-        """
-        model, repo = ISOLanguage, ISOLanguageRepository
-        response: ISOLanguage = await repo.get_by_field_v2(filters, model, session)
-        default_lang: str = settings.DEFAULT_LANG
-        lang: str = response.iso_639_1
-        return '' if lang == default_lang else f'_{lang}'
 
     @staticmethod
     async def get_subcategiory(filters: dict | tuple, session: AsyncSession) -> str:
@@ -335,17 +296,6 @@ class VLLMService:
         duration_s = time.time() - start_time
         logger.info(f'bulk_test in background finished. total duration is {duration_s}')
         return
-        """
-        async with session_factory() as session:
-
-            trservice = TranslateRawDataService
-            trrepo = TranslateRawDataRepository
-            trmodel = TranslateRawData
-            await trservice.create_bulk(result, trrepo, trmodel, session)
-            await session.commit()
-        duration_s = time.time() - start_time
-        logger.info(f'bulk_test in background finished. total duration is {duration_s}')
-        """
 
     @background_unique
     async def handbook_translate(self, session_factory, translation_service: TranslationService,
@@ -362,33 +312,36 @@ class VLLMService:
         tmp_model = TmpTranslate
         tmp_repo = TmpTranslateRepository
         last_id = 0
+        errors = []  # список ошибок [[word, bad_trans, good_trans]]
         while True:  # бесконечый цикл пока есть записи handbooks
             # 3. get data
             async with session_factory() as session:
                 phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
                 await session.commit()
-            # 4. translate
+            # 4.0 translate
             result = await translation_service.real_batch(phrases, dataclass)
+            # 4.1 evaluate
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+            # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
-            errors = [item.get('errors') for item in evaluated]
-            jprint(errors)
-            logger.critical('==========')
+            err = [item.get('errors') for item in evaluated if item]
+            errors.extend(err)
             logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
             # 5. save to temporary file
-            # 5.0. ready to save
-            distill = self.tmp_data_validate(result, handbook, target_field, language_destination, evaluated)
-            # 5.1. save
+            # 5.0. prepaire for save (score added)
+            distill = self.__tmp_data_validate__(result, evaluated, dataclass)
+
+            # 5.1. save to tmp_model
             async with session_factory() as session:
                 response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                 await session.commit()
             logger.success(f'{response} записей добавлено во временную таблицу')
-            if not last_id:
+            # 5.2. оценка качества перевода
+            quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
+            if not quality or not last_id:
                 break
-            # logger.warning(f'{system_prompt=}, \n\n {user_prompt=}, \n\n {source_field=}, \n\n {target_field=}, '
-            #                f'{handbook=}, \n\n {params}')
         # 6.0 implementation to real database
-        # 6.1. выдать сводку - сколько записей с 10 и сколько < 10 по таблицам
+        # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
         async with session_factory() as session:
             stats = await self.__stats__(session)
             # 6.2. удалить плохие переводы
@@ -397,6 +350,8 @@ class VLLMService:
             result = await self.__update_handbook__(stats, session)
             # 6.4. очистка таблицы
             await self.__clear_tmptable__(session)
+            # 6.5. заполнение TranslateHelper
+            
             await session.commit()
             session.expire_all()
         return None
@@ -427,11 +382,10 @@ class VLLMService:
             last_id = result[-1][0]
         return result, last_id
 
-    def tmp_data_validate(self, data: dict, handbook: str,
-                          target_field: str, language_destination: str,
-                          evaluated: List[dict]) -> List[dict]:
+    def __tmp_data_validate__(self, data: dict, evaluated: List[dict],
+                              d: HandbookTranslateData) -> List[dict]:
         """
-            преобразование и валидация данных для добалвения во временную таблицу
+            преобразование и валидация данных для добавления во временную таблицу
             return:
             guid: int   id записи
             table: str  имя таблицы
@@ -443,29 +397,45 @@ class VLLMService:
         """
         evo = {d.get('drink_id'): int(d.get('total_score')) for d in evaluated}
         distill = [{'guid': v.get('drink_id'),
-                    'table': handbook,
-                    'field': target_field,
-                    'lang': language_destination,
+                    'table': d.handbook,
+                    'field': d.target_field,
+                    'lang': d.language_destination,
                     'origin': v.get('origin'),
                     'translate': v.get('result'),
                     'score': evo.get(v.get('drink_id'))} for v in data]
         return distill
 
-    async def __stats__(self, session: AsyncSession) -> List[dict]:
+    def __score_analyse__(self, distill: List[dict], threshold: int, errors: list):
+        """
+            анализ оценок качества переводов
+            если >50% ниже score_threshold
+            возвращает false и цикл прерывается
+        """
+        items = [item.get('score') for item in distill]
+        less = sum(x < threshold for x in items) / len(items) * 100
+        if less < 50:
+            return True
+        logger.warning(
+                f'Качество перевода менее 50%. Останавливаем перевод. В ходе перевода выявлено '
+                f'{len(errors)} слов и выражений. Сейчас они будут добавлены в словарь трудностей и можно запустить '
+                f'перевод заново - качество доджно улучшиться'
+        )
+        return False
+
+    async def __stats__(self, session: AsyncSession, threshold: int) -> List[dict]:
         """
             сводка по качеству перевода
-            удаление не качественного контента
-            добавление качественного контента по таблицам
-            очистка результата
+            # удаление не качественного контента
+            # добавление качественного контента по таблицам
+            # очистка результата
         """
         Tmp = get_model_by_tablename('tmptranslates')
         # 1. Статистика
         result = await session.execute(
-            select(Tmp.table, Tmp.field, func.count().filter(Tmp.score == 10).label('good'),  # или score == 100
-                   func.count().filter(Tmp.score < 10).label('bad')
+            select(Tmp.table, Tmp.field, func.count().filter(Tmp.score >= threshold).label('good'),
+                   func.count().filter(Tmp.score < threshold).label('bad')
                    ).group_by(Tmp.table, Tmp.field)
         )
-        # stats = [(row.table, row.field): (row.good, row.bad) for row in result]
         stats = [{key: str(value) for key, value in row._mapping.items()} for row in result]
         rich_print(stats, 'статистика перевода')
         return stats
@@ -507,6 +477,13 @@ class VLLMService:
         очистка временной таблицы
         """
         await session.execute(text(f"TRUNCATE TABLE {TmpTranslate.__tablename__} RESTART IDENTITY CASCADE;"))
+
+    async def __add_translatehelper__(self, errors: List) -> int:
+        """
+        добавление ошибок в TranslateHelper
+        """
+        # 0.
+        pass
 
     @background_unique
     async def drink_translate(
@@ -585,5 +562,5 @@ class DrinkTranslateScoreService(Service):
     default = ['id']
 
 
-class TranslateHelperService(Service):
+class TranslateHelperService(ArrayService, Service):
     default = ['id', 'word']

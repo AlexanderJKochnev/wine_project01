@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
+from app.core.routers.mixin_router import ArrayRouter
 from app.core.utils.common_utils import jprint
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
@@ -190,20 +191,23 @@ class VllmRouter(LightRouter):
             params: Preset = Query(
                 ..., descrition='настройки'
             ),
-            chunk: int = Query(25, description='чанк')):
+            chunk: int = Query(25, description='чанк'),
+            score_threshold: int = Query(10, ge=1, le=10, description='нижний порог приемлемой оценки')
+    ):
         """
             перевод справочников
         """
-        data = await HandbookTranslateData.load_from_db(system=author,
-                                                        language_origin1=language_origin.value,
-                                                        language_destination1=language_destination.value,
-                                                        user=user_prompt,
-                                                        proption=params,
-                                                        chunk1=chunk,
-                                                        field='name',
-                                                        handbook1=handbook.value,
-                                                        session=session
-                                                        )
+        data = await HandbookTranslateData.load_from_db(
+            system=author,
+            language_origin1=language_origin.value,
+            language_destination1=language_destination.value,
+            user=user_prompt,
+            proption=params,
+            chunk1=chunk,
+            field='name',
+            handbook1=handbook.value,
+            score=score_threshold,
+            session=session)
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
                                                          dataclass=data, background_tasks=background_tasks
@@ -228,7 +232,9 @@ class VllmRouter(LightRouter):
                               language_origin: Languages = Query(..., description='язык оригинала'),
                               language_destination: Languages = Query(..., description='язык оригинала'),
                               chunk: int = Query(25, description='чанк'),
-                              fieldname: Drinkfield = Query('description', description='имя переводимого поля')
+                              fieldname: Drinkfield = Query('description', description='имя переводимого поля'),
+                              score_threshold: int = Query(8, ge=1, le=10, description='нижний порог приемлемой '
+                                                           'оценки')
                               ):
         """
             сервис массового перевода описаний
@@ -241,6 +247,7 @@ class VllmRouter(LightRouter):
                                                      proption=params,
                                                      chunk1=chunk,
                                                      field=fieldname.value,
+                                                     score=score_threshold,
                                                      session=session)
         await self.service.drink_translate(session_factory=DatabaseManager.session_maker,
                                            translation_service=translation_service,
@@ -270,16 +277,17 @@ class TranslateRawDataRouter(BaseRouter):
         return result
 
 
-class TranslateHelperRouter(BaseRouter):
+class TranslateHelperRouter(ArrayRouter, BaseRouter):
     def __init__(self):
         super().__init__(
             model=TranslateHelper,
             prefix="/translatehelper",
         )
+        self.arrayName: str = 'drow'
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
-                     translate: str = Form(..., description='предпочитаемый перевод'),
+                     translate: List[str] = Form(..., description='предпочитаемый перевод'),
                      session: AsyncSession = Depends(get_db)):
         data = TranslateHelperCreate(word=word, drow=translate)
         return await super().create(data, session)

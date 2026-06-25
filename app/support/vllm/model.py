@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, func, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import ARRAY, Float, ForeignKey, func, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
 from app.core.models.base_model import Base, BaseAt, int_null_index, plural, str_null_false
+from app.core.types import SetArrayType
 
 if TYPE_CHECKING:
     from app.support.drink.model import Drink
@@ -108,8 +109,9 @@ class TranslateHelper(Base, BaseAt):
         stone fruits - косточковые фрукты
         перед переводом текста если такие фразы встретятся - в user prompt будет добавлена подсказка как переводить
     """
-    word: Mapped[str] = mapped_column(String, nullable=False)
-    drow: Mapped[str] = mapped_column(String, nullable=False)
-    __table_args__ = (Index('index_word',
-                            func.public.immutable_unaccent(func.lower(word)), unique=True),
-                      )
+    # слово или фраза
+    word: Mapped[str] = mapped_column(String, nullable=False, index=True, unique=True)
+    # массив слов или фраз - возможные варианты перевода
+    drow: Mapped[set[str]] = mapped_column(SetArrayType, nullable=False)
+    # GIN-индекс для быстрого поиска внутри массива
+    __table_args__ = (Index("ix_translatehelper_gin", "drow", postgresql_using="gin"),)

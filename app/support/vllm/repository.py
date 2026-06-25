@@ -2,6 +2,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.core.repositories.array_repository import ArrayRepository
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.types import ModelType
 from app.support import Drink
@@ -39,5 +40,5 @@ class DrinkTranslateScoreRepository(Repository):
     model = DrinkTranslateScore
 
 
-class TranslateHelperRepository(Repository):
+class TranslateHelperRepository(ArrayRepository, Repository):
     model = TranslateHelper
