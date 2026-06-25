@@ -35,8 +35,9 @@ class TranslationService:
 
         [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
         For each issue, extract a tuple containing: (1) the exact original segment,
-        (2) the incorrect translation segment, and (3) your corrected version (only translation segment without any
-        comments).
+        (2) the incorrect translation segment, and (3) your corrected version.
+        CRITICAL: The third element MUST contain ONLY the corrected translation.
+        Do not include any explanations, definitions, parentheses, or alternative options.
         If there are no errors, return an empty list.
         You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
         JSON schema:
@@ -45,7 +46,7 @@ class TranslationService:
           "text_score": int,
           "reasoning": "Short explanation of your choice in English",
           "errors": [
-            ["original text segment", "incorrect translation segment", "correct translation segment"]
+            ["original text segment", "incorrect translation segment", "ONLY the correct translation without any comments or brackets"]
           ]
         }}
         """
