@@ -35,7 +35,8 @@ class TranslationService:
 
         [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
         For each issue, extract a tuple containing: (1) the exact original segment,
-        (2) the incorrect translation segment, and (3) your corrected version.
+        (2) the incorrect translation segment, and (3) your corrected version (only translation segment without any
+        comments).
         If there are no errors, return an empty list.
         You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
         JSON schema:

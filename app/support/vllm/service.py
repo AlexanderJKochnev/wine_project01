@@ -371,7 +371,7 @@ class VLLMService:
             result = await translation_service.real_batch(phrases, dataclass)
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
-            jprint(evaluated)
+            jprint(evaluated.get('errors'))
             logger.critical('==========')
             logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
             # 5. save to temporary file
