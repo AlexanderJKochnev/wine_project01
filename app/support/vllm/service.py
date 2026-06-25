@@ -365,8 +365,7 @@ class VLLMService:
         while True:  # бесконечый цикл пока есть записи handbooks
             # 3. get data
             async with session_factory() as session:
-                phrases, last_id = await self.fetch_data_chunk(session, dataclass,
-                                                            last_id)
+                phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
                 await session.commit()
             # 4. translate
             result = await translation_service.real_batch(phrases, dataclass)

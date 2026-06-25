@@ -206,7 +206,7 @@ class VllmRouter(LightRouter):
                                                         )
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
-                                                         dataclas=data, background_tasks = background_tasks
+                                                         dataclass=data, background_tasks=background_tasks
                                                          )
         return response
 
@@ -258,9 +258,6 @@ class TranslateRawDataRouter(BaseRouter):
 
     async def create(self, data: TranslateRawDataCreate,
                      session: AsyncSession = Depends(get_db)):
-        from app.core.utils.common_utils import jprint
-        print(type(data))
-        jprint(data)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: TranslateRawDataUpdate, background_tasks: BackgroundTasks,
