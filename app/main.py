@@ -57,7 +57,7 @@ from app.support.producer.router import ProducerRouter, ProducerTitleRouter
 from app.support.vintage.router import VintageConfigRouter, DesignationRouter, ClassificationRouter
 from app.support.parcel.router import ParcelRouter, SiteRouter
 from app.support.source.router import SourceRouter
-from app.support.vllm.router import VllmRouter, TranslateRawDataRouter
+from app.support.vllm.router import VllmRouter, TranslateRawDataRouter, TranslateHelperRouter
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.seaweed_async import init_seaweed, close_seaweed
 from app.support.seaweeds.router import SeaweedsRouter
@@ -243,6 +243,7 @@ app.include_router(GlasswareRouter().router)
 app.include_router(ScaleRouter().router)
 app.include_router(TastingNoteRouter().router)
 app.include_router(TranslateRawDataRouter().router)
+app.include_router(TranslateHelperRouter().router)
 # app.include_router(CustomerRouter().router)
 # app.include_router(WarehouseRouter().router)
 

@@ -393,6 +393,7 @@ class VLLMService:
                 param, language_destination, descr  # subj
             )
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+            # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
             jprint(evaluated)
             logger.critical('==========')
             logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
@@ -604,3 +605,7 @@ class TmpTranslateService(Service):
 
 class DrinkTranslateScoreService(Service):
     default = ['id']
+
+
+class TranslateHelperService(Service):
+    default = ['id', 'word']

@@ -11,9 +11,10 @@ from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Wri
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
-from app.support.vllm.model import TranslateRawData
+from app.support.vllm.model import TranslateHelper, TranslateRawData
 from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
-from app.support.vllm.schemas import TranslateRawDataCreate, TranslateRawDataUpdate
+from app.support.vllm.schemas import TranslateHelperCreate, TranslateHelperUpdate, TranslateRawDataCreate, \
+    TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
 from app.support.vllm.service import VLLMService
@@ -265,3 +266,22 @@ class TranslateRawDataRouter(BaseRouter):
                               session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)
         return result
+
+
+class TranslateHelperRouter(BaseRouter):
+    def __init__(self):
+        super().__init__(
+            model=TranslateHelper,
+            prefix="/translatehelper",
+        )
+
+    async def create(self,
+                     word: str = Form(..., description='слово или фраза'),
+                     translate: str = Form(..., description='предпочитаемый перевод'),
+                     session: AsyncSession = Depends(get_db)):
+        data = TranslateHelperCreate(word=word, drow=translate)
+        return await super().create(data, session)
+
+    async def patch(self, id: int, data: TranslateHelperUpdate, background_tasks: BackgroundTasks,
+                    session: AsyncSession = Depends(get_db)):
+        return await super().patch(id, data, background_tasks, session)

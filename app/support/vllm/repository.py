@@ -37,3 +37,7 @@ class TmpTranslateRepository(Repository):
 
 class DrinkTranslateScoreRepository(Repository):
     model = DrinkTranslateScore
+
+
+class TranslateHelperRepository(Repository):
+    model = TranslateHelper

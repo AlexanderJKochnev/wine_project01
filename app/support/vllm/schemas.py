@@ -98,3 +98,17 @@ class DrinkTranslateScoreUpdate(BaseModel):
     writerrule_id: Optional[int] = None
     proption_id: Optional[int] = None
     score: Optional[int] = None
+
+
+class TranslateHelperCreate(BaseModel):
+    word: str
+    drow: str
+
+
+class TranslateHelperUpdate(BaseModel):
+    word: Optional[str] = None
+    drow: Optional[str] = None
+
+
+class TranslateHelperRead(TranslateHelperUpdate):
+    id: int
