@@ -6,7 +6,8 @@ from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
-from app.support.vllm.dataclasses import DrinkTranslateData
+from app.core.utils.common_utils import jprint
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
@@ -175,7 +176,7 @@ class VllmRouter(LightRouter):
         return {'result': 'Translation started in backgound taska'}
 
     async def handbook_translate(
-            self, background_tasks: BackgroundTasks,
+            self, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db),
             translation_service: TranslationService = Depends(get_translation_service),
             handbook: Handbooks = Query(..., description='справочник'),
             language_origin: Languages = Query(..., description='язык оригинала'),
@@ -193,6 +194,19 @@ class VllmRouter(LightRouter):
         """
             перевод справочников
         """
+        data = await HandbookTranslateData.load_from_db(system=author,
+                                                        language_origin1=language_origin.value,
+                                                        language_destination1=language_destination.value,
+                                                        user=user_prompt,
+                                                        proption=params,
+                                                        chunk1=chunk,
+                                                        field='name',
+                                                        handbook1=handbook.value,
+                                                        session=session
+                                                        )
+        jprint(data)
+        return None
+
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
                                                          handbook=handbook.value,
