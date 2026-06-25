@@ -365,7 +365,7 @@ class TranslationService:
             single_params = d.params
             task = self._translate_single_task(
                 semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, d.language_destination,
-                    d.descr, single_params,
+                d.descr, single_params,
             )
             group_tasks.append(task)
             remain_tasks -= 1
