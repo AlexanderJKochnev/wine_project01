@@ -92,13 +92,12 @@ class UniqueNormalizedNameMixin(GeneralMixin):
     def __extra_indices__(cls):
         index_name = f"uq_idx_{cls.__tablename__}_norm_name"[:63]
         # Достаем реальный объект колонки "name" из таблицы текущего класса
-        column_obj = cls.__table__.c.name
 
         return [
             Index(
                 index_name,
                 # func.unaccent(func.lower(text("name"))),
-                func.public.immutable_unaccent(func.lower(column_obj)),
+                func.public.immutable_unaccent(func.lower(cls.name)),
                 unique=True
             )
         ]
