@@ -116,4 +116,5 @@ class TranslateHelper(Base, BaseAt):
     # shit True - подсказка переводчику, False - заменить на то что указано в drow
     shit: Mapped[bool] = mapped_column(Boolean, default=False, index=True, unique=False)
     # GIN-индекс для быстрого поиска внутри массива
-    __table_args__ = (Index("ix_translatehelper_gin", "drow", postgresql_using="gin"),)
+    __table_args__ = (Index("ix_translatehelper_gin", "drow", postgresql_using="gin",
+                            postgresql_ops={'drow': 'array_ops'}),)
