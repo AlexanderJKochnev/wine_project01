@@ -344,7 +344,7 @@ class VLLMService:
         # 6.0 implementation to real database
         # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
         async with session_factory() as session:
-            await self.__stats__(session)
+            await self.__stats__(session, dataclass.score_threshold)
             # 6.5. заполнение TranslateHelper
             await self.__add_translatehelper__(errors)
             await session.commit()
