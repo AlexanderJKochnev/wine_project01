@@ -20,8 +20,10 @@ class ArrayRepository:
     3. replace all array
     4. delete all array
     5. add array first
+    6... mutable array methods
     """
-
+    model: ModelType
+    
     @classmethod
     async def _get_array_(cls, id: int, model: ModelType,
                           arrayName: str, session: AsyncSession) -> list:

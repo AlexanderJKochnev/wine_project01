@@ -1,5 +1,5 @@
 # app.support.vllm.schemas.py
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -104,12 +104,12 @@ class DrinkTranslateScoreUpdate(BaseModel):
 
 class TranslateHelperCreate(BaseModel):
     word: str
-    drow: List[str] = Field(default=[])
+    drow: set[str] = Field(default=[])
 
 
 class TranslateHelperUpdate(BaseModel):
     word: Optional[str] = None
-    drow: Optional[List[str]] = Field(default=[])
+    drow: Optional[set[str]] = Field(default=[])
 
 
 class TranslateHelperRead(TranslateHelperUpdate):

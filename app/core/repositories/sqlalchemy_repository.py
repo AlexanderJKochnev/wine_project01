@@ -8,6 +8,7 @@ from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
+from fastapi import HTTPException
 from loguru import logger
 from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select, Select, update)
 from sqlalchemy.dialects import postgresql  # NOQA: F401
@@ -20,7 +21,7 @@ from app.core.exceptions import AppBaseException
 from app.core.models.base_model import get_model_by_name
 from app.core.repositories.repo_background_tasks import Background
 from app.core.repositories.search_unaccent_repository import SearchRepositoryMixin
-from app.core.types import ModelType
+from app.core.types import ModelType, SetArrayType
 # from sqlalchemy.sql.elements import ColumnElement
 from app.core.utils.alchemy_utils import (get_field_list, get_sql_search)
 from app.core.utils.pydantic_utils import get_repo
@@ -793,3 +794,44 @@ class HandbookRepository(SearchRepositoryMixin, Repository):
     стандратный репо + поиск  unaccent (включает диакретические символы)
     """
     pass
+
+
+class MutableSetArrayRepository(Repository):
+    """
+        РЕПОЗИТОРИЙ ДЛЯ mutable set array fields
+    """
+
+    @classmethod
+    async def add_elements(cls, session: AsyncSession,
+                           filter: dict,
+                           field_name: str,
+                           elements: str | set) -> ModelType:
+        """
+        добавление одного или нескольких элементов
+        """
+        if isinstance(elements, str):
+            elements: set = {elements}
+        inst = await cls.get_by_field_v2(filter, cls.model, session)
+        if not inst:
+            raise HTTPException(status_code=404, detail=f'the record with {filter} not found')
+        collection: SetArrayType = getattr(inst, field_name)
+        collection.update(elements)
+        await session.commit()
+        return inst
+
+    @classmethod
+    async def del_elements(
+            cls, session: AsyncSession, filter: dict, field_name: str, elements: str | set
+            ) -> ModelType:
+        """
+        удаление одного или нескольких элементов
+        """
+        if isinstance(elements, str):
+            elements: set = {elements}
+        inst = await cls.get_by_field_v2(filter, cls.model, session)
+        if not inst:
+            raise HTTPException(status_code=404, detail=f'the record with {filter} not found')
+        collection = getattr(inst, field_name)
+        collection.difference_update(elements)
+        await session.commit()
+        return inst

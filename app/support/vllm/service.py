@@ -1,5 +1,6 @@
 # app.support.vllm.service.py
 import time
+from collections import defaultdict
 from typing import Dict, List, Sequence, Tuple
 
 from fastapi import HTTPException  # , BackgroundTasks,
@@ -25,7 +26,7 @@ from app.support.ollama.repository import ISOLanguageRepository, PromptRepositor
     WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
-from app.support.vllm.model import TmpTranslate
+from app.support.vllm.model import TmpTranslate, TranslateHelper
 from app.support.vllm.repository import TmpTranslateRepository, TranslateRawDataRepository
 
 
@@ -343,15 +344,9 @@ class VLLMService:
         # 6.0 implementation to real database
         # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
         async with session_factory() as session:
-            stats = await self.__stats__(session)
-            # 6.2. удалить плохие переводы
-            await self.__del_bad_scores__(stats, session)
-            # 6.3. обновить таблицы переводами
-            result = await self.__update_handbook__(stats, session)
-            # 6.4. очистка таблицы
-            await self.__clear_tmptable__(session)
+            await self.__stats__(session)
             # 6.5. заполнение TranslateHelper
-            
+            await self.__add_translatehelper__(errors)
             await session.commit()
             session.expire_all()
         return None
@@ -438,6 +433,14 @@ class VLLMService:
         )
         stats = [{key: str(value) for key, value in row._mapping.items()} for row in result]
         rich_print(stats, 'статистика перевода')
+
+        # 6.2. удалить плохие переводы
+        await self.__del_bad_scores__(stats, session)
+        # 6.3. обновить таблицы переводами
+        result = await self.__update_handbook__(stats, session)
+        # 6.4. очистка таблицы
+        await self.__clear_tmptable__(session)
+
         return stats
 
     async def __del_bad_scores__(self, stats: List[Dict], session: AsyncSession):
@@ -482,8 +485,13 @@ class VLLMService:
         """
         добавление ошибок в TranslateHelper
         """
-        # 0.
-        pass
+        # 0. convert [(word, wrong, drow)] => [{'word': word, drow: [drow]}]
+        result = defaultdict(list)
+        for key, _, val in errors:
+            result[key].append(val)
+        data: List[dict] = [{'word': key, 'drow': val} for key, val in result.items()]
+        logger.critical('__add_transferhelper__')
+        jprint(data)
 
     @background_unique
     async def drink_translate(

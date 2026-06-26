@@ -1,9 +1,10 @@
 # app.support.vllm.repository.py
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.repositories.array_repository import ArrayRepository
-from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.repositories.sqlalchemy_repository import MutableSetArrayRepository, Repository
 from app.core.types import ModelType
 from app.support import Drink
 from app.support.vllm.model import DrinkTranslateScore, TmpTranslate, TranslateHelper, TranslateRawData
@@ -40,5 +41,13 @@ class DrinkTranslateScoreRepository(Repository):
     model = DrinkTranslateScore
 
 
-class TranslateHelperRepository(ArrayRepository, Repository):
+class TranslateHelperRepository(MutableSetArrayRepository):
     model = TranslateHelper
+
+    @classmethod
+    async def bulk_create_or_update(cls, session: AsyncSession, data: List[dict]):
+        """
+            массовое добавление/обновление
+        """
+        # 0. получение существующих записей
+        filter: dict = data.copy()
