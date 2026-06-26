@@ -487,8 +487,9 @@ class VLLMService:
         добавление ошибок в TranslateHelper
         """
         # 0. convert [(word, wrong, drow)] => [{'word': word, drow: [drow]}]
+        jprint(errors)
         result = defaultdict(list)
-        for key, _, val in errors:
+        for key, val, *_ in errors:
             result[key].append(val)
         data: List[dict] = [{'word': key, 'drow': val} for key, val in result.items()]
         logger.critical('__add_transferhelper__')

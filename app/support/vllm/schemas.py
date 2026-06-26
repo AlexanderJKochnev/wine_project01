@@ -105,11 +105,13 @@ class DrinkTranslateScoreUpdate(BaseModel):
 class TranslateHelperCreate(BaseModel):
     word: str
     drow: set[str] = Field(default=[])
+    shit: Optional[bool] = False
 
 
 class TranslateHelperUpdate(BaseModel):
     word: Optional[str] = None
     drow: Optional[set[str]] = Field(default=[])
+    shit: Optional[bool] = False
 
 
 class TranslateHelperRead(TranslateHelperUpdate):

@@ -113,5 +113,7 @@ class TranslateHelper(Base, BaseAt):
     word: Mapped[str] = mapped_column(String, nullable=False, index=True, unique=True)
     # массив слов или фраз - возможные варианты перевода
     drow: Mapped[set[str]] = mapped_column(SetArrayType, nullable=False)
+    # shit True - подсказка переводчику, False - заменить на то что указано в drow
+    shit: Mapped[bool] = mapped_column(bool, default=False, index=True, unique=False)
     # GIN-индекс для быстрого поиска внутри массива
     __table_args__ = (Index("ix_translatehelper_gin", "drow", postgresql_using="gin"),)
