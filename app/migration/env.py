@@ -95,7 +95,7 @@ def filter_false_positive_indexes(context, revision, directives):
         return
     
     upgrade_ops = directive.upgrade_ops.ops
-    
+    print([type(op) for op in upgrade_ops])
     # Собираем чистые строковые имена индексов, которые планируется УДАЛИТЬ
     dropped_indexes = {str(op.index_name) for op in upgrade_ops if
             isinstance(op, ops.DropIndexOp) and is_tracked_problematic_index(op.index_name)}
