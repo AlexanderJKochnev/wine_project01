@@ -325,7 +325,7 @@ class VLLMService:
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
-            err = [item.get('errors') for item in evaluated if item != []]
+            err = [errors for item in evaluated if (errors := item.get('errors'))]
             errors.extend(err)
             logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
             # 5. save to temporary file
