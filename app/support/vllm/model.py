@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ARRAY, Float, ForeignKey, func, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import ARRAY, Boolean, Float, ForeignKey, func, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.config.project_config import settings
@@ -114,6 +114,6 @@ class TranslateHelper(Base, BaseAt):
     # массив слов или фраз - возможные варианты перевода
     drow: Mapped[set[str]] = mapped_column(SetArrayType, nullable=False)
     # shit True - подсказка переводчику, False - заменить на то что указано в drow
-    shit: Mapped[bool] = mapped_column(bool, default=False, index=True, unique=False)
+    shit: Mapped[bool] = mapped_column(Boolean, default=False, index=True, unique=False)
     # GIN-индекс для быстрого поиска внутри массива
     __table_args__ = (Index("ix_translatehelper_gin", "drow", postgresql_using="gin"),)
