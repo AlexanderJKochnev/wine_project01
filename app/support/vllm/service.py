@@ -326,7 +326,8 @@ class VLLMService:
             # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
             err = [errors for item in evaluated if (errors := item.get('errors'))]
-            errors.extend(err)
+            if err:
+                errors.extend([item for sublist in err for item in sublist])
             logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
             # 5. save to temporary file
             # 5.0. prepaire for save (score added)
