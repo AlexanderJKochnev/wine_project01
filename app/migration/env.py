@@ -63,10 +63,11 @@ target_metadata = Base.metadata
 
 #------------------
 # 1. Определяем функцию-критерий отбора проблемных индексов
-def is_tracked_problematic_index(name: str) -> bool:
-    if not name:
+def is_tracked_problematic_index(name_obj: str) -> bool:
+    if not name_obj:
         return False
     
+    name = str(name_obj)
     # Критерий 1: Начало названия индекса (добавляйте сюда новые префиксы при необходимости)
     target_prefixes = ("uq_idx_", "ix_translatehelper_")
     starts_correctly = any(name.startswith(prefix) for prefix in target_prefixes)
@@ -86,26 +87,32 @@ def filter_false_positive_indexes(context, revision, directives):
     # Директивы автогенерации обычно лежат в первом элементе списка
     if not directives:
         return
+        
+        # Alembic может передавать директивы списком. Берём первый элемент, если это список.
+    directive = directives[0] if isinstance(directives, list) else directives
     
-    upgrade_ops = directives[0].upgrade_ops.ops
+    if not hasattr(directive, "upgrade_ops") or directive.upgrade_ops is None:
+        return
     
-    # Находим все имена индексов, которые Alembic планирует УДАЛИТЬ
-    dropped_indexes = {op.index_name for op in upgrade_ops if
+    upgrade_ops = directive.upgrade_ops.ops
+    
+    # Собираем чистые строковые имена индексов, которые планируется УДАЛИТЬ
+    dropped_indexes = {str(op.index_name) for op in upgrade_ops if
             isinstance(op, ops.DropIndexOp) and is_tracked_problematic_index(op.index_name)}
     
-    # Находим все имена индексов, которые Alembic планирует СОЗДАТЬ
-    created_indexes = {op.index_name for op in upgrade_ops if
+    # Собираем чистые строковые имена индексов, которые планируется СОЗДАТЬ
+    created_indexes = {str(op.index_name) for op in upgrade_ops if
             isinstance(op, ops.CreateIndexOp) and is_tracked_problematic_index(op.index_name)}
     
-    # Пересечение множеств даст нам индексы, которые попали в ложный цикл DROP + CREATE
+    # Находим пересечение (индексы, которые попали в ложный цикл DROP + CREATE)
     false_positives = dropped_indexes.intersection(created_indexes)
     
     if false_positives:
-        # Фильтруем список операций, выкидывая парные ложные команды
+        # Очищаем список операций от парных команд для этих индексов
         filtered_ops = [op for op in upgrade_ops if
-                not (isinstance(op, (ops.DropIndexOp, ops.CreateIndexOp)) and op.index_name in false_positives)]
-        # Перезаписываем список операций Alembic очищенным списком
-        directives[0].upgrade_ops.ops = filtered_ops
+                not (isinstance(op, (ops.DropIndexOp, ops.CreateIndexOp)) and str(op.index_name) in false_positives)]
+        # Перезаписываем операции Alembic
+        directive.upgrade_ops.ops = filtered_ops
 
 #------------------
 def run_migrations_offline() -> None:
