@@ -90,7 +90,10 @@ class UniqueNormalizedNameMixin(GeneralMixin):
 
     @classmethod
     def __extra_indices__(cls):
-        index_name = f"uq_idx_{cls.__tablename__}_norm_name"[:63]
+        """ в случае изменения в индексе - изменить суффикс _м1 на следубщи1/другйо иначе
+            alembic не увидит изменения
+        """
+        index_name = f"uq_idx_{cls.__tablename__}_norm_name_v1"[:63]
         # Достаем реальный объект колонки "name" из таблицы текущего класса
 
         return [
