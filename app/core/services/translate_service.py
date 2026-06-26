@@ -30,9 +30,9 @@ class TranslationService:
            - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper",
             "wine's body" translated literally must be heavily penalized.
            - It must sound like it was originally written by a native {lang} writer, not a machine.
-           - Ignore any space-separated hyphens or dashes between words. They have identical meanings and must be translated the same way.
         2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names),
         and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
+
         [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
         For each issue, extract a tuple containing: (1) the exact original segment,
         (2) the incorrect translation segment, and (3) your corrected version.
