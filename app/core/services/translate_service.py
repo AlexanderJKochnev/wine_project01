@@ -33,7 +33,6 @@ class TranslationService:
            - Ignore any space-separated hyphens or dashes between words. They have identical meanings and must be translated the same way.
         2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names),
         and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
-
         [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
         For each issue, extract a tuple containing: (1) the exact original segment,
         (2) the incorrect translation segment, and (3) your corrected version.
