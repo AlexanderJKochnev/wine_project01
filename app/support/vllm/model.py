@@ -112,7 +112,7 @@ class TranslateHelper(Base, BaseAt):
     # слово или фраза
     word: Mapped[str] = mapped_column(String, nullable=False, index=True, unique=True)
     # массив слов или фраз - возможные варианты перевода
-    drow: Mapped[set[str]] = mapped_column(ARRAY(String), nullable=False, default=set, server_default='{}')
+    drow: Mapped[set[str]] = mapped_column(SetArrayType, nullable=False, default=set, server_default='{}')
     # shit True - подсказка переводчику, False - заменить на то что указано в drow
     shit: Mapped[bool] = mapped_column(Boolean, default=False, index=True, unique=False)
     # GIN-индекс для быстрого поиска внутри массива
