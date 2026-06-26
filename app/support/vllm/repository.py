@@ -1,4 +1,6 @@
 # app.support.vllm.repository.py
+from typing import List
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -51,3 +53,4 @@ class TranslateHelperRepository(MutableSetArrayRepository):
         """
         # 0. получение существующих записей
         filter: dict = data.copy()
+        pass
