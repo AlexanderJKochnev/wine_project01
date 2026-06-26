@@ -5,6 +5,8 @@ from logging.config import fileConfig
 # from sqlalchemy import pool
 # from sqlalchemy.engine import Connection
 # from sqlalchemy.ext.asyncio import async_engine_from_config
+from alembic.autogenerate import Rewriter
+from alembic.operations import ops
 
 from alembic import context
 import sys
@@ -56,18 +58,55 @@ config.set_section_option(section, "POSTGRES_PASSWORD",
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-# target_metadata = None
 target_metadata = Base.metadata
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+
+#------------------
+# 1. Определяем функцию-критерий отбора проблемных индексов
+def is_tracked_problematic_index(name: str) -> bool:
+    if not name:
+        return False
+    
+    # Критерий 1: Начало названия индекса (добавляйте сюда новые префиксы при необходимости)
+    target_prefixes = ("uq_idx_", "ix_translatehelper_")
+    starts_correctly = any(name.startswith(prefix) for prefix in target_prefixes)
+    
+    # Критерий 2: Конец названия содержит версию, например: _v1, _v2, _v12
+    has_version_suffix = bool(re.search(r'_v\d+$', name))
+    
+    return starts_correctly and has_version_suffix
 
 
+def filter_false_positive_indexes(context, revision, directives):
+    """
+    Анализирует весь список сгенерированных команд автогенерации.
+    Если для одного и того же версионированного индекса найдены и DROP, и CREATE,
+    они удаляются как ложное срабатывание. Одиночные команды пропускаются.
+    """
+    # Директивы автогенерации обычно лежат в первом элементе списка
+    if not directives:
+        return
+    
+    upgrade_ops = directives[0].upgrade_ops.ops
+    
+    # Находим все имена индексов, которые Alembic планирует УДАЛИТЬ
+    dropped_indexes = {op.index_name for op in upgrade_ops if
+            isinstance(op, ops.DropIndexOp) and is_tracked_problematic_index(op.index_name)}
+    
+    # Находим все имена индексов, которые Alembic планирует СОЗДАТЬ
+    created_indexes = {op.index_name for op in upgrade_ops if
+            isinstance(op, ops.CreateIndexOp) and is_tracked_problematic_index(op.index_name)}
+    
+    # Пересечение множеств даст нам индексы, которые попали в ложный цикл DROP + CREATE
+    false_positives = dropped_indexes.intersection(created_indexes)
+    
+    if false_positives:
+        # Фильтруем список операций, выкидывая парные ложные команды
+        filtered_ops = [op for op in upgrade_ops if
+                not (isinstance(op, (ops.DropIndexOp, ops.CreateIndexOp)) and op.index_name in false_positives)]
+        # Перезаписываем список операций Alembic очищенным списком
+        directives[0].upgrade_ops.ops = filtered_ops
+
+#------------------
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -86,6 +125,9 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        # Обязательно подключаем наш writer в директивы ревизии
+        process_revision_directives=filter_false_positive_indexes,
+        # end injection
     )
 
     with context.begin_transaction():
@@ -105,6 +147,9 @@ def run_migrations_online():
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            # Обязательно подключаем наш writer в директивы ревизии
+            process_revision_directives=filter_false_positive_indexes,
+            # end injection
             include_object=include_object,
             compare_type=True,
         )

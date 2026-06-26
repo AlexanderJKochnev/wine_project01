@@ -92,6 +92,7 @@ class UniqueNormalizedNameMixin(GeneralMixin):
     def __extra_indices__(cls):
         """ в случае изменения в индексе - изменить суффикс _м1 на следубщи1/другйо иначе
             alembic не увидит изменения
+            индекс должен начинаться с uq_idx (см is_tracked_problematic_index in mogrations/env.py
         """
         index_name = f"uq_idx_{cls.__tablename__}_norm_name_v1"[:63]
         # Достаем реальный объект колонки "name" из таблицы текущего класса
@@ -130,7 +131,7 @@ class DynamicCompositeUniqueMixin(GeneralMixin):
         if not fk_field_name:
             return []
 
-        index_name = f"uq_idx_{cls.__tablename__}_{fk_field_name}_name"[:63]
+        index_name = f"uq_idx_{cls.__tablename__}_{fk_field_name}_name_v1"[:63]
         return [
             Index(
                 index_name,
