@@ -590,9 +590,7 @@ class TranslateHelperService(ArrayService, Service):
         data_dict: dict = data.model_dump()
         for key in cls.array_fields:
             data_dict[key] = list(data_dict.get(key))
-        jprint(data_dict)
         obj = cls.model(**data_dict)
-        logger.critical(f'============================={obj}')
         result = await cls.repository.create(obj, cls.model, session)
-        logger.critical(f'{result=}')
+        await session.commit()
         return inst_dict(result)
