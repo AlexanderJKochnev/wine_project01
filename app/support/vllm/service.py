@@ -588,6 +588,8 @@ class TranslateHelperService(ArrayService, Service):
             создание записи
         """
         data_dict: dict = data.model_dump()
+        jprint(data_dict)
+        return data_dict
         for key in cls.array_fields:
             data_dict[key] = list(data_dict.get(cls.array_fields))
         jprint(data_dict)
