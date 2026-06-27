@@ -277,7 +277,7 @@ class TranslateRawDataRouter(BaseRouter):
         return result
 
 
-class TranslateHelperRouter(ArrayRouter, BaseRouter):
+class TranslateHelperRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=TranslateHelper,
@@ -285,13 +285,20 @@ class TranslateHelperRouter(ArrayRouter, BaseRouter):
         )
         self.arrayName: str = 'drow'
 
+    def setup_routes(self):
+        self.router.add_api_route(
+            "/create", self.create,
+            methods=["POST"],
+            openapi_extra={'x-request-schema': None}
+        )
+
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
                      translate: List[str] = Form(..., description='предпочитаемый перевод'),
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        data = TranslateHelperCreate(word=word, drow=translate, shit=replace)
+        data = TranslateHelperCreate(word=word, drow=translate, shit=set(replace))
         return await super().create(data, session)
 
     async def patch(self, id: int, data: TranslateHelperUpdate, background_tasks: BackgroundTasks,
