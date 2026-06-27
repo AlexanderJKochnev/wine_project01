@@ -80,39 +80,42 @@ def is_tracked_problematic_index(name_obj: str) -> bool:
 
 def filter_false_positive_indexes(context, revision, directives):
     """
-    Анализирует весь список сгенерированных команд автогенерации.
-    Если для одного и того же версионированного индекса найдены и DROP, и CREATE,
-    они удаляются как ложное срабатывание. Одиночные команды пропускаются.
+    Глубокий фильтр операций Alembic.
+    Разворачивает контейнеры ModifyTableOps для очистки ложных DROP+CREATE.
     """
-    # Директивы автогенерации обычно лежат в первом элементе списка
     if not directives:
         return
-        
-        # Alembic может передавать директивы списком. Берём первый элемент, если это список.
-    directive = directives[0] if isinstance(directives, list) else directives
     
+    directive = directives[0] if isinstance(directives, list) else directives
     if not hasattr(directive, "upgrade_ops") or directive.upgrade_ops is None:
         return
     
-    upgrade_ops = directive.upgrade_ops.ops
-    print([type(op) for op in upgrade_ops])
-    # Собираем чистые строковые имена индексов, которые планируется УДАЛИТЬ
-    dropped_indexes = {str(op.index_name) for op in upgrade_ops if
-            isinstance(op, ops.DropIndexOp) and is_tracked_problematic_index(op.index_name)}
+    top_level_ops = directive.upgrade_ops.ops
     
-    # Собираем чистые строковые имена индексов, которые планируется СОЗДАТЬ
-    created_indexes = {str(op.index_name) for op in upgrade_ops if
-            isinstance(op, ops.CreateIndexOp) and is_tracked_problematic_index(op.index_name)}
-    
-    # Находим пересечение (индексы, которые попали в ложный цикл DROP + CREATE)
-    false_positives = dropped_indexes.intersection(created_indexes)
-    
-    if false_positives:
-        # Очищаем список операций от парных команд для этих индексов
-        filtered_ops = [op for op in upgrade_ops if
-                not (isinstance(op, (ops.DropIndexOp, ops.CreateIndexOp)) and str(op.index_name) in false_positives)]
-        # Перезаписываем операции Alembic
-        directive.upgrade_ops.ops = filtered_ops
+    # Перебираем все операции верхнего уровня
+    for top_op in top_level_ops:
+        # Проверяем, является ли операция контейнером изменений таблицы
+        if isinstance(top_op, ops.ModifyTableOps):
+            table_sub_ops = top_op.ops
+            
+            # 1. Собираем DROP и CREATE внутри конкретной таблицы
+            dropped_indexes = {str(sub_op.index_name) for sub_op in table_sub_ops if
+                    isinstance(sub_op, ops.DropIndexOp) and is_tracked_problematic_index(sub_op.index_name)}
+            
+            created_indexes = {str(sub_op.index_name) for sub_op in table_sub_ops if
+                    isinstance(sub_op, ops.CreateIndexOp) and is_tracked_problematic_index(sub_op.index_name)}
+            
+            # 2. Находим ложные пересечения для этой таблицы
+            false_positives = dropped_indexes.intersection(created_indexes)
+            
+            if false_positives:
+                # 3. Фильтруем под-операции внутри ModifyTableOps
+                filtered_sub_ops = [sub_op for sub_op in table_sub_ops if not (
+                        isinstance(sub_op, (ops.DropIndexOp, ops.CreateIndexOp)) and str(
+                    sub_op.index_name
+                    ) in false_positives)]
+                # Перезаписываем список операций для данной таблицы
+                top_op.ops = filtered_sub_ops
 
 #------------------
 def run_migrations_offline() -> None:
