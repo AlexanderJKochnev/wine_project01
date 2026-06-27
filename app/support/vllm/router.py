@@ -294,7 +294,7 @@ class TranslateHelperRouter(BaseRouter):
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
-                     translate: Set[str] = Form(..., description='предпочитаемый перевод'),
+                     translate: List[str] = Form(..., description='предпочитаемый перевод'),
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
