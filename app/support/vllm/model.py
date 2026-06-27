@@ -121,5 +121,5 @@ class TranslateHelper(Base, BaseAt):
             alembic не увидит изменения
             индекс должен начинаться с uq_idx (см is_tracked_problematic_index in mogrations/env.py
     """
-    # __table_args__ = (Index("uq_idx_translatehelper_gin_v1", "drow", postgresql_using="gin",
-    #                         postgresql_ops={'drow': 'array_ops'}),)
+    __table_args__ = (Index("uq_idx_translatehelper_gin_v1", "drow", postgresql_using="gin",
+                            postgresql_ops={'drow': 'array_ops'}),)
