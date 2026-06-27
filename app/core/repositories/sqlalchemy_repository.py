@@ -152,12 +152,9 @@ class Repository(Background, metaclass=RepositoryMeta):
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
-        session.add(obj)
-        logger.critical('----------1')
+        await session.add(obj)
         await session.flush()
-        logger.critical('----------2')
         await session.refresh(obj)
-        logger.critical('----------3')
         id = obj.id
         await cls.get_related_model_instances(id, model, session)
         return obj
