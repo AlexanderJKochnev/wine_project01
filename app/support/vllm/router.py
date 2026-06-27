@@ -286,11 +286,15 @@ class TranslateHelperRouter(BaseRouter):
         self.arrayName: str = 'drow'
 
     def setup_routes(self):
+        self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
+        """
         self.router.add_api_route(
             "/create", self.create,
             methods=["POST"],
             openapi_extra={'x-request-schema': None}
         )
+        self.router.add_api_route("/get", self.get, methods=["get"])
+        """
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
@@ -300,8 +304,6 @@ class TranslateHelperRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)):
         tmp = set(translate[0].split(','))
         data = TranslateHelperCreate(word=word, drow=tmp, shit=replace)
-        jprint(data.model_dump())
-        return data
         service = TranslateHelperService
         return await service.create_new(data, session)
 

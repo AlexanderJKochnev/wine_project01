@@ -56,7 +56,6 @@ class BaseRouter:
         self.model = model
         self.repo = get_repo(model)
         self.service: TService = get_service(model)
-
         self.auth_dependency = auth_dependency
         # input py schema for simple create without relation
         self.create_schema = get_pyschema(model, 'Create')
@@ -65,7 +64,6 @@ class BaseRouter:
         self.create_schema_relation = get_pyschema(model, 'CreateRelation') or self.create_schema
         # input update schema
         self.update_schema = get_pyschema(model, 'Update')
-
         # response schemas:
         self.read_schema = get_pyschema(model, 'Read')
         self.read_schema_relation = get_pyschema(model, 'ReadRelation') or self.read_schema
@@ -80,46 +78,66 @@ class BaseRouter:
                                 tags=self.tags,
                                 dependencies=[Depends(self.auth_dependency)],
                                 include_in_schema=include_in_schema)
+        """
+            action: (path, func, methods: list, schema_name
+        """
+        self.autoroutes: dict = {'create': ("", self.create, ["POST"], self.create_schema.__name__),
+                                 'create_hierarchy': ("/hierarchy", self.create_relation, ["POST"], self.create_schema_relation.__name__),
+                                 'get': ("", self.get, ["GET"], None),
+                                 'search': ("/search", self.search, ["GET"], None),
+                                 'search_all': ("/search_all", self.search_all, ["GET"], None),
+                                 'get_all': ("/all", self.get_all, ["GET"], None),
+                                 'get_full': ("/full", self.get_full, ["GET"], None),
+                                 'list_view': ("/list_view", self.get_list_view_page, ["GET"], None),
+                                 'get_one': ("/{id}", self.get_one, ["GET"], None),
+                                 'update_or_create': ("", self.update_or_create, ["PATCH"], self.update_schema.__name__),
+                                 'patch': ("/{id}", self.patch, ["PATCH"], self.update_schema.__name__),
+                                 'delete': ("/{id", self.delete, ["DELETE"], None)
+                                 }
+
         self.setup_routes()
         # self.read_response = py.read_response(read_schema)
         # self.path_schema = path_schema
+
+    def setup_route_adv(self, *args):
+        """ Настройка маршрутов тонкая
+            в args через запятую указать какие роуты нужны
+            'create', 'get', 'update' ...
+            список см self.autoroutes выше
+        """
+        routes = [val for key, val in self.autoroutes.items() if key in args]
+        for path, endpoint, act, schema in routes:
+            self.router.add_api_route(path, endpoint, methods=act, openapi_extra={'x-request-schema': schema})
 
     def setup_routes(self):
         """Настраивает маршруты"""
         # 1. create simple
         self.router.add_api_route("", self.create, methods=["POST"],
-                                  # response_model=self.create_response_schema,
                                   openapi_extra={'x-request-schema': self.create_schema.__name__})
         # 2. create in hierarchy
         self.router.add_api_route("/hierarchy",
                                   self.create_relation,
                                   status_code=status.HTTP_200_OK,
                                   methods=["POST"],
-                                  # response_model=self.read_schema_relation,
                                   openapi_extra={'x-request-schema': self.create_schema_relation.__name__})
         # 3. get all без паггинации не раньше заданной даты
         self.router.add_api_route("", self.get, methods=["GET"],
-                                  # response_model=self.paginated_response,
                                   openapi_extra={'x-request-schema': None})
         # 4. search с пагинацией (по всем текстовым полям модели, во вложеннных не ищет)
         self.router.add_api_route("/search", self.search, methods=["GET"],
-                                  # response_model=self.paginated_response,
                                   openapi_extra={'x-request-schema': None})
         # 5. search без пагинации (по всем текстовым полям модели, во вложеннных не ищет)
         self.router.add_api_route("/search_all",
                                   self.search_all, methods=["GET"],
-                                  # response_model=self.nonpaginated_response,
                                   openapi_extra={'x-request-schema': None})
         # 6. get without pagination не раньше заданной даты
         self.router.add_api_route("/all",
                                   self.get_all, methods=["GET"],
-                                  # response_model=self.nonpaginated_response,  # List[self.read_response])
                                   openapi_extra={'x-request-schema': None})
         # 7. get full list no pagination
         self.router.add_api_route("/full",
                                   self.get_full,
                                   methods=["GET"],
-                                  # response_model=self.nonpaginated_response,
                                   openapi_extra={'x-request-schema': None})
         # 8. list view
         self.router.add_api_route("/list_view",
@@ -129,22 +147,18 @@ class BaseRouter:
         # 9. get one buy id
         self.router.add_api_route("/{id}",
                                   self.get_one, methods=["GET"],
-                                  # response_model=self.read_schema,
                                   openapi_extra={'x-request-schema': None})
         # 10. update_or_create
         self.router.add_api_route("",
                                   self.update_or_create, methods=["PATCH"],
-                                  # response_model=self.read_schema,
                                   openapi_extra={'x-request-schema': self.update_schema.__name__})
         # 11. patch one
         self.router.add_api_route("/{id}",
                                   self.patch, methods=["PATCH"],
-                                  # response_model=self.read_schema,
                                   openapi_extra={'x-request-schema': self.update_schema.__name__})
         # 12. delete one
         self.router.add_api_route("/{id}",
                                   self.delete, methods=["DELETE"],
-                                  # response_model=self.delete_response,
                                   openapi_extra={'x-request-schema': None})
 
     async def create(self, data: TCreateSchema,
