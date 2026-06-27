@@ -58,10 +58,10 @@ class TranslateHelperRepository(MutableSetArrayRepository):
         pass
 
     @classmethod
-    async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
+    async def create(cls, obj: TranslateHelper, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
-        logger.critical('--------------0')
-        jprint(obj)
+        logger.critical(f'--------------0, {obj}')
+        jprint(obj.to_dict_fast())
         session.add(obj)
         logger.critical('--------------1')
         await session.flush()
