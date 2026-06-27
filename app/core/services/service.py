@@ -159,8 +159,6 @@ class Service(metaclass=ServiceMeta):
             if not isinstance(data, dict):
                 # если исходные данные не словарь
                 data_dict: dict = data.model_dump(exclude_unset=True)
-                jprint(data_dict)
-                logger.critical('--------------------1---------------------')
             default_dict: dict = {key: val for key, val in data_dict.items() if key in default}
             instance: ModelType = await repository.get_by_fields(default_dict, model, session)
             if instance:
@@ -169,7 +167,6 @@ class Service(metaclass=ServiceMeta):
                 return inst_dict(instance), False
             # запись не найдена
             obj = model(**data_dict)
-            logger.critical(('-----------------------2-----------------'))
             if model.__name__ == 'Item':
                 drink_model = get_model_by_name('Drink')
                 drink_repo = get_repo('Drink')
