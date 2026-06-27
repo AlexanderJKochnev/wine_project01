@@ -298,8 +298,8 @@ class TranslateHelperRouter(BaseRouter):
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        print(translate, type(translate), set(translate), type(set(translate)))
-        data = TranslateHelperCreate(word=word, drow=set(translate), shit=replace)
+        tmp = set(translate[0].split(','))
+        data = TranslateHelperCreate(word=word, drow=tmp, shit=replace)
         jprint(data.model_dump())
         return data
         service = TranslateHelperService
