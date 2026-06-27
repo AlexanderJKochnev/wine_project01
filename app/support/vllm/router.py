@@ -299,8 +299,6 @@ class TranslateHelperRouter(BaseRouter):
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
         data = TranslateHelperCreate(word=word, drow=set(translate), shit=replace)
-        print('-----------------', data)
-        return data.model_dump()
         service = TranslateHelperService
         return await service.create_new(data, session)
 
