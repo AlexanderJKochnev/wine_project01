@@ -1,5 +1,5 @@
 # app.support.router.py
-from typing import List, Optional
+from typing import List, Optional, Set
 
 # app.suport.ollama.router.py
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
@@ -294,11 +294,11 @@ class TranslateHelperRouter(BaseRouter):
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
-                     translate: List[str] = Form(..., description='предпочитаемый перевод'),
+                     translate: Set[str] = Form(..., description='предпочитаемый перевод'),
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        data = TranslateHelperCreate(word=word, drow=set(translate), shit=replace)
+        data = TranslateHelperCreate(word=word, drow=translate, shit=replace)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: TranslateHelperUpdate, background_tasks: BackgroundTasks,
