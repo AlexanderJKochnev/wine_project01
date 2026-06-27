@@ -199,7 +199,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         stmt = insert(model)
         # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
         # print(compiled)
-        response = await session.execute(stmt, data)
+        await session.execute(stmt, data)
         return len(data)
 
     @classmethod
@@ -822,8 +822,8 @@ class MutableSetArrayRepository(Repository):
 
     @classmethod
     async def del_elements(
-            cls, session: AsyncSession, filter: dict, field_name: str, elements: str | set
-            ) -> ModelType:
+        cls, session: AsyncSession, filter: dict, field_name: str, elements: str | set
+    ) -> ModelType:
         """
         удаление одного или нескольких элементов
         """
