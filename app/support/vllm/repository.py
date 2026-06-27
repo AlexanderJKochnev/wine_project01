@@ -63,6 +63,8 @@ class TranslateHelperRepository(MutableSetArrayRepository):
         logger.critical(f'--------------0, {obj}')
         tmp = obj.to_dict_fast()
         logger.critical(f'{tmp.get("drow")=}')
+        tmp['drow'] = set(list(tmp.get("drow")))
+        logger.critical(f'{tmp.get("drow")=}')
         jprint(tmp)
         session.add(TranslateHelper(**tmp))
         logger.critical('--------------1')
