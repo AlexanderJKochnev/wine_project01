@@ -61,12 +61,12 @@ class TranslateHelperRepository(MutableSetArrayRepository):
     async def create(cls, obj: TranslateHelper, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
         logger.critical(f'--------------0, {obj}')
-        tmp = obj.to_dict_fast()
+        # tmp = obj.to_dict_fast()
         # logger.critical(f'{tmp.get("drow")=}')
         # tmp['drow'] = set(list(tmp.get("drow")))
         # logger.critical(f'{tmp.get("drow")=}')
         # jprint(tmp)
-        session.add(TranslateHelper(**tmp))
+        session.add(obj)
         logger.critical('--------------1')
         await session.flush()
         await session.refresh(obj)
