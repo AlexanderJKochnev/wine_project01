@@ -94,7 +94,7 @@ class UniqueNormalizedNameMixin(GeneralMixin):
             alembic не увидит изменения
             индекс должен начинаться с uq_idx (см is_tracked_problematic_index in mogrations/env.py
         """
-        index_name = f"uq_idx_{cls.__tablename__}_norm_name_v1"[:63]
+        index_name = f"uq_idx_{cls.__tablename__}_norm_name_v2"[:63]
         # Достаем реальный объект колонки "name" из таблицы текущего класса
 
         return [
