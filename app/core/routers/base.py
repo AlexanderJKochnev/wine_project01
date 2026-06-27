@@ -155,8 +155,8 @@ class BaseRouter:
         response_model <>CreateResponseSchema
         """
         try:
-            print(self.repo, type(self.repo))
             obj, created = await self.service.get_or_create(data, self.repo, self.model, session)
+            logger.critical('----------------------')
             return orresponse(obj)
         except Exception as e:
             detail = (f'ошибка создания записи {e}, model = {self.model}, '
