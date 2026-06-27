@@ -10,6 +10,8 @@ from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
+from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.schemas.base import BaseModel
 from app.core.services.array_service import ArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
@@ -27,7 +29,8 @@ from app.support.ollama.repository import ISOLanguageRepository, PromptRepositor
 from app.support.subcategory.repository import SubcategoryRepository
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.support.vllm.model import TmpTranslate, TranslateHelper
-from app.support.vllm.repository import TmpTranslateRepository, TranslateRawDataRepository
+from app.support.vllm.repository import TmpTranslateRepository, TranslateHelperRepository, TranslateRawDataRepository
+from app.support.vllm.schemas import TranslateHelperCreate
 
 
 class VLLMService:
@@ -574,4 +577,19 @@ class DrinkTranslateScoreService(Service):
 
 
 class TranslateHelperService(ArrayService, Service):
-    default = ['id', 'word']
+    default = ['word']  # по этим полям будет проверяться наличие записей
+    repository = TranslateHelperRepository
+    model = TranslateHelper
+    array_fields = ('drow',)
+
+    @classmethod
+    async def create_new(cls, data: TranslateHelperCreate, session: AsyncSession, **kwargs) -> dict:
+        """
+            создание записи
+        """
+        data_dict: dict = data.model_dump()
+        for key in cls.array_fields:
+            data_dict[key] = list(data_dict.get(cls.array_fields))
+        obj = cls.model(**data_dict)
+        result = await cls.repository.create(obj, cls.model, session)
+        return inst_dict(result)

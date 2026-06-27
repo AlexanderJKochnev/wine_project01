@@ -19,7 +19,7 @@ from app.support.vllm.schemas import TranslateHelperCreate, TranslateHelperUpdat
     TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
-from app.support.vllm.service import VLLMService
+from app.support.vllm.service import TranslateHelperService, VLLMService
 
 
 class VllmRouter(LightRouter):
@@ -298,8 +298,9 @@ class TranslateHelperRouter(BaseRouter):
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        data = TranslateHelperCreate(word=word, drow=translate, shit=replace)
-        return await super().create(data, session)
+        data = TranslateHelperCreate(word=word, drow=set(translate), shit=replace)
+        service = TranslateHelperService
+        return await service.create_new(data, session)
 
     async def patch(self, id: int, data: TranslateHelperUpdate, background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)):

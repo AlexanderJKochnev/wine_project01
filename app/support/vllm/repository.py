@@ -12,6 +12,7 @@ from app.core.types import ModelType
 from app.core.utils.common_utils import jprint
 from app.support import Drink
 from app.support.vllm.model import DrinkTranslateScore, TmpTranslate, TranslateHelper, TranslateRawData
+from app.support.vllm.schemas import TranslateHelperRead
 
 
 class VllmRepository:
@@ -58,20 +59,6 @@ class TranslateHelperRepository(MutableSetArrayRepository):
         pass
 
     @classmethod
-    async def create(cls, obj: TranslateHelper, model: ModelType, session: AsyncSession) -> ModelType:
+    async def create(cls, obj: TranslateHelper, model: ModelType, session: AsyncSession) -> TranslateHelperRead:
         """ создание записи """
-        logger.critical(f'--------------0, {obj}')
-        # tmp = obj.to_dict_fast()
-        # logger.critical(f'{tmp.get("drow")=}')
-        # tmp['drow'] = set(list(tmp.get("drow")))
-        # logger.critical(f'{tmp.get("drow")=}')
-        # jprint(tmp)
-        session.add(obj)
-        logger.critical('--------------1')
-        await session.flush()
-        await session.refresh(obj)
-        logger.critical('--------------2')
-        id = obj.id
-        await cls.get_related_model_instances(id, model, session)
-        logger.critical('--------------3')
-        return obj
+        return super().create(obj, model, session)
