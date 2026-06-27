@@ -46,7 +46,7 @@ class TranslationService:
           "text_score": int,
           "reasoning": "Short explanation of your choice in English",
           "errors": [
-            ["original text segment", "ONLY the correct translation without any comments or brackets", "incorrect translation segment"]
+            ["original text segment", "incorrect translation segment", "ONLY the correct translation without any comments or brackets"]
           ]
         }}
         """
