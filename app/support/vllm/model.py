@@ -117,9 +117,11 @@ class TranslateHelper(Base, BaseAt):
     shit: Mapped[bool] = mapped_column(Boolean, default=False, index=True, unique=False)
     # GIN-индекс для быстрого поиска внутри массива
     """
-            в случае изменения в индексе - изменить суффикс _v1 на следующий/другой иначе
-            alembic не увидит изменения
-            индекс должен начинаться с uq_idx (см is_tracked_problematic_index in mogrations/env.py
+        возможны проблемы в случае измененя структуры этой таблицы а именно поля drow
+        в крайнем случае поможет снос таблицы через DROP с потерей всех данных
+        в случае изменения в индексе - изменить суффикс _v1 на следующий/другой иначе
+        alembic не увидит изменения
+        индекс должен начинаться с uq_idx (см is_tracked_problematic_index in mogrations/env.py
     """
     __table_args__ = (Index("uq_idx_translatehelper_gin_v1", "drow", postgresql_using="gin",
                             postgresql_ops={'drow': 'array_ops'}),)

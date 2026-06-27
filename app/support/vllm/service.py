@@ -325,6 +325,7 @@ class VLLMService:
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
+            jprint(errors)
             err = [errors for item in evaluated if (errors := item.get('errors'))]
             if err:
                 errors.extend([item for sublist in err for item in sublist])
