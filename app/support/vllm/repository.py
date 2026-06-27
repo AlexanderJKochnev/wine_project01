@@ -57,8 +57,3 @@ class TranslateHelperRepository(MutableSetArrayRepository):
         # 0. получение существующих записей
         filter: dict = data.copy()
         pass
-
-    @classmethod
-    async def create(cls, obj: TranslateHelper, model: ModelType, session: AsyncSession) -> TranslateHelperRead:
-        """ создание записи """
-        return super().create(obj, model, session)
