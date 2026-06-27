@@ -1,6 +1,7 @@
 # app.support.vllm.repository.py
 from typing import List
 
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.core.repositories.array_repository import ArrayRepository
 from app.core.repositories.sqlalchemy_repository import MutableSetArrayRepository, Repository
 from app.core.types import ModelType
+from app.core.utils.common_utils import jprint
 from app.support import Drink
 from app.support.vllm.model import DrinkTranslateScore, TmpTranslate, TranslateHelper, TranslateRawData
 
@@ -54,3 +56,18 @@ class TranslateHelperRepository(MutableSetArrayRepository):
         # 0. получение существующих записей
         filter: dict = data.copy()
         pass
+
+    @classmethod
+    async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
+        """ создание записи """
+        logger.critical('--------------0')
+        jprint(obj)
+        session.add(obj)
+        logger.critical('--------------1')
+        await session.flush()
+        await session.refresh(obj)
+        logger.critical('--------------2')
+        id = obj.id
+        await cls.get_related_model_instances(id, model, session)
+        logger.critical('--------------3')
+        return obj

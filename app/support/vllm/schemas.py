@@ -104,7 +104,7 @@ class DrinkTranslateScoreUpdate(BaseModel):
 
 class TranslateHelperCreate(BaseModel):
     word: str
-    drow: Set[str] = Field(default={})  # для того что бы принял роутер - в нем уже преобразовать в set
+    drow: Optional[Set[str]] = Field(default={})  # для того что бы принял роутер - в нем уже преобразовать в set
     shit: Optional[bool] = False
 
 
