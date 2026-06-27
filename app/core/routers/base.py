@@ -92,7 +92,7 @@ class BaseRouter:
                                  'get_one': ("/{id}", self.get_one, ["GET"], None),
                                  'update_or_create': ("", self.update_or_create, ["PATCH"], self.update_schema.__name__),
                                  'patch': ("/{id}", self.patch, ["PATCH"], self.update_schema.__name__),
-                                 'delete': ("/{id", self.delete, ["DELETE"], None)
+                                 'delete': ("/{id}", self.delete, ["DELETE"], None)
                                  }
 
         self.setup_routes()
