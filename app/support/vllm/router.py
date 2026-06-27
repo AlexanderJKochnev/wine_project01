@@ -298,7 +298,7 @@ class TranslateHelperRouter(BaseRouter):
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        data = TranslateHelperCreate(word=word, drow=translate, shit=set(replace))
+        data = TranslateHelperCreate(word=word, drow=set(translate), shit=replace)
         return await super().create(data, session)
 
     async def patch(self, id: int, data: TranslateHelperUpdate, background_tasks: BackgroundTasks,
