@@ -125,3 +125,8 @@ class TranslateHelper(Base, BaseAt):
     """
     __table_args__ = (Index("uq_idx_translatehelper_gin_v1", "drow", postgresql_using="gin",
                             postgresql_ops={'drow': 'array_ops'}),)
+
+    def __str__(self):
+        # переоопределять в особенных формах
+        # or "" на всякий случай если обязательное поле вдруг окажется необязательным и пустым
+        return self.word or ""
