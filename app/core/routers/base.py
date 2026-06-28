@@ -114,7 +114,6 @@ class BaseRouter:
         customized routes setup
         setup_route_custom('/path/{id}', self.func, 'POST,GET', self.create_schema.__name__)
         """
-        print(f'{path} ===============================')
         methods = methods.split(',')
         schema = self.create_schema.__name__ if 'POST' in methods else None
         self.router.add_api_route(path, func, methods=methods, openapi_extra={'x-request-schema': schema})
