@@ -327,17 +327,17 @@ class VLLMService:
                 revised_phrases = []
                 for phrase_id, txt in phrases:
                     revised_text = clean_text_with_aho(txt, cleaner_auto)
-                    print(txt)
-                    print('---------------------------')
-                    print(revised_text)
-                    print('===========================')
+                    # print(txt)
+                    # print('---------------------------')
+                    # print(revised_text)
+                    # print('===========================')
                     revised_phrases.append((phrase_id, revised_text))
                 # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
                 # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
                 final_phrases = []
                 for phrase_id, revised_text in revised_phrases:
                     translation_hints = get_translations_with_aho(revised_text, translator_auto)
-                    print(f'{translation_hints=}')
+                    # print(f'{translation_hints=}')
                     final_phrases.append((phrase_id, revised_text, translation_hints))
             # 4.0 translate
             result = await translation_service.real_batch(final_phrases, dataclass)
@@ -352,7 +352,9 @@ class VLLMService:
             # 5. save to temporary file
             # 5.0. prepaire for save (score added)
             distill = self.__tmp_data_validate__(result, evaluated, dataclass)
+
             rich_print(distill, "список записей во временной таблице")
+
             # 5.1. save to tmp_model
             async with session_factory() as session:
                 response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
@@ -362,6 +364,8 @@ class VLLMService:
             quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
             if not quality or not last_id:
                 break
+        errors_list_dict = [{'word': a, 'wrong': b, 'proposed': c} for a, b, c in errors]
+        rich_print(errors_list_dict, 'список ошибок')
         # 6.0 implementation to real database
         # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
         async with session_factory() as session:
@@ -507,7 +511,6 @@ class VLLMService:
         добавление ошибок в TranslateHelper
         """
         # 0. convert [(word, wrong, drow)] => [{'word': word, drow: [drow]}]
-        jprint(errors)
         result = defaultdict(list)
         for key, val, *_ in errors:
             result[key].append(val)
