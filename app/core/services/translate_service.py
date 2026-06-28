@@ -51,7 +51,7 @@ class TranslationService:
         }}
         """
 
-        self.EXPERT_USER_PROMPT = """Drink Info: {drink_info}
+        self.EXPERT_USER_PROMPT = """Subject Info: {drink_info}
         Original Text: "{origin}"
         Translated Text: "{result}"
 
