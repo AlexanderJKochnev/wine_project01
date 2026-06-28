@@ -1006,7 +1006,7 @@ def rich_print(data: List[Dict], title: str):
     на входе список словарей
     где ключи - названия колонок
     """
-    jprint(data)
+    # jprint(data)
     if data is None or len(data) == 0:
         return
     console = Console()
@@ -1014,7 +1014,7 @@ def rich_print(data: List[Dict], title: str):
     for key in data[0].keys():
         table.add_column(key.capitalize(), style="cyan", justify="left")
     for val in data:
-        table.add_row(*val.values())
+        table.add_row([str(v) for v in val.values()])
     console.print(table)
 
 
