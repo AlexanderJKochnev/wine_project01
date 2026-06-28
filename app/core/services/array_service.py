@@ -305,7 +305,7 @@ class SetArrayService:
         data_dict.update(validated_array)
         instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
         if not instance:
-            response = await cls.repository.create(cls.model(**data))
+            response = await cls.repository.create(cls.model(**data_dict))
         else:
             current_dict: dict = inst_dict(instance)
             for key, val in validated_array.items():
