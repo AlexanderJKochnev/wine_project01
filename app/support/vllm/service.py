@@ -337,6 +337,7 @@ class VLLMService:
                 final_phrases = []
                 for phrase_id, revised_text in revised_phrases:
                     translation_hints = get_translations_with_aho(revised_text, translator_auto)
+                    print(f'{translation_hints=}')
                     final_phrases.append((phrase_id, revised_text, translation_hints))
                 # В ЭТО МЕСТО НУЖНО ВНЕДРИТЬ МОДИФИКАЦИЮ phrases c помощью второго бора
             # 4.0 translate
