@@ -9,28 +9,23 @@ from openai import AsyncOpenAI
 from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config.project_config import settings
-from app.core.repositories.sqlalchemy_repository import Repository
-from app.core.schemas.base import BaseModel
-from app.core.services.array_service import ArrayService, SetArrayService
+from app.core.services.array_service import SetArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.alchemy_utils import get_model_by_tablename
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint, rich_print
-from app.core.utils.pydantic_utils import inst_dict, list_dict
+from app.core.utils.pydantic_utils import list_dict
 from app.support import Drink, DrinkService, Subcategory, TranslateRawData
 from app.support.drink.repository import DrinkRepository
 # from app.core.utils.common_utils import jprint
-from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
-from app.support.ollama.repository import ISOLanguageRepository, PromptRepository, ProptionRepository, \
-    WriterRuleRepository
+from app.support.ollama.model import Prompt, Proption, WriterRule
+from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.support.vllm.model import TmpTranslate, TranslateHelper
 from app.support.vllm.repository import TmpTranslateRepository, TranslateHelperRepository, TranslateRawDataRepository
-from app.support.vllm.schemas import TranslateHelperCreate
 
 
 class VLLMService:

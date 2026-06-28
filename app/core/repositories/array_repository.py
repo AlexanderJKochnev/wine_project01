@@ -174,8 +174,8 @@ class SetArrayRepository(Repository):
     model: ModelType
 
     @classmethod
-    async def set_add(cls, session: AsyncSession, instance, data: dict) -> model:
+    async def set_add(cls, session: AsyncSession, instance, data: dict):
         """
         update set field
         """
-        
+        pass
