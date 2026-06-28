@@ -58,14 +58,26 @@ class TranslationService:
         Analyze the text, find all translation and stylistic errors, and evaluate the translation now."""
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
-                        drink: str = None) -> list:
+                        drink: str = None, hints: dict = None) -> list:
         """
         Формирует структурированный массив сообщений для Chat Completions API.
         vLLM автоматически применит к нему ChatML шаблоны для Qwen.
         """
+        hints_str = ""
+        if hints:
+            lines = []
+            for word, translation_set in hints.items():
+                # Превращаем {'вариант1', 'вариант2'} в строку "вариант1" или "вариант2"
+                variants = ", ".join(f"'{t}'" for t in sorted(translation_set))
+                # Формируем строчку по стилю вашего промпта
+                lines.append(f"\n- Слово или фразу '{word}' переводи как {variants}.")
+
+            # Склеиваем все найденные подсказки
+            hints_str = "".join(lines)
+
         target_lang = lang_code
         system_prompt = system_prompt.format(lang=target_lang)
-        user_prompt = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink)
+        user_prompt = user_prompt.format(lang=target_lang, phrase=phrase, drink=drink, translation_hints=hints_str)
         # ВНИМАНИЕ КОСТЫЛЬ - В КОНЦЕ user_prompt ДОПИСЫВАЕМ ВОЛШЕБНОЕ ЗАКЛИНАНИЕ (если оно есть)
         # if not user_prompt.endswith(self.hang):
         #     user_prompt = f'{user_prompt}. {self.hang}'
@@ -141,10 +153,10 @@ class TranslationService:
 
     async def _translate_single_task(
             self, semaphore: asyncio.Semaphore, p_id: int, phrase: str, s_id: int, s_prompt: str, u_id: int,
-            u_prompt: str, lang: str, drink: str, single_params: dict
+            u_prompt: str, lang: str, drink: str, single_params: dict, translation_hint: dict
     ) -> Dict[str, Any]:
         """Обработка одной конкретной комбинации параметров и текстов"""
-        messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink)
+        messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink, translation_hint)
         request_params = self._prepare_params(**single_params)
         request_params["messages"] = messages
         try:
@@ -361,13 +373,13 @@ class TranslationService:
         logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
         start_time = time.time()
         group_tasks = []
-        for c, (p_id, phrase) in enumerate(phrases):
+        for c, (p_id, phrase, translation_hint) in enumerate(phrases):
             u_id, u_prompt, _ = d.user_prompt
             s_id, s_prompt, _ = d.system_prompt
             single_params = d.params
             task = self._translate_single_task(
                 semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, d.language_destination,
-                d.descr, single_params,
+                d.descr, single_params, translation_hint
             )
             group_tasks.append(task)
             remain_tasks -= 1
