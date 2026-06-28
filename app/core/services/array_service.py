@@ -351,7 +351,7 @@ class SetArrayService:
                 x = set(current_dict.get(key, []))
                 x.difference_update(val)
                 validated_array[key] = x
-            if clear and ''.join(*validated_array.value()) == '':
+            if clear and ''.join(*validated_array.values()) == '':
                 # array поля пустые - удалить
                 await cls.repository.delete(instance, session)
                 return {'result': 'array are empty, record deleted'}
