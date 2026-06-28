@@ -18,7 +18,7 @@ from app.core.schemas.base import BaseModel, IndexFillResponse
 from app.core.services.click_service import FullTextSearch
 from app.core.types import ModelType
 from app.core.utils.alchemy_utils import has_column
-from app.core.utils.common_utils import flatten_dict_with_localized_fields, jprint, make_paging_dict
+from app.core.utils.common_utils import flatten_dict_with_localized_fields, make_paging_dict
 from app.core.utils.converters import list_move
 from app.core.utils.pydantic_utils import (get_data_for_search, get_repo, inst_dict, list_dict, make_paginated_response,
                                            prepare_search_string)

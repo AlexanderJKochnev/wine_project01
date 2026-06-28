@@ -284,17 +284,11 @@ class TranslateHelperRouter(BaseRouter):
             prefix="/translatehelper",
         )
         self.arrayName: str = 'drow'
+        self.service = TranslateHelperService
 
     def setup_routes(self):
         self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
-        """
-        self.router.add_api_route(
-            "/create", self.create,
-            methods=["POST"],
-            openapi_extra={'x-request-schema': None}
-        )
-        self.router.add_api_route("/get", self.get, methods=["get"])
-        """
+        self.setup_route_custom('/add', self.add_drow, 'POST')
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
@@ -302,11 +296,18 @@ class TranslateHelperRouter(BaseRouter):
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        tmp = set(translate[0].split(','))
-        data = TranslateHelperCreate(word=word, drow=tmp, shit=replace)
+        # tmp = set(translate[0].split(','))
+        data = TranslateHelperCreate(word=word, drow=translate, shit=replace)
         service = TranslateHelperService
-        return await service.create_new(data, session)
+        return await service.create(data, session)
 
-    async def patch(self, id: int, data: TranslateHelperUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
+    async def add_drow(self,
+                       word: str = Form(..., description='слово или фраза'),
+                       translate: List[str] = Form(..., description='предпочитаемый перевод'),
+                       replace: bool = Form(False, description='True - мусор для замены перед переводом, '
+                                            'False - подсказка переводчику'),
+                       session: AsyncSession = Depends(get_db)
+                       ):
+        data = self.create_schema(word=word, drow=translate, replace=replace)
+        result: dict = await self.service.set_add_single(session, data)
+        return result

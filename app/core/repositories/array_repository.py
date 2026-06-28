@@ -5,6 +5,8 @@
 from typing import List
 from sqlalchemy import update, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.utils.common_utils import getter
 from app.core.types import ModelType
 from loguru import logger  # noqa: F401
@@ -163,3 +165,17 @@ class ArrayRepository:
         array_list[pos: pos + block] = newdata
         await cls._set_array_(id, model, arrayName, array_list, session)
         return array_list
+
+
+class SetArrayRepository(Repository):
+    """
+    РЕПОЗИТОРИЙ ДЛЯ Set(Any) полей
+    """
+    model: ModelType
+
+    @classmethod
+    async def set_add(cls, session: AsyncSession, instance, data: dict) -> model:
+        """
+        update set field
+        """
+        

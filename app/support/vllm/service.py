@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config.project_config import settings
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import BaseModel
-from app.core.services.array_service import ArrayService
+from app.core.services.array_service import ArrayService, SetArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
@@ -576,21 +576,8 @@ class DrinkTranslateScoreService(Service):
     default = ['id']
 
 
-class TranslateHelperService(ArrayService, Service):
+class TranslateHelperService(SetArrayService, Service):
     default = ['word']  # по этим полям будет проверяться наличие записей
     repository = TranslateHelperRepository
     model = TranslateHelper
     array_fields = ('drow',)
-
-    @classmethod
-    async def create_new(cls, data: TranslateHelperCreate, session: AsyncSession, **kwargs) -> dict:
-        """
-            создание записи
-        """
-        data_dict: dict = data.model_dump()
-        for key in cls.array_fields:
-            data_dict[key] = list(data_dict.get(key))
-        obj = cls.model(**data_dict)
-        result = await cls.repository.create(obj, cls.model, session)
-        await session.commit()
-        return inst_dict(result)

@@ -109,6 +109,15 @@ class BaseRouter:
         for path, endpoint, act, schema in routes:
             self.router.add_api_route(path, endpoint, methods=act, openapi_extra={'x-request-schema': schema})
 
+    def setup_route_custom(self, path: str, func, methods: str):
+        """
+        customized routes setup
+        setup_route_custom('/path/{id}', self.func, 'POST,GET', self.create_schema.__name__)
+        """
+        methods = methods.split(',')
+        schema = self.create_schema.__name__ if 'POST' in methods else None
+        self.router.add_api_route(path, func, methods=methods, openapi_extra={'x-request-schema': schema})
+
     def setup_routes(self):
         """Настраивает маршруты"""
         # 1. create simple

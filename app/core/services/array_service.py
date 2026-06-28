@@ -5,8 +5,9 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, Request
 from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.schemas.base import BaseModel
 from app.core.types import ModelType
-from app.core.repositories.array_repository import ArrayRepository
+from app.core.repositories.array_repository import ArrayRepository, SetArrayRepository
 from app.core.services.seaweed_service import SeaweedsService
 from app.core.utils.alchemy_utils import has_column
 from app.core.utils.common_utils import jprint
@@ -14,6 +15,7 @@ from app.core.utils.image_utils import get_default_image
 from app.core.utils.io_utils import get_font_list
 from app.core.utils.pillow_generator import TextConfig, generate_text_image, TextConfigAdaptive
 from app.core.utils.color_palette import auto_match_colors_old, auto_match_colors
+from app.core.utils.pydantic_utils import inst_dict
 
 
 class ArrayService:
@@ -260,3 +262,64 @@ class ArrayService:
         rx = randint(0, x - 1)
         font = font_list[rx]
         return await cls.generate_image_by_id_v2(id, font, session, bg_opacity)
+
+
+class SetArrayService:
+    """
+        сервис для моделей с полями Set[String]
+        методы:
+        create, patch, delete, get, get_one: это все в Service
+        КАСАЕТСЯ ТОЛЬКО ПОЛЕ SET
+        add_to_array
+        delete_from_array
+        find in array
+    """
+    default: list  # список полей, однозначно определяющих запись, по ним будет происходить поиск записи в get_or_create
+    repository: SetArrayRepository  # репозиторий
+    model: ModelType  # модель
+    array_fields: tuple  # список полей массивов
+
+    @classmethod
+    def __array_set_validation__(cls, data_dict: dict) -> dict:
+        """
+            валидация array_set полей - возвращает новый словарь только с array полями
+        """
+        result = {key: val for key, val in data_dict if key in cls.array_fields}
+        for key, val in result.items():
+            if isinstance(val, list):
+                result[key] = set(val)
+            elif isinstance(val, str):
+                result[key] = set(val.split(','))
+        return result
+
+    @classmethod
+    async def set_add_single(cls, session: AsyncSession, data: BaseModel) -> dict:
+        """
+            проверка - есть отсутствует запись, то создает
+            если есть то дополняет
+            data: Update pydantic model
+        """
+        data_dict = data.model_dump()
+        filter = {key: val for key, val in data_dict if key in cls.default}
+        validated_array: dict = cls.__array_set_validation__(data_dict)
+        data_dict.update(validated_array)
+        instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
+        if not instance:
+            response = await cls.repository.create(cls.model(**data))
+        else:
+            current_dict: dict = inst_dict(instance)
+            for key, val in validated_array.items():
+                current_dict[key] = set(current_dict.get(key), []).update(val)
+            response = await cls.repository.patch(instance, current_dict, session)
+        return inst_dict(response)
+
+    @classmethod
+    async def create(cls, session: AsyncSession, data: BaseModel) -> dict:
+        """
+            создание записи
+        """
+        data_dict = data.model_dump()
+        validated_array: dict = cls.__array_set_validation__(data_dict)
+        data_dict.update(validated_array)
+        response = await cls.repository.create(cls.model(**data))
+        return inst_dict(response)
