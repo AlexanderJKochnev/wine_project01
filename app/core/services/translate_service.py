@@ -241,10 +241,12 @@ class TranslationService:
                                                       row['result'],
                                                       row['hint']
                                                       )
+        """
         user_content = self.EXPERT_USER_PROMPT.format(
             subject_info=row['drink'],  # содержит f'{drink=}'
             origin=row['origin'], result=row['result']
         )
+        """
 
         # Для экспертной оценки всегда используем температуру 0.0
         request_params = self._prepare_params(temperature=0.0)
