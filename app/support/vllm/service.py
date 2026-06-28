@@ -339,11 +339,13 @@ class VLLMService:
                     translation_hints = get_translations_with_aho(revised_text, translator_auto)
                     print(f'{translation_hints=}')
                     final_phrases.append((phrase_id, revised_text, translation_hints))
+            if len(final_phrases) == 0:
+                break
             # 4.0 translate
             result = await translation_service.real_batch(final_phrases, dataclass)
             # 4.1 evaluate
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-            jprint(evaluated)
+
             # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
             err = [errors for item in evaluated if (errors := item.get('errors'))]
