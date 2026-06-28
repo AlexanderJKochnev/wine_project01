@@ -36,9 +36,17 @@ class TranslationService:
         [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
         For each issue, extract a tuple containing: (1) the exact original segment,
         (2) the incorrect translation segment, and (3) your corrected version.
-        CRITICAL: The third element MUST contain ONLY the corrected translation.
+
+        CRITICAL LOGIC RULES TO PREVENT FALSE POSITIVES:
+        - NEVER list an error where your "corrected version" is identical or semantically 100% equal to the "incorrect translation segment".
+        - If the translation used a valid option from the provided Glossary/Hints, it is 100% CORRECT. Do not treat it as an error.
+        - Before generating JSON, double-check every item in the "errors" list. If the "incorrect translation segment" and "your corrected version" match, REMOVE it from the list.
+        - If the "errors" list becomes empty after this check, you MUST give a score of 10 for both translation_score and text_score.
+
+        CRITICAL FORMATTING: The third element of the error tuple MUST contain ONLY the corrected translation.
         Do not include any explanations, definitions, parentheses, or alternative options.
         If there are no errors, return an empty list.
+
         You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
         JSON schema:
         {{
@@ -51,11 +59,11 @@ class TranslationService:
         }}
         """
 
-        self.EXPERT_USER_PROMPT = """Subject Info: {drink_info}
+        self.EXPERT_USER_PROMPT = """Subject Info: {subject_info}
         Original Text: "{origin}"
-        Translated Text: "{result}"
+        Translated Text: "{result}"{translation_hints}
 
-        Analyze the text, find all translation and stylistic errors, and evaluate the translation now."""
+        Analyze the text, find all translation and stylistic errors using the rules and the Approved Glossary, and evaluate the translation now."""
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
                         drink: str = None, hints: dict = None) -> list:
@@ -180,6 +188,7 @@ class TranslationService:
                 'proption_id': single_params.get('id'),
                 'origin': phrase,
                 'result': content,
+                'hint': translation_hint
                 # 'duration': round(duration_s, 4)
                 }
 
@@ -226,8 +235,14 @@ class TranslationService:
         target_lang = self.lang_map.get(row['lang_result'][:2], row['lang_result'])
 
         system_content = self.EXPERT_SYSTEM_PROMPT.format(lang=target_lang)
+        user_content = self.render_expert_user_prompt(self.EXPERT_USER_PROMPT,
+                                                      row['drink'],
+                                                      row['origin'],
+                                                      row['result'],
+                                                      row['hint']
+                                                      )
         user_content = self.EXPERT_USER_PROMPT.format(
-            drink_info=row['drink'],  # содержит f'{drink=}'
+            subject_info=row['drink'],  # содержит f'{drink=}'
             origin=row['origin'], result=row['result']
         )
 
@@ -390,3 +405,20 @@ class TranslationService:
         results.extend(group_results)
         logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
         return results
+
+    def render_expert_user_prompt(template: str, subject_info: str, origin: str, result: str, hints: dict) -> str:
+        """
+        Форматирует USER_PROMPT для эксперта, внедряя подсказки из второго бора в качестве глоссария.
+        """
+        hints_str = ""
+
+        if hints:
+            lines = ["\n\nApproved Glossary Hints (These variants are verified and absolutely correct):"]
+            for word, translation_set in hints.items():
+                variants = ", ".join(f"'{t}'" for t in sorted(translation_set))
+                lines.append(f"- '{word}': can be translated as {variants}")
+            hints_str = "\n".join(lines)
+
+        return template.format(
+            subject_info=subject_info, origin=origin, result=result, translation_hints=hints_str
+        )
