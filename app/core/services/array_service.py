@@ -300,7 +300,7 @@ class SetArrayService:
             data: Update pydantic model
         """
         data_dict = data.model_dump()
-        filter = {key: val for key, val in data_dict if key in cls.default}
+        filter = {key: val for key, val in data_dict.items() if key in cls.default}
         validated_array: dict = cls.__array_set_validation__(data_dict)
         data_dict.update(validated_array)
         instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
