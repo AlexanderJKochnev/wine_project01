@@ -13,6 +13,7 @@ from app.core.services.array_service import SetArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
+from app.core.utils.ahocorasick import clean_text_with_aho, get_extractor, get_translations_with_aho
 from app.core.utils.alchemy_utils import get_model_by_tablename
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint, rich_print
@@ -300,7 +301,7 @@ class VLLMService:
     async def handbook_translate(self, session_factory, translation_service: TranslationService,
                                  dataclass: HandbookTranslateData):
         """
-            перевод справочников
+            перевод справочников и drink
             0. язык двух символьный код
             1. получаем prompts
             2. определяем поля для источника и поля для перевода
@@ -317,8 +318,29 @@ class VLLMService:
             async with session_factory() as session:
                 phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
                 await session.commit()
+                # В ЭТО МЕСТО НУЖНО ВНЕДРИТЬ ПОИСК И ЗАМЕНУ С ПОМОЩЬЮ ПЕРВОГО БОРА
+                # Получаем/инициализируем оба бора из базы данных (произойдет один раз при старте)
+                cleaner_auto = await get_extractor('cleaner', session, {'shit': True}, TranslateHelperService)
+                translator_auto = await get_extractor('translator', session, {'shit': False}, TranslateHelperService)
+                # Шаг 1. Очистка текстов от мусора с помощью первого бора
+                # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
+                revised_phrases = []
+                for phrase_id, txt in phrases:
+                    revised_text = clean_text_with_aho(txt, cleaner_auto)
+                    print(txt)
+                    print('---------------------------')
+                    print(revised_text)
+                    print('===========================')
+                    revised_phrases.append((phrase_id, revised_text))
+                # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
+                # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
+                final_phrases = []
+                for phrase_id, revised_text in revised_phrases:
+                    translation_hints = get_translations_with_aho(revised_text, translator_auto)
+                    final_phrases.append((phrase_id, revised_text, translation_hints))
+                # В ЭТО МЕСТО НУЖНО ВНЕДРИТЬ МОДИФИКАЦИЮ phrases c помощью второго бора
             # 4.0 translate
-            result = await translation_service.real_batch(phrases, dataclass)
+            result = await translation_service.real_batch(final_phrases, dataclass)
             # 4.1 evaluate
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             # 4.2. extend error list
@@ -411,9 +433,9 @@ class VLLMService:
         if less < 50:
             return True
         logger.warning(
-                f'Качество перевода менее 50%. Останавливаем перевод. В ходе перевода выявлено '
-                f'{len(errors)} слов и выражений. Сейчас они будут добавлены в словарь трудностей и можно запустить '
-                f'перевод заново - качество доджно улучшиться'
+            f'Качество перевода менее 50%. Останавливаем перевод. В ходе перевода выявлено '
+            f'{len(errors)} слов и выражений. Сейчас они будут добавлены в словарь трудностей и можно запустить '
+            f'перевод заново - качество должно улучшиться'
         )
         return False
 
@@ -525,9 +547,6 @@ class VLLMService:
                     break
             break
         return
-
-        tmp_model = TmpTranslate
-        tmp_repo = TmpTranslateRepository
         last_id = 0
         return None
 
