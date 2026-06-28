@@ -320,8 +320,8 @@ class VLLMService:
                 await session.commit()
                 # В ЭТО МЕСТО НУЖНО ВНЕДРИТЬ ПОИСК И ЗАМЕНУ С ПОМОЩЬЮ ПЕРВОГО БОРА
                 # Получаем/инициализируем оба бора из базы данных (произойдет один раз при старте)
-                cleaner_auto = await get_extractor('cleaner', session, {'shit': True}, TranslateHelperService)
-                translator_auto = await get_extractor('translator', session, {'shit': False}, TranslateHelperService)
+                cleaner_auto = await get_extractor('cleaner', session, {'shit': True})
+                translator_auto = await get_extractor('translator', session, {'shit': False})
                 # Шаг 1. Очистка текстов от мусора с помощью первого бора
                 # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
                 revised_phrases = []
@@ -337,7 +337,7 @@ class VLLMService:
                 final_phrases = []
                 for phrase_id, revised_text in revised_phrases:
                     translation_hints = get_translations_with_aho(revised_text, translator_auto)
-                    # print(f'{translation_hints=}')
+                    print(f'{translation_hints=}')
                     final_phrases.append((phrase_id, revised_text, translation_hints))
             # 4.0 translate
             result = await translation_service.real_batch(final_phrases, dataclass)

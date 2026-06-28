@@ -6,6 +6,8 @@ import asyncio
 import ahocorasick
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.utils.pydantic_utils import get_service
+
 # Глобальные хранилища для боров и блокировка от состояния гонки
 _extractors = {}
 _lock = asyncio.Lock()
@@ -13,13 +15,12 @@ _lock = asyncio.Lock()
 
 async def get_extractor(task_type: str,
                         session: AsyncSession,
-                        db_filter: dict,
-                        translatehelpservice) -> ahocorasick.Automaton:
+                        db_filter: dict) -> ahocorasick.Automaton:
     """
     Ленивая инициализация нужного бора. При первом вызове загружает данные из БД.
     """
     global _extractors
-
+    translatehelpservice = get_service('TranslateHelper')
     if task_type not in _extractors:
         async with _lock:
             # Double-check под блокировкой для безопасного асинхронного доступа
@@ -104,16 +105,16 @@ def get_translations_with_aho(text: str, auto: ahocorasick.Automaton) -> dict:
     return hints
 
 
-async def refresh_extractor(task_type: str, session: AsyncSession, db_filter: dict, dataclass) -> None:
+async def refresh_extractor(task_type: str, session: AsyncSession, db_filter: dict) -> None:
     """
     Принудительное обновление конкретного бора.
     Загружает актуальные данные из БД и атомарно заменяет старый бор в памяти.
     """
     global _extractors
-
+    translatehelpservice = get_service('TranslateHelper')
     async with _lock:
         # 1. Загружаем свежие данные из базы данных
-        term_to_data = await dataclass.get_dict(session, db_filter)
+        term_to_data = await translatehelpservice.get_dict(session, db_filter)
 
         # 2. Строим новый автомат во временную переменную.
         # Пока идет этот процесс, ваши циклы продолжают читать старый бор без сбоев.
