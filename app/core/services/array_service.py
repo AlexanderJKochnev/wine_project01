@@ -303,7 +303,6 @@ class SetArrayService:
         filter: dict = cls.__filter__(data_dict)
         validated_array: dict = cls.__array_set_validation__(data_dict)
         instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
-        
         return instance, validated_array
 
     @classmethod
@@ -322,8 +321,11 @@ class SetArrayService:
                 x = set(current_dict.get(key, []))
                 x.update(val)
                 validated_array[key] = val
-            response = await cls.repository.patch(instance, validated_array, session)
-        return inst_dict(response)
+            response: dict = await cls.repository.patch(instance, validated_array, session)
+            # response = {"success": True, "data": obj}
+            if not response.get('success'):
+                raise HTTPException(status_code=500, detail='обновление не случилось')
+        return inst_dict(response.get('data'))
 
     @classmethod
     async def create(cls, session: AsyncSession, data: BaseModel) -> dict:
