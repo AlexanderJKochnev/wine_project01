@@ -335,3 +335,28 @@ class SetArrayService:
         data_dict = data.model_dump()
         response = await cls.repository.create(cls.model(**data_dict))
         return inst_dict(response)
+
+    @classmethod
+    async def set_remove_single(cls, session: AsyncSession, data: BaseModel, clear: bool = True) -> dict:
+        """
+            удаляет элемент из array set
+            если array пустой и clear = True - удаляет всю запись
+        """
+        instance, validated_array = await cls.__preparation__(session, data)
+        if not instance:
+            raise HTTPException(status_code=404, detail='запись не найдена')
+        else:
+            current_dict: dict = inst_dict(instance)
+            for key, val in validated_array.items():
+                x = set(current_dict.get(key, []))
+                x.difference_update(val)
+                validated_array[key] = x
+            if clear and ''.join(*validated_array.value()) == '':
+                # array поля пустые - удалить
+                await cls.repository.delete(instance, session)
+                return {'result': 'array are empty, record deleted'}
+            response: dict = await cls.repository.patch(instance, validated_array, session)
+            # response = {"success": True, "data": obj}
+            if not response.get('success'):
+                raise HTTPException(status_code=500, detail='обновление не случилось')
+        return inst_dict(response.get('data'))

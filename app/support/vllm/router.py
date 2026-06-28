@@ -1,13 +1,11 @@
 # app.support.router.py
-from typing import List, Optional, Set
+from typing import List, Optional
 
 # app.suport.ollama.router.py
 from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
-from app.core.routers.mixin_router import ArrayRouter
-from app.core.utils.common_utils import jprint
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
@@ -15,8 +13,7 @@ from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
 from app.support.vllm.model import TranslateHelper, TranslateRawData
 from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
-from app.support.vllm.schemas import TranslateHelperCreate, TranslateHelperUpdate, TranslateRawDataCreate, \
-    TranslateRawDataUpdate
+from app.support.vllm.schemas import TranslateHelperCreate, TranslateRawDataCreate, TranslateRawDataUpdate
 # from app.core.utils.common_utils import compare_lists_compact, jprint
 # from app.support.ollama.model import Prompt, ISOLanguage, Proption, WriterRule
 from app.support.vllm.service import TranslateHelperService, VLLMService
@@ -289,6 +286,7 @@ class TranslateHelperRouter(BaseRouter):
     def setup_routes(self):
         self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
         self.setup_route_custom('/add', self.add_drow, 'POST')
+        self.setup_route_custom('/remove', self.remove_drow, 'POST')
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
@@ -296,8 +294,8 @@ class TranslateHelperRouter(BaseRouter):
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
-        # tmp = set(translate[0].split(','))
-        data = TranslateHelperCreate(word=word, drow=translate[0], shit=replace)
+        tmp = set(translate[0].split(','))
+        data = TranslateHelperCreate(word=word, drow=tmp, shit=replace)
         service = TranslateHelperService
         return await service.create(data, session)
 
@@ -316,4 +314,22 @@ class TranslateHelperRouter(BaseRouter):
         tmp = set(translate[0].split(','))
         data = self.create_schema(word=word, drow=tmp, replace=replace)
         result: dict = await self.service.set_add_single(session, data)
+        return result
+
+    async def remove_drow(self,
+                          word: str = Form(..., description='слово или фраза'),
+                          translate: List[str] = Form(...,
+                                                      description='удалить из перечня предпочитаемых переводов'),
+                          replace: bool = Form(False, description='True - мусор для замены перед переводом, '
+                                               'False - подсказка переводчику'),
+                          session: AsyncSession = Depends(get_db)
+                          ):
+        """
+            проверка - есть отсутствует запись, то создает
+            если есть то дополняет translate варинатами
+            data: Update pydantic model
+        """
+        tmp = set(translate[0].split(','))
+        data = self.create_schema(word=word, drow=tmp, replace=replace)
+        result: dict = await self.service.set_remove_single(session, data)
         return result
