@@ -406,7 +406,7 @@ class TranslationService:
         logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
         return results
 
-    def render_expert_user_prompt(template: str, subject_info: str, origin: str, result: str, hints: dict) -> str:
+    def render_expert_user_prompt(self, template: str, subject_info: str, origin: str, result: str, hints: dict) -> str:
         """
         Форматирует USER_PROMPT для эксперта, внедряя подсказки из второго бора в качестве глоссария.
         """
