@@ -322,8 +322,11 @@ class SetArrayService:
             response = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
         else:
             current_dict: dict = inst_dict(instance)
+            jprint(current_dict)
             for key, val in validated_array.items():
                 validated_array[key] = set(current_dict.get(key, [])).update(val)
+                print(current_dict.get(key, []), val, set(current_dict.get(key, [])).update(val))
+            jprint(validated_array)
             response = await cls.repository.patch(instance, validated_array, session)
         return inst_dict(response)
 
