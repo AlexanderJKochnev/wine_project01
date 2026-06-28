@@ -336,5 +336,7 @@ class TranslateHelperRouter(BaseRouter):
 
     async def get_dict(self, session: AsyncSession = Depends(get_db), 
                        replace: bool = Query(..., description="да/нет")):
+        print('==========================================')
         filter = {'shit': replace}
+        print(filter, '------------------------------------')
         return await self.service.get_dict(session, filter)
