@@ -353,7 +353,8 @@ class VLLMService:
             # 5. save to temporary file
             # 5.0. prepaire for save (score added)
             distill = self.__tmp_data_validate__(result, evaluated, dataclass)
-
+            if len(distill) == 0:
+                break
             rich_print(distill, "список записей во временной таблице")
 
             # 5.1. save to tmp_model
