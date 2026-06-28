@@ -303,6 +303,7 @@ class SetArrayService:
         filter: dict = cls.__filter__(data_dict)
         validated_array: dict = cls.__array_set_validation__(data_dict)
         instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
+        
         return instance, validated_array
 
     @classmethod
@@ -322,8 +323,8 @@ class SetArrayService:
         else:
             current_dict: dict = inst_dict(instance)
             for key, val in validated_array.items():
-                current_dict[key] = set(current_dict.get(key, [])).update(val)
-            response = await cls.repository.patch(instance, current_dict, session)
+                validated_array[key] = set(current_dict.get(key, [])).update(val)
+            response = await cls.repository.patch(instance, validated_array, session)
         return inst_dict(response)
 
     @classmethod
