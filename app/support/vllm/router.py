@@ -334,7 +334,7 @@ class TranslateHelperRouter(BaseRouter):
         result: dict = await self.service.set_remove_single(session, data)
         return result
 
-    async def get_dict(self, session: AsyncSession = Depends(get_db), 
+    async def get_dict(self, session: AsyncSession = Depends(get_db),
                        replace: bool = Query(..., description="да/нет")):
         print('==========================================')
         filter = {'shit': replace}
