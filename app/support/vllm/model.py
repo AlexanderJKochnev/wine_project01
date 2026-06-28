@@ -115,6 +115,12 @@ class TranslateHelper(Base, BaseAt):
     drow: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False)
     # shit True - подсказка переводчику, False - заменить на то что указано в drow
     shit: Mapped[bool] = mapped_column(Boolean, default=False, index=True, unique=False)
+    # язык оригинала (суффикс - два символа)
+    origin: Mapped[str] = mapped_column(String(2), index=True, nullable=True, unique=False)
+    # язык перевода (суффикс - вда символа)
+    destin: Mapped[str] = mapped_column(String(2), index=True, nullable=True, unique=False)
+    # одобрене перевода
+    approved: Mapped[bool] = mapped_column(Boolean, index=True, nullable=True)
     # GIN-индекс для быстрого поиска внутри массива
     """
         возможны проблемы в случае измененя структуры этой таблицы а именно поля drow

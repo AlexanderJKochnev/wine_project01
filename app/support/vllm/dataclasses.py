@@ -57,7 +57,7 @@ class DrinkTranslateData:
         params = inst_dict(result)
         # получение двух суффиксов языков сразу
         model = ISOLanguage
-        query = (select(model.name_en, model.iso_639_1)
+        query = (select(model.name_en, model.iso_639_1, model.id)
                  .where(ISOLanguage.name_en.in_((language_origin1, language_destination1))))
         result = await session.execute(query)
         def_lang: str = settings.DEFAULT_LANG
@@ -73,7 +73,6 @@ class DrinkTranslateData:
                                                              item['category'].get('name')),
             blacklist=('other', 'brandy', 'прочее', 'бренди')
         )) for item in subcat_dict}
-        jprint(drink)
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
