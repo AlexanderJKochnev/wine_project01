@@ -333,7 +333,7 @@ class SetArrayService:
             создание записи
         """
         data_dict = data.model_dump()
-        response = await cls.repository.create(cls.model(**data_dict))
+        response = await cls.repository.create(cls.model(**data_dict), cls.model, session)
         return inst_dict(response)
 
     @classmethod
