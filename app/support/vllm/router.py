@@ -297,7 +297,7 @@ class TranslateHelperRouter(BaseRouter):
                                           'False - подсказка переводчику'),
                      session: AsyncSession = Depends(get_db)):
         # tmp = set(translate[0].split(','))
-        data = TranslateHelperCreate(word=word, drow=translate, shit=replace)
+        data = TranslateHelperCreate(word=word, drow=translate[0], shit=replace)
         service = TranslateHelperService
         return await service.create(data, session)
 
@@ -308,6 +308,6 @@ class TranslateHelperRouter(BaseRouter):
                                             'False - подсказка переводчику'),
                        session: AsyncSession = Depends(get_db)
                        ):
-        data = self.create_schema(word=word, drow=translate, replace=replace)
+        data = self.create_schema(word=word, drow=translate[0], replace=replace)
         result: dict = await self.service.set_add_single(session, data)
         return result
