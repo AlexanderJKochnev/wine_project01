@@ -345,7 +345,6 @@ class VLLMService:
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
             # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
-            jprint(errors)
             err = [errors for item in evaluated if (errors := item.get('errors'))]
             if err:
                 errors.extend([item for sublist in err for item in sublist])
@@ -353,7 +352,7 @@ class VLLMService:
             # 5. save to temporary file
             # 5.0. prepaire for save (score added)
             distill = self.__tmp_data_validate__(result, evaluated, dataclass)
-
+            rich_print(distill, "список записей во временной таблице")
             # 5.1. save to tmp_model
             async with session_factory() as session:
                 response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
@@ -434,8 +433,8 @@ class VLLMService:
             return True
         logger.warning(
             f'Качество перевода менее 50%. Останавливаем перевод. В ходе перевода выявлено '
-            f'{len(errors)} слов и выражений. Сейчас они будут добавлены в словарь трудностей и можно запустить '
-            f'перевод заново - качество должно улучшиться'
+            f'{len(errors)} неточностей. Сейчас они будут добавлены в словарь трудностей и можно '
+            f'запустить перевод заново - качество должно улучшиться'
         )
         return False
 
