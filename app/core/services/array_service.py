@@ -284,7 +284,7 @@ class SetArrayService:
         """
             валидация array_set полей - возвращает новый словарь только с array полями
         """
-        result = {key: val for key, val in data_dict if key in cls.array_fields}
+        result = {key: val for key, val in data_dict.items() if key in cls.array_fields}
         for key, val in result.items():
             if isinstance(val, list):
                 result[key] = set(val)
