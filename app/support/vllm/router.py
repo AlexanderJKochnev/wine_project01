@@ -296,8 +296,7 @@ class TranslateHelperRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)):
         tmp = set(translate[0].split(','))
         data = TranslateHelperCreate(word=word, drow=tmp, shit=replace)
-        service = TranslateHelperService
-        return await service.create(data, session)
+        return await self.service.create(session, data)
 
     async def add_drow(self,
                        word: str = Form(..., description='слово или фраза'),
