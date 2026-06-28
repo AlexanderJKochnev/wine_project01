@@ -284,13 +284,26 @@ class SetArrayService:
         """
             валидация array_set полей - возвращает новый словарь только с array полями
         """
-        result = {key: val for key, val in data_dict.items() if key in cls.array_fields}
-        for key, val in result.items():
-            if isinstance(val, list):
-                result[key] = set(val)
-            elif isinstance(val, str):
-                result[key] = set(val.split(','))
-        return result
+        return {key: val for key, val in data_dict.items() if key in cls.array_fields}
+
+    @classmethod
+    def __filter__(cls, data_dict) -> dict:
+        """
+            выделяет фильтр из данных
+        """
+        return {key: val for key, val in data_dict.items() if key in cls.default}
+
+    @classmethod
+    async def __preparation__(cls, session: AsyncSession, data: BaseModel) -> (ModelType, dict):
+        """
+            получает Create
+            возвращает соотвествующий instance и словать с array set
+        """
+        data_dict = data.model_dump()
+        filter: dict = cls.__filter__(data_dict)
+        validated_array: dict = cls.__array_set_validation__(data_dict)
+        instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
+        return instance, validated_array
 
     @classmethod
     async def set_add_single(cls, session: AsyncSession, data: BaseModel) -> dict:
@@ -299,24 +312,18 @@ class SetArrayService:
             если есть то дополняет
             data: Update pydantic model
         """
-        print('2================================================================')
-        data_dict = data.model_dump()
-        filter = {key: val for key, val in data_dict.items() if key in cls.default}
-        print('3=================================================================')
-        validated_array: dict = cls.__array_set_validation__(data_dict)
-        print('4================================================================')
-        data_dict.update(validated_array)
-        jprint(data_dict)
-        instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
+        # data_dict = data.model_dump()
+        # filter: dict = cls.__filter__(data_dict)
+        # validated_array: dict = cls.__array_set_validation__(data_dict)
+        # instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
+        instance, validated_array = await cls.__preparation__(session, data)
         if not instance:
-            response = await cls.repository.create(cls.model(**data_dict), cls.model, session)
+            response = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
         else:
             current_dict: dict = inst_dict(instance)
             for key, val in validated_array.items():
-                current_dict[key] = set(current_dict.get(key), []).update(val)
+                current_dict[key] = set(current_dict.get(key, [])).update(val)
             response = await cls.repository.patch(instance, current_dict, session)
-        jprint(inst_dict(response))
-        print('5=============================================================')
         return inst_dict(response)
 
     @classmethod
@@ -325,7 +332,5 @@ class SetArrayService:
             создание записи
         """
         data_dict = data.model_dump()
-        validated_array: dict = cls.__array_set_validation__(data_dict)
-        data_dict.update(validated_array)
-        response = await cls.repository.create(cls.model(**data))
+        response = await cls.repository.create(cls.model(**data_dict))
         return inst_dict(response)

@@ -308,7 +308,11 @@ class TranslateHelperRouter(BaseRouter):
                                             'False - подсказка переводчику'),
                        session: AsyncSession = Depends(get_db)
                        ):
-        print('===========================================================')
+        """
+            проверка - есть отсутствует запись, то создает
+            если есть то дополняет translate варинатами
+            data: Update pydantic model
+        """
         tmp = set(translate[0].split(','))
         data = self.create_schema(word=word, drow=tmp, replace=replace)
         result: dict = await self.service.set_add_single(session, data)

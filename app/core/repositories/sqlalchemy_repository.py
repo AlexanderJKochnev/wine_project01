@@ -67,6 +67,7 @@ class Repository(Background, metaclass=RepositoryMeta):
                                           add: bool = True) -> List[ModelType] | None:
         """
             получение связанных завписей из related model
+            РАЗОБРАТЬСЯ ЧТО ЭТО И ЗАЧЕМ
         """
         related_model = cls.get_related_model(model)
         if not related_model:
