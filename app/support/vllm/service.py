@@ -580,6 +580,5 @@ class TranslateHelperService(SetArrayService, Service):
     @classmethod
     async def get_dict(cls, session: AsyncSession, filter: dict) -> dict:
         stmt = select(cls.model.word, cls.model.drow).filter_by(**filter)
-        response = await session.scalars(stmt)
-        result = response.all()
-        return {key: val for key, val in result}
+        response = await session.execute(stmt)
+        return dict(response.tuples().all())
