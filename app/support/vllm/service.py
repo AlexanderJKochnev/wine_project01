@@ -600,4 +600,7 @@ class TranslateHelperService(SetArrayService, Service):
     async def get_dict(cls, session: AsyncSession, filter: dict) -> dict:
         stmt = select(cls.model.word, cls.model.drow).filter_by(**filter)
         response = await session.execute(stmt)
-        return dict(response.tuples().all())
+        result = dict(response.tuples().all())
+        if filter.get('shit'):
+            result = {key: next(iter(val)) for key, val in result.items()}
+        return result
