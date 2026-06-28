@@ -313,20 +313,15 @@ class SetArrayService:
             если есть то дополняет
             data: Update pydantic model
         """
-        # data_dict = data.model_dump()
-        # filter: dict = cls.__filter__(data_dict)
-        # validated_array: dict = cls.__array_set_validation__(data_dict)
-        # instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
         instance, validated_array = await cls.__preparation__(session, data)
         if not instance:
             response = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
         else:
             current_dict: dict = inst_dict(instance)
-            jprint(current_dict)
             for key, val in validated_array.items():
-                validated_array[key] = set(current_dict.get(key, [])).update(val)
-                print(current_dict.get(key, []), val, set(current_dict.get(key, [])).update(val))
-            jprint(validated_array)
+                x = set(current_dict.get(key, []))
+                x.update(val)
+                validated_array[key] = val
             response = await cls.repository.patch(instance, validated_array, session)
         return inst_dict(response)
 
