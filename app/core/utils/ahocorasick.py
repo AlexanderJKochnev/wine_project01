@@ -102,3 +102,33 @@ def get_translations_with_aho(text: str, auto: ahocorasick.Automaton) -> dict:
             hints[original_word] = {str(translation_data)}
 
     return hints
+
+
+async def refresh_extractor(task_type: str, session: AsyncSession, db_filter: dict, dataclass) -> None:
+    """
+    Принудительное обновление конкретного бора.
+    Загружает актуальные данные из БД и атомарно заменяет старый бор в памяти.
+    """
+    global _extractors
+
+    async with _lock:
+        # 1. Загружаем свежие данные из базы данных
+        term_to_data = await dataclass.get_dict(session, db_filter)
+
+        # 2. Строим новый автомат во временную переменную.
+        # Пока идет этот процесс, ваши циклы продолжают читать старый бор без сбоев.
+        new_auto = ahocorasick.Automaton()
+        if term_to_data:
+            for term, val in term_to_data.items():
+                if task_type == 'cleaner':
+                    if isinstance(val, (list, set, tuple)):
+                        val = str(next(iter(val))) if val else ""
+                    else:
+                        val = str(val)
+
+                new_auto.add_word(term.lower(), (len(term), val))
+
+        new_auto.make_automaton()
+
+        # 3. Атомарно подменяем ссылку в глобальном словаре
+        _extractors[task_type] = new_auto
