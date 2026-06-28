@@ -319,11 +319,8 @@ class SetArrayService:
             current_dict: dict = inst_dict(instance)
             for key, val in validated_array.items():
                 x = set(current_dict.get(key, []))
-                print(f'=================={x=}, ======={val=}')
                 x.update(val)
-                print(f'=================={x=}')
-                validated_array[key] = val
-            jprint(validated_array)
+                validated_array[key] = x
             response: dict = await cls.repository.patch(instance, validated_array, session)
             # response = {"success": True, "data": obj}
             if not response.get('success'):
