@@ -287,6 +287,7 @@ class TranslateHelperRouter(BaseRouter):
         self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
         self.setup_route_custom('/add', self.add_drow, 'POST')
         self.setup_route_custom('/remove', self.remove_drow, 'POST')
+        self.setup_route_custom('/get_dict', self.get_dict, 'GET')
 
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
@@ -332,3 +333,8 @@ class TranslateHelperRouter(BaseRouter):
         data = self.create_schema(word=word, drow=tmp, replace=replace)
         result: dict = await self.service.set_remove_single(session, data)
         return result
+
+    async def get_dict(self, session: AsyncSession = Depends(get_db), 
+                       replace: bool = Query(..., description="да/нет")):
+        filter = {'shit': replace}
+        return await self.service.get_dict(session, filter)

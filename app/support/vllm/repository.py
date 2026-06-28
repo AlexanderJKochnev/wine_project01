@@ -1,18 +1,11 @@
 # app.support.vllm.repository.py
-from typing import List
-
-from loguru import logger
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.repositories.array_repository import ArrayRepository
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.types import ModelType
-from app.core.utils.common_utils import jprint
 from app.support import Drink
 from app.support.vllm.model import DrinkTranslateScore, TmpTranslate, TranslateHelper, TranslateRawData
-from app.support.vllm.schemas import TranslateHelperRead
 
 
 class VllmRepository:

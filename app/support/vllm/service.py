@@ -576,3 +576,8 @@ class TranslateHelperService(SetArrayService, Service):
     repository = TranslateHelperRepository
     model = TranslateHelper
     array_fields = ('drow',)
+
+    @classmethod
+    async def get_dict(cls, session: AsyncSession, filter: dict) -> dict:
+        response = await session.scalars(select(cls.model.word, cls.model.drow).where(filter)).all()
+        return {key: val for key, val in response}
