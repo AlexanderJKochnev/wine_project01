@@ -556,7 +556,6 @@ class VLLMService:
         rich_print(distill, "список записей во временной таблице")
         return distill
 
-
     @background_unique
     async def drink_translate(
             self, session_factory, translation_service: TranslationService,
