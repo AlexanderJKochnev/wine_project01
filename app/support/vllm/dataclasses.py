@@ -30,6 +30,8 @@ class DrinkTranslateData:
     target_field: str   # destination_ru
     subcategories: Dict  # Tuple[Dict[Any, str]]
     score_threshold: int  # приемлемая оценка
+    lang_origin: str  # 2х значный код
+    lang_destin: str  # 2х значный код
 
     @classmethod
     async def load_from_db(cls,
@@ -59,14 +61,17 @@ class DrinkTranslateData:
         model = ISOLanguage
         query = (select(model.name_en, model.iso_639_1)
                  .where(ISOLanguage.name_en.in_((language_origin1, language_destination1))))
-        result = await session.execute(query)
+        resp = await session.execute(query)
+        result: dict = dict(resp.all())
         def_lang: str = settings.DEFAULT_LANG
-        lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result}
+        lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result.items()}
         source_field: str = f'{field}{lang_dict.get(language_origin1)}'
         target_field: str = f'{field}{lang_dict.get(language_destination1)}'
         # получение описаний напитка на языке перевода (имена полей в subcat name name)
         # source_name: str = f'name{lang_dict.get(language_origin1)}'
         target_name: str = f'name{lang_dict.get(language_destination1)}'
+        lang_origin = result.get(language_origin1)
+        lang_destin = result.get(language_destination1)
 
         drink: dict = {item.get('id'): (distinct_glue(item.get(target_name, item.get('name')),
                                         item['category'].get(target_name,
@@ -84,7 +89,9 @@ class DrinkTranslateData:
                    source_field=source_field,
                    target_field=target_field,
                    subcategories=drink,
-                   score_threshold=score)
+                   score_threshold=score,
+                   lang_destin=lang_destin,
+                   lang_origin=lang_origin)
 
 
 @dataclass(slots=True)
@@ -103,6 +110,8 @@ class HandbookTranslateData:
     handbook: str  # handbook table
     descr: str  # описание (drink)
     score_threshold: int
+    lang_origin: str  # 2х значный код
+    lang_destin: str  # 2х значный код
 
     @classmethod
     async def load_from_db(cls,
@@ -129,12 +138,14 @@ class HandbookTranslateData:
         model = ISOLanguage
         query = (select(model.name_en, model.iso_639_1)
                  .where(ISOLanguage.name_en.in_((language_origin1, language_destination1))))
-        result = await session.execute(query)
-        result = dict(result.all())
+        resp = await session.execute(query)
+        result: dict = dict(resp.all())
         def_lang: str = settings.DEFAULT_LANG
         lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result.items()}
         source_field: str = f'{field}{lang_dict.get(language_origin1)}'
         target_field: str = f'{field}{lang_dict.get(language_destination1)}'
+        lang_origin = result.get(language_origin1)
+        lang_destin = result.get(language_destination1)
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
@@ -147,4 +158,6 @@ class HandbookTranslateData:
                    target_field=target_field,
                    handbook=handbook1,
                    descr=descr,
-                   score_threshold=score)
+                   score_threshold=score,
+                   lang_destin=lang_destin,
+                   lang_origin=lang_origin)
