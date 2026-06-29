@@ -320,20 +320,12 @@ class VLLMService:
             async with session_factory() as session:
                 phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
                 await session.commit()
-                # В ЭТО МЕСТО НУЖНО ВНЕДРИТЬ ПОИСК И ЗАМЕНУ С ПОМОЩЬЮ ПЕРВОГО БОРА
-                # Получаем/инициализируем оба бора из базы данных (произойдет один раз при старте)
-                # cleaner_auto = await get_extractor('cleaner', session, {'shit': True})
-                # task_type, filter = self.__task_type_generator__()
                 # translator_auto = await get_extractor('translator', session, {'shit': False})
                 # Шаг 1. Очистка текстов от мусора с помощью первого бора
                 # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
                 revised_phrases = []
                 for phrase_id, txt in phrases:
                     revised_text = clean_text_with_aho(txt, cleaner_auto)
-                    # print(txt)
-                    # print('---------------------------')
-                    # print(revised_text)
-                    # print('===========================')
                     revised_phrases.append((phrase_id, revised_text))
                 # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
                 # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
@@ -348,7 +340,9 @@ class VLLMService:
             result = await translation_service.real_batch(final_phrases, dataclass)
             # 4.1 evaluate
             evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-
+            logger.critical('evaluated')
+            jprint(evaluated)
+            logger.critical('evaluated end =========================')
             # 4.2. extend error list
             # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
             err = [errors for item in evaluated if (errors := item.get('errors'))]
