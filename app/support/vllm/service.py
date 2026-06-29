@@ -356,9 +356,11 @@ class VLLMService:
                 if len(distill) == 0:
                     break
                 rich_print(distill, "список записей во временной таблице")
-    
+
                 # 5.1. save to tmp_model
                 async with session_factory() as session:
+                    response = await tmp_repo.get_full(tmp_model, session, 50)
+                    jprint(response)
                     response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                     await session.commit()
                 logger.success(f'{response} записей добавлено во временную таблицу')
