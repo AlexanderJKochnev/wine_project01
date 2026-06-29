@@ -499,9 +499,9 @@ class VLLMService:
             # Шаг 1. Очистка текстов от мусора с помощью первого бора
             # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
             revised_phrases = []
-            for phrase_id, txt in phrases:
+            for phrase_id, txt, descr in phrases:
                 revised_text = clean_text_with_aho(txt, cleaner_auto)
-                revised_phrases.append((phrase_id, revised_text))
+                revised_phrases.append((phrase_id, revised_text, descr))
             # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
             # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
             final_phrases = []
