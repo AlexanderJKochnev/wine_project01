@@ -59,7 +59,7 @@ class TranslateHelperRepository(Repository):
                 db_filter = {'shit': True}
             else:
                 s = key.split('_')
-                db_filter = {'split': False, 'origin': s[-2], 'destin': s[-1]}
+                db_filter = {'shit': False, 'origin': s[-2], 'destin': s[-1]}
             await refresh_extractor(task_type=key, session=session, db_filter=db_filter)
         # await refresh_extractor(task_type='cleaner', session=session, db_filter={'shit': True})
         # await refresh_extractor(task_type='translator', session=session, db_filter={'shit': False})
