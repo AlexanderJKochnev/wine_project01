@@ -1,5 +1,8 @@
 # app.suport.ollama.repository.py
 from ollama import ListResponse, GenerateResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 # from fastapi import Request
 # from app.core.config.database.ollama_async import OllamaClientManager
 from app.core.config.project_config import settings
@@ -111,6 +114,23 @@ class ProptionRepository(Repository):
 class ISOLanguageRepository(Repository):
     model = ISOLanguage
 
+    @classmethod
+    async def get_lang2_by_name(cls, session: AsyncSession) -> dict:
+        """
+            возвращает словарь {'English': 'en', ...}
+        """
+        query = select(cls.model.name_en, cls.model.iso_639_1)
+        resp = await session.execute(query)
+        return dict(resp.all())
+
+    @classmethod
+    async def get_name_by_lang2(cls, session: AsyncSession) -> dict:
+        """
+            возвращает словарь {'en': 'English', ...}
+        """
+        query = select(cls.model.iso_639_1, cls.model.name_en)
+        resp = await session.execute(query)
+        return dict(resp.all())
 
 class WriterRuleRepository(Repository):
     model = WriterRule
