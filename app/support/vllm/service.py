@@ -368,7 +368,7 @@ class VLLMService:
                 quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
                 if not quality or not last_id:
                     break
-            errors_list_dict = [{'word': a, 'wrong': b, 'proposed': c} for a, b, c in errors]
+            errors_list_dict = [{'word': a, 'wrong': b, 'proposed': c} for a, b, c in errors if a or b or c]
             rich_print(errors_list_dict, 'список ошибок')
             # 6.0 implementation to real database
             # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
