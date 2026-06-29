@@ -133,3 +133,12 @@ async def refresh_extractor(task_type: str, session: AsyncSession, db_filter: di
 
         # 3. Атомарно подменяем ссылку в глобальном словаре
         _extractors[task_type] = new_auto
+
+
+def get_loaded_extractor_tasks() -> list[str]:
+    """
+    Возвращает список всех task_type (ключей),
+    которые сейчас загружены и активны в памяти приложения.
+    """
+    global _extractors
+    return list(_extractors.keys())

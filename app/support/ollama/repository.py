@@ -132,5 +132,6 @@ class ISOLanguageRepository(Repository):
         resp = await session.execute(query)
         return dict(resp.all())
 
+
 class WriterRuleRepository(Repository):
     model = WriterRule

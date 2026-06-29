@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.types import ModelType
-from app.core.utils.ahocorasick import refresh_extractor
+from app.core.utils.ahocorasick import get_loaded_extractor_tasks, refresh_extractor
 from app.support import Drink
 from app.support.vllm.model import DrinkTranslateScore, TmpTranslate, TranslateHelper, TranslateRawData
 
@@ -50,7 +50,10 @@ class TranslateHelperRepository(Repository):
     async def refresh_corasick(cls, session: AsyncSession):
         """
         обновление боров ахо карасика
+        'translator_{lang_origin}_{lang_destin}'
         """
+        print(get_loaded_extractor_tasks(), '------------------')
+
         await refresh_extractor(task_type='cleaner', session=session, db_filter={'shit': True})
         await refresh_extractor(task_type='translator', session=session, db_filter={'shit': False})
 
