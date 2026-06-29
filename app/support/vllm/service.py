@@ -319,6 +319,8 @@ class VLLMService:
             cleaner_auto, translator_auto = dataclass.cleaner_auto, dataclass.translator_auto
             while True:  # бесконечый цикл пока есть записи handbooks
                 # 3. get data
+                final_phrases = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto, translator_auto)
+                """
                 async with session_factory() as session:
                     # получение фраз
                     phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
@@ -336,6 +338,7 @@ class VLLMService:
                         translation_hints = get_translations_with_aho(revised_text, translator_auto)
                         print(f'{translation_hints=}')
                         final_phrases.append((phrase_id, revised_text, translation_hints))
+                """
                 if len(final_phrases) == 0:
                     break
                 # 4.0 translate
@@ -527,13 +530,28 @@ class VLLMService:
         logger.critical('__add_transferhelper__')
         jprint(data)
 
-    def __task_type_generator__(self, lang_origin: str, lang_destin: str, task: str = 'translator'):
+    async def __get_phrases__(self, session_factory, dataclass, last_id, cleaner_auto, translator_auto) -> list:
         """
-            генерирует имя бора в зависимости от языков + и фильтр
+        получение данных для перевода
         """
-        return f'{task}_{lang_origin}_{lang_destin}', {'shit': False,
-                                                       'origin': lang_origin,
-                                                       'destin': lang_destin}
+        async with session_factory() as session:
+            # получение фраз
+            phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
+            await session.commit()
+            # Шаг 1. Очистка текстов от мусора с помощью первого бора
+            # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
+            revised_phrases = []
+            for phrase_id, txt in phrases:
+                revised_text = clean_text_with_aho(txt, cleaner_auto)
+                revised_phrases.append((phrase_id, revised_text))
+            # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
+            # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
+            final_phrases = []
+            for phrase_id, revised_text in revised_phrases:
+                translation_hints = get_translations_with_aho(revised_text, translator_auto)
+                print(f'{translation_hints=}')
+                final_phrases.append((phrase_id, revised_text, translation_hints))
+            return final_phrases
 
     @background_unique
     async def drink_translate(
