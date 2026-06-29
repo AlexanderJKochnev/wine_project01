@@ -154,7 +154,6 @@ class HandbookTranslateData:
         cleaner_auto: ahocorasick.Automaton = await get_extractor('cleaner', session, {'shit': True})
         task_type: str = f'translator_{lang_origin}_{lang_destin}'
         db_filter: dict = {'shit': False, 'origin': lang_origin, 'destin': lang_destin}
-        print(f'{db_filter=}===================================================')
         translator_auto: ahocorasick.Automaton = await get_extractor(task_type, session, db_filter)
 
         # 2. Возвращаем уже заполненный датакласс

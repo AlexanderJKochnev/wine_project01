@@ -1,6 +1,6 @@
 # app.support.vllm.repository.py
 from typing import Any, Dict, Union
-
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -60,6 +60,7 @@ class TranslateHelperRepository(Repository):
             else:
                 s = key.split('_')
                 db_filter = {'shit': False, 'origin': s[-2], 'destin': s[-1]}
+            logger.warning(f'{key=}, {db_filter}=')
             await refresh_extractor(task_type=key, session=session, db_filter=db_filter)
         # await refresh_extractor(task_type='cleaner', session=session, db_filter={'shit': True})
         # await refresh_extractor(task_type='translator', session=session, db_filter={'shit': False})
