@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
+from app.core.utils.tricks import get_lang2_by_name
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
@@ -292,11 +293,18 @@ class TranslateHelperRouter(BaseRouter):
     async def create(self,
                      word: str = Form(..., description='слово или фраза'),
                      translate: List[str] = Form(..., description='предпочитаемый перевод'),
+                     source: Languages = Form(..., description='языка оригинала'),
+                     destination: Languages = Form(..., description='языка перевода'),
                      replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                           'False - подсказка переводчику'),
+                     approved: bool = Form(False, description='True - перевод проверен и одобрен, '
+                                           'False - перевод не одобрен'),
                      session: AsyncSession = Depends(get_db)):
         tmp = set(translate[0].split(','))
-        data = TranslateHelperCreate(word=word, drow=tmp, shit=replace)
+        langs: dict = await get_lang2_by_name(session)
+        origin = langs.get(source.value)
+        destin = langs.get(destination.value)
+        data = TranslateHelperCreate(word=word, drow=tmp, shit=replace, origin=origin, destin=destin)
         return await self.service.create(session, data)
 
     async def add_drow(self,

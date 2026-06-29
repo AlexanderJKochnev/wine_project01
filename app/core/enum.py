@@ -25,7 +25,7 @@ def fetch_all_startup_data() -> dict:
 
         # Запрос 4: Languages
         language = session.scalars(select(ISOLanguage.name_en).order_by(ISOLanguage.name_en.asc())).all()
-        data['language'] = [c for c in language] or ["ru"]
+        data['language'] = [c for c in language] or ["Russian"]
 
         # Запрос 5: WriterRules
         writer = session.scalars(select(WriterRule.name).order_by(WriterRule.name.asc())).all()

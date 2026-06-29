@@ -110,7 +110,7 @@ class TranslateHelper(Base, BaseAt):
         перед переводом текста если такие фразы встретятся - в user prompt будет добавлена подсказка как переводить
     """
     # слово или фраза
-    word: Mapped[str] = mapped_column(String, nullable=False, index=True, unique=True)
+    word: Mapped[str] = mapped_column(String, nullable=False, index=True)
     # массив слов или фраз - возможные варианты перевода
     drow: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False)
     # shit True - подсказка переводчику, False - заменить на то что указано в drow
@@ -130,7 +130,10 @@ class TranslateHelper(Base, BaseAt):
         индекс должен начинаться с uq_idx (см is_tracked_problematic_index in mogrations/env.py
     """
     __table_args__ = (Index("uq_idx_translatehelper_gin_v1", "drow", postgresql_using="gin",
-                            postgresql_ops={'drow': 'array_ops'}),)
+                            postgresql_ops={'drow': 'array_ops'}), UniqueConstraint(
+        'word', 'origin', 'destin', name='uq_translatehelper_word_origin_destin'
+    ),
+    )
 
     def __str__(self):
         return self.word or ""

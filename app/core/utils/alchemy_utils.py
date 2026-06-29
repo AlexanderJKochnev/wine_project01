@@ -18,6 +18,7 @@ from app.core.config.project_config import get_path_to_root
 from app.core.models.base_model import Base
 from app.core.types import ModelType
 from app.core.utils.common_utils import camel_to_enum, clean_string, enum_to_camel
+from app.support.ollama.model import ISOLanguage
 
 function = {1: or_, 2: and_}
 
