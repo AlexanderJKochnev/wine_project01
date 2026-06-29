@@ -331,7 +331,8 @@ class VLLMService:
                 if not quality or not last_id:
                     break
             # обработка и имплементация результатов
-            
+            await self.__post_processing__(session_factory, dataclass, errors)
+            """
             errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]}
                                 for e in errors if len(e) == 3]
             rich_print(errors_list_dict, 'список ошибок')
@@ -343,6 +344,8 @@ class VLLMService:
                 await self.__add_translatehelper__(errors)
                 await session.commit()
                 session.expire_all()
+            """
+            logger.info(f'перевод в фонвом режиме закончен')
             return None
         except Exception as e:
             logger.error(e)
