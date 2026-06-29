@@ -152,7 +152,7 @@ class HandbookTranslateData:
         lang_destin = result.get(language_destination1)
         # загрузка боров
         cleaner_auto: ahocorasick.Automaton = await get_extractor('cleaner', session, {'shit': True})
-        task_type: str = 'translator_{lang_origin}_{lang_destin}'
+        task_type: str = f'translator_{lang_origin}_{lang_destin}'
         db_filter: dict = {'shit': False, 'origin': lang_origin, 'destin': lang_destin}
         print(f'{db_filter=}===================================================')
         translator_auto: ahocorasick.Automaton = await get_extractor(task_type, session, db_filter)

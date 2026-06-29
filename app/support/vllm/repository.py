@@ -52,10 +52,17 @@ class TranslateHelperRepository(Repository):
         обновление боров ахо карасика
         'translator_{lang_origin}_{lang_destin}'
         """
-        print(get_loaded_extractor_tasks(), '------------------')
-
-        await refresh_extractor(task_type='cleaner', session=session, db_filter={'shit': True})
-        await refresh_extractor(task_type='translator', session=session, db_filter={'shit': False})
+        # активные боры 'translator_{lang_origin}_{lang_destin}', 'cleaner'
+        boras: list = get_loaded_extractor_tasks()
+        for key in boras:
+            if key == 'cleaner':
+                db_filter = {'shit': True}
+            else:
+                s = key.split('_')
+                db_filter = {'split': False, 'origin': s[-2], 'destin': s[-1]}
+            await refresh_extractor(task_type=key, session=session, db_filter=db_filter)
+        # await refresh_extractor(task_type='cleaner', session=session, db_filter={'shit': True})
+        # await refresh_extractor(task_type='translator', session=session, db_filter={'shit': False})
 
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
