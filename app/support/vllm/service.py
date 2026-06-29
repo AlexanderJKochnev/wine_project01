@@ -323,7 +323,7 @@ class VLLMService:
                 if len(final_phrases) == 0:
                     break
                 # 4.0 translate / evaluate / error collection
-                distill, err = await self.__translate_evaluate__(translation_service, final_phrases, dataclass, errors)
+                distill, err = await self.__translate_evaluate__(translation_service, final_phrases, dataclass)
                 if err:
                     errors.extend(err)
                 """
