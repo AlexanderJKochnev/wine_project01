@@ -323,7 +323,10 @@ class VLLMService:
                 if len(final_phrases) == 0:
                     break
                 # 4.0 translate / evaluate / error collection / save to tmp_table / quality assurance
-                quality, err = await self.__translate_evaluate__(translation_service, final_phrases, dataclass)
+                quality, err = await self.__translate_evaluate__(translation_service,
+                                                                 final_phrases, dataclass,
+                                                                 session_factory, tmp_repo,
+                                                                 tmp_model)
                 errors.extend(err)
                 # if len(distill) == 0:
                 #     break
