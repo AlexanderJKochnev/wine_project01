@@ -341,9 +341,9 @@ class VLLMService:
                 result = await translation_service.real_batch(final_phrases, dataclass)
                 # 4.1 evaluate
                 evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-                logger.critical('evaluated')
-                jprint(evaluated)
-                logger.critical('evaluated end =========================')
+                # logger.critical('evaluated')
+                # jprint(evaluated)
+                # logger.critical('evaluated end =========================')
                 # 4.2. extend error list
                 # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
                 err = [errors for item in evaluated if (errors := item.get('errors'))]
@@ -368,7 +368,8 @@ class VLLMService:
                 quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
                 if not quality or not last_id:
                     break
-            errors_list_dict = [{'word': a, 'wrong': b, 'proposed': c} for a, b, c in errors if a or b or c]
+            errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]}
+                                for e in errors if len(e) == 3]
             rich_print(errors_list_dict, 'список ошибок')
             # 6.0 implementation to real database
             # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
