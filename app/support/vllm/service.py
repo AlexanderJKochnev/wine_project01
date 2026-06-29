@@ -328,19 +328,10 @@ class VLLMService:
                                                                  session_factory, tmp_repo,
                                                                  tmp_model)
                 errors.extend(err)
-                # if len(distill) == 0:
-                #     break
-                """
-                # 5.1. save to tmp_model
-                async with session_factory() as session:
-                    response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
-                    await session.commit()
-                logger.success(f'{response} записей добавлено во временную таблицу')
-                # 5.2. оценка качества перевода
-                quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
-                """
                 if not quality or not last_id:
                     break
+            # обработка и имплементация результатов
+            
             errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]}
                                 for e in errors if len(e) == 3]
             rich_print(errors_list_dict, 'список ошибок')
@@ -445,8 +436,8 @@ class VLLMService:
 
         # 6.2. удалить плохие переводы
         await self.__del_bad_scores__(stats, session)
-        # 6.3. обновить таблицы переводами
-        result = await self.__update_handbook__(stats, session)
+        # 6.3. обновить таблицы переводами ВОТ ЭТО ЗАПИСЬ ПЕРЕВОДА В ТАБЛИЦУ ИСТОЧНИК
+        result = await self.__update_handbook__(stats, session, threshold)
         # 6.4. очистка таблицы
         await self.__clear_tmptable__(session)
 
@@ -462,7 +453,10 @@ class VLLMService:
         logger.info(f'deleted {result} records with bad score')
         return None
 
-    async def __update_handbook__(self, stats, session):
+    async def __update_handbook__(self, stats, session, threshold: int):
+        """
+        обновление исходной таблицы переводом
+        """
         result: list = []
         for row in stats:
             table_name = row.get('table')
@@ -472,7 +466,7 @@ class VLLMService:
             stmt = (update(model)
                     .where(model.id == TmpTranslate.guid)
                     .where(TmpTranslate.table == table_name)
-                    .where(TmpTranslate.score == 10)
+                    .where(TmpTranslate.score == threshold or 10)
                     .values({target_column: TmpTranslate.translate}))
             # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
             # print(compiled_pg)
@@ -553,6 +547,22 @@ class VLLMService:
         # 5.2. оценка качества перевода
         quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
         return quality, errors
+
+    async def __post_processing__(self, session_factory, dataclass, errors):
+        """
+            обработка результатов
+        """
+        errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in errors if len(e) == 3]
+        rich_print(errors_list_dict, 'список ошибок')
+        # 6.0 implementation to real database
+        # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
+        async with session_factory() as session:
+            await self.__stats__(session, dataclass.score_threshold)
+            # 6.5. заполнение TranslateHelper
+            await self.__add_translatehelper__(errors)
+            await session.commit()
+            session.expire_all()
+        return None
 
     @background_unique
     async def drink_translate(
