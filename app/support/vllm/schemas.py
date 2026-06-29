@@ -106,12 +106,16 @@ class TranslateHelperCreate(BaseModel):
     word: str
     drow: Optional[Set[str]] = Field(default={})
     shit: Optional[bool] = False
+    origin: str
+    destin: str
 
 
 class TranslateHelperUpdate(BaseModel):
     word: Optional[str] = None
     drow: Optional[Set[str]] = Field(default={})
     shit: Optional[bool] = False
+    origin: Optional[str] = None
+    destin: Optional[str] = None
 
 
 class TranslateHelperRead(TranslateHelperUpdate):
