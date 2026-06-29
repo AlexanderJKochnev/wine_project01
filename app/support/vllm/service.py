@@ -332,20 +332,7 @@ class VLLMService:
                     break
             # обработка и имплементация результатов
             await self.__post_processing__(session_factory, dataclass, errors)
-            """
-            errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]}
-                                for e in errors if len(e) == 3]
-            rich_print(errors_list_dict, 'список ошибок')
-            # 6.0 implementation to real database
-            # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
-            async with session_factory() as session:
-                await self.__stats__(session, dataclass.score_threshold)
-                # 6.5. заполнение TranslateHelper
-                await self.__add_translatehelper__(errors)
-                await session.commit()
-                session.expire_all()
-            """
-            logger.info(f'перевод в фонвом режиме закончен')
+            logger.info('перевод в фонвом режиме закончен')
             return None
         except Exception as e:
             logger.error(e)
@@ -372,7 +359,7 @@ class VLLMService:
         # print(compiled_pg)
         response = await session.execute(stmt)
         rows = response.all()
-        result = tuple((row.id, row._mapping[d.source_field]) for row in rows)
+        result = tuple((row.id, row._mapping[d.source_field], d.descr) for row in rows)
         logger.success(f'получено {len(result)} записей для перевода')
         if len(result) < d.chunk:
             last_id = None
@@ -500,7 +487,8 @@ class VLLMService:
         logger.critical('__add_transferhelper__')
         jprint(data)
 
-    async def __get_phrases__(self, session_factory, dataclass, last_id, cleaner_auto, translator_auto) -> list:
+    async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
+                              last_id, cleaner_auto, translator_auto) -> list:
         """
         получение данных для перевода
         """
@@ -517,10 +505,10 @@ class VLLMService:
             # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
             # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
             final_phrases = []
-            for phrase_id, revised_text in revised_phrases:
+            for phrase_id, revised_text, descr in revised_phrases:
                 translation_hints = get_translations_with_aho(revised_text, translator_auto)
                 print(f'{translation_hints=}')
-                final_phrases.append((phrase_id, revised_text, translation_hints))
+                final_phrases.append((phrase_id, revised_text, translation_hints, descr))
             return final_phrases
 
     async def __translate_evaluate__(self, translation_service, final_phrases, dataclass,

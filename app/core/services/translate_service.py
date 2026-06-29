@@ -390,13 +390,13 @@ class TranslationService:
         logger.info(f"Запуск перевода. Всего комбинаций: {total_tasks}")
         start_time = time.time()
         group_tasks = []
-        for c, (p_id, phrase, translation_hint) in enumerate(phrases):
+        for c, (p_id, phrase, translation_hint, descr) in enumerate(phrases):
             u_id, u_prompt, _ = d.user_prompt
             s_id, s_prompt, _ = d.system_prompt
             single_params = d.params
             task = self._translate_single_task(
                 semaphore, p_id, phrase, s_id, s_prompt, u_id, u_prompt, d.language_destination,
-                d.descr, single_params, translation_hint
+                descr, single_params, translation_hint
             )
             group_tasks.append(task)
             remain_tasks -= 1
