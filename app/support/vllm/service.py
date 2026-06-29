@@ -323,7 +323,9 @@ class VLLMService:
                 if len(final_phrases) == 0:
                     break
                 # 4.0 translate / evaluate / error collection
-                distill = await self.__translate_evaluate__(translation_service, final_phrases, dataclass, errors)
+                distill, err = await self.__translate_evaluate__(translation_service, final_phrases, dataclass, errors)
+                if err:
+                    errors.extend(err)
                 """
                 result = await translation_service.real_batch(final_phrases, dataclass)
                 # 4.1 evaluate
@@ -535,10 +537,11 @@ class VLLMService:
                 final_phrases.append((phrase_id, revised_text, translation_hints))
             return final_phrases
 
-    async def __translate_evaluate__(self, translation_service, final_phrases, dataclass, errors):
+    async def __translate_evaluate__(self, translation_service, final_phrases, dataclass):
         """
         перевод, оценка, сборка ошибок
         """
+        errors = []
         result = await translation_service.real_batch(final_phrases, dataclass)
         # 4.1 evaluate
         evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
@@ -554,7 +557,7 @@ class VLLMService:
         # if len(distill) == 0:
         #     break
         rich_print(distill, "список записей во временной таблице")
-        return distill
+        return distill, errors
 
     @background_unique
     async def drink_translate(
