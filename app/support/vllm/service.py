@@ -322,28 +322,12 @@ class VLLMService:
                 final_phrases = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto, translator_auto)
                 if len(final_phrases) == 0:
                     break
-                # 4.0 translate / evaluate / error collection
-                distill, err = await self.__translate_evaluate__(translation_service, final_phrases, dataclass)
-                if err:
-                    errors.extend(err)
+                # 4.0 translate / evaluate / error collection / save to tmp_table / quality assurance
+                quality, err = await self.__translate_evaluate__(translation_service, final_phrases, dataclass)
+                errors.extend(err)
+                # if len(distill) == 0:
+                #     break
                 """
-                result = await translation_service.real_batch(final_phrases, dataclass)
-                # 4.1 evaluate
-                evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-                # 4.2. extend error list
-                # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
-                err = [errors for item in evaluated if (errors := item.get('errors'))]
-                if err:
-                    errors.extend([item for sublist in err for item in sublist])
-                logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
-                # 5. save to temporary file
-                # 5.0. prepaire for save (score added)
-                distill = self.__tmp_data_validate__(result, evaluated, dataclass)
-                """
-                if len(distill) == 0:
-                    break
-                # rich_print(distill, "список записей во временной таблице")
-
                 # 5.1. save to tmp_model
                 async with session_factory() as session:
                     response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
@@ -351,6 +335,7 @@ class VLLMService:
                 logger.success(f'{response} записей добавлено во временную таблицу')
                 # 5.2. оценка качества перевода
                 quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
+                """
                 if not quality or not last_id:
                     break
             errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]}
@@ -537,7 +522,8 @@ class VLLMService:
                 final_phrases.append((phrase_id, revised_text, translation_hints))
             return final_phrases
 
-    async def __translate_evaluate__(self, translation_service, final_phrases, dataclass):
+    async def __translate_evaluate__(self, translation_service, final_phrases, dataclass,
+                                     session_factory, tmp_repo, tmp_model):
         """
         перевод, оценка, сборка ошибок
         """
@@ -557,7 +543,13 @@ class VLLMService:
         # if len(distill) == 0:
         #     break
         rich_print(distill, "список записей во временной таблице")
-        return distill, errors
+        async with session_factory() as session:
+            response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
+            await session.commit()
+        logger.success(f'{response} записей добавлено во временную таблицу')
+        # 5.2. оценка качества перевода
+        quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
+        return quality, errors
 
     @background_unique
     async def drink_translate(
