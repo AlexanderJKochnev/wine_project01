@@ -457,6 +457,7 @@ class VLLMService:
         """
         обновление исходной таблицы переводом
         """
+        logger.warning(f'------------{threshold=}')
         result: list = []
         for row in stats:
             table_name = row.get('table')
@@ -466,7 +467,7 @@ class VLLMService:
             stmt = (update(model)
                     .where(model.id == TmpTranslate.guid)
                     .where(TmpTranslate.table == table_name)
-                    .where(TmpTranslate.score == threshold or 10)
+                    .where(TmpTranslate.score == threshold)
                     .values({target_column: TmpTranslate.translate}))
             # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
             # print(compiled_pg)
