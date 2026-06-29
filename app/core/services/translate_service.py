@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 from loguru import logger  # noqa: F401
 
 from app.core.utils.common_utils import replaceX
-from app.support.vllm.dataclasses import HandbookTranslateData
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 
 
 class TranslationService:
@@ -374,7 +374,7 @@ class TranslationService:
 
     async def real_batch(
             self, phrases: List[Tuple[int, str]],
-            d: HandbookTranslateData,
+            d: HandbookTranslateData | DrinkTranslateData,
             # system_prompt: Tuple[int, str],
             # user_prompt: Tuple[int, str], param: dict, lang: str, drink: str,
             max_concurrent_requests: int = 128

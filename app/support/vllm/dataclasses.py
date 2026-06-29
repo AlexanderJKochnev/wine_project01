@@ -30,10 +30,13 @@ class DrinkTranslateData:
     chunk: int
     source_field: str   # destination_ru
     target_field: str   # destination_ru
-    subcategories: Dict  # Tuple[Dict[Any, str]]
+    subcategories: Dict  # Tuple[Dict[Any, str]] описание: словарь subcategory_id: описание
     score_threshold: int  # приемлемая оценка
     lang_origin: str  # 2х значный код
     lang_destin: str  # 2х значный код
+    cleaner_auto: Optional[ahocorasick.Automaton] = None
+    translator_auto: Optional[ahocorasick.Automaton] = None
+    descr: Optional[str] = None  # описание - совместимость с Handbook
 
     @classmethod
     async def load_from_db(cls,
@@ -74,7 +77,12 @@ class DrinkTranslateData:
         target_name: str = f'name{lang_dict.get(language_destination1)}'
         lang_origin = result.get(language_origin1)
         lang_destin = result.get(language_destination1)
-
+        # загрузка боров
+        cleaner_auto: ahocorasick.Automaton = await get_extractor('cleaner', session, {'shit': True})
+        task_type: str = f'translator_{lang_origin}_{lang_destin}'
+        db_filter: dict = {'shit': False, 'origin': lang_origin, 'destin': lang_destin}
+        translator_auto: ahocorasick.Automaton = await get_extractor(task_type, session, db_filter)
+        # описание: словарь subcategory_id: описание
         drink: dict = {item.get('id'): (distinct_glue(item.get(target_name, item.get('name')),
                                         item['category'].get(target_name,
                                                              item['category'].get('name')),
@@ -93,7 +101,9 @@ class DrinkTranslateData:
                    subcategories=drink,
                    score_threshold=score,
                    lang_destin=lang_destin,
-                   lang_origin=lang_origin)
+                   lang_origin=lang_origin,
+                   translator_auto=translator_auto,
+                   cleaner_auto=cleaner_auto)
 
 
 @dataclass(slots=True)

@@ -13,7 +13,7 @@ from app.core.services.array_service import SetArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
-from app.core.utils.ahocorasick import clean_text_with_aho, get_extractor, get_translations_with_aho
+from app.core.utils.ahocorasick import clean_text_with_aho, get_translations_with_aho
 from app.core.utils.alchemy_utils import get_model_by_tablename
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint, rich_print
@@ -302,26 +302,27 @@ class VLLMService:
                                  dataclass: HandbookTranslateData):
         """
             перевод справочников и drink
-            0. язык двух символьный код
-            1. получаем prompts
-            2. определяем поля для источника и поля для перевода
-            3. отфильтровываем и получаем (id, value in name_{lang}) where name_{dest} is null
-            4. отправляем на перевод
-            5. получаеv -> передаем на сохранение (update)
+            все данные подготовлены в dataclasses
+            запускается бесконечый цикл перевода до тех пока
+                а) не переведет все
+                б) если количество записей с качеством ниже требуемого меньше 50%
+            переведенные тексты анализируются критиком и выдаются ошибки перевода и предложения к их исправению
+            предлагаемые изменения записываются в словарь помошника переводчика и используются при следующем/повторном
+            переводе.
+            но не всегда предложенный перевод удовлетворяет требованиям, поэтому предумотрена процедура ручного
+            одобрения перевода. После одобрения перевода - все записи содержащие это словосочетания переводятся заново.
+            таким образом качество переводов повышается.
         """
         try:
-            tmp_model = TmpTranslate
-            tmp_repo = TmpTranslateRepository
-            last_id = 0
-            errors = []  # список ошибок [[word, bad_trans, good_trans]]
-            cleaner_auto = dataclass.cleaner_auto
-            translator_auto = dataclass.translator_auto
+            tmp_model, tmp_repo, last_id, errors = TmpTranslate, TmpTranslateRepository, 0, []
+            # словари ахо карасики - очистка мусора и подсказки переводчику - зависят от языков исходного и перевода
+            cleaner_auto, translator_auto = dataclass.cleaner_auto, dataclass.translator_auto
             while True:  # бесконечый цикл пока есть записи handbooks
                 # 3. get data
                 async with session_factory() as session:
+                    # получение фраз
                     phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
                     await session.commit()
-                    # translator_auto = await get_extractor('translator', session, {'shit': False})
                     # Шаг 1. Очистка текстов от мусора с помощью первого бора
                     # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
                     revised_phrases = []
@@ -341,9 +342,6 @@ class VLLMService:
                 result = await translation_service.real_batch(final_phrases, dataclass)
                 # 4.1 evaluate
                 evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-                # logger.critical('evaluated')
-                # jprint(evaluated)
-                # logger.critical('evaluated end =========================')
                 # 4.2. extend error list
                 # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
                 err = [errors for item in evaluated if (errors := item.get('errors'))]
@@ -360,7 +358,7 @@ class VLLMService:
                 # 5.1. save to tmp_model
                 async with session_factory() as session:
                     response = await tmp_repo.get_full(tmp_model, session, 50)
-                    jprint(response)
+                    # jprint(response)
                     response: int = await tmp_repo.bulk_create_no_return(distill, tmp_model, session)
                     await session.commit()
                 logger.success(f'{response} записей добавлено во временную таблицу')
