@@ -320,28 +320,11 @@ class VLLMService:
             while True:  # бесконечый цикл пока есть записи handbooks
                 # 3. get data
                 final_phrases = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto, translator_auto)
-                """
-                async with session_factory() as session:
-                    # получение фраз
-                    phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
-                    await session.commit()
-                    # Шаг 1. Очистка текстов от мусора с помощью первого бора
-                    # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
-                    revised_phrases = []
-                    for phrase_id, txt in phrases:
-                        revised_text = clean_text_with_aho(txt, cleaner_auto)
-                        revised_phrases.append((phrase_id, revised_text))
-                    # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
-                    # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
-                    final_phrases = []
-                    for phrase_id, revised_text in revised_phrases:
-                        translation_hints = get_translations_with_aho(revised_text, translator_auto)
-                        print(f'{translation_hints=}')
-                        final_phrases.append((phrase_id, revised_text, translation_hints))
-                """
                 if len(final_phrases) == 0:
                     break
-                # 4.0 translate
+                # 4.0 translate / evaluate / error collection
+                distill = await self.__translate_evaluate__(translation_service, final_phrases, dataclass, errors)
+                """
                 result = await translation_service.real_batch(final_phrases, dataclass)
                 # 4.1 evaluate
                 evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
@@ -354,9 +337,10 @@ class VLLMService:
                 # 5. save to temporary file
                 # 5.0. prepaire for save (score added)
                 distill = self.__tmp_data_validate__(result, evaluated, dataclass)
+                """
                 if len(distill) == 0:
                     break
-                rich_print(distill, "список записей во временной таблице")
+                # rich_print(distill, "список записей во временной таблице")
 
                 # 5.1. save to tmp_model
                 async with session_factory() as session:
@@ -552,6 +536,28 @@ class VLLMService:
                 print(f'{translation_hints=}')
                 final_phrases.append((phrase_id, revised_text, translation_hints))
             return final_phrases
+
+    async def __translate_evaluate__(self, translation_service, final_phrases, dataclass, errors):
+        """
+        перевод, оценка, сборка ошибок
+        """
+        result = await translation_service.real_batch(final_phrases, dataclass)
+        # 4.1 evaluate
+        evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+        # 4.2. extend error list
+        # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
+        err = [errors for item in evaluated if (errors := item.get('errors'))]
+        if err:
+            errors.extend([item for sublist in err for item in sublist])
+        logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
+        # 5. save to temporary file
+        # 5.0. prepaire for save (score added)
+        distill = self.__tmp_data_validate__(result, evaluated, dataclass)
+        # if len(distill) == 0:
+        #     break
+        rich_print(distill, "список записей во временной таблице")
+        return distill,
+
 
     @background_unique
     async def drink_translate(
