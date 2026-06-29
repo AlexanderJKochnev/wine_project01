@@ -3,12 +3,12 @@ import json
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from fastapi import Query
 from loguru import logger  # noqa: F401
 from pydantic import BaseModel, create_model, Field
-from sqlalchemy import and_, Column, ColumnElement, func, inspect, or_, select, String, Text, text, Unicode, UnicodeText
+from sqlalchemy import and_, Column, ColumnElement, func, inspect, or_, String, Text, text, Unicode, UnicodeText
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, MapperProperty
@@ -18,7 +18,6 @@ from app.core.config.project_config import get_path_to_root
 from app.core.models.base_model import Base
 from app.core.types import ModelType
 from app.core.utils.common_utils import camel_to_enum, clean_string, enum_to_camel
-from app.support.ollama.model import ISOLanguage
 
 function = {1: or_, 2: and_}
 
