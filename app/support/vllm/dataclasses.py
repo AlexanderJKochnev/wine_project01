@@ -4,13 +4,15 @@
 """
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
+import ahocorasick
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from app.core.config.project_config import settings
 from app.core.enum import HANDBOOKS
+from app.core.utils.ahocorasick import get_extractor
 from app.core.utils.common_utils import distinct_glue
 from app.core.utils.pydantic_utils import inst_dict
 from app.support import Subcategory
@@ -112,6 +114,8 @@ class HandbookTranslateData:
     score_threshold: int
     lang_origin: str  # 2х значный код
     lang_destin: str  # 2х значный код
+    cleaner_auto: Optional[ahocorasick.Automaton] = None
+    translator_auto: Optional[ahocorasick.Automaton] = None
 
     @classmethod
     async def load_from_db(cls,
@@ -146,6 +150,11 @@ class HandbookTranslateData:
         target_field: str = f'{field}{lang_dict.get(language_destination1)}'
         lang_origin = result.get(language_origin1)
         lang_destin = result.get(language_destination1)
+        # загрузка боров
+        cleaner_auto: ahocorasick.Automaton = await get_extractor('cleaner', session, {'shit': True})
+        task_type: str = 'translator_{lang_origin}_{lang_destin}'
+        db_filter: dict = {'shit': False, 'origin': lang_origin, 'destin': lang_destin}
+        translator_auto: ahocorasick.Automaton = await get_extractor(task_type, session, db_filter)
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
@@ -160,4 +169,6 @@ class HandbookTranslateData:
                    descr=descr,
                    score_threshold=score,
                    lang_destin=lang_destin,
-                   lang_origin=lang_origin)
+                   lang_origin=lang_origin,
+                   translator_auto=translator_auto,
+                   cleaner_auto=cleaner_auto)

@@ -313,6 +313,8 @@ class VLLMService:
         tmp_repo = TmpTranslateRepository
         last_id = 0
         errors = []  # список ошибок [[word, bad_trans, good_trans]]
+        cleaner_auto = dataclass.cleaner_auto
+        translator_auto = dataclass.translator_auto
         while True:  # бесконечый цикл пока есть записи handbooks
             # 3. get data
             async with session_factory() as session:
@@ -320,8 +322,9 @@ class VLLMService:
                 await session.commit()
                 # В ЭТО МЕСТО НУЖНО ВНЕДРИТЬ ПОИСК И ЗАМЕНУ С ПОМОЩЬЮ ПЕРВОГО БОРА
                 # Получаем/инициализируем оба бора из базы данных (произойдет один раз при старте)
-                cleaner_auto = await get_extractor('cleaner', session, {'shit': True})
-                translator_auto = await get_extractor('translator', session, {'shit': False})
+                # cleaner_auto = await get_extractor('cleaner', session, {'shit': True})
+                # task_type, filter = self.__task_type_generator__()
+                # translator_auto = await get_extractor('translator', session, {'shit': False})
                 # Шаг 1. Очистка текстов от мусора с помощью первого бора
                 # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
                 revised_phrases = []
@@ -521,6 +524,14 @@ class VLLMService:
         data: List[dict] = [{'word': key, 'drow': val} for key, val in result.items()]
         logger.critical('__add_transferhelper__')
         jprint(data)
+
+    def __task_type_generator__(self, lang_origin: str, lang_destin: str, task: str = 'translator'):
+        """
+            генерирует имя бора в зависимости от языков + и фильтр
+        """
+        return f'{task}_{lang_origin}_{lang_destin}', {'shit': False,
+                                                       'origin': lang_origin,
+                                                       'destin': lang_destin}
 
     @background_unique
     async def drink_translate(
