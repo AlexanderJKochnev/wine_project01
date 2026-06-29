@@ -4,14 +4,14 @@
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from typing import Dict
 
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from app.core.config.project_config import settings
 from app.core.enum import HANDBOOKS
-from app.core.utils.common_utils import distinct_glue, jprint
+from app.core.utils.common_utils import distinct_glue
 from app.core.utils.pydantic_utils import inst_dict
 from app.support import Subcategory
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
@@ -57,7 +57,7 @@ class DrinkTranslateData:
         params = inst_dict(result)
         # получение двух суффиксов языков сразу
         model = ISOLanguage
-        query = (select(model.name_en, model.iso_639_1, model.id)
+        query = (select(model.name_en, model.iso_639_1)
                  .where(ISOLanguage.name_en.in_((language_origin1, language_destination1))))
         result = await session.execute(query)
         def_lang: str = settings.DEFAULT_LANG
@@ -130,8 +130,9 @@ class HandbookTranslateData:
         query = (select(model.name_en, model.iso_639_1)
                  .where(ISOLanguage.name_en.in_((language_origin1, language_destination1))))
         result = await session.execute(query)
+        result = dict(result.all())
         def_lang: str = settings.DEFAULT_LANG
-        lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result}
+        lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result.items()}
         source_field: str = f'{field}{lang_dict.get(language_origin1)}'
         target_field: str = f'{field}{lang_dict.get(language_destination1)}'
 
