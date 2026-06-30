@@ -333,9 +333,12 @@ class VLLMService:
                                                                  session_factory, tmp_repo,
                                                                  tmp_model)
                 errors.extend(err)
+                logger.error('error in cycles')
+                print(errors)
                 if not quality or not last_id:
                     break
             # обработка и имплементация результатов
+            print(errors)
             await self.__post_processing__(session_factory, dataclass, errors)
             logger.info('перевод в фонвом режиме закончен')
             return None
@@ -536,6 +539,8 @@ class VLLMService:
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
             errors.extend([tuple(item for sublist in err for item in sublist)])
+        logger.warning('errors in __translate_evaluate__')
+        print(errors)
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
         # 5. save to temporary file
         # 5.0. prepaire for save (score added)
