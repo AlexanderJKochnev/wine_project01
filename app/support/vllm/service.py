@@ -556,6 +556,8 @@ class VLLMService:
             обработка результатов
         """
         if len(errors) > 0:
+            logger.warning('-----------------------------')
+            jprint(errors)
             errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in set(errors) if len(e) == 3]
             logger.warning(f'{len(errors)=},  {len(errors_list_dict)=}, ')
             rich_print(errors_list_dict, 'список ошибок')
