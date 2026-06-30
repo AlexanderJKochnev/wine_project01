@@ -556,11 +556,10 @@ class VLLMService:
         """
             обработка результатов
         """
-        jprint(errors)
-        logger.warning('------------------errors--------------------')
-        errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in errors if len(e) == 3]
-
-        rich_print(errors_list_dict, 'список ошибок')
+        if len(errors) > 0:
+            errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in errors if len(e) == 3]
+            logger.warning(f'{len(errors)=},  {len(errors_list_dict)=}, ')
+            rich_print(errors_list_dict, 'список ошибок')
         # 6.0 implementation to real database
         # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
         async with session_factory() as session:
