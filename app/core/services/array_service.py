@@ -315,6 +315,7 @@ class SetArrayService:
         instance, validated_array = await cls.__preparation__(session, data)
         if not instance:
             response = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
+            result = inst_dict(response)
         else:
             current_dict: dict = inst_dict(instance)
             for key, val in validated_array.items():
@@ -325,9 +326,8 @@ class SetArrayService:
             # response = {"success": True, "data": obj}
             if not response.get('success'):
                 raise HTTPException(status_code=500, detail='обновление не случилось')
-            logger.warning(response)
-            
-        return inst_dict(response.get('data'))
+            result = inst_dict(response.get('data'))
+        return result
 
     @classmethod
     async def create(cls, session: AsyncSession, data: BaseModel) -> dict:
