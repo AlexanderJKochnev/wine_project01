@@ -1010,7 +1010,7 @@ def rich_print(data: List[Dict], title: str):
     if data is None or len(data) == 0:
         return
     console = Console()
-    table = Table(title=title)
+    table = Table(title=title, expand=True)
     for key in data[0].keys():
         table.add_column(key.capitalize(), style="cyan", justify="left", no_wrap=True)
     for val in data:
