@@ -380,7 +380,7 @@ class VLLMService:
         return result, last_id
 
     def __tmp_data_validate__(self, data: dict, evaluated: List[dict],
-                              d: HandbookTranslateData) -> List[dict]:
+                              d: HandbookTranslateData | DrinkTranslateData) -> List[dict]:
         """
             преобразование и валидация данных для добавления во временную таблицу
             return:
@@ -392,9 +392,13 @@ class VLLMService:
             translate: str перевод
             score: int
         """
+        if isinstance(d, HandbookTranslateData):
+            table = d.handbook
+        else:
+            table = 'drinks'
         evo = {d.get('drink_id'): int(d.get('total_score')) for d in evaluated}
         distill = [{'guid': v.get('drink_id'),
-                    'table': d.handbook,
+                    'table': table,
                     'field': d.target_field,
                     'lang': d.language_destination,
                     'origin': v.get('origin'),
