@@ -517,7 +517,8 @@ class VLLMService:
             final_phrases = []
             for phrase_id, revised_text, descr in revised_phrases:
                 translation_hints = get_translations_with_aho(revised_text, translator_auto)
-                print(f'{translation_hints=}')
+                if translation_hints:
+                    print(f'{translation_hints=}')
                 final_phrases.append((phrase_id, revised_text, translation_hints, descr))
             return final_phrases
 
@@ -534,7 +535,7 @@ class VLLMService:
         # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
-            errors.extend([item for sublist in err for item in sublist])
+            errors.extend(tuple(item for sublist in err for item in sublist))
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
         # 5. save to temporary file
         # 5.0. prepaire for save (score added)
