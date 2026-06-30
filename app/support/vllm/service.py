@@ -538,7 +538,7 @@ class VLLMService:
         # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
-            errors.extend([tuple(item for sublist in err for item in sublist)])
+            errors = [tuple(item for sublist in err for item in sublist)]
         logger.warning('errors in __translate_evaluate__')
         print(errors)
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
