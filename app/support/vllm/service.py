@@ -6,7 +6,8 @@ from typing import Dict, List, Sequence, Tuple
 from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
-from sqlalchemy import func, select, text, update
+from sqlalchemy import and_, func, or_, select, text, update
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.services.array_service import SetArrayService
@@ -24,7 +25,7 @@ from app.support.drink.repository import DrinkRepository
 from app.support.ollama.model import Prompt, Proption, WriterRule
 from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
-from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData, LastComposite
 from app.support.vllm.model import TmpTranslate, TranslateHelper
 from app.support.vllm.repository import TmpTranslateRepository, TranslateHelperRepository, TranslateRawDataRepository
 
@@ -341,7 +342,7 @@ class VLLMService:
                 await session.commit()
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def fetch_data_chunk(self, session: AsyncSession, d: HandbookTranslateData, last_id: int) -> tuple:
+    async def __fetch_data_chunk__(self, session: AsyncSession, d: HandbookTranslateData, last_id: int) -> tuple:
         """
         получение данных
         """
@@ -492,9 +493,14 @@ class VLLMService:
         """
         получение данных для перевода
         """
+        if isinstance(dataclass, HandbookTranslateData):
+            # func = self.__fetch_data_chunk__
+            logger.critical('=============================')
+        else:
+        
         async with session_factory() as session:
             # получение фраз
-            phrases, last_id = await self.fetch_data_chunk(session, dataclass, last_id)
+            phrases, last_id = await self.__fetch_data_chunk__(session, dataclass, last_id)
             await session.commit()
             # Шаг 1. Очистка текстов от мусора с помощью первого бора
             # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
@@ -556,66 +562,47 @@ class VLLMService:
             session.expire_all()
         return None
 
-    @background_unique
-    async def drink_translate(
-            self, session_factory, translation_service: TranslationService,
-            data: DrinkTranslateData
-            # system_prompt: str,
-            # language_origin: str, language_destination: str, user_prompt: str, params: str, chunk: int,
-            # field_name: str = 'description'
-    ):
-        """
-        0. исходные данные: data: DrinkTranslateData
-        1. Запуск цикла: первый tier - если средний балл низкий - прерывается
-        """
-        for subcat_id, drink in data.subcategories.items():
-            last_id = 0
-            while True:
-                async with session_factory() as session:
-                    datas, last_id = await self.__fetch_drink_chunk__(session, data.source_field,
-                                                                      data.target_field, subcat_id,
-                                                                      data.chunk, last_id
-                                                                      )
-                    await session.commit()
-                # 4. translate
-                result = await translation_service.real_batch(
-                    datas, data.system_prompt, data.user_prompt, data.params, data.language_destination, drink  # subj
-                )
-                jprint(result)
-                last_id = None
-                if not last_id:
-                    break
-            break
-        return
-        last_id = 0
-        return None
-
-    async def __fetch_drink_chunk__(self, session: AsyncSession, source_field: str, target_field: str,
-                                    subcat_id: int, chunk: int, last_id: int = 0) -> tuple:
+    async def __fetch_drink_chunk__(self, session: AsyncSession, d: DrinkTranslateData,
+                                    lc: LastComposite | None) -> tuple:
         """
         получение данных перевода
+        last_composit = (last_id, last_subcat)
+        select(model).options(joinedload(model.category)).where(model.id.in_(subcategory_ids))
         """
         raw_sql = """
-        SELECT id, {source_field} FROM drinks
+        SELECT id, {source_field}, subcategory_id FROM drinks
         WHERE COALESCE({target_field},'') = '' AND COALESCE({source_field}, '') != ''
-        AND subcategory_id = {subcat_id}
-        AND id > {last_id}
-        ORDER BY id
+        AND subcategory_id in {subcat_id}
+        AND (subcategory_id > {last_subcategory_id}
+             OR (subcategory_id = {last_subcategory_id} AND id > {last_id})
+        ORDER BY subcategory_id, id
         LIMIT {chunk};
         """
-        sql = raw_sql.format(source_field=source_field, target_field=target_field,
-                             subcat_id=subcat_id, last_id=last_id, chunk=chunk)
-        stmt = text(sql)
-        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        model = Drink
+        source_attr = getattr(model, d.source_field)
+        target_attr = getattr(model, d.target_field)
+        stmt = (select(model.id, source_attr, model.subcategory_id)
+                .where(
+                and_(or_(target_attr.is_(None), target_attr == ''),
+                     and_(source_attr.is_not(None), source_attr != ''),
+                     model.subcategory_id.in_(d.subcategory_ids),
+                     and_(
+                    or_(model.subcategory_id > lc.last_subcategory,
+                        and_(model.subcategory_id == lc.last_subcategory, model.id > lc.last_id)))
+                     )
+                ).order_by(Drink.subcategory_id, Drink.id).limit(d.chunk))
+
+        compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        print(compiled_pg)
         response = await session.execute(stmt)
         rows = response.all()
-        result = tuple((row.id, row._mapping[source_field]) for row in rows)
+        result = tuple((row.id, row._mapping[d.source_field], row.subcategory_id) for row in rows)
         logger.success(f'получено {len(result)} записей для перевода')
-        if len(result) < chunk:
-            last_id = None
+        if len(result) < d.chunk:
+            lc = None
         else:
-            last_id = result[-1][0]
-        return result, last_id
+            lc = LastComposite(last_id=result[-1][0], last_subcategory=result[-1][2])
+        return result, lc
 
 
 class TranslateRawDataService(Service):

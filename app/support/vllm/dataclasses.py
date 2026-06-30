@@ -4,7 +4,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import ahocorasick
 from sqlalchemy import select
@@ -34,6 +34,7 @@ class DrinkTranslateData:
     score_threshold: int  # приемлемая оценка
     lang_origin: str  # 2х значный код
     lang_destin: str  # 2х значный код
+    subcategory_ids: tuple  # ids
     cleaner_auto: Optional[ahocorasick.Automaton] = None
     translator_auto: Optional[ahocorasick.Automaton] = None
     descr: Optional[str] = None  # описание - совместимость с Handbook
@@ -54,10 +55,10 @@ class DrinkTranslateData:
         system_prompt = result.id, result.system_prompt, result.role
         result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
         user_prompt = result.id, result.prompt, result.name
-        subcategories = tuple(result.subcategory_ids)
+        subcategory_ids = tuple(result.subcategory_ids)
         # получение субкатегорий
         model = Subcategory
-        query = select(model).options(joinedload(model.category)).where(model.id.in_(subcategories))
+        query = select(model).options(joinedload(model.category)).where(model.id.in_(subcategory_ids))
         response = await session.scalars(query)
         subcat_dict = [inst_dict(instance) for instance in response.all()]
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
@@ -103,7 +104,8 @@ class DrinkTranslateData:
                    lang_destin=lang_destin,
                    lang_origin=lang_origin,
                    translator_auto=translator_auto,
-                   cleaner_auto=cleaner_auto)
+                   cleaner_auto=cleaner_auto,
+                   subcategory_ids=subcategory_ids)
 
 
 @dataclass(slots=True)
@@ -182,3 +184,9 @@ class HandbookTranslateData:
                    lang_origin=lang_origin,
                    translator_auto=translator_auto,
                    cleaner_auto=cleaner_auto)
+
+
+@dataclass(slots=True)
+class LastComposite:
+    last_id: Optional[int] = None
+    last_subcategory: Optional[int] = None
