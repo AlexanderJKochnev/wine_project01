@@ -262,7 +262,6 @@ class VLLMService:
         # экспертная оценка
         evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
         logger.warning(evaluated)
-        jprint(evaluated)
         # best_configs = translation_service.rank_translation_configs(evaluated)
         best_configs = translation_service.rank_translation_configs_v2(evaluated)
         for best_config in best_configs:
@@ -502,7 +501,6 @@ class VLLMService:
         # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
         # logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
         rich_print(data, 'справочник трудных слов')
-        jprint(data)
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
                               last_id, cleaner_auto, translator_auto) -> list:
@@ -602,8 +600,8 @@ class VLLMService:
                      )
                 ).order_by(Drink.subcategory_id, Drink.id).limit(d.chunk))
 
-        compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-        print(compiled_pg)
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print(compiled_pg)
         response = await session.execute(stmt)
         rows = response.all()
         result = tuple((row.id, row._mapping[d.source_field], row.subcategory_id) for row in rows)
