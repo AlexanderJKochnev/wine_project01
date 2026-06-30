@@ -496,8 +496,8 @@ class VLLMService:
         if isinstance(dataclass, HandbookTranslateData):
             # func = self.__fetch_data_chunk__
             logger.critical('=============================')
-        else:
-        
+        if isinstance(dataclass, DrinkTranslateData):
+            logger.critical('========123=====================')
         async with session_factory() as session:
             # получение фраз
             phrases, last_id = await self.__fetch_data_chunk__(session, dataclass, last_id)
