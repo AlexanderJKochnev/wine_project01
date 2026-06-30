@@ -179,7 +179,7 @@ class VllmRouter(LightRouter):
             translation_service: TranslationService = Depends(get_translation_service),
             handbook: Handbooks = Query(..., description='справочник'),
             language_origin: Languages = Query(..., description='язык оригинала'),
-            language_destination: Languages = Query(..., description='язык оригинала'),
+            language_destination: Languages = Query(..., description='язык перевода'),
             author: Prompts = Query(
                 ..., descrition='переводчик'
             ),

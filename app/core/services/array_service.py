@@ -325,6 +325,8 @@ class SetArrayService:
             # response = {"success": True, "data": obj}
             if not response.get('success'):
                 raise HTTPException(status_code=500, detail='обновление не случилось')
+            logger.warning(response)
+            
         return inst_dict(response.get('data'))
 
     @classmethod
