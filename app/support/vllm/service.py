@@ -499,8 +499,9 @@ class VLLMService:
         for key, *_, val in errors:
             result[key].append(val)
         data: List[dict] = [{'word': key, 'drow': list(set(val))} for key, val in result.items()]
-        # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ
-        logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
+        # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
+        # logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
+        rich_print(data, 'справочник трудных слов')
         jprint(data)
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,

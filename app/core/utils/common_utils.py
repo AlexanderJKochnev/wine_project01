@@ -1012,7 +1012,7 @@ def rich_print(data: List[Dict], title: str):
     console = Console()
     table = Table(title=title)
     for key in data[0].keys():
-        table.add_column(key.capitalize(), style="cyan", justify="left")
+        table.add_column(key.capitalize(), style="cyan", justify="left", no_wrap=True)
     for val in data:
         v = tuple(str(v) for v in val.values())
         table.add_row(*v)
