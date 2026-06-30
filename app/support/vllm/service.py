@@ -491,7 +491,7 @@ class VLLMService:
         result = defaultdict(list)
         for key, *_, val in errors:
             result[key].append(val)
-        data: List[dict] = [{'word': key, 'drow': val} for key, val in result.items()]
+        data: List[dict] = [{'word': key, 'drow': list(set(val))} for key, val in result.items()]
         logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
         jprint(data)
 
