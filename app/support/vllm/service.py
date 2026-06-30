@@ -530,7 +530,6 @@ class VLLMService:
         """
         перевод, оценка, сборка ошибок
         """
-        errors = []
         result = await translation_service.real_batch(final_phrases, dataclass)
         # 4.1 evaluate
         evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
@@ -538,9 +537,9 @@ class VLLMService:
         # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
-            errors = [tuple(item for sublist in err for item in sublist)]
+            err2 = [tuple(item) for sublist in err for item in sublist]
         logger.warning('errors in __translate_evaluate__')
-        print(errors)
+        print(err2)
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
         # 5. save to temporary file
         # 5.0. prepaire for save (score added)
@@ -554,7 +553,7 @@ class VLLMService:
         logger.success(f'{response} записей добавлено во временную таблицу')
         # 5.2. оценка качества перевода
         quality = self.__score_analyse__(distill, dataclass.score_threshold, errors)
-        return quality, errors
+        return quality, err2
 
     async def __post_processing__(self, session_factory, dataclass, errors):
         """
