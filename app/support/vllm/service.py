@@ -29,6 +29,12 @@ from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateDa
 from app.support.vllm.model import TmpTranslate, TranslateHelper
 from app.support.vllm.repository import TmpTranslateRepository, TranslateHelperRepository, TranslateRawDataRepository
 
+"""
+################################################################################################
+# __update_handbook__()   это метод который записывает переведенные данные в исходную таблицу  #
+################################################################################################
+"""
+
 
 class VLLMService:
     """
@@ -464,9 +470,9 @@ class VLLMService:
                     .where(TmpTranslate.table == table_name)
                     .where(TmpTranslate.score == threshold)
                     .values({target_column: TmpTranslate.translate}))
-            # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-            # print(compiled_pg)
-            response = await session.execute(stmt)
+            compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            print(compiled_pg)
+            # response = await session.execute(stmt)
             result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
             # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
         rich_print(result, 'количество обновленных записей')
@@ -530,9 +536,9 @@ class VLLMService:
         result = await translation_service.real_batch(final_phrases, dataclass)
         # 4.1 evaluate
         evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
-        logger.warning('--------evaluated-----------')
-        jprint(evaluated)
-        logger.warning('--------END evaluated-------')
+        # logger.warning('--------evaluated-----------')
+        # jprint(evaluated)
+        # logger.warning('--------END evaluated-------')
         # 4.2. extend error list
         # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
         err = [errors for item in evaluated if (errors := item.get('errors'))]
