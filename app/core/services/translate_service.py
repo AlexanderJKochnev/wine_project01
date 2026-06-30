@@ -42,6 +42,8 @@ class TranslationService:
         - If the translation used a valid option from the provided Glossary/Hints, it is 100% CORRECT. Do not treat it as an error.
         - Before generating JSON, double-check every item in the "errors" list. If the "incorrect translation segment" and "your corrected version" match, REMOVE it from the list.
         - If the "errors" list becomes empty after this check, you MUST give a score of 10 for both translation_score and text_score.
+        - Once again: if there is no errors in "errors" list, you MUST give a score of 10 for both translation_score
+        and text_score.
 
         CRITICAL FORMATTING: The third element of the error tuple MUST contain ONLY the corrected translation.
         Do not include any explanations, definitions, parentheses, or alternative options.
