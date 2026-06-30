@@ -333,12 +333,9 @@ class VLLMService:
                                                                  session_factory, tmp_repo,
                                                                  tmp_model)
                 errors.extend(err)
-                logger.error('error in cycles')
-                print(errors)
                 if not quality or not last_id:
                     break
             # обработка и имплементация результатов
-            print(errors)
             await self.__post_processing__(session_factory, dataclass, errors)
             logger.info('перевод в фонвом режиме закончен')
             return None
@@ -492,6 +489,7 @@ class VLLMService:
         for key, *_, val in errors:
             result[key].append(val)
         data: List[dict] = [{'word': key, 'drow': list(set(val))} for key, val in result.items()]
+        # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ
         logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
         jprint(data)
 
@@ -537,8 +535,6 @@ class VLLMService:
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
             err2 = [tuple(item) for sublist in err for item in sublist]
-        logger.warning('errors in __translate_evaluate__')
-        print(err2)
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
         # 5. save to temporary file
         # 5.0. prepaire for save (score added)
