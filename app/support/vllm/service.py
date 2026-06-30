@@ -441,7 +441,7 @@ class VLLMService:
         rich_print(stats, 'статистика перевода')
 
         # 6.2. удалить плохие переводы
-        await self.__del_bad_scores__(stats, session)
+        await self.__del_bad_scores__(stats, session, threshold)
         # 6.3. обновить таблицы переводами ВОТ ЭТО ЗАПИСЬ ПЕРЕВОДА В ТАБЛИЦУ ИСТОЧНИК
         result = await self.__update_handbook__(stats, session, threshold)
         # 6.4. очистка таблицы
@@ -449,13 +449,13 @@ class VLLMService:
 
         return stats
 
-    async def __del_bad_scores__(self, stats: List[Dict], session: AsyncSession):
+    async def __del_bad_scores__(self, stats: List[Dict], session: AsyncSession, threshold: int):
         """ удаление
             плохих отметок
         """
         model = TmpTranslate
         repository = TmpTranslateRepository
-        result = await repository.bulk_delete(session, model, model.score < 10)
+        result = await repository.bulk_delete(session, model, model.score < threshold)
         logger.info(f'deleted {result} records with bad score')
         return None
 
@@ -476,7 +476,7 @@ class VLLMService:
                     .values({target_column: TmpTranslate.translate}))
             compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
             print(compiled_pg)
-            # response = await session.execute(stmt)
+            response = await session.execute(stmt)
             result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
             # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
         rich_print(result, 'количество обновленных записей')
