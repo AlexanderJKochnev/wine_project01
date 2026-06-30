@@ -588,15 +588,6 @@ class VLLMService:
         last_composit = (last_id, last_subcat)
         select(model).options(joinedload(model.category)).where(model.id.in_(subcategory_ids))
         """
-        raw_sql = """
-        SELECT id, {source_field}, subcategory_id FROM drinks
-        WHERE COALESCE({target_field},'') = '' AND COALESCE({source_field}, '') != ''
-        AND subcategory_id in {subcat_id}
-        AND (subcategory_id > {last_subcategory_id}
-             OR (subcategory_id = {last_subcategory_id} AND id > {last_id})
-        ORDER BY subcategory_id, id
-        LIMIT {chunk};
-        """
         model = Drink
         source_attr = getattr(model, d.source_field)
         target_attr = getattr(model, d.target_field)
