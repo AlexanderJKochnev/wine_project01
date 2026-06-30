@@ -456,7 +456,6 @@ class VLLMService:
         """
         обновление исходной таблицы переводом
         """
-        logger.warning(f'------------{threshold=}')
         result: list = []
         for row in stats:
             table_name = row.get('table')
@@ -490,10 +489,10 @@ class VLLMService:
         """
         # 0. convert [(word, wrong, drow)] => [{'word': word, drow: [drow]}]
         result = defaultdict(list)
-        for key, val, *_ in errors:
+        for key, *_, val in errors:
             result[key].append(val)
         data: List[dict] = [{'word': key, 'drow': val} for key, val in result.items()]
-        logger.critical('__add_transferhelper__')
+        logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
         jprint(data)
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
@@ -560,10 +559,7 @@ class VLLMService:
             обработка результатов
         """
         if len(errors) > 0:
-            logger.warning('-----------------------------')
-            jprint(errors)
             errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in set(errors) if len(e) == 3]
-            logger.warning(f'{len(errors)=},  {len(errors_list_dict)=}, ')
             rich_print(errors_list_dict, 'список ошибок')
         # 6.0 implementation to real database
         # 6.1. выдать сводку - сколько записей больше или равно threshold и меньше по таблицам
