@@ -535,7 +535,6 @@ class VLLMService:
         # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
-            print([item for sublist in err for item in sublist], '==========')
             errors.extend([item for sublist in err for item in sublist])
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
         # 5. save to temporary file
@@ -557,7 +556,7 @@ class VLLMService:
             обработка результатов
         """
         if len(errors) > 0:
-            errors_list_dict = set({'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in errors if len(e) == 3)
+            errors_list_dict = [{'word': e[0], 'wrong': e[1], 'proposed': e[2]} for e in errors if len(e) == 3]
             logger.warning(f'{len(errors)=},  {len(errors_list_dict)=}, ')
             rich_print(errors_list_dict, 'список ошибок')
         # 6.0 implementation to real database
