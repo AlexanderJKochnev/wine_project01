@@ -530,6 +530,9 @@ class VLLMService:
         result = await translation_service.real_batch(final_phrases, dataclass)
         # 4.1 evaluate
         evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+        logger.warning('--------evaluated-----------')
+        jprint(evaluated)
+        logger.warning('--------END evaluated-------')
         # 4.2. extend error list
         # evaluated.get('errors') = [['Moutere', 'Моттера (Moutere)', 'Моттера']]
         err = [errors for item in evaluated if (errors := item.get('errors'))]
