@@ -623,7 +623,7 @@ class DrinkTranslateScoreService(Service):
 
 
 class TranslateHelperService(SetArrayService, Service):
-    default = ['word']  # по этим полям будет проверяться наличие записей
+    default = ['word', 'origin', 'destin']  # по этим полям будет проверяться наличие записей
     repository = TranslateHelperRepository
     model = TranslateHelper
     array_fields = ('drow',)

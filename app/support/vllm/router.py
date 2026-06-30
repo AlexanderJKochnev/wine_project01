@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
 from app.support.ollama.repository import ISOLanguageRepository
-from app.support.ollama.service import ISOLanguageService
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
@@ -310,6 +309,8 @@ class TranslateHelperRouter(BaseRouter):
 
     async def add_drow(self,
                        word: str = Form(..., description='слово или фраза'),
+                       source: Languages = Form(..., description='языка оригинала'),
+                       destination: Languages = Form(..., description='языка перевода'),
                        translate: List[str] = Form(..., description='предпочитаемый перевод'),
                        replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                             'False - подсказка переводчику'),
@@ -321,7 +322,10 @@ class TranslateHelperRouter(BaseRouter):
             data: Update pydantic model
         """
         tmp = set(translate[0].split(','))
-        data = self.create_schema(word=word, drow=tmp, replace=replace)
+        langs: dict = await ISOLanguageRepository.get_lang2_by_name(session)
+        origin = langs.get(source.value)
+        destin = langs.get(destination.value)
+        data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin)
         result: dict = await self.service.set_add_single(session, data)
         return result
 
