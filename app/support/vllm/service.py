@@ -300,7 +300,7 @@ class VLLMService:
 
     @background_unique
     async def handbook_translate(self, session_factory, translation_service: TranslationService,
-                                 dataclass: HandbookTranslateData):
+                                 dataclass: HandbookTranslateData | DrinkTranslateData):
         """
             перевод справочников и drink
             все данные подготовлены в dataclasses
@@ -315,7 +315,11 @@ class VLLMService:
             таким образом качество переводов повышается.
         """
         try:
-            tmp_model, tmp_repo, last_id, errors = TmpTranslate, TmpTranslateRepository, 0, []
+            tmp_model, tmp_repo, errors = TmpTranslate, TmpTranslateRepository, []
+            if isinstance(dataclass, HandbookTranslateData):
+                last_id = 0
+            else:
+                last_id = LastComposite(last_id=0, last_subcategory=0)
             # словари ахо карасики - очистка мусора и подсказки переводчику - зависят от языков исходного и перевода
             cleaner_auto, translator_auto = dataclass.cleaner_auto, dataclass.translator_auto
             while True:  # бесконечый цикл пока есть записи handbooks
@@ -342,7 +346,8 @@ class VLLMService:
                 await session.commit()
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def __fetch_data_chunk__(self, session: AsyncSession, d: HandbookTranslateData, last_id: int) -> tuple:
+    async def __fetch_data_chunk__(self, session: AsyncSession, d: HandbookTranslateData, last_id: int | tuple) -> (
+            tuple):
         """
         получение данных
         """
@@ -494,13 +499,12 @@ class VLLMService:
         получение данных для перевода
         """
         if isinstance(dataclass, HandbookTranslateData):
-            # func = self.__fetch_data_chunk__
-            logger.critical('=============================')
+            func = self.__fetch_data_chunk__
         if isinstance(dataclass, DrinkTranslateData):
-            logger.critical('========123=====================')
+            func = self.__fetch_drink_chunk__
         async with session_factory() as session:
             # получение фраз
-            phrases, last_id = await self.__fetch_data_chunk__(session, dataclass, last_id)
+            phrases, last_id = await func(session, dataclass, last_id)
             await session.commit()
             # Шаг 1. Очистка текстов от мусора с помощью первого бора
             # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
