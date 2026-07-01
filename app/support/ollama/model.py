@@ -1,7 +1,7 @@
 # app.suport.ollama.model.py
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float
+from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float, Text
 # from sqlalchemy.dialects.postgresql import JSONB  # Если используете PostgreSQL
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.models.base_model import Base, BaseAt, plural, ActiveMixin
@@ -208,7 +208,7 @@ class WriterRule(ActiveMixin, BaseAt, Base):
     category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    prompt: Mapped[str] = mapped_column(String)
+    prompt: Mapped[str] = mapped_column(Text)
     subcategory_ids: Mapped[Optional[List[int]]] = mapped_column(JSON, nullable=True)
 
     def __str__(self):
