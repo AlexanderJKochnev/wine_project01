@@ -12,7 +12,7 @@ ListResponse - тоже что и Pagianted только без Pagianted
 from datetime import datetime
 from typing import Generic, List, NewType, Optional, TypeVar, Any
 from app.service_registry import register_pyschema
-from pydantic import BaseModel as BaseOrigin, ConfigDict, model_serializer
+from pydantic import BaseModel as BaseOrigin, ConfigDict, Field, model_serializer
 
 # from abc import ABC
 
@@ -254,5 +254,6 @@ class TextArea(BaseOrigin):
     """
     для получения textarea в swagger
     """
-    descr: str
+    descr: str = Field(..., description='промпт должен содержать {lang} {prase}',
+                       examples=[""])  # Пустой пример вместо "string"
     model_config = ConfigDict(json_schema_extra={"examples": None})
