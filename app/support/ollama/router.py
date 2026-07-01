@@ -271,7 +271,9 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self, prompt1: TextArea = Form(..., description = 'промпт должен содержать {lang} {prase}'),
+    async def create(self, prompt1: TextArea = Form(...,
+                                                    description='промпт должен содержать {lang} {prase}',
+                                                    openapi_examples=None),
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
                                         json_schema_extra={"format": "textarea"}),
