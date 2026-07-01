@@ -271,7 +271,7 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self, prompt3: TextArea = Form(...,
+    async def create(self, prompt1: TextArea = Form(...,
                                                     description='промпт должен содержать {lang} {prase}'),
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
@@ -281,7 +281,7 @@ class WriterRuleRouter(BaseRouter):
                      active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
                      ): # -> PromptRead:
-        res = prompt3.descr
+        res = prompt1.descr
         return {'result': res
                 }
         response = await CategoryRepository.get_by_field('name', category, Category, session)
