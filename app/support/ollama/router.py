@@ -305,6 +305,7 @@ class WriterRuleRouter(BaseRouter):
         else:
             subcat = None
         data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcat)
+        jprint(data)
         return await super().create(data, session)
 
     async def patch(self, request: Request,
