@@ -271,7 +271,7 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self, prompt1: TextArea = Form(...,
+    async def create(self, prompt1: TextArea = Form(None,
                                                     description='промпт должен содержать {lang} {prase}'),
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
