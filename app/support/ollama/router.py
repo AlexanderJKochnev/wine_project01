@@ -282,6 +282,7 @@ class WriterRuleRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)
                      ): # -> PromptRead:
         res = prompt1.descr
+        logger.critical(f'{res}=================================================')
         return {'result': res
                 }
         response = await CategoryRepository.get_by_field('name', category, Category, session)
