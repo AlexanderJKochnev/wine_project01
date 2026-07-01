@@ -256,13 +256,12 @@ class TextArea(BaseOrigin):
     """
     descr: Optional[str] = None
 
-    @field_validator('descr', mode='before')
-    @classmethod
-    def validate_descr(cls, v):
-        # Если пришла строка, превращаем её в словарь
-        if isinstance(v, str):
-            return v
-        return v
+    def __init__(self, **data):
+        # Если пришла строка вместо словаря
+        if isinstance(data, str):
+            super().__init__(descr=data)
+        else:
+            super().__init__(**data)
 
     model_config = ConfigDict(json_schema_extra={
         "example":
