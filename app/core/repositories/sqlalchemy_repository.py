@@ -8,7 +8,7 @@ from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-from fastapi import HTTPException
+from fastapi import HTTPException  # NOQA: F401
 from loguru import logger
 from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select, Select, update)
 from sqlalchemy.dialects import postgresql  # NOQA: F401
@@ -21,7 +21,7 @@ from app.core.exceptions import AppBaseException
 from app.core.models.base_model import get_model_by_name
 from app.core.repositories.repo_background_tasks import Background
 from app.core.repositories.search_unaccent_repository import SearchRepositoryMixin
-from app.core.types import ModelType, SetArrayType
+from app.core.types import ModelType
 # from sqlalchemy.sql.elements import ColumnElement
 from app.core.utils.alchemy_utils import (get_field_list, get_sql_search)
 from app.core.utils.pydantic_utils import get_repo
@@ -153,16 +153,12 @@ class Repository(Background, metaclass=RepositoryMeta):
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
-        try:
-            session.add(obj)
-            await session.flush()
-            await session.refresh(obj)
-            id = obj.id
-            await cls.get_related_model_instances(id, model, session)
-            return obj
-        except Exception as e:
-            logger.error(f'======={e}=')
-            raise HTTPException(status_code=404, detail=e)
+        session.add(obj)
+        await session.flush()
+        await session.refresh(obj)
+        id = obj.id
+        await cls.get_related_model_instances(id, model, session)
+        return obj
 
     @classmethod
     async def bulk_create(cls, data: List[Dict], model: ModelType,

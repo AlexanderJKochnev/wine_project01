@@ -304,16 +304,14 @@ class WriterRuleRouter(BaseRouter):
         """
             ДОБАВЛЕНИЕ user_prompt В БАЗУ ДАННЫХ
         """
-        # subcategory_ids: List[int] = [1,2,3,4,5]
         data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcategory_ids)
-        jprint(data)
         return await self.service.create(data, self.repo, self.model, session)
-        # return await super().create(data, session)
 
     async def patch(self, request: Request,
                     prompt: str = Body(writter_prompt,
                                        description='промпт должен содержать пласхолдеры '
-                                                   '{lang}, {prase}, {translation_hints}',
+                                                   '{lang}, {prase}, {translation_hints}, '
+                                                   'если этот параметр не меняется - удали значение по умолчанию',
                                        media_type="text/plain"
                                        ),
                     name: Writers = Query(..., description='название - неизменяется'),
@@ -324,5 +322,10 @@ class WriterRuleRouter(BaseRouter):
         """
         ОБНОВЛЕНИЕ
         """
-        pass
+        result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': name}, WriterRule, session)
+        id = result.id
+        data: WriterRuleUpdate = self.update_schema(prompt=prompt, subcategory_ids=subcategory_ids, active=active)
+        data_dict = data.model_dump(exclude_unset=True, exclude_none=True)
+        jprint(data_dict)
+        return data_dict
         # return await super().patch(id, data, background_tasks, session)
