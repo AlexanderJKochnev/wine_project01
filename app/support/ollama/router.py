@@ -1,7 +1,7 @@
 # app.suport.ollama.router.py
 from typing import List, Optional
 from loguru import logger
-from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body
+from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Categories, Preset, Prompts, Writers
 from app.core.config.database.db_async import get_db
@@ -271,17 +271,18 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self,
+    async def create(self, request: Request,
                      name: str = Form(..., description='name'),
-                     prompt: TextArea = Form(...,
-                                             description='промпт должен содержать пласхолдеры '
-                                                         '{lang}, {prase}, {translation_hints}'),
+                     prompt: str = Body(...,
+                                        description='промпт должен содержать пласхолдеры '
+                                                    '{lang}, {prase}, {translation_hints}',
+                                        media_type="text/plain"),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
                      subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
                      active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
                      ):
-        prompt = prompt.descr
+        # prompt = prompt.descr
         logger.critical(f'{prompt}=================================================')
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
