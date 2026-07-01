@@ -153,12 +153,16 @@ class Repository(Background, metaclass=RepositoryMeta):
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
-        session.add(obj)
-        await session.flush()
-        await session.refresh(obj)
-        id = obj.id
-        await cls.get_related_model_instances(id, model, session)
-        return obj
+        try:
+            session.add(obj)
+            await session.flush()
+            await session.refresh(obj)
+            id = obj.id
+            await cls.get_related_model_instances(id, model, session)
+            return obj
+        except Exception as e:
+            logger.error(f'======={e}=')
+            raise HTTPException(status_code=404, detail=e)
 
     @classmethod
     async def bulk_create(cls, data: List[Dict], model: ModelType,
