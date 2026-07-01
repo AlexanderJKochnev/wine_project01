@@ -16,6 +16,7 @@ from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptC
                                         ISOLanguageCreate, ISOLanguageRead, ISOLanguageUpdate,
                                         ProptionRead, ProptionCreate, ProptionUpdate)
 from app.support.ollama.service import LLMService, OllamaService
+from app.support.parser.router import background_tasks
 
 writter_prompt = """
 Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
@@ -291,22 +292,35 @@ class WriterRuleRouter(BaseRouter):
                                         media_type="text/plain"
                                         ),
                      name: str = Query(..., description='name'),
-                     category: Categories = Query(..., description='категория к которой применен prompt'),
                      subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
                      active: bool = Query(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
                      ):
-        # prompt = prompt.descr
-        logger.critical(f'{prompt}=================================================')
-        response = await CategoryRepository.get_by_field('name', category, Category, session)
-        category_id = response.id
-        data = WriterRuleCreate(name=name, prompt=prompt, category_id=category_id, active=active)
+        """
+            ДОБАВЛЕНИЕ user_prompt В БАЗУ ДАННЫХ
+        """
+        if isinstance(subcategory_ids, str):
+            subcat = set(subcategory_ids[0].split(','))
+        else:
+            subcat = None
+        data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcat)
         return await super().create(data, session)
 
-    async def patch(self, id: int, background_tasks: BackgroundTasks,
-                    data: WriterRuleUpdate,
+    async def patch(self, request: Request,
+                    prompt: str = Body(writter_prompt,
+                                       description='промпт должен содержать пласхолдеры '
+                                                   '{lang}, {prase}, {translation_hints}',
+                                       media_type="text/plain"
+                                       ),
+                    name: Writers = Query(..., description='название - неизменяется'),
+                    subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
+                    active: bool = Query(True, description='активировано'),
                     session: AsyncSession = Depends(get_db)
-                    ) -> PromptRead:
+                    ):
+        """
+        ОБНОВЛЕНИЕ
+        """
+
         return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(

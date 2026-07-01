@@ -1,14 +1,11 @@
 # app.suport.ollama.model.py
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float, Text
+from typing import Optional, List
+from sqlalchemy import String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float, Text
 # from sqlalchemy.dialects.postgresql import JSONB  # Если используете PostgreSQL
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from app.core.models.base_model import Base, BaseAt, plural, ActiveMixin
 from app.core.config.project_config import settings
-
-if TYPE_CHECKING:
-    from app.support.category.model import Category
 
 
 class Ollama(Base, BaseAt):
@@ -49,14 +46,11 @@ class Prompt(ActiveMixin, BaseAt, Base):
     single_name = 'prompt'
     plural_name = plural(single_name)
 
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
-    category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
-
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # название промпта
     role: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     # промпт
-    system_prompt: Mapped[str] = mapped_column(String)
+    system_prompt: Mapped[str] = mapped_column(Text)
     subcategory_ids: Mapped[Optional[List[int]]] = mapped_column(JSON, nullable=True)
 
     def __str__(self):
@@ -71,9 +65,6 @@ class Proption(ActiveMixin, BaseAt, Base):
     cascade = settings.CASCADE
     single_name = 'proption'
     plural_name = plural(single_name)
-
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
-    category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
 
     # наименовение настройки
     preset: Mapped[str] = mapped_column(String(50), unique=True, index=True)
@@ -204,8 +195,6 @@ class WriterRule(ActiveMixin, BaseAt, Base):
     cascade = settings.CASCADE
     single_name = 'writerrule'
     plural_name = plural(single_name)
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False, index=True)
-    category: Mapped["Category"] = relationship(cascade=cascade, lazy=lazy)
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt: Mapped[str] = mapped_column(Text)

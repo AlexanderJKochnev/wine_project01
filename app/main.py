@@ -51,7 +51,7 @@ from app.support.varietal.router import VarietalRouter
 from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter, OrchestratorRouter,
                                        ImageRouter, RawdataRouter, RegistryRouter)
 from app.support.websearch.router import router as web_router
-from app.support.ollama.router import PromptRouter, ISOLanguageRouter, ProptionRouter, WriterRuleRouter, OllamaRouter
+from app.support.ollama.router import PromptRouter, ISOLanguageRouter, ProptionRouter, WriterRuleRouter
 from app.support.lwin.router import LwinRouter
 from app.support.producer.router import ProducerRouter, ProducerTitleRouter
 from app.support.vintage.router import VintageConfigRouter, DesignationRouter, ClassificationRouter
@@ -195,7 +195,7 @@ app.include_router(LwinRouter().router)
 app.include_router(PromptRouter().router)
 app.include_router(ProptionRouter().router)
 app.include_router(WriterRuleRouter().router)
-app.include_router(OllamaRouter().router)
+# app.include_router(OllamaRouter().router)
 app.include_router(VllmRouter().router)
 app.include_router(SeaweedsRouter().router)
 app.include_router(MongoRouter)
