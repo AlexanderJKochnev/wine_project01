@@ -255,3 +255,4 @@ class TextArea(BaseOrigin):
     для получения textarea в swagger
     """
     descr: str
+    model_config = ConfigDict(json_schema_extra={"examples": None})

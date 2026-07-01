@@ -272,8 +272,7 @@ class WriterRuleRouter(BaseRouter):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
     async def create(self, prompt1: TextArea = Form(...,
-                                                    description='промпт должен содержать {lang} {prase}',
-                                                    openapi_examples=None),
+                                                    description='промпт должен содержать {lang} {prase}'),
                      name: str = Form(..., description='name'),
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
                                         json_schema_extra={"format": "textarea"}),
@@ -283,7 +282,7 @@ class WriterRuleRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)
                      ): # -> PromptRead:
         res = prompt1.descr
-        return res
+        return {'result': res, 'prompt1': prompt1}
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
         data = WriterRuleCreate(name=name, prompt=prompt, category_id=category_id, active=active)
