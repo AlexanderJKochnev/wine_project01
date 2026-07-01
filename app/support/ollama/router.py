@@ -304,7 +304,7 @@ class WriterRuleRouter(BaseRouter):
         """
             ДОБАВЛЕНИЕ user_prompt В БАЗУ ДАННЫХ
         """
-        if isinstance(subcategory_ids, str):
+        if isinstance(subcategory_ids, list):
             subcat = set(subcategory_ids[0].split(','))
         else:
             subcat = None
