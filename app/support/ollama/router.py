@@ -308,15 +308,16 @@ class WriterRuleRouter(BaseRouter):
         return await self.service.create(data, self.repo, self.model, session)
 
     async def patch(self, request: Request,
-                    prompt: str = Body(writter_prompt,
+                    prompt: str = Body(None,
                                        description='промпт должен содержать пласхолдеры '
                                                    '{lang}, {prase}, {translation_hints}, '
-                                                   'если этот параметр не меняется - удали значение по умолчанию',
+                                                   'если этот параметр не меняется - удали значение по умолчанию'
+                                                   '',
                                        media_type="text/plain"
                                        ),
-                    name: Writers = Query(..., description='название - неизменяется'),
-                    subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
-                    active: bool = Query(True, description='активировано'),
+                    name: Writers = Query(..., description='название - не изменяемый параметр'),
+                    subcategory_ids: List[int] = Query(None, description='id субкатегорий'),
+                    active: bool = Query(None, description='активировано'),
                     session: AsyncSession = Depends(get_db)
                     ):
         """
