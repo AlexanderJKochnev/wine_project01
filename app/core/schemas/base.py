@@ -255,5 +255,5 @@ class TextArea(BaseOrigin):
     для получения textarea в swagger
     """
     descr: str = Field(..., description='промпт должен содержать {lang} {prase}',
-                       examples=[""])  # Пустой пример вместо "string"
-    model_config = ConfigDict(json_schema_extra={"examples": None})
+                       examples=None)  # Пустой пример вместо "string"
+    model_config = ConfigDict(json_schema_extra=None)
