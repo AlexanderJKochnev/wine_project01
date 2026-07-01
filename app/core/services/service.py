@@ -123,6 +123,7 @@ class Service(metaclass=ServiceMeta):
             drink_repo = get_repo('Drink')
             # создагние индекса налету
             obj = await reindex_items(obj, drink_model, drink_repo, cls.skip_keys, session)
+        print(f'======================{obj}===================')
         result = await repository.create(obj, model, session)
         await session.commit()
         return inst_dict(result)

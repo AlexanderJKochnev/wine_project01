@@ -10,11 +10,12 @@ from app.core.utils.common_utils import compare_lists_compact, jprint
 from app.support import Category
 from app.support.category.repository import CategoryRepository
 from app.support.ollama.model import Ollama, Prompt, ISOLanguage, Proption, WriterRule
+from app.support.ollama.repository import WriterRuleRepository
 from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptCreate,
                                         PromptRead, PromptUpdate, WriterRuleRead, WriterRuleCreate, WriterRuleUpdate,
                                         ISOLanguageCreate, ISOLanguageRead, ISOLanguageUpdate,
                                         ProptionRead, ProptionCreate, ProptionUpdate)
-from app.support.ollama.service import LLMService, OllamaService
+from app.support.ollama.service import LLMService, OllamaService, WriterRuleService
 
 writter_prompt = """
 Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
@@ -282,6 +283,9 @@ class ProptionRouter(BaseRouter):
 class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
+        self.service = WriterRuleService
+        self.repo = WriterRuleRepository
+        self.model = WriterRule
 
     def setup_routes(self):
         self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
@@ -306,7 +310,8 @@ class WriterRuleRouter(BaseRouter):
             subcat = None
         data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcat)
         jprint(data)
-        return await super().create(data, session)
+        return await self.service.create(data, self.repo, self.model, session)
+        # return await super().create(data, session)
 
     async def patch(self, request: Request,
                     prompt: str = Body(writter_prompt,
