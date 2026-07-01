@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Categories, Preset, Prompts, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
-from app.core.schemas.base import TextArea
 from app.core.utils.common_utils import compare_lists_compact, jprint
 from app.support import Category
 from app.support.category.repository import CategoryRepository
@@ -16,7 +15,6 @@ from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptC
                                         ISOLanguageCreate, ISOLanguageRead, ISOLanguageUpdate,
                                         ProptionRead, ProptionCreate, ProptionUpdate)
 from app.support.ollama.service import LLMService, OllamaService
-from app.support.parser.router import background_tasks
 
 writter_prompt = """
 Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
@@ -285,6 +283,9 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
+    def setup_routes(self):
+        self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
+
     async def create(self, request: Request,
                      prompt: str = Body(writter_prompt,
                                         description='промпт должен содержать пласхолдеры '
@@ -320,10 +321,5 @@ class WriterRuleRouter(BaseRouter):
         """
         ОБНОВЛЕНИЕ
         """
-
-        return await super().patch(id, data, background_tasks, session)
-
-    async def update_or_create(
-        self, data: WriterRuleCreate, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db)
-    ) -> WriterRuleRead:
-        return await super().update_or_create(data, background_tasks, session)
+        pass
+        # return await super().patch(id, data, background_tasks, session)

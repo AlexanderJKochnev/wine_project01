@@ -12,7 +12,7 @@ ListResponse - тоже что и Pagianted только без Pagianted
 from datetime import datetime
 from typing import Generic, List, NewType, Optional, TypeVar, Any
 from app.service_registry import register_pyschema
-from pydantic import BaseModel as BaseOrigin, ConfigDict, field_validator, model_serializer
+from pydantic import BaseModel as BaseOrigin, ConfigDict, model_serializer
 
 # from abc import ABC
 
@@ -248,33 +248,3 @@ class ColorMixin(BaseModel):
         color field in hex
     """
     color: Optional[str] = None
-
-
-class TextArea(BaseOrigin):
-    """
-    для получения textarea в swagger
-    """
-    descr: Optional[str] = None
-
-    def __init__(self, **data):
-        # Если пришла строка вместо словаря
-        if isinstance(data, str):
-            super().__init__(descr=data)
-        else:
-            super().__init__(**data)
-
-    model_config = ConfigDict(json_schema_extra={
-        "example":
-        """Определи язык оригинала и переведи текст \"{phrase}\" на {
-           lang} язык. Данный текст относится к области \"{drink}\" -
-           обязательно подбирай слова из соответствующего словаря,
-           используй устоявшийся эквивалент на {lang} языке.
-           Только при отсутствии эквивалента или подходящего словарного слова - транслитерируй.
-           Переводи строго, без пояснений.
-           Обращай внимание на согласование родов.
-           Жесткое условие для фактов: {translation_hints}.
-           Категорически запрещено писать вводные слова, вступление, здороваться, комментировать или объяснять свое
-           решение, выдумывать несуществующие сущности.
-           Твой ответ должен начинаться сразу с перевода. Перевод «
-        """
-    })
