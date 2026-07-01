@@ -7,6 +7,7 @@ from app.core.enum import Categories, Preset, Prompts, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.core.utils.common_utils import compare_lists_compact, jprint
+from app.core.utils.pydantic_utils import inst_dict
 from app.support import Category
 from app.support.category.repository import CategoryRepository
 from app.support.ollama.model import Ollama, Prompt, ISOLanguage, Proption, WriterRule
@@ -324,9 +325,10 @@ class WriterRuleRouter(BaseRouter):
         ОБНОВЛЕНИЕ
         """
         result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': name}, WriterRule, session)
-        id = result.id
+        if subcategory_ids:
+            subcategory_ids = list(set(subcategory_ids))
         data: WriterRuleUpdate = self.update_schema(prompt=prompt, subcategory_ids=subcategory_ids, active=active)
         data_dict = data.model_dump(exclude_unset=True, exclude_none=True)
         jprint(data_dict)
-        return data_dict
-        # return await super().patch(id, data, background_tasks, session)
+        response = await self.repo.patch(result, data_dict, session)
+        return inst_dict(response.get('data'))
