@@ -272,7 +272,8 @@ class WriterRuleRouter(BaseRouter):
 
     async def create(self,
                      name: str = Form(..., description='name'),
-                     prompt: str = Form(..., description='промпт должен содержать {lang} {prase}'),
+                     prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
+                                        json_schema_extra={"widget": "textarea"}),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
                      subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
                      active: bool = Form(True, description='активировано'),
