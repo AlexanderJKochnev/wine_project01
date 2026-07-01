@@ -304,12 +304,8 @@ class WriterRuleRouter(BaseRouter):
         """
             ДОБАВЛЕНИЕ user_prompt В БАЗУ ДАННЫХ
         """
-        logger.warning(f'{subcategory_ids=}')
-        if isinstance(subcategory_ids, list):
-            subcat = set(subcategory_ids[0].split(','))
-        else:
-            subcat = None
-        data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcat)
+        # subcategory_ids: List[int] = [1,2,3,4,5]
+        data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcategory_ids)
         jprint(data)
         return await self.service.create(data, self.repo, self.model, session)
         # return await super().create(data, session)
