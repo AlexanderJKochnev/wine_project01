@@ -280,7 +280,7 @@ class WriterRuleRouter(BaseRouter):
                      subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
                      active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
-                     ) -> PromptRead:
+                     ):
         prompt = prompt.descr
         logger.critical(f'{prompt}=================================================')
         response = await CategoryRepository.get_by_field('name', category, Category, session)
