@@ -17,6 +17,19 @@ from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptC
                                         ProptionRead, ProptionCreate, ProptionUpdate)
 from app.support.ollama.service import LLMService, OllamaService
 
+writter_prompt = """
+Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
+Данный текст относится к области \"{drink}\" - обязательно подбирай слова из соответствующего словаря,
+используй устоявшийся эквивалент на {lang} языке.
+Только при отсутствии эквивалента или подходящего словарного слова - транслитерируй.
+Переводи строго, без пояснений.
+Обращай внимание на согласование родов.
+Жесткое условие для фактов: {translation_hints}.
+Категорически запрещено писать вводные слова, вступление, здороваться, комментировать или объяснять свое решение,
+выдумывать несуществующие сущности.
+Твой ответ должен начинаться сразу с перевода. Перевод «
+"""
+
 
 class OllamaRouter(BaseRouter):
     """ языковые модели для OLLAMA"""
@@ -272,14 +285,15 @@ class WriterRuleRouter(BaseRouter):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
     async def create(self, request: Request,
-                     name: str = Form(..., description='name'),
                      prompt: str = Body(...,
                                         description='промпт должен содержать пласхолдеры '
                                                     '{lang}, {prase}, {translation_hints}',
-                                        media_type="text/plain"),
-                     category: Categories = Form(..., description='категория к которой применен prompt'),
-                     subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
-                     active: bool = Form(True, description='активировано'),
+                                        media_type="text/plain",
+                                        default=writter_prompt),
+                     name: str = Query(..., description='name'),
+                     category: Categories = Query(..., description='категория к которой применен prompt'),
+                     subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
+                     active: bool = Query(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
                      ):
         # prompt = prompt.descr
