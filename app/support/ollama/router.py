@@ -285,11 +285,11 @@ class WriterRuleRouter(BaseRouter):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
     async def create(self, request: Request,
-                     prompt: str = Body(...,
+                     prompt: str = Body(writter_prompt,
                                         description='промпт должен содержать пласхолдеры '
                                                     '{lang}, {prase}, {translation_hints}',
-                                        media_type="text/plain",
-                                        default=writter_prompt),
+                                        media_type="text/plain"
+                                        ),
                      name: str = Query(..., description='name'),
                      category: Categories = Query(..., description='категория к которой применен prompt'),
                      subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
