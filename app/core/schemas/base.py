@@ -248,3 +248,10 @@ class ColorMixin(BaseModel):
         color field in hex
     """
     color: Optional[str] = None
+
+
+class TextArea(BaseOrigin):
+    """
+    для получения textarea в swagger
+    """
+    descr: str

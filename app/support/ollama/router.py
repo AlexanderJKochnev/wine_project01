@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enum import Categories, Preset, Prompts, Writers
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
+from app.core.schemas.base import TextArea
 from app.core.utils.common_utils import compare_lists_compact, jprint
 from app.support import Category
 from app.support.category.repository import CategoryRepository
@@ -270,8 +271,9 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self,
+    async def create(self, prompt1: TextArea, #  = Form(..., description = 'промпт должен содержать {lang} {prase}'),
                      name: str = Form(..., description='name'),
+                     
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
                                         json_schema_extra={"format": "textarea"}),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
