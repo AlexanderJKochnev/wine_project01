@@ -271,16 +271,17 @@ class WriterRuleRouter(BaseRouter):
     def __init__(self):
         super().__init__(model=WriterRule, prefix="/writerrules")
 
-    async def create(self, prompt1: TextArea, #  = Form(..., description = 'промпт должен содержать {lang} {prase}'),
+    async def create(self, prompt1: TextArea = Form(..., description = 'промпт должен содержать {lang} {prase}'),
                      name: str = Form(..., description='name'),
-                     
                      prompt: str = Form(..., description='промпт должен содержать {lang} {prase}',
                                         json_schema_extra={"format": "textarea"}),
                      category: Categories = Form(..., description='категория к которой применен prompt'),
                      subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
                      active: bool = Form(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)
-                     ) -> PromptRead:
+                     ): # -> PromptRead:
+        res = prompt1.descr
+        return res
         response = await CategoryRepository.get_by_field('name', category, Category, session)
         category_id = response.id
         data = WriterRuleCreate(name=name, prompt=prompt, category_id=category_id, active=active)
