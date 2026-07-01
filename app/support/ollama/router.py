@@ -11,15 +11,14 @@ from app.core.utils.pydantic_utils import inst_dict
 from app.support import Category
 from app.support.category.repository import CategoryRepository
 from app.support.ollama.model import Ollama, Prompt, ISOLanguage, Proption, WriterRule
-from app.support.ollama.repository import WriterRuleRepository
+from app.support.ollama.repository import PromptRepository, WriterRuleRepository
 from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptCreate,
                                         PromptRead, PromptUpdate, WriterRuleRead, WriterRuleCreate, WriterRuleUpdate,
                                         ISOLanguageCreate, ISOLanguageRead, ISOLanguageUpdate,
                                         ProptionRead, ProptionCreate, ProptionUpdate)
-from app.support.ollama.service import LLMService, OllamaService, WriterRuleService
+from app.support.ollama.service import LLMService, OllamaService, PromptService, WriterRuleService
 
-writter_prompt = """
-Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
+writter_prompt = """Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
 Данный текст относится к области \"{drink}\" - обязательно подбирай слова из соответствующего словаря,
 используй устоявшийся эквивалент на {lang} языке.
 Только при отсутствии эквивалента или подходящего словарного слова - транслитерируй.
@@ -29,6 +28,17 @@ writter_prompt = """
 Категорически запрещено писать вводные слова, вступление, здороваться, комментировать или объяснять свое решение,
 выдумывать несуществующие сущности.
 Твой ответ должен начинаться сразу с перевода. Перевод «
+"""
+
+system_prompt = """You are an expert wine writer and professional translator.
+Your task is to translate the text.
+Translated text must sound like natural, fluent, and elegant wine/spirit journalism
+(e.g., in the style of Bunin, Maugham, or elite wine magazines).
+Check for:
+- Flawless grammar, proper gender/case agreements, and natural sentence structures.
+- ABSOLUTE ZERO TOLERANCE for literal translation (calque).
+Phrases like "fruit of the winery", "hits of pepper", "wine's body" translated literally must be heavily penalized.
+- It must sound like it was originally written by a native {lang} writer, not a machine.
 """
 
 
@@ -187,41 +197,44 @@ class PromptRouter(BaseRouter):
 
     def __init__(self):
         super().__init__(model=Prompt, prefix="/prompt")
-        self.LLMservice = LLMService()
+        # self.LLMservice = LLMService()
+        self.service = PromptService
+        self.repo = PromptRepository
+        self.model = Prompt
 
     def setup_routes(self):
-        super().setup_routes()
+        self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
 
     async def create(self,
-                     role: str = Form(..., description='роль'),
-                     system_prompt: str = Form(..., description='промпт должен содержать {lang}'),
-                     category: Categories = Form(..., description='категория к которой применен prompt'),
-                     subcategory_ids: List[int] = Form(..., description='id субкатегорий'),
-                     active: bool = Form(True, description='активировано'),
-                     session: AsyncSession = Depends(get_db)) -> PromptRead:
-        response = await CategoryRepository.get_by_field('name', category, Category, session)
-        category_id = response.id
-        data = PromptCreate(role=role, system_prompt=system_prompt, category_id=category_id, active=active)
-        return await super().create(data, session)
+                     system_prompt: str = Body(system_prompt, description='системный промпт должен содержать описание роли',
+                                               media_type="text/plain"),
+                     role: str = Query(..., description='роль'),
+                     subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
+                     active: bool = Query(True, description='активировано'),
+                     session: AsyncSession = Depends(get_db)):
+        data = PromptCreate(role=role, system_prompt=system_prompt, subcategory_ids=subcategory_ids, active=active)
+        return await self.service.create(data, self.repo, self.model, session)
 
-    async def patch(self, id: int,
-                    data: PromptUpdate,
-                    background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)) -> PromptRead:
-        return await super().patch(id, data, background_tasks, session)
-
-    async def update_or_create(self, data: PromptCreate,
-                               background_tasks: BackgroundTasks,
-                               session: AsyncSession = Depends(get_db)) -> PromptRead:
-        return await super().update_or_create(data, background_tasks, session)
-
-    async def get_generate(self, translate_it: str = Query(None, description='текст, который нужно перевести'),
-                           session: AsyncSession = Depends(get_db)):
+    async def patch(self,
+                    system_prompt: str = Body(None, description='системный промпт должен содержать описание роли',
+                                              media_type="text/plain"),
+                    role: Prompts = Query(..., description='роль'),
+                    subcategory_ids: List[int] = Query(None, description='id субкатегорий'),
+                    active: bool = Query(True, description='активировано'),
+                    session: AsyncSession = Depends(get_db)):
         """
-            Перевод текста
-
+        ОБНОВЛЕНИЕ
         """
-        return translate_it
+        result: Prompt = await self.repo.get_by_field_v2({'role': role}, self.model, session)
+        if subcategory_ids:
+            subcategory_ids = list(set(subcategory_ids))
+        if system_prompt == 'sting':
+            system_prompt = None
+        data: WriterRuleUpdate = self.update_schema(system_prompt=system_prompt,
+                                                    subcategory_ids=subcategory_ids, active=active)
+        data_dict = data.model_dump(exclude_unset=True, exclude_none=True)
+        response = await self.repo.patch(result, data_dict, session)
+        return inst_dict(response.get('data'))
 
 
 class ProptionRouter(BaseRouter):
@@ -327,8 +340,9 @@ class WriterRuleRouter(BaseRouter):
         result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': name}, WriterRule, session)
         if subcategory_ids:
             subcategory_ids = list(set(subcategory_ids))
+        if prompt == 'sting':
+            prompt = None
         data: WriterRuleUpdate = self.update_schema(prompt=prompt, subcategory_ids=subcategory_ids, active=active)
         data_dict = data.model_dump(exclude_unset=True, exclude_none=True)
-        jprint(data_dict)
         response = await self.repo.patch(result, data_dict, session)
         return inst_dict(response.get('data'))
