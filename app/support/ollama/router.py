@@ -212,6 +212,8 @@ class PromptRouter(BaseRouter):
                      subcategory_ids: List[int] = Query(..., description='id субкатегорий'),
                      active: bool = Query(True, description='активировано'),
                      session: AsyncSession = Depends(get_db)):
+        if subcategory_ids:
+            subcategory_ids = list(set(subcategory_ids))
         data = PromptCreate(role=role, system_prompt=system_prompt, subcategory_ids=subcategory_ids, active=active)
         return await self.service.create(data, self.repo, self.model, session)
 
@@ -318,6 +320,8 @@ class WriterRuleRouter(BaseRouter):
         """
             ДОБАВЛЕНИЕ user_prompt В БАЗУ ДАННЫХ
         """
+        if subcategory_ids:
+            subcategory_ids = list(set(subcategory_ids))
         data = WriterRuleCreate(name=name, prompt=prompt, active=active, subcategory_ids=subcategory_ids)
         return await self.service.create(data, self.repo, self.model, session)
 
