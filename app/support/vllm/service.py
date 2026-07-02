@@ -501,7 +501,7 @@ class VLLMService:
         for key, *_, val in errors:
             result[key].append(val)
         data: List[dict] = [{'word': key, 'drow': list(set(val)),
-                             'shit': True,
+                             'shit': False,
                              'origin': d.lang_origin,
                              'destin': d.lang_destin} for key, val in result.items()]
         # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
@@ -510,7 +510,6 @@ class VLLMService:
             logger.success(f'{response=}')
             rich_print(data, 'справочник трудных слов')
             return response
-        
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
                               last_id, cleaner_auto, translator_auto) -> list:
@@ -536,8 +535,8 @@ class VLLMService:
             final_phrases = []
             for phrase_id, revised_text, descr in revised_phrases:
                 translation_hints = get_translations_with_aho(revised_text, translator_auto)
-                if translation_hints:
-                    print(f'{translation_hints=}')
+                # if translation_hints:
+                print(f'{translation_hints=}')
                 final_phrases.append((phrase_id, revised_text, translation_hints, descr))
             return final_phrases
 
