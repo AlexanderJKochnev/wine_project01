@@ -308,9 +308,6 @@ class TranslationService:
         tasks = []
         system_prompt = d.expert_system_prompt[1]
         user_prompt = d.expert_user_prompt[1]
-        logger.warning(f'{system_prompt=}')
-        logger.warning(f'{user_prompt=}')
-
         for row in translated_records:
             task = self._evaluate_single_task_(semaphore, row, xcounter, total_tasks, system_prompt, user_prompt)
             tasks.append(task)

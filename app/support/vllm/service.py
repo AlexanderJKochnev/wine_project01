@@ -344,7 +344,6 @@ class VLLMService:
                     break
             # обработка и имплементация результатов
             await self.__post_processing__(session_factory, dataclass, errors)
-            logger.info('перевод в фонвом режиме закончен')
             return None
         except Exception as e:
             logger.error(e)
@@ -473,7 +472,7 @@ class VLLMService:
             stmt = (update(model)
                     .where(model.id == TmpTranslate.guid)
                     .where(TmpTranslate.table == table_name)
-                    .where(TmpTranslate.score == threshold)
+                    .where(TmpTranslate.score >= threshold)
                     .values({target_column: TmpTranslate.translate}))
             # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
             # print(compiled_pg)
