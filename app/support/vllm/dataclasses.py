@@ -173,7 +173,7 @@ class HandbookTranslateData:
         query = (select(WriterRule.id, WriterRule.prompt, WriterRule.name)
                  .where(WriterRule.name.in_((user, expert_user))))
         resp = await session.execute(query)
-        prompts = {row.role: (row.id, row.prompt, row.name) for row in resp.all()}
+        prompts = {row.name: (row.id, row.prompt, row.name) for row in resp.all()}
         user_prompt = prompts.get(user)
         expert_user_prompt = prompts.get(expert_user)
 
