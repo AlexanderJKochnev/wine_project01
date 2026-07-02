@@ -229,13 +229,21 @@ class TranslationService:
         logger.success(f"Перевод завершен. Успешно обработано {total_tasks} записей.")
         return results
 
-    async def _evaluate_single_task(
+    async def _evaluate_single_task_(
             self, semaphore: asyncio.Semaphore, row: dict,  # Принимает ваш словарь из памяти
-            xcounter: list, total_tasks: int
+            xcounter: list, total_tasks: int,
+            system_prompt: str,
+            user_prompt: str
     ) -> dict:
         """Оценка одного перевода моделью-критиком по вашей структуре полей"""
         target_lang = self.lang_map.get(row['lang_result'][:2], row['lang_result'])
-
+        system_content = system_prompt.format(lang=target_lang)
+        user_content = self.render_expert_user_prompt(user_prompt,
+                                                      row['drink'],
+                                                      row['origin'],
+                                                      row['result'],
+                                                      row['hint'])
+        """
         system_content = self.EXPERT_SYSTEM_PROMPT.format(lang=target_lang)
         user_content = self.render_expert_user_prompt(self.EXPERT_USER_PROMPT,
                                                       row['drink'],
@@ -244,12 +252,6 @@ class TranslationService:
                                                       row['hint']
                                                       )
         """
-        user_content = self.EXPERT_USER_PROMPT.format(
-            subject_info=row['drink'],  # содержит f'{drink=}'
-            origin=row['origin'], result=row['result']
-        )
-        """
-
         # Для экспертной оценки всегда используем температуру 0.0
         request_params = self._prepare_params(temperature=0.0)
         request_params["messages"] = [{"role": "system", "content": system_content},
@@ -292,7 +294,9 @@ class TranslationService:
         return evaluated_row
 
     async def evaluate_translations_batch(
-            self, translated_records: list[dict], max_concurrent_requests: int = 64
+            self, translated_records: list[dict],
+            d: DrinkTranslateData | HandbookTranslateData,
+            max_concurrent_requests: int = 64
     ) -> list[dict]:
         """Массовая оценка пула выполненных переводов"""
         semaphore = asyncio.Semaphore(max_concurrent_requests)
@@ -302,8 +306,13 @@ class TranslationService:
 
         xcounter = [0]
         tasks = []
+        system_prompt = d.expert_system_prompt[1]
+        user_prompt = d.expert_user_prompt[1]
+        logger.warning(f'{system_prompt=}')
+        logger.warning(f'{user_prompt=}')
+
         for row in translated_records:
-            task = self._evaluate_single_task(semaphore, row, xcounter, total_tasks)
+            task = self._evaluate_single_task_(semaphore, row, xcounter, total_tasks, system_prompt, user_prompt)
             tasks.append(task)
 
         return await asyncio.gather(*tasks)

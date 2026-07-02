@@ -540,7 +540,7 @@ class VLLMService:
         """
         result = await translation_service.real_batch(final_phrases, dataclass)
         # 4.1 evaluate
-        evaluated: List[dict] = await translation_service.evaluate_translations_batch(result)
+        evaluated: List[dict] = await translation_service.evaluate_translations_batch(result, dataclass)
         logger.warning('--------evaluated-----------')
         jprint(evaluated)
         logger.warning('--------END evaluated-------')

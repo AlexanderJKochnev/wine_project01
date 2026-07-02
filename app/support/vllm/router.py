@@ -6,13 +6,12 @@ from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
-from app.core.utils.common_utils import jprint
-from app.support.ollama.repository import ISOLanguageRepository
-from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.dependencies import get_translation_service
+from app.support.ollama.repository import ISOLanguageRepository
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.support.vllm.model import TranslateHelper, TranslateRawData
 from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
 from app.support.vllm.schemas import TranslateHelperCreate, TranslateRawDataCreate, TranslateRawDataUpdate
@@ -210,7 +209,7 @@ class VllmRouter(LightRouter):
             expert_user=expert_user_prompt,
             expert_system=expert_system_prompt,
             session=session)
-        jprint(data)
+        # jprint(data)
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
                                                          dataclass=data, background_tasks=background_tasks
@@ -256,7 +255,7 @@ class VllmRouter(LightRouter):
                                                      expert_system=expert_system_prompt,
                                                      expert_user=expert_user_prompt,
                                                      session=session)
-        jprint(data)
+        # jprint(data)
         await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                               translation_service=translation_service,
                                               dataclass=data,
