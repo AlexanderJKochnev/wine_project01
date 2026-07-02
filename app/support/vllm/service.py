@@ -329,7 +329,8 @@ class VLLMService:
             cleaner_auto, translator_auto = dataclass.cleaner_auto, dataclass.translator_auto
             while True:  # бесконечый цикл пока есть записи handbooks
                 # 3. get data
-                final_phrases = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto, translator_auto)
+                final_phrases, last_id = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto,
+                                                                    translator_auto)
                 if len(final_phrases) == 0:
                     logger.critical(f'{len(final_phrases)=} ============')
                     break
@@ -539,7 +540,7 @@ class VLLMService:
                 # if translation_hints:
                 print(f'{translation_hints=}')
                 final_phrases.append((phrase_id, revised_text, translation_hints, descr))
-            return final_phrases
+            return final_phrases, last_id
 
     async def __translate_evaluate__(self, translation_service, final_phrases, dataclass,
                                      session_factory, tmp_repo, tmp_model):
