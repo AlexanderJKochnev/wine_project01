@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import DatabaseManager, get_db
+from app.core.utils.common_utils import jprint
 from app.support.ollama.repository import ISOLanguageRepository
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
@@ -190,8 +191,9 @@ class VllmRouter(LightRouter):
                 ..., descrition='настройки'
             ),
             chunk: int = Query(25, description='чанк'),
-            score_threshold: int = Query(10, ge=1, le=10, description='нижний порог приемлемой оценки')
-    ):
+            score_threshold: int = Query(10, ge=1, le=10, description='нижний порог приемлемой оценки'),
+            expert_user_prompt: Writers = Query("Expert_not_for_translate", descrition='промпт эксперта'),
+            expert_system_prompt: Prompts = Query("Expert_not_for_translate", descrition='переводчик')):
         """
             перевод справочников
         """
@@ -205,7 +207,10 @@ class VllmRouter(LightRouter):
             field='name',
             handbook1=handbook.value,
             score=score_threshold,
+            expert_user=expert_user_prompt,
+            expert_system=expert_system_prompt,
             session=session)
+        jprint(data)
         response = await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                                          translation_service=translation_service,
                                                          dataclass=data, background_tasks=background_tasks
@@ -232,7 +237,9 @@ class VllmRouter(LightRouter):
                               chunk: int = Query(25, description='чанк'),
                               fieldname: Drinkfield = Query('description', description='имя переводимого поля'),
                               score_threshold: int = Query(8, ge=1, le=10, description='нижний порог приемлемой '
-                                                           'оценки')
+                                                           'оценки'),
+                              expert_user_prompt: Writers = Query("Expert_not_for_translate", descrition='промпт эксперта'),
+                              expert_system_prompt: Prompts = Query("Expert_not_for_translate", descrition='переводчик'),
                               ):
         """
             сервис массового перевода описаний
@@ -246,7 +253,10 @@ class VllmRouter(LightRouter):
                                                      chunk1=chunk,
                                                      field=fieldname.value,
                                                      score=score_threshold,
+                                                     expert_system=expert_system_prompt,
+                                                     expert_user=expert_user_prompt,
                                                      session=session)
+        jprint(data)
         await self.service.handbook_translate(session_factory=DatabaseManager.session_maker,
                                               translation_service=translation_service,
                                               dataclass=data,

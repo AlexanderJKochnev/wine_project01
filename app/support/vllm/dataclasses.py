@@ -4,7 +4,7 @@
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import ahocorasick
 from sqlalchemy import select
@@ -17,7 +17,7 @@ from app.core.utils.common_utils import distinct_glue
 from app.core.utils.pydantic_utils import inst_dict
 from app.support import Subcategory
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
-from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
+from app.support.ollama.repository import ProptionRepository
 
 
 @dataclass(slots=True)  # без __dict__ +скорость/меньше память
@@ -35,6 +35,8 @@ class DrinkTranslateData:
     lang_origin: str  # 2х значный код
     lang_destin: str  # 2х значный код
     subcategory_ids: tuple  # ids
+    expert_system_prompt: tuple
+    expert_user_prompt: tuple
     cleaner_auto: Optional[ahocorasick.Automaton] = None
     translator_auto: Optional[ahocorasick.Automaton] = None
     descr: Optional[str] = None  # описание - совместимость с Handbook
@@ -49,13 +51,27 @@ class DrinkTranslateData:
                            chunk1: int,
                            field: str,
                            score: int,
+                           expert_system: str,
+                           expert_user: str,
                            session):
         """Асинхронный фабричный метод для создания объекта."""
-        result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
-        system_prompt = result.id, result.system_prompt, result.role
-        result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
-        user_prompt = result.id, result.prompt, result.name
-        subcategory_ids = tuple(result.subcategory_ids)
+        # result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
+        # system_prompt = result.id, result.system_prompt, result.role
+        query = (select(Prompt.id, Prompt.system_prompt, Prompt.role).where(Prompt.role.in_((system, expert_system))))
+        resp = await session.execute(query)
+        prompts = {row.role: (row.id, row.system_prompt, row.role) for row in resp.all()}
+        system_prompt = prompts.get(system)
+        expert_system_prompt = prompts.get(expert_system)
+        # user prompts
+        query = (select(WriterRule.id, WriterRule.prompt, WriterRule.name,
+                 WriterRule.subcategory_ids).where(Prompt.name.in_(user, expert_user)))
+        resp = await session.execute(query)
+        prompts = {row.name: (row.id, row.prompt, row.name, row.subcategory_ids) for row in resp.all()}
+        *user_prompt, subcategory_ids = prompts.get(user)
+        *expert_user_prompt, _ = prompts.get(expert_user)
+        # result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
+        # user_prompt = result.id, result.prompt, result.name
+
         # получение субкатегорий
         model = Subcategory
         query = select(model).options(joinedload(model.category)).where(model.id.in_(subcategory_ids))
@@ -105,7 +121,9 @@ class DrinkTranslateData:
                    lang_origin=lang_origin,
                    translator_auto=translator_auto,
                    cleaner_auto=cleaner_auto,
-                   subcategory_ids=subcategory_ids)
+                   subcategory_ids=subcategory_ids,
+                   expert_system_prompt=expert_system_prompt,
+                   expert_user_prompt=expert_user_prompt)
 
 
 @dataclass(slots=True)
@@ -126,6 +144,8 @@ class HandbookTranslateData:
     score_threshold: int
     lang_origin: str  # 2х значный код
     lang_destin: str  # 2х значный код
+    expert_system_prompt: tuple
+    expert_user_prompt: tuple
     cleaner_auto: Optional[ahocorasick.Automaton] = None
     translator_auto: Optional[ahocorasick.Automaton] = None
 
@@ -140,12 +160,26 @@ class HandbookTranslateData:
                            field: str,
                            handbook1: str,
                            score: int,
+                           expert_system: str,
+                           expert_user: str,
                            session):
         """Асинхронный фабричный метод для создания объекта."""
-        result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
-        system_prompt = result.id, result.system_prompt, result.role
-        result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
-        user_prompt = result.id, result.prompt, result.name
+        query = (select(Prompt.id, Prompt.system_prompt, Prompt.role).where(Prompt.role.in_((system, expert_system))))
+        resp = await session.execute(query)
+        prompts = {row.role: (row.id, row.system_prompt, row.role) for row in resp.all()}
+        system_prompt = prompts.get(system)
+        expert_system_prompt = prompts.get(expert_system)
+        # user prompts
+        query = (select(WriterRule.id, WriterRule.prompt, WriterRule.name).where(Prompt.name.in_(user, expert_user)))
+        resp = await session.execute(query)
+        prompts = {row.role: (row.id, row.prompt, row.name) for row in resp.all()}
+        user_prompt = prompts.get(user)
+        expert_user_prompt = prompts.get(expert_user)
+
+        # result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
+        # system_prompt = result.id, result.system_prompt, result.role
+        # result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
+        # user_prompt = result.id, result.prompt, result.name
         descr = HANDBOOKS.get(handbook1)
         # получение params
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
@@ -183,7 +217,10 @@ class HandbookTranslateData:
                    lang_destin=lang_destin,
                    lang_origin=lang_origin,
                    translator_auto=translator_auto,
-                   cleaner_auto=cleaner_auto)
+                   cleaner_auto=cleaner_auto,
+                   expert_system_prompt=expert_system_prompt,
+                   expert_user_prompt=expert_user_prompt
+                   )
 
 
 @dataclass(slots=True)
