@@ -338,7 +338,8 @@ class VLLMService:
                                                                  final_phrases, dataclass,
                                                                  session_factory, tmp_repo,
                                                                  tmp_model)
-                errors.extend(err)
+                if err:
+                    errors.extend(err)
                 if not quality or not last_id:
                     logger.critical(f'{quality=} ========{last_id=}====')
                     break
