@@ -331,6 +331,7 @@ class VLLMService:
                 # 3. get data
                 final_phrases = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto, translator_auto)
                 if len(final_phrases) == 0:
+                    logger.critical(f'{len(final_phrases)=} ============')
                     break
                 # 4.0 translate / evaluate / error collection / save to tmp_table / quality assurance
                 quality, err = await self.__translate_evaluate__(translation_service,
@@ -339,6 +340,7 @@ class VLLMService:
                                                                  tmp_model)
                 errors.extend(err)
                 if not quality or not last_id:
+                    logger.critical(f'{quality=} ========{last_id=}====')
                     break
             # обработка и имплементация результатов
             await self.__post_processing__(session_factory, dataclass, errors)
@@ -473,8 +475,8 @@ class VLLMService:
                     .where(TmpTranslate.table == table_name)
                     .where(TmpTranslate.score == threshold)
                     .values({target_column: TmpTranslate.translate}))
-            compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
-            print(compiled_pg)
+            # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            # print(compiled_pg)
             response = await session.execute(stmt)
             result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
             # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
