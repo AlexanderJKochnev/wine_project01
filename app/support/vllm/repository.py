@@ -1,5 +1,5 @@
 # app.support.vllm.repository.py
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -81,5 +81,13 @@ class TranslateHelperRepository(Repository):
     @classmethod
     async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
         result = await super().delete(obj, session)
+        await cls.refresh_corasick(session)
+        return result
+
+    @classmethod
+    async def bulk_create_no_return(
+        cls, data: List[Dict], model: ModelType, session: AsyncSession
+    ) -> int:
+        result = await super().bulk_create_no_return(data, model, session)
         await cls.refresh_corasick(session)
         return result
