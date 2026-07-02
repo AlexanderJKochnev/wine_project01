@@ -556,6 +556,8 @@ class VLLMService:
         err = [errors for item in evaluated if (errors := item.get('errors'))]
         if err:
             err2 = [tuple(item) for sublist in err for item in sublist]
+        else:
+            err2 = None
         logger.success(f'оценено {len(evaluated)} записей. Результаты оценки ниже.')
         # 5. save to temporary file
         # 5.0. prepaire for save (score added)
