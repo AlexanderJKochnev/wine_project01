@@ -490,7 +490,9 @@ class VLLMService:
         """
         await session.execute(text(f"TRUNCATE TABLE {TmpTranslate.__tablename__} RESTART IDENTITY CASCADE;"))
 
-    async def __add_translatehelper__(self, errors: List, d: HandbookTranslateData | DrinkTranslateData) -> int:
+    async def __add_translatehelper__(self, errors: List,
+                                      d: HandbookTranslateData | DrinkTranslateData,
+                                      session: AsyncSession) -> int:
         """
         добавление ошибок в TranslateHelper
         """
@@ -506,7 +508,9 @@ class VLLMService:
         if isinstance(d, HandbookTranslateData):
             response = await TranslateHelperRepository.bulk_create_no_return(data, TranslateHelper, session)
             logger.success(f'{response=}')
-        rich_print(data, 'справочник трудных слов')
+            rich_print(data, 'справочник трудных слов')
+            return response
+        
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
                               last_id, cleaner_auto, translator_auto) -> list:
@@ -580,7 +584,7 @@ class VLLMService:
         async with session_factory() as session:
             await self.__stats__(session, dataclass.score_threshold)
             # 6.5. заполнение TranslateHelper
-            await self.__add_translatehelper__(errors, dataclass, session)
+            result = await self.__add_translatehelper__(errors, dataclass, session)
             await session.commit()
             session.expire_all()
         return None
