@@ -503,7 +503,9 @@ class VLLMService:
                              'origin': d.lang_origin,
                              'destin': d.lang_destin} for key, val in result.items()]
         # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
-        # logger.critical('__add_transferhelper__ что пойдет в справочник трудных слов')
+        if isinstance(d, HandbookTranslateData):
+            response = await TranslateHelperRepository.bulk_create_no_return(data, TranslateHelper, session)
+            logger.success(f'{response=}')
         rich_print(data, 'справочник трудных слов')
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
@@ -578,7 +580,7 @@ class VLLMService:
         async with session_factory() as session:
             await self.__stats__(session, dataclass.score_threshold)
             # 6.5. заполнение TranslateHelper
-            await self.__add_translatehelper__(errors, dataclass)
+            await self.__add_translatehelper__(errors, dataclass, session)
             await session.commit()
             session.expire_all()
         return None
