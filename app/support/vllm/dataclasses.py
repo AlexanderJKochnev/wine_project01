@@ -64,7 +64,7 @@ class DrinkTranslateData:
         expert_system_prompt = prompts.get(expert_system)
         # user prompts
         query = (select(WriterRule.id, WriterRule.prompt, WriterRule.name,
-                 WriterRule.subcategory_ids).where(WriterRule.name.in_(user, expert_user)))
+                 WriterRule.subcategory_ids).where(WriterRule.name.in_((user, expert_user))))
         resp = await session.execute(query)
         prompts = {row.name: (row.id, row.prompt, row.name, row.subcategory_ids) for row in resp.all()}
         *user_prompt, subcategory_ids = prompts.get(user)
@@ -170,7 +170,8 @@ class HandbookTranslateData:
         system_prompt = prompts.get(system)
         expert_system_prompt = prompts.get(expert_system)
         # user prompts
-        query = (select(WriterRule.id, WriterRule.prompt, WriterRule.name).where(WriterRule.name.in_(user, expert_user)))
+        query = (select(WriterRule.id, WriterRule.prompt, WriterRule.name)
+                 .where(WriterRule.name.in_((user, expert_user))))
         resp = await session.execute(query)
         prompts = {row.role: (row.id, row.prompt, row.name) for row in resp.all()}
         user_prompt = prompts.get(user)
