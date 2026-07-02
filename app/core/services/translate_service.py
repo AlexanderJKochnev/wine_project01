@@ -296,7 +296,7 @@ class TranslationService:
     async def evaluate_translations_batch(
             self, translated_records: list[dict],
             d: DrinkTranslateData | HandbookTranslateData,
-            max_concurrent_requests: int = 64
+            max_concurrent_requests: int = 128
     ) -> list[dict]:
         """Массовая оценка пула выполненных переводов"""
         semaphore = asyncio.Semaphore(max_concurrent_requests)
