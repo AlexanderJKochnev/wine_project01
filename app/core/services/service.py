@@ -164,6 +164,7 @@ class Service(metaclass=ServiceMeta):
         inserted_count = await repository.bulk_create_no_return_unnest(
             data_arrays=payload_params,
             unique_fields=cls.default,
+            model=model,
             session=session
         )
         return inserted_count
