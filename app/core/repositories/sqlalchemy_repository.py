@@ -235,20 +235,26 @@ class Repository(Background, metaclass=RepositoryMeta):
         bind_declarations = []
 
         # 2. Динамически строим SQL-плейсхолдеры и биндинги типов
+        # 2. Динамически строим SQL-плейсхолдеры и биндинги типов
         for col_name in target_columns:
             if col_name not in model_columns:
                 raise ValueError(f"Колонка '{col_name}' отсутствует в модели {model.__name__}")
 
-            # Извлекаем объект типа из колонки (например, Integer(), String(), ARRAY(String()))
+            # Извлекаем базовый объект типа из колонки модели
             base_type = model_columns[col_name].type
 
-            # Для unnest нам нужно обернуть тип колонки в ARRAY.
-            # Если колонка сама по себе является массивом (как drow: ARRAY(String)),
-            # то для unnest это будет массив массивов. SQLAlchemy корректно вложит их.
-            array_wrapped_type = ARRAY(base_type)
+            # Проверяем, является ли тип уже массивом (например, ARRAY(String))
+            if isinstance(base_type, ARRAY):
+                # Для unnest нам нужен массив из таких массивов (увеличиваем вложенность)
+                current_dimensions = base_type.dimensions or 1
+                array_wrapped_type = ARRAY(
+                    item_type=base_type.item_type, dimensions=current_dimensions + 1
+                )
+            else:
+                # Если это обычный тип (String, Boolean, Integer), просто оборачиваем в одномерный массив
+                array_wrapped_type = ARRAY(base_type)
 
-            # Строим часть unnest с чистым плейсхолдером (без двоеточий типа ::text[]),
-            # так как тип мы передадим напрямую в драйвер через bindparam
+            # Строим часть unnest с чистым плейсхолдером
             unnest_list.append(f"unnest(:{col_name})")
 
             # Регистрируем типизированный параметр для asyncpg
