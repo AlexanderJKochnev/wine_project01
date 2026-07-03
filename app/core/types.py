@@ -12,8 +12,8 @@ class Base(DeclarativeBase):
     pass
 
 
+ModelType = Type[DeclarativeBase]
 # ModelType = TypeVar("ModelType", bound=Base)
-ModelType = TypeVar("ModelType", bound=Base)
 
 # Применяем MutableSet.as_mutable к типу ARRAY
 """ после этого с ними можно работать как с обычными списками сетами append, extend, remove """

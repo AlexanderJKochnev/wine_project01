@@ -508,7 +508,11 @@ class VLLMService:
                              'destin': d.lang_destin} for key, val in result.items()]
         # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
         if isinstance(d, HandbookTranslateData):
-            response = await TranslateHelperRepository.bulk_create_no_return(data, TranslateHelper, session)
+            response = await TranslateHelperService.bulk_create_unnest(data,
+                                                                       TranslateHelperRepository,
+                                                                       TranslateHelper,
+                                                                       session)
+            # response = await TranslateHelperRepository.bulk_create_no_return(data, TranslateHelper, session)
             logger.success(f'{response=}')
             rich_print(data, 'справочник трудных слов')
             return response

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from fastapi import HTTPException  # NOQA: F401
 from loguru import logger
-from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select, Select, update)
+from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select, Select, text, update)
 from sqlalchemy.dialects import postgresql  # NOQA: F401
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -201,6 +201,70 @@ class Repository(Background, metaclass=RepositoryMeta):
         # print(compiled)
         await session.execute(stmt, data)
         return len(data)
+
+    @classmethod
+    async def bulk_create_no_return_unnest(cls,
+                                           data_arrays: Dict[str, List[Any]],
+                                           unique_fields: List[str],
+                                           model: ModelType,
+                                           session: AsyncSession
+                                           ) -> int:
+        """
+        Массовое добавление записей через unnest и LEFT OUTER JOIN для обхода unique constraints.
+
+        :param data_arrays: Словарь, где ключ - имя колонки, значение - список значений этой колонки.
+        :param unique_fields: Список полей, по которым проверяется уникальность (бизнес-ключ).
+        """
+        if not data_arrays:
+            return 0
+
+        # 1. Извлекаем метаданные модели для определения реальных типов в Postgres
+        mapper = inspect(model)
+        table_name = mapper.local_table.name
+
+        # Кэшируем типы колонок (например, "email": "varchar(100)[]")
+        dialect = session.bind.dialect
+        db_column_types = {col.name: f"{col.type.compile(dialect=dialect)}[]" for col in mapper.columns}
+
+        # 2. Формируем строки для SQL-запроса
+        target_columns = list(data_arrays.keys())
+
+        unnest_parts = []
+        for col in target_columns:
+            if col not in db_column_types:
+                raise ValueError(f"Колонка '{col}' не существует в модели {model.__name__}")
+            # Строим: :email::varchar(100)[]
+            pg_array_type = db_column_types[col]
+            unnest_parts.append(f":{col}::{pg_array_type}")
+
+        columns_str = ", ".join(target_columns)                        # email, username, status
+        v_columns_str = ", ".join([f"v.{col}" for col in target_columns])  # v.email, v.username, v.status
+        unnest_str = ", ".join(unnest_parts)                           # :email::varchar[], :username::text[]...
+        alias_str = f"v({columns_str})"                                # v(email, username, status)
+
+        # 3. Формируем условие JOIN по уникальным полям
+        # Пример: t.email = v.email AND t.org_id = v.org_id
+        join_conditions = [f"t.{field} = v.{field}" for field in unique_fields]
+        join_str = " AND ".join(join_conditions)
+
+        # Берем первое поле из unique_fields для проверки на NULL (что записи нет в БД)
+        check_field = unique_fields[0]
+
+        # 4. Собираем финальный сырой SQL-запрос
+        query_string = f"""
+            INSERT INTO {table_name} ({columns_str})
+            SELECT {v_columns_str}
+            FROM unnest({unnest_str}) AS {alias_str}
+            LEFT JOIN {table_name} AS t ON {join_str}
+            WHERE t.{check_field} IS NULL;
+        """
+
+        # 5. Выполнение запроса
+        # В PostgreSQL INSERT ... SELECT не возвращает rowcount автоматически для отфильтрованных строк,
+        # но execute().rowcount вернет именно количество НАСТОЯЩЕМУ вставленных строк в базу.
+        result = await session.execute(text(query_string), data_arrays)
+
+        return result.rowcount
 
     @classmethod
     async def bulk_update(cls, data: List[Dict], model: ModelType,
@@ -460,7 +524,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             Поиск по всем заданным текстовым полям основной таблицы
             через raw sql и limit
         """
-        logger.critical('this is noraml Repository')
+        logger.critical('this is normal Repository')
         try:
             # query = cls.get_query(model)
             query = cls.get_short_query(model)

@@ -145,6 +145,30 @@ class Service(metaclass=ServiceMeta):
         return list_dict(result)
 
     @classmethod
+    async def bulk_create_unnest(cls, validated_data: List[Dict[str, Any]], repository: Type[Repository],
+                                 model: ModelType,
+                                 session: AsyncSession, **kwargs) -> int:
+        """
+            массовое добавление через unnest с проверкой unique constraint
+            validated_data: список словарей CreateSchema.model_to_dump() но для сокрости лучше собрать в ручную
+        """
+        if not validated_data:
+            return 0
+        # Превращаем [ {"col1": 1, "col2": 2}, {"col1": 3, "col2": 4} ]
+        # в { "col1":, "col2": [2, 4] }
+        target_columns = list(validated_data[0].keys())
+        payload_params = {}
+        for col in target_columns:
+            payload_params[col] = [row.get(col) for row in validated_data]
+        # Вызываем репозиторий, передавая массивы и правила уникальности
+        inserted_count = await repository.bulk_create_no_return_unnest(
+            data_arrays=payload_params,
+            unique_fields=cls.default,
+            session=session
+        )
+        return inserted_count
+
+    @classmethod
     async def get_or_create(cls, data: Union[BaseModel, dict], repository: Repository,
                             model: Type[ModelType], session: AsyncSession,
                             default: List[str] = None, **kwargs) -> Tuple[ModelType, bool]:

@@ -91,3 +91,18 @@ class TranslateHelperRepository(Repository):
         result = await super().bulk_create_no_return(data, model, session)
         await cls.refresh_corasick(session)
         return result
+
+    @classmethod
+    async def search(cls, search: str,
+                     skip: int, limit: int,
+                     model: ModelType, session: AsyncSession, ) -> tuple:
+        # stmt = select(User).where(User.name.contains(search_term))
+        """
+        stmt = select(User).where(
+                or_(
+                        User.name.ilike(f"%{search_term}%"),
+                        func.array_to_string(User.tags, ',').ilike(f"%{search_term}%")
+                        )
+                )
+        return session.execute(stmt).scalars().all()
+        """
