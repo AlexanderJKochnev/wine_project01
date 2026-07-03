@@ -96,7 +96,7 @@ class TranslateHelperRepository(Repository):
     async def search(cls, search: str,
                      skip: int, limit: int,
                      model: ModelType, session: AsyncSession, ) -> tuple:
-        # stmt = select(User).where(User.name.contains(search_term))
+        stmt = select(model).where(model.word.contains(search))
         """
         stmt = select(User).where(
                 or_(
@@ -104,5 +104,5 @@ class TranslateHelperRepository(Repository):
                         func.array_to_string(User.tags, ',').ilike(f"%{search_term}%")
                         )
                 )
-        return session.execute(stmt).scalars().all()
         """
+        return session.execute(stmt).scalars().all()

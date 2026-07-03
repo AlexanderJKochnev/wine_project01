@@ -508,10 +508,10 @@ class VLLMService:
                              'destin': d.lang_destin} for key, val in result.items()]
         # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
         if isinstance(d, HandbookTranslateData):
-            response = await TranslateHelperService.bulk_create_unnest(data,
-                                                                       TranslateHelperRepository,
-                                                                       TranslateHelper,
-                                                                       session)
+            response = await TranslateHelperService.bulk_create_no_return_orm(data,
+                                                                              TranslateHelperRepository,
+                                                                              TranslateHelper,
+                                                                              session)
             # response = await TranslateHelperRepository.bulk_create_no_return(data, TranslateHelper, session)
             logger.success(f'{response=}')
             rich_print(data, 'справочник трудных слов')
@@ -592,9 +592,10 @@ class VLLMService:
             await self.__stats__(session, dataclass.score_threshold)
             # 6.5. заполнение TranslateHelper
             result = await self.__add_translatehelper__(errors, dataclass, session)
+            logger.success(f'добавлено {result} подсказок для перевода')
             await session.commit()
             session.expire_all()
-        return None
+        return result
 
     async def __fetch_drink_chunk__(self, session: AsyncSession, d: DrinkTranslateData,
                                     lc: LastComposite | None) -> tuple:

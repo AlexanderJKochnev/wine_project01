@@ -145,29 +145,19 @@ class Service(metaclass=ServiceMeta):
         return list_dict(result)
 
     @classmethod
-    async def bulk_create_unnest(cls, validated_data: List[Dict[str, Any]], repository: Type[Repository],
-                                 model: ModelType,
-                                 session: AsyncSession, **kwargs) -> int:
+    async def bulk_create_no_return_orm(cls, data_list: List[dict],
+                                        repository: Repository, model: ModelType,
+                                        session: AsyncSession, **kwargs):
         """
-            массовое добавление через unnest с проверкой unique constraint
-            validated_data: список словарей CreateSchema.model_to_dump() но для сокрости лучше собрать в ручную
+        Массовое добавление записей на чистом SQLAlchemy ORM.
+        Использует LEFT OUTER JOIN для фильтрации дубликатов по бизнес-ключам.
+
+        :param data: Список валидированных словарей с данными.
+        :param unique_fields: Список полей для проверки уникальности (например, ["word", "origin", "destin"]).
+        :param model: Декларативная модель SQLAlchemy.
         """
-        if not validated_data:
-            return 0
-        # Превращаем [ {"col1": 1, "col2": 2}, {"col1": 3, "col2": 4} ]
-        # в { "col1":, "col2": [2, 4] }
-        target_columns = list(validated_data[0].keys())
-        payload_params = {}
-        for col in target_columns:
-            payload_params[col] = [row.get(col) for row in validated_data]
-        # Вызываем репозиторий, передавая массивы и правила уникальности
-        inserted_count = await repository.bulk_create_no_return_unnest(
-            data_arrays=payload_params,
-            unique_fields=cls.default,
-            model=model,
-            session=session
-        )
-        return inserted_count
+        result = await repository.bulk_create_no_return_orm(data_list, cls.default, model, session)
+        return result
 
     @classmethod
     async def get_or_create(cls, data: Union[BaseModel, dict], repository: Repository,

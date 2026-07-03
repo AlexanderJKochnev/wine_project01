@@ -204,91 +204,52 @@ class Repository(Background, metaclass=RepositoryMeta):
         return len(data)
 
     @classmethod
-    async def bulk_create_no_return_unnest(
-            cls,
-            data_arrays: Dict[str, List[Any]],
-            unique_fields: List[str],
-            model: ModelType,
+    async def bulk_create_no_return_orm(
+            cls, data: List[Dict[str, Any]], unique_fields: List[str], model: ModelType,
             session: AsyncSession
     ) -> int:
         """
-        Массовое добавление записей для ЛЮБЫХ таблиц и полей через unnest и LEFT OUTER JOIN.
-        Безопасно для asyncpg: автоматически биндит многомерные массивы и кастомные типы.
+        Массовое добавление записей на чистом SQLAlchemy ORM.
+        Использует LEFT OUTER JOIN для фильтрации дубликатов по бизнес-ключам.
 
-        :param data_arrays: Словарь колонок вида {"word": [...], "drow": [[...], [...]]}
-        :param unique_fields: Список полей для проверки уникальности (бизнес-ключ)
-        :param model: Декларативная модель SQLAlchemy
+        :param data: Список валидированных словарей с данными.
+        :param unique_fields: Список полей для проверки уникальности (например, ["word", "origin", "destin"]).
+        :param model: Декларативная модель SQLAlchemy.
         """
-        if not data_arrays:
+        if not data:
             return 0
 
-        # 1. Получаем метаданные модели
-        mapper = inspect(model)
-        table_name = mapper.local_table.name
+        # Получаем объект таблицы из модели SQLAlchemy
+        table = model.__table__
 
-        # Инспектируем реальные объекты типов SQLAlchemy для колонок таблицы
-        # (нужно для создания правильных bindparam)
-        model_columns = {col.name: col for col in mapper.columns}
+        # 1. Строим виртуальную таблицу (подзапрос) из переданного списка словарей.
+        # Конструкция values() автоматически мапит типы данных (включая многомерные массивы drow)
+        # на основе колонок реальной таблицы.
+        data_subquery = (
+            select(*[table.c[col] for col in data[0].keys()]).values(*data).subquery(name="incoming_data"))
 
-        target_columns = list(data_arrays.keys())
-        unnest_list = []
-        bind_declarations = []
+        # 2. Формируем условия для LEFT OUTER JOIN по уникальным полям
+        # Итоговый вид: and_(table.c.word == data_subquery.c.word, table.c.origin == data_subquery.c.origin, ...)
+        join_conditions = and_(
+            *[table.c[field] == data_subquery.c[field] for field in unique_fields]
+        )
 
-        # 2. Динамически строим SQL-плейсхолдеры и биндинги типов
-        # 2. Динамически строим SQL-плейсхолдеры и биндинги типов
-        for col_name in target_columns:
-            if col_name not in model_columns:
-                raise ValueError(f"Колонка '{col_name}' отсутствует в модели {model.__name__}")
-
-            # Извлекаем базовый объект типа из колонки модели
-            base_type = model_columns[col_name].type
-
-            # Проверяем, является ли тип уже массивом (например, ARRAY(String))
-            if isinstance(base_type, ARRAY):
-                # Для unnest нам нужен массив из таких массивов (увеличиваем вложенность)
-                current_dimensions = base_type.dimensions or 1
-                array_wrapped_type = ARRAY(
-                    item_type=base_type.item_type, dimensions=current_dimensions + 1
-                )
-            else:
-                # Если это обычный тип (String, Boolean, Integer), просто оборачиваем в одномерный массив
-                array_wrapped_type = ARRAY(base_type)
-
-            # Строим часть unnest с чистым плейсхолдером
-            unnest_list.append(f"unnest(:{col_name})")
-
-            # Регистрируем типизированный параметр для asyncpg
-            bind_declarations.append(
-                bindparam(col_name, type_=array_wrapped_type)
-            )
-
-        # 3. Собираем строки для SQL
-        columns_str = ", ".join(target_columns)                        # word, drow, shit...
-        v_columns_str = ", ".join([f"v.{col}" for col in target_columns])  # v.word, v.drow...
-        unnest_str = ", ".join(unnest_list)                            # unnest(:word), unnest(:drow)...
-        alias_str = f"v({columns_str})"                                # v(word, drow...)
-
-        # Условие связи для LEFT JOIN (t.word = v.word AND t.origin = v.origin...)
-        join_str = " AND ".join([f"t.{field} = v.{field}" for field in unique_fields])
-
-        # Первое поле уникального ключа используем для детекции отсутствия записи в БД
+        # 3. Первое поле уникального ключа используем для проверки: если в реальной таблице его нет, значит это новая запись
         check_field = unique_fields[0]
 
-        # 4. Формируем финальный SQL с использованием ROWS FROM
-        # Это самый стабильный синтаксис в Postgres для параллельного unnest нескольких массивов
-        query_string = f"""
-                INSERT INTO {table_name} ({columns_str})
-                SELECT {v_columns_str}
-                FROM ROWS FROM ({unnest_str}) AS {alias_str}
-                LEFT JOIN {table_name} AS t ON {join_str}
-                WHERE t.{check_field} IS NULL;
-            """
+        # 4. Собираем SELECT-запрос, который выберет из входящих данных только те, которых еще нет в БД
+        select_new_records_stmt = (
+            select(data_subquery).outerjoin(table, join_conditions).where(table.c[check_field].is_(None)))
 
-        # 5. Привязываем сгенерированные bindparams к тексту запроса
-        stmt = text(query_string).bindparams(*bind_declarations)
+        # 5. Передаем отфильтрованный результат в INSERT INTO ... SELECT
+        insert_stmt = insert(table).from_select(
+            names=list(data[0].keys()), selectdata=select_new_records_stmt
+        )
 
-        # 6. Выполняем
-        result = await session.execute(stmt, data_arrays)
+        # 6. Выполнение на уровне сессии
+        result = await session.execute(insert_stmt)
+
+        # Возвращаем количество фактически вставленных строк
         return result.rowcount
 
     @classmethod
