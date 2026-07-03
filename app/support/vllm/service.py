@@ -541,8 +541,8 @@ class VLLMService:
             final_phrases = []
             for phrase_id, revised_text, descr in revised_phrases:
                 translation_hints = get_translations_with_aho(revised_text, translator_auto)
-                # if translation_hints:
-                print(f'{translation_hints=}')
+                if translation_hints:
+                    print(f'{translation_hints=}')
                 final_phrases.append((phrase_id, revised_text, translation_hints, descr))
             return final_phrases, last_id
 
