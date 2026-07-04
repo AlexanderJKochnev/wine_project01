@@ -9,6 +9,7 @@ from app.core.config.database.db_async import DatabaseManager, get_db
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
+from app.core.types import Base
 from app.core.utils.alchemy_utils import get_models
 from app.dependencies import get_translation_service
 from app.support.ollama.repository import ISOLanguageRepository
@@ -223,6 +224,8 @@ class VllmRouter(LightRouter):
         print(res)
         result = {n: x.__name__ for n, x in enumerate(res)}
         # print(result)
+        for mapper in Base.registry.mappers:
+            print(f"{mapper.class_.__name__}: {list(mapper.columns.keys())}")
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
