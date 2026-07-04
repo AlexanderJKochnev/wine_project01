@@ -223,10 +223,12 @@ class VllmRouter(LightRouter):
         response = get_models()
         res = list(response)
         print(res)
+        w = [cls for cls in Base.registry._class_registry.values() if isinstance(cls, type) and hasattr(cls,
+                                                                                                       '__table__')]
+        for i in w:
+            print('--', w)
         result = {n: x.__name__ for n, x in enumerate(res)}
-        # print(result)
-        fields = {cls.__name__ for cls in Base.registry._class_registry.values() if
-                  hasattr(cls, '__tablename__')}
+
         jprint(fields)
         return result
 
