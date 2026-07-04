@@ -220,11 +220,12 @@ class VllmRouter(LightRouter):
         return response
 
     async def test(self, session: AsyncSession = Depends(get_db)):
-        w = (cls for cls in Base.registry._class_registry.values()
-             if isinstance(cls, type) and hasattr(cls, '__table__'))
-        print('----------------------------------------------')
+        # w = [cls for cls in Base.registry._class_registry.values()
+        #      if isinstance(cls, type) and hasattr(cls, '__table__')]
+        w = (mapper.class_ for mapper in Base.registry.mappers)
         for i in w:
             print('--', i)
+        print('-------------------------------------------------------')
         response = get_models()
         res = list(response)
         print(res)
