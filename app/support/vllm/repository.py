@@ -96,7 +96,7 @@ class TranslateHelperRepository(Repository):
     async def search_all(cls, search: str,
                          model: ModelType,
                          session: AsyncSession, limit: int = 20) -> List:
-        stmt = select(model).where(model.word.contains(search))
+        stmt = select(model).where(TranslateHelper.word.icontains(search))
         """
         stmt = select(User).where(
                 or_(
