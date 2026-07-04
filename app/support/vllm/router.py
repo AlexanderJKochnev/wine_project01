@@ -230,6 +230,10 @@ class VllmRouter(LightRouter):
         for i in w:
             print('--', i)
         print('-------------------------------------------------------')
+        resp2 = get_models()
+        res2 = list(resp2)
+        print(res2)
+
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
