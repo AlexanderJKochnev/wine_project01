@@ -226,7 +226,8 @@ class VllmRouter(LightRouter):
         res = list(response)
         print(res)
         result = {n: x.__name__ for n, x in enumerate(res)}
-        w = (mapper.class_ for mapper in Base.registry.mappers)
+        w = (cls for cls in Base.registry._class_registry.values() if
+            isinstance(cls, type) and hasattr(cls, '__table__'))
         for i in w:
             print('--', i)
         print('-------------------------------------------------------')
