@@ -222,12 +222,12 @@ class VllmRouter(LightRouter):
     async def test(self, session: AsyncSession = Depends(get_db)):
         # w = [cls for cls in Base.registry._class_registry.values()
         #      if isinstance(cls, type) and hasattr(cls, '__table__')]
-        response = get_models()
-        res = response
-        print(res)
-        result = {n: x.__name__ for n, x in enumerate(res)}
+        # response = get_models()
+        # res = response
+        # result = {n: x.__name__ for n, x in enumerate(res)}
         for key, value in Base.metadata.tables.items():
             print(key, value)
+        result = {1: 2}
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
