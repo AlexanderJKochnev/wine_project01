@@ -223,7 +223,7 @@ class VllmRouter(LightRouter):
         # w = [cls for cls in Base.registry._class_registry.values()
         #      if isinstance(cls, type) and hasattr(cls, '__table__')]
         response = get_models()
-        res = list(response)
+        res = response
         print(res)
         result = {n: x.__name__ for n, x in enumerate(res)}
         raw_values = list(Base.registry._class_registry.values())
@@ -234,8 +234,7 @@ class VllmRouter(LightRouter):
             print('--', i)
         print('-------------------------------------------------------')
         resp2 = get_models()
-        res2 = list(resp2)
-        print(res2)
+        print(resp2)
 
         return result
 

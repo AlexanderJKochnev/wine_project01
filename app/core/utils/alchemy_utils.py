@@ -205,8 +205,8 @@ def get_models() -> Iterator[ModelType]:
         возвращеет генератор списка зарегистрированных sqlalchemy моделей
         (получать имя через .__name__)
     """
-    return (cls for cls in Base.registry._class_registry.values() if
-            isinstance(cls, type) and hasattr(cls, '__table__'))
+    return [cls for cls in Base.registry._class_registry.values() if
+            isinstance(cls, type) and hasattr(cls, '__table__')]
 
 
 def get_model_by_tablename(tablename: str):
