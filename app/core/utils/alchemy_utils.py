@@ -216,8 +216,10 @@ def get_models_with_columns(lang_suff: str) -> List[ModelType]:
         (получать имя через .__name__)
         МАГИЯ - ВЫЗОВ СТРОКИ НАПРЯМУЮ ГДЕ ЛИБО НЕ ДАЙТ РЕЗУЛЬТАТА - ТОЛЬКО ЧЕРЕЗ get_models
     """
-    return [(cls, column) for cls in Base.registry._class_registry.values() for column in cls.__table__.columns
-            if isinstance(cls, type) and hasattr(cls, '__table__')]
+    return [(cls, column) for cls in Base.registry._class_registry.values()
+            if isinstance(cls, type) and hasattr(cls, '__table__') for column in cls.__table__.columns
+           ]
+
 
 def get_model_by_tablename(tablename: str):
     # Получаем Table объект
