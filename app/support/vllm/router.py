@@ -226,8 +226,8 @@ class VllmRouter(LightRouter):
         res = response
         print(res)
         result = {n: x.__name__ for n, x in enumerate(res)}
-        tables = Base.metadata.tables
-        jprint(tables)
+        for key, value in Base.metadata.tables.items():
+            print(key, value)
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
