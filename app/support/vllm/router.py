@@ -219,7 +219,10 @@ class VllmRouter(LightRouter):
 
     async def test(self, session: AsyncSession = Depends(get_db)):
         response = get_models()
-        result = {n: x for n, x in enumerate(response)}
+        res = list(response)
+        print(res)
+        result = {n: x for n, x in enumerate(res)}
+        print(result)
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
