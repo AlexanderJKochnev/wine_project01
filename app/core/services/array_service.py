@@ -1,5 +1,5 @@
 # app.core.service.array_service.py
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 from random import randint
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -314,7 +314,7 @@ class SetArrayService:
         """
         instance, validated_array = await cls.__preparation__(session, data)
         if not instance:
-            response = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
+            response: ModelType = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
             result = inst_dict(response)
         else:
             current_dict: dict = inst_dict(instance)
@@ -358,7 +358,6 @@ class SetArrayService:
                 await cls.repository.delete(instance, session)
                 return {'result': 'array are empty, record deleted'}
             response: dict = await cls.repository.patch(instance, validated_array, session)
-            # response = {"success": True, "data": obj}
             if not response.get('success'):
                 raise HTTPException(status_code=500, detail='обновление не случилось')
         return inst_dict(response.get('data'))

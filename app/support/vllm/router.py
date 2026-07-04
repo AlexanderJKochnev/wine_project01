@@ -237,8 +237,10 @@ class VllmRouter(LightRouter):
                               fieldname: Drinkfield = Query('description', description='имя переводимого поля'),
                               score_threshold: int = Query(8, ge=1, le=10, description='нижний порог приемлемой '
                                                            'оценки'),
-                              expert_user_prompt: Writers = Query("Expert_not_for_translate", descrition='промпт эксперта'),
-                              expert_system_prompt: Prompts = Query("Expert_not_for_translate", descrition='переводчик'),
+                              expert_user_prompt: Writers = Query(
+                                  "Expert_not_for_translate", descrition='промпт эксперта'),
+                              expert_system_prompt: Prompts = Query(
+                                  "Expert_not_for_translate", descrition='переводчик'),
                               ):
         """
             сервис массового перевода описаний
@@ -340,6 +342,8 @@ class TranslateHelperRouter(BaseRouter):
 
     async def remove_drow(self,
                           word: str = Form(..., description='слово или фраза'),
+                          source: Languages = Form(..., description='языка оригинала'),
+                          destination: Languages = Form(..., description='языка перевода'),
                           translate: List[str] = Form(...,
                                                       description='удалить из перечня предпочитаемых переводов'),
                           replace: bool = Form(False, description='True - мусор для замены перед переводом, '
@@ -352,7 +356,10 @@ class TranslateHelperRouter(BaseRouter):
             data: Update pydantic model
         """
         tmp = set(translate[0].split(','))
-        data = self.create_schema(word=word, drow=tmp, replace=replace)
+        langs: dict = await ISOLanguageRepository.get_lang2_by_name(session)
+        origin = langs.get(source.value)
+        destin = langs.get(destination.value)
+        data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin)
         result: dict = await self.service.set_remove_single(session, data)
         return result
 
