@@ -225,7 +225,7 @@ class VllmRouter(LightRouter):
         print(res)
         result = {n: x.__name__ for n, x in enumerate(res)}
         # print(result)
-        fields = {cls.__name__: list(cls.__table__.columns.keys()) for cls in Base.registry._class_registry.values() if
+        fields = {cls.__name__: list(cls.__table__.c.keys()) for cls in Base.registry._class_registry.values() if
                   hasattr(cls, '__tablename__')}
         jprint(fields)
         return result
