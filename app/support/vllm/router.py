@@ -225,8 +225,9 @@ class VllmRouter(LightRouter):
         print(res)
         w = (cls for cls in Base.registry._class_registry.values()
              if isinstance(cls, type) and hasattr(cls, '__table__'))
+        print('----------------------------------------------')
         for i in w:
-            print('--', w)
+            print('--', i)
         result = {n: x.__name__ for n, x in enumerate(res)}
 
         # jprint(fields)
