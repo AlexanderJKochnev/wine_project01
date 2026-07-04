@@ -10,7 +10,7 @@ from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Wri
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
 from app.core.types import Base
-from app.core.utils.alchemy_utils import get_models
+from app.core.utils.alchemy_utils import get_models, get_models_with_columns
 from app.core.utils.common_utils import jprint
 from app.dependencies import get_translation_service
 from app.support.ollama.repository import ISOLanguageRepository
@@ -225,10 +225,9 @@ class VllmRouter(LightRouter):
         # response = get_models()
         # res = response
         # result = {n: x.__name__ for n, x in enumerate(res)}
-        for key, value in Base.metadata.tables.items():
-            print(key, value)
-        result = {1: 2}
-        return result
+        response = get_models_with_columns('ru')
+        jprint(response)
+        return {'result': True}
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
                               session: AsyncSession = Depends(get_db),
