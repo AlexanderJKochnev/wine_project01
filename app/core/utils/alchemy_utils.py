@@ -216,7 +216,7 @@ def get_models_with_columns(lang_suff: str) -> Dict[str, ModelType]:
         (получать имя через .__name__)
         ЛЮТАЯ МАГИЯ - ВЫЗОВ СТРОКИ НАПРЯМУЮ ГДЕ ЛИБО НЕ ДАЙТ РЕЗУЛЬТАТА - ТОЛЬКО ЧЕРЕЗ get_models_with_columns
     """
-    return {cls.__name__: tuple(cls, columns) for cls in Base.registry._class_registry.values() if
+    return {cls: columns for cls in Base.registry._class_registry.values() if
             isinstance(cls, type) and hasattr(cls, '__table__')
             # Сначала собираем кортеж колонок, и если он не пустой (len > 0), добавляем в словарь
             if (columns := tuple(
