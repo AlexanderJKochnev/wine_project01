@@ -9,6 +9,7 @@ from app.core.config.database.db_async import DatabaseManager, get_db
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
+from app.core.utils.alchemy_utils import get_models
 from app.dependencies import get_translation_service
 from app.support.ollama.repository import ISOLanguageRepository
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
@@ -217,12 +218,8 @@ class VllmRouter(LightRouter):
         return response
 
     async def test(self, session: AsyncSession = Depends(get_db)):
-        stats = await self.service.__stats__(session)
-        await self.service.__del_bad_scores__(stats, session)
-        result = await self.service.__update_handbook__(stats, session)
-        await self.service.__clear_tmptable__(session)
-        await session.commit()
-        session.expire_all()
+        response = get_models()
+        result = {n: x for n, x in enumerate(response)}
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
@@ -318,7 +315,7 @@ class TranslateHelperRouter(BaseRouter):
         data = TranslateHelperCreate(word=word, drow=tmp, shit=replace, origin=origin, destin=destin)
         return await self.service.create(session, data)
 
-    async def add_drow(self,
+    async def add_drow(self, background_tasks: BackgroundTasks,
                        word: str = Form(..., description='слово или фраза'),
                        source: Languages = Form(..., description='языка оригинала'),
                        destination: Languages = Form(..., description='языка перевода'),
@@ -342,7 +339,7 @@ class TranslateHelperRouter(BaseRouter):
         result: dict = await self.service.set_add_single(session, data)
         return result
 
-    async def remove_drow(self,
+    async def remove_drow(self, background_tasks: BackgroundTasks,
                           word: str = Form(..., description='слово или фраза'),
                           source: Languages = Form(..., description='языка оригинала'),
                           destination: Languages = Form(..., description='языка перевода'),

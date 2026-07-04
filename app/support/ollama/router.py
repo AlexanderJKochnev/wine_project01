@@ -13,7 +13,7 @@ from app.support.category.repository import CategoryRepository
 from app.support.ollama.model import Ollama, Prompt, ISOLanguage, Proption, WriterRule
 from app.support.ollama.repository import PromptRepository, WriterRuleRepository
 from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptCreate,
-                                        PromptRead, PromptUpdate, WriterRuleRead, WriterRuleCreate, WriterRuleUpdate,
+                                        WriterRuleCreate, WriterRuleUpdate,
                                         ISOLanguageCreate, ISOLanguageRead, ISOLanguageUpdate,
                                         ProptionRead, ProptionCreate, ProptionUpdate)
 from app.support.ollama.service import LLMService, OllamaService, PromptService, WriterRuleService

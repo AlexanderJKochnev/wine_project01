@@ -662,3 +662,18 @@ class TranslateHelperService(SetArrayService, Service):
             result = {key: next(iter(val)) for key, val in result.items()}
         return result
 
+    @classmethod
+    @background_unique
+    async def update_translate(cls, session: AsyncSession) -> int:
+        """
+            фоновое обновлеие переводов после обновления подсказок
+            аргументы:
+            word:
+            lang_orgin:
+            lang_dest:
+        """
+        # 1 список моделей/полей origin/dest
+        # 2 цикл по списку 1
+        # 2.1. выборка записей по origin.icontaint(word)
+        # 2.2. перевод с подсказками
+        
