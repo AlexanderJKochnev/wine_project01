@@ -224,11 +224,11 @@ class VllmRouter(LightRouter):
                    session: AsyncSession = Depends(
             get_db)):
         # model: tuple(field_name)
-        data = TranslateHelpData.load_from_db(word1='auver',
-                                              language_origin1='English',
-                                              language_destination1='Russian',
-                                              approved1=True,
-                                              session=session)
+        data = await TranslateHelpData.load_from_db(word1='auver',
+                                                    language_origin1='English',
+                                                    language_destination1='Russian',
+                                                    approved1=True,
+                                                    session=session)
         res = data.as_dict()
         response = await TranslateHelperService.update_translate(session_factory=DatabaseManager.session_maker,
                                                                  d=data, background_tasks=background_tasks)
