@@ -481,10 +481,7 @@ class VLLMService:
             # print(compiled_pg)
             response = await session.execute(stmt)
             result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{response.rowcount}'})
-            # result.append({'table': model.__name__, 'field': field_name, 'updated records': f'{row.get('good')}'})
         rich_print(result, 'количество обновленных записей')
-        # session.execute(text(f"TRUNCATE TABLE {Country.__tablename__} RESTART IDENTITY CASCADE;"))
-        # session.commit()
         return result
 
     async def __clear_tmptable__(self, session: AsyncSession):
@@ -507,7 +504,7 @@ class VLLMService:
                              'shit': False,
                              'origin': d.lang_origin,
                              'destin': d.lang_destin} for key, val in result.items()]
-        # СЮДА ВСТАВИТЬ ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
+        # ДОБАВЛЕНИЕ В ТАБЛИЦУ translatehelper
         if isinstance(d, HandbookTranslateData):
             response = await TranslateHelperService.bulk_create_no_return_orm(data,
                                                                               TranslateHelperRepository,
