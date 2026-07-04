@@ -221,8 +221,8 @@ class VllmRouter(LightRouter):
         response = get_models()
         res = list(response)
         print(res)
-        result = {n: x for n, x in enumerate(res)}
-        print(result)
+        result = {n: x.__name__ for n, x in enumerate(res)}
+        # print(result)
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
