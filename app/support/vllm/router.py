@@ -227,7 +227,7 @@ class VllmRouter(LightRouter):
         # result = {n: x.__name__ for n, x in enumerate(res)}
         response = get_models_with_columns('ru')
         jprint(response)
-        return {'result': True}
+        return response
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
                               session: AsyncSession = Depends(get_db),

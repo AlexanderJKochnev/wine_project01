@@ -210,15 +210,16 @@ def get_models() -> Iterator[ModelType]:
             isinstance(cls, type) and hasattr(cls, '__table__'))
 
 
-def get_models_with_columns(lang_suff: str) -> List[ModelType]:
+def get_models_with_columns(lang_suff: str) -> Dict[str, ModelType]:
     """
         возвращеет генератор списка зарегистрированных sqlalchemy моделей
         (получать имя через .__name__)
         МАГИЯ - ВЫЗОВ СТРОКИ НАПРЯМУЮ ГДЕ ЛИБО НЕ ДАЙТ РЕЗУЛЬТАТА - ТОЛЬКО ЧЕРЕЗ get_models
     """
-    return [(cls, column.name) for cls in Base.registry._class_registry.values()
+    return {cls.name: cls for cls in Base.registry._class_registry.values()
             if isinstance(cls, type) and hasattr(cls, '__table__') for column in cls.__table__.columns
-            ]
+            if column.name.endswith(lang_suff)
+            }
 
 
 def get_model_by_tablename(tablename: str):
