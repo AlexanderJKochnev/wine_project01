@@ -226,8 +226,10 @@ class VllmRouter(LightRouter):
         res = list(response)
         print(res)
         result = {n: x.__name__ for n, x in enumerate(res)}
-        w = (cls for cls in Base.registry._class_registry.values() if
-            isinstance(cls, type) and hasattr(cls, '__table__'))
+        raw_values = list(Base.registry._class_registry.values())
+        # Теперь генератор работает с локальной переменной raw_values,
+        # а не пытается лезть в Base через асинхронный контекст
+        w = (cls for cls in raw_values if isinstance(cls, type) and hasattr(cls, '__table__'))
         for i in w:
             print('--', i)
         print('-------------------------------------------------------')
