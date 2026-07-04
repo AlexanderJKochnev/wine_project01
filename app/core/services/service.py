@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from fastapi import BackgroundTasks, HTTPException, Request
 from loguru import logger
-from sqlalchemy import select, update
+from sqlalchemy import insert, select, tuple_, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -145,7 +145,7 @@ class Service(metaclass=ServiceMeta):
         return list_dict(result)
 
     @classmethod
-    async def bulk_create_no_return_orm(cls, data_list: List[dict],
+    async def bulk_create_no_return_orm(cls, data: List[dict],
                                         repository: Repository, model: ModelType,
                                         session: AsyncSession, **kwargs):
         """
@@ -156,8 +156,35 @@ class Service(metaclass=ServiceMeta):
         :param unique_fields: Список полей для проверки уникальности (например, ["word", "origin", "destin"]).
         :param model: Декларативная модель SQLAlchemy.
         """
-        result = await repository.bulk_create_no_return_orm(data_list, cls.default, model, session)
-        return result
+        if not data:
+            return 0
+        table = model.__table__
+        filter_tuples = [tuple(row.get(field) for field in cls.default) for row in data]
+        model_fields = [table.c[field] for field in cls.default]
+        # Запрос: SELECT word, origin, destin FROM table WHERE (word, origin, destin) IN (...)
+        select_stmt = select(*model_fields).where(tuple_(*model_fields).in_(filter_tuples))
+        result = await session.execute(select_stmt)
+        # Преобразуем результат в список tuple для быстрого сравнения на стороне Python
+        # Пример: {("cat", "en", "ru"), ("existing_word", "en", "fr")}
+        existing_records = set(result.all())
+        # ==========================================
+        # ШАГ 2: Фильтруем данные в Питонe
+        # ==========================================
+        new_records = []
+        for row in data:
+            # Формируем tuple бизнес-ключа для текущей строки
+            row_key = tuple(row.get(field) for field in cls.default)
+
+            # Если такого ключа нет в базе, добавляем строку в список на вставку
+            if row_key not in existing_records:
+                new_records.append(row)
+
+        if not new_records:
+            return 0
+        stmt = insert(model)
+        await session.execute(stmt, new_records)
+
+        return len(new_records)
 
     @classmethod
     async def get_or_create(cls, data: Union[BaseModel, dict], repository: Repository,
