@@ -219,18 +219,17 @@ class VllmRouter(LightRouter):
                                                          )
         return response
 
-    async def test(self, session: AsyncSession = Depends(get_db)):
-        # response = get_models()
-        # res = list(response)
-        # print(res)
-        res = (cls for cls in Base.registry._class_registry.values()
-               if isinstance(cls, type) and hasattr(cls, '__table__'))
+    def test(self, session: AsyncSession = Depends(get_db)):
+        response = get_models()
+        res = list(response)
+        print(res)
+        w = (cls for cls in Base.registry._class_registry.values()
+             if isinstance(cls, type) and hasattr(cls, '__table__'))
         print('----------------------------------------------')
-        for i in res:
+        for i in w:
             print('--', i)
-        result = {n: x.__name__ for n, x in enumerate(res)}
 
-        # jprint(fields)
+        result = {n: x.__name__ for n, x in enumerate(res)}
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
