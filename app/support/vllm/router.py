@@ -14,7 +14,7 @@ from app.core.utils.alchemy_utils import get_models, get_models_with_columns
 from app.core.utils.common_utils import jprint
 from app.dependencies import get_translation_service
 from app.support.ollama.repository import ISOLanguageRepository
-from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData, TranslateHelpData
 from app.support.vllm.model import TranslateHelper, TranslateRawData
 from app.support.vllm.repository import TranslateRawDataRepository  # NOQA: F401
 from app.support.vllm.schemas import TranslateHelperCreate, TranslateRawDataCreate, TranslateRawDataUpdate
@@ -219,15 +219,21 @@ class VllmRouter(LightRouter):
                                                          )
         return response
 
-    async def test(self, session: AsyncSession = Depends(get_db)):
-        # w = [cls for cls in Base.registry._class_registry.values()
-        #      if isinstance(cls, type) and hasattr(cls, '__table__')]
-        # response = get_models()
-        # res = response
-        # result = {n: x.__name__ for n, x in enumerate(res)}
-        response = get_models_with_columns('ru')
+    async def test(self, background_tasks: BackgroundTasks,
+                   search: str = Query(...),
+                   session: AsyncSession = Depends(
+            get_db)):
+        # model: tuple(field_name)
+        data = TranslateHelpData.load_from_db(word1='auver',
+                                              language_origin1='English',
+                                              language_destination1='Russian',
+                                              approved1=True,
+                                              session=session)
+        res = data.as_dict()
+        response = await TranslateHelperService.update_translate(session_factory=DatabaseManager.session_maker,
+                                                                 d=data, background_tasks=background_tasks)
         jprint(response)
-        return {1:2}
+        return res
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
                               session: AsyncSession = Depends(get_db),
@@ -320,6 +326,11 @@ class TranslateHelperRouter(BaseRouter):
         origin = langs.get(source.value)
         destin = langs.get(destination.value)
         data = TranslateHelperCreate(word=word, drow=tmp, shit=replace, origin=origin, destin=destin)
+        data1 = TranslateHelpData.load_from_db(word1=word,
+                                               language_origin1=source,
+                                               language_destination1=destination,
+                                               approved1=approved,
+                                               session=session)
         return await self.service.create(session, data)
 
     async def add_drow(self, background_tasks: BackgroundTasks,
@@ -344,6 +355,11 @@ class TranslateHelperRouter(BaseRouter):
         destin = langs.get(destination.value)
         data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin, approved=approved)
         result: dict = await self.service.set_add_single(session, data)
+        data1 = TranslateHelpData.load_from_db(word1=word,
+                                               language_origin1=source,
+                                               language_destination1=destination,
+                                               approved1=approved,
+                                               session=session)
         return result
 
     async def remove_drow(self, background_tasks: BackgroundTasks,
@@ -367,6 +383,13 @@ class TranslateHelperRouter(BaseRouter):
         destin = langs.get(destination.value)
         data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin)
         result: dict = await self.service.set_remove_single(session, data)
+        approved = result.get('approved')
+        if approved:
+            data1 = TranslateHelpData.load_from_db(
+                word1=word, language_origin1=source, language_destination1=destination, approved1=approved,
+                session=session
+            )
+        await TranslateHelperService.update_translate
         return result
 
     async def get_dict(self, session: AsyncSession = Depends(get_db),

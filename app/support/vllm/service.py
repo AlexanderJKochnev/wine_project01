@@ -10,13 +10,14 @@ from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config.project_config import settings
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.array_service import SetArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
 from app.core.types import ModelType
 from app.core.utils.ahocorasick import clean_text_with_aho, get_translations_with_aho
-from app.core.utils.alchemy_utils import get_model_by_tablename
+from app.core.utils.alchemy_utils import get_model_by_tablename, get_models_with_columns
 from app.core.utils.backgound_tasks import background_unique
 from app.core.utils.common_utils import jprint, rich_print
 from app.core.utils.pydantic_utils import list_dict
@@ -26,7 +27,7 @@ from app.support.drink.repository import DrinkRepository
 from app.support.ollama.model import Prompt, Proption, WriterRule
 from app.support.ollama.repository import PromptRepository, ProptionRepository, WriterRuleRepository
 from app.support.subcategory.repository import SubcategoryRepository
-from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData, LastComposite
+from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData, LastComposite, TranslateHelpData
 from app.support.vllm.model import TmpTranslate, TranslateHelper
 from app.support.vllm.repository import TmpTranslateRepository, TranslateHelperRepository, TranslateRawDataRepository
 
@@ -661,16 +662,19 @@ class TranslateHelperService(SetArrayService, Service):
 
     @classmethod
     @background_unique
-    async def update_translate(cls, session: AsyncSession) -> int:
+    async def update_translate(cls, session_factory, d: TranslateHelpData) -> int:
         """
-            фоновое обновлеие переводов после обновления подсказок
+            фоновое обновление переводов после обновления подсказок
             аргументы:
             word:
             lang_orgin:
             lang_dest:
         """
-        # 1 список моделей/полей origin/dest
+        # 1 список моделей/полей origin/dest {model: (field, field)
+        localized_fields = settings.FIELDS_LOCALIZED
+        response = get_models_with_columns(localized_fields)    # ищет языковые поля
+        jprint(response)
         # 2 цикл по списку 1
         # 2.1. выборка записей по origin.icontaint(word)
         # 2.2. перевод с подсказками
-        
+

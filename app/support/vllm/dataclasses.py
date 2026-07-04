@@ -8,6 +8,7 @@ from typing import Dict, Optional
 
 import ahocorasick
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.core.config.project_config import settings
@@ -53,7 +54,7 @@ class DrinkTranslateData:
                            score: int,
                            expert_system: str,
                            expert_user: str,
-                           session):
+                           session: AsyncSession):
         """Асинхронный фабричный метод для создания объекта."""
         # result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
         # system_prompt = result.id, result.system_prompt, result.role
@@ -158,11 +159,11 @@ class HandbookTranslateData:
                            language_destination1: str,
                            chunk1: int,
                            field: str,
-                           handbook1: str,
+                           handbook1: str,  #
                            score: int,
                            expert_system: str,
                            expert_user: str,
-                           session):
+                           session: AsyncSession):
         """Асинхронный фабричный метод для создания объекта."""
         query = (select(Prompt.id, Prompt.system_prompt, Prompt.role).where(Prompt.role.in_((system, expert_system))))
         resp = await session.execute(query)
@@ -177,10 +178,6 @@ class HandbookTranslateData:
         user_prompt = prompts.get(user)
         expert_user_prompt = prompts.get(expert_user)
 
-        # result: Prompt = await PromptRepository.get_by_field_v2({'role': system}, Prompt, session)
-        # system_prompt = result.id, result.system_prompt, result.role
-        # result: WriterRule = await WriterRuleRepository.get_by_field_v2({'name': user}, WriterRule, session)
-        # user_prompt = result.id, result.prompt, result.name
         descr = HANDBOOKS.get(handbook1)
         # получение params
         result: Proption = await ProptionRepository.get_by_field_v2({'preset': proption}, Proption, session)
@@ -228,3 +225,38 @@ class HandbookTranslateData:
 class LastComposite:
     last_id: Optional[int] = None
     last_subcategory: Optional[int] = None
+
+
+@dataclass(slots=True)
+class TranslateHelpData:
+    word: str
+    language_origin: str  # English
+    language_destination: str  # Russian
+    origin: str  # ru, ''
+    destin: str  # ru, ''
+    approved: bool
+
+    @classmethod
+    async def load_from_db(cls, word1: str,
+                           language_origin1: str,
+                           language_destination1: str,
+                           approved1: bool,
+                           session: AsyncSession):
+        model = ISOLanguage
+        query = (select(model.name_en, model.iso_639_1).where(
+            ISOLanguage.name_en.in_((language_origin1, language_destination1))
+        ))
+        resp = await session.execute(query)
+        result: dict = dict(resp.all())
+        def_lang: str = settings.DEFAULT_LANG
+        lang_dict = {name: '' if lang == def_lang else f'_{lang}' for name, lang in result.items()}
+        origin: str = f'{lang_dict.get(language_origin1)}'
+        destin: str = f'{lang_dict.get(language_destination1)}'
+        # source_field: str = f'{field}{lang_dict.get(language_origin1)}'
+        # target_field: str = f'{field}{lang_dict.get(language_destination1)}
+        return cls(word=word1,
+                   language_destination=language_destination1,
+                   language_origin=language_origin1,
+                   origin=origin,
+                   destin=destin,
+                   approved=approved1)

@@ -210,7 +210,7 @@ def get_models() -> Iterator[ModelType]:
             isinstance(cls, type) and hasattr(cls, '__table__'))
 
 
-def get_models_with_columns(lang_suff: str) -> Dict[str, ModelType]:
+def get_models_with_columns(localized_field: tuple | list) -> Dict[ModelType, tuple]:
     """
         возвращеет генератор списка зарегистрированных sqlalchemy моделей
         (получать имя через .__name__)
@@ -220,7 +220,7 @@ def get_models_with_columns(lang_suff: str) -> Dict[str, ModelType]:
             isinstance(cls, type) and hasattr(cls, '__table__')
             # Сначала собираем кортеж колонок, и если он не пустой (len > 0), добавляем в словарь
             if (columns := tuple(
-                column.name for column in cls.__table__.columns if column.name.endswith(f"_{lang_suff}")
+                column.name for column in cls.__table__.columns if column.name in localized_field
             ))}
 
 

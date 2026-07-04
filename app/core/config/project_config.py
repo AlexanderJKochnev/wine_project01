@@ -344,7 +344,7 @@ class Settings(BaseSettings):
         return strtolist(self.LANGS)
 
     @property
-    def FIELDS_LOCALIZED(self):
+    def FIELDS_LOCALIZED(self) -> list:
         """
         return list of localized fileds (without suffix)
         """
