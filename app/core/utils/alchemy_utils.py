@@ -3,7 +3,7 @@ import json
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Generator, Iterator, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from fastapi import Query
 from loguru import logger  # noqa: F401
@@ -200,13 +200,14 @@ def model_to_dict(obj, seen=None):
     return result
 
 
-def get_models() -> List[ModelType]:
+def get_models() -> Iterator[ModelType]:
     """
         возвращеет генератор списка зарегистрированных sqlalchemy моделей
         (получать имя через .__name__)
     """
     return (cls for cls in Base.registry._class_registry.values() if
             isinstance(cls, type) and hasattr(cls, '__table__'))
+
 
 def get_model_by_tablename(tablename: str):
     # Получаем Table объект

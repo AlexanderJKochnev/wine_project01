@@ -225,6 +225,7 @@ class VllmRouter(LightRouter):
         result = {n: x.__name__ for n, x in enumerate(res)}
         # print(result)
         for mapper in Base.registry.mappers:
+            print('--------------------------------------------------------')
             print(f"{mapper.class_.__name__}: {list(mapper.columns.keys())}")
         return result
 
