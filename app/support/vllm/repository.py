@@ -93,9 +93,9 @@ class TranslateHelperRepository(Repository):
         return result
 
     @classmethod
-    async def search(cls, search: str,
-                     skip: int, limit: int,
-                     model: ModelType, session: AsyncSession, ) -> tuple:
+    async def search_all(cls, search: str,
+                         model: ModelType,
+                         session: AsyncSession, limit: int = 20) -> List:
         stmt = select(model).where(model.word.contains(search))
         """
         stmt = select(User).where(
@@ -105,4 +105,4 @@ class TranslateHelperRepository(Repository):
                         )
                 )
         """
-        return session.execute(stmt).scalars().all()
+        return await cls.nonpagination(stmt, session)

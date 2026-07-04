@@ -295,7 +295,7 @@ class TranslateHelperRouter(BaseRouter):
 
     def setup_routes(self):
         self.setup_route_custom('/get_dict', self.get_dict, 'GET')
-        self.setup_route_adv('create', 'get', 'search', 'get_one', 'patch', 'delete')
+        self.setup_route_adv('create', 'get', 'search_all', 'get_one', 'patch', 'delete')
         self.setup_route_custom('/add', self.add_drow, 'POST')
         self.setup_route_custom('/remove', self.remove_drow, 'POST')
 
