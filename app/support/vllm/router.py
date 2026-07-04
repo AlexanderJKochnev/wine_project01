@@ -229,7 +229,7 @@ class VllmRouter(LightRouter):
             print('--', w)
         result = {n: x.__name__ for n, x in enumerate(res)}
 
-        jprint(fields)
+        # jprint(fields)
         return result
 
     async def drink_translate(self, background_tasks: BackgroundTasks,
