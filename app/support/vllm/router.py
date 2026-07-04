@@ -325,6 +325,8 @@ class TranslateHelperRouter(BaseRouter):
                        translate: List[str] = Form(..., description='предпочитаемый перевод'),
                        replace: bool = Form(False, description='True - мусор для замены перед переводом, '
                                             'False - подсказка переводчику'),
+                       approved: bool = Form(True, description='True - перевод проверен и одобрен, '
+                                             'False - перевод не одобрен'),
                        session: AsyncSession = Depends(get_db)
                        ):
         """
@@ -336,7 +338,7 @@ class TranslateHelperRouter(BaseRouter):
         langs: dict = await ISOLanguageRepository.get_lang2_by_name(session)
         origin = langs.get(source.value)
         destin = langs.get(destination.value)
-        data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin)
+        data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin, approved=approved)
         result: dict = await self.service.set_add_single(session, data)
         return result
 
