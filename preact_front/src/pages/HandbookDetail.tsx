@@ -44,6 +44,7 @@ export const HandbookDetail = () => {
       'producertitles': `/get/producertitles/${language}/${id}`,
       'vintageconfigs': `/get/vintageconfigs/${language}/${id}`,
       'designations': `/get/designations/${language}/${id}`,
+      'tastingnotes': `/get/tastingnotes/${language}/${id}`
       'classifications': `/get/classifications/${language}/${id}`,
     };
     return endpoints[type] || `/get/${type}/${language}/${id}`;
@@ -109,6 +110,7 @@ export const HandbookDetail = () => {
       'producertitles': 'ProducerTitle',
       'vintageconfigs': 'VintageConfig',
       'designations': 'Designation',
+      'tastingnotes': 'TastingNote'
       'classifications': 'Classification'
     };
     return names[type] || type.charAt(0).toUpperCase() + type.slice(1);

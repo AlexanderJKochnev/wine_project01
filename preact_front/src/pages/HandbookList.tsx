@@ -21,6 +21,7 @@ export const HandbookList = () => {
     { id: 'vintageconfigs', name: 'VintageConfig', endpoint: '/vintageconfigs/all' },
     { id: 'designations', name: 'Designation', endpoint: '/designations/all' },
     { id: 'classifications', name: 'Classification', endpoint: '/classifications/all' },
+    { id: 'tastingnotes', name: 'TastingNote', endpoint: 'tastingnotes/all' },
     { id: 'producers', name: 'Producer', endpoint: '/producers/all' }
   ]);
 
