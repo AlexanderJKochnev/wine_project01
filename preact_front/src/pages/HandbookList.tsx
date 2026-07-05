@@ -22,7 +22,11 @@ export const HandbookList = () => {
     { id: 'designations', name: 'Designation', endpoint: '/designations/all' },
     { id: 'classifications', name: 'Classification', endpoint: '/classifications/all' },
     { id: 'tastingnotes', name: 'TastingNote', endpoint: 'tastingnotes/all' },
-    { id: 'producers', name: 'Producer', endpoint: '/producers/all' }
+    { id: 'producers', name: 'Producer', endpoint: '/producers/all' },
+    { id: 'scales', name: 'Scale', endpoint: '/scales/all' },
+    { id: 'bodies', name: 'Body', endpoint: '/bodies/all' },
+    { id: 'glasswares', name: 'Glassware', endpoint: '/glasswares/all' },
+    { id: 'baseingredients', name: 'BaseIngredient', endpoint: '/baseingredients/all' }
   ]);
 
   return (
