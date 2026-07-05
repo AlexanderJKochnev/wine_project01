@@ -8,6 +8,7 @@ from app.core.models.base_model import BaseFull, plural
 
 
 class Superfood(BaseFull):
+    table_description = "Продукты питания, закуски сочетаемые с алкогольными напитками"
     lazy = settings.LAZY
     single_name = 'superfood'
     plural_name = plural(single_name)

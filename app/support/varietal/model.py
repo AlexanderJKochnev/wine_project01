@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 @registers_search_update("drink_associations.drink.items")
 class Varietal(BaseFull):
+    table_description = 'сорта винограда применемые в виноделии'
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'varietal'

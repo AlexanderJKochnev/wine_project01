@@ -390,7 +390,7 @@ class TranslateHelperRouter(BaseRouter):
                 word1=word, language_origin1=source, language_destination1=destination, approved1=approved,
                 session=session
             )
-        await TranslateHelperService.update_translate
+        # await TranslateHelperService.update_translate
         return result
 
     async def get_dict(self, session: AsyncSession = Depends(get_db),
