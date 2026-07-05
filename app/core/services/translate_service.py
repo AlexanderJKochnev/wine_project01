@@ -80,7 +80,7 @@ class TranslationService:
                 # Превращаем {'вариант1', 'вариант2'} в строку "вариант1" или "вариант2"
                 variants = ", ".join(f"'{t}'" for t in sorted(translation_set))
                 # Формируем строчку по стилю вашего промпта
-                lines.append(f"\n- Слово или фразу '{word}' переводи как {variants}.")
+                lines.append(f"\n- Слово или фразу '{word.lower()}' переводи как {variants.lower()}.")
 
             # Склеиваем все найденные подсказки
             hints_str = "".join(lines)
