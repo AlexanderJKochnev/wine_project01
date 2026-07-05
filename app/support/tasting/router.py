@@ -14,7 +14,7 @@ class BaseIngredientRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=BaseIngredient,
-            prefix="/BaseIngredient".lower(),
+            prefix="/BaseIngredients".lower(),
         )
 
     async def create(self, data: BaseIngredientCreate,
