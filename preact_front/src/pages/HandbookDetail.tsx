@@ -110,7 +110,7 @@ export const HandbookDetail = () => {
       'producertitles': 'ProducerTitle',
       'vintageconfigs': 'VintageConfig',
       'designations': 'Designation',
-      'tastingnotes': 'TastingNote'
+      'tastingnotes': 'TastingNote',
       'classifications': 'Classification'
     };
     return names[type] || type.charAt(0).toUpperCase() + type.slice(1);
