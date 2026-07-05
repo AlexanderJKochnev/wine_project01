@@ -19,6 +19,8 @@ class Parcel(BaseFull):
     """
     lazy = settings.LAZY
     single_name = 'parcel'
+    table_description = ("Отдельный, четко разграниченный участок виноградника, "
+                         "который обладает своими уникальными природными характеристиками")
     plural_name = plural(single_name)
     cascade = settings.CASCADE
     # Обратная связь: many to one
@@ -32,6 +34,7 @@ class Site(BaseFullFree):
     """
     виноградник в subregion
     """
+    table_description = "Официально признанный виноградник"
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'site'

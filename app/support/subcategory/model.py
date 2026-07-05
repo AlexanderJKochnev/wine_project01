@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 @registers_search_update("drink.item")
 class Subcategory(ColorMixin, BaseFullFree):
     lazy = settings.LAZY
+    table_description = "Категории и виды алкогольных и безалкогольных напитков"
     cascade = settings.CASCADE
     single_name = 'subcategory'
     plural_name = plural(single_name)

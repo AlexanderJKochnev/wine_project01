@@ -10,6 +10,7 @@ from app.service_registry import registers_search_update
 
 @registers_search_update("producer.drink.item")
 class ProducerTitle(BaseFull):
+    table_description = 'категория производителя алкогольных напитков'
     lazy = settings.LAZY
     single_name = 'producertitle'
     plural_name = plural(single_name)
@@ -22,6 +23,7 @@ class ProducerTitle(BaseFull):
 
 @registers_search_update("drink.item")
 class Producer(BaseFull):
+    table_description = "наименование производителя алкогольных напитков"
     lazy = settings.LAZY
     single_name = 'producer'
     plural_name = plural(single_name)

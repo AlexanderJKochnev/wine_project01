@@ -14,6 +14,7 @@ class Category(ColorMixin, BaseFull):
     single_name = 'category'
     plural_name = plural(single_name)
     cascade = settings.CASCADE
+    table_description = "Категории и виды алкогольных и безалкогольных напитков"
     # Обратная связь: один ко многим
     subcategories = relationship(
         "Subcategory", back_populates=single_name, cascade=cascade, lazy=lazy

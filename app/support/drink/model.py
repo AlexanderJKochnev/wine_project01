@@ -323,6 +323,7 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage
 @registers_search_update("drink.item")
 class DrinkFood(Base):
     __tablename__ = "drink_food_associations"
+    table_description = "Алкогольные и безалкогольные напитки"
     drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.id"), primary_key=True)
     food_id: Mapped[int] = mapped_column(ForeignKey("foods.id"), primary_key=True)
 

@@ -18,6 +18,7 @@ class Food(BaseFull):
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single_name = 'food'
+    table_description = "Продукты питания, закуски сочетаемые с алкогольными напитками"
     plural_name = plural(single_name)
 
     superfood_id: Mapped[int] = mapped_column(ForeignKey("superfoods.id"), nullable=True, index=True)

@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 @registers_search_update("subregion.site.drink.item")
 class Region(BaseFullFree):
+    table_description = ('географические указания, аппелласьоны и регионы происхождения '
+                         'в рамках международных классификаторов алкогольной и безалкогольной индустрии')
     lazy = settings.LAZY
     cascade = settings.CASCADE
     single = 'region'

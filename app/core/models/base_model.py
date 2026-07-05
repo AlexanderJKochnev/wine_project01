@@ -28,12 +28,7 @@ updated_at = Annotated[datetime, mapped_column(DateTime(timezone=True),
                                                onupdate=func.now(),  # Используем БД-функцию для консистентности
                                                index=True
                                                )]
-"""
-updated_at = Annotated[datetime, mapped_column(DateTime(timezone=True),
-                                               server_default=func.now(),
-                                               onupdate=datetime.now(timezone.utc),
-                                               index=True)]
-"""
+
 # 3. Strings: В 2.0+ Mapped[str] по умолчанию nullable=False.
 # Для уникальности и индексов:
 str_uniq = Annotated[str, mapped_column(unique=True, index=True)]
@@ -72,7 +67,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     # Кэш атрибутов для каждого класса (чтобы не вызывать inspect постоянно)
     _cached_cols = None
     _cached_rels = None
-
+    table_description = 'это относится к общим областм знаний'
     id: Mapped[int_pk]
 
     @declared_attr.directive
@@ -153,25 +148,6 @@ class Base(AsyncAttrs, DeclarativeBase):
                     result[key] = value.to_dict(seen)
 
         return result
-
-        """
-        for key in self.__dict__.keys():
-            if key.startswith("_"):
-                continue
-            value = getattr(self, key)
-            if isinstance(value, list):
-                # result[key] = [item.to_dict(seen) for item in value]
-                result[key] = [item.to_dict(seen) if hasattr(item, 'to_dict') else item for item in value]
-            elif hasattr(value, "__table__"):  # ORM-объект
-                result[key] = value.to_dict(seen)
-            elif isinstance(value, datetime):
-                result[key] = value.isoformat()
-            elif isinstance(value, Decimal):
-                result[key] = float(value)
-            else:
-                result[key] = value
-        return result
-        """
 
     def to_dict_fast(self, exclude=None, skip_empty=True):
         """
