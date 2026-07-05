@@ -229,7 +229,7 @@ class VllmRouter(LightRouter):
                                                     language_destination1='Russian',
                                                     approved1=True,
                                                     session=session)
-        res = data.as_dict()
+        res = data.asdict()
         response = await TranslateHelperService.update_translate(session_factory=DatabaseManager.session_maker,
                                                                  d=data, background_tasks=background_tasks)
         jprint(response)
