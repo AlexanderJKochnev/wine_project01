@@ -44,7 +44,7 @@ export const HandbookDetail = () => {
       'producertitles': `/get/producertitles/${language}/${id}`,
       'vintageconfigs': `/get/vintageconfigs/${language}/${id}`,
       'designations': `/get/designations/${language}/${id}`,
-      'tastingnotes': `/get/tastingnotes/${language}/${id}`
+      'tastingnotes': `/get/tastingnotes/${language}/${id}`,
       'classifications': `/get/classifications/${language}/${id}`,
     };
     return endpoints[type] || `/get/${type}/${language}/${id}`;
