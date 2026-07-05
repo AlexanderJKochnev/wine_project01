@@ -1,4 +1,5 @@
 # app.support.router.py
+from dataclasses import asdict
 from typing import List, Optional
 
 # app.suport.ollama.router.py
@@ -229,7 +230,7 @@ class VllmRouter(LightRouter):
                                                     language_destination1='Russian',
                                                     approved1=True,
                                                     session=session)
-        res = data.asdict()
+        res = asdict(data)
         response = await TranslateHelperService.update_translate(session_factory=DatabaseManager.session_maker,
                                                                  d=data, background_tasks=background_tasks)
         jprint(response)
