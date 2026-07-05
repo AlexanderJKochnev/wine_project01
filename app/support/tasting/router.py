@@ -35,7 +35,7 @@ class BodyRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Body,
-            prefix="/Body".lower(),
+            prefix="/Bodies".lower(),
         )
 
     async def create(self, data: BodyCreate,
@@ -56,7 +56,7 @@ class GlasswareRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Glassware,
-            prefix="/Glassware".lower(),
+            prefix="/Glasswares".lower(),
         )
 
     async def create(self, data: GlasswareCreate,
@@ -77,7 +77,7 @@ class ScaleRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Scale,
-            prefix="/Scale".lower(),
+            prefix="/Scales".lower(),
         )
 
     async def create(self, data: ScaleCreate,
@@ -98,7 +98,7 @@ class TastingNoteRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=TastingNote,
-            prefix="/TastingNote".lower(),
+            prefix="/TastingNotes".lower(),
         )
 
     async def create(self, data: TastingNoteCreate,
