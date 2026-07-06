@@ -80,7 +80,7 @@ def clean_text_with_aho(text: str, auto: ahocorasick.Automaton) -> str:
     return "".join(result)
 
 
-def get_translations_with_aho(text: str, auto: ahocorasick.Automaton) -> dict:
+def get_translations_with_aho_old(text: str, auto: ahocorasick.Automaton) -> dict:
     """
     Находит все совпадения для подсказок перевода.
     Возвращает словарь {слово_из_текста: set_вариантов} с сохранением регистра ключа.
@@ -101,6 +101,64 @@ def get_translations_with_aho(text: str, auto: ahocorasick.Automaton) -> dict:
             hints[original_word] = set(translation_data)
         else:
             hints[original_word] = {str(translation_data)}
+
+    return hints
+
+
+def get_translations_with_aho(text: str, auto: ahocorasick.Automaton) -> dict:
+    """
+    Находит все совпадения для подсказок перевода.
+    Исключает вложенные короткие слова с помощью линейного массива занятых индексов.
+    """
+    if not text:
+        return {}
+
+    lower_text = text.lower()
+    all_matches = []
+
+    # Шаг 1: Собираем все возможные совпадения
+    for end_idx, (word_len, translation_data) in auto.iter(lower_text):
+        start_idx = end_idx - word_len + 1
+        all_matches.append(
+            {'start': start_idx, 'end': end_idx, 'len': word_len, 'data': translation_data}
+        )
+
+    # Шаг 2: Сортируем от самых длинных к коротким
+    all_matches.sort(key=lambda x: (-x['len'], x['start']))
+
+    # Шаг 3: Массив флагов для отслеживания занятых символов текста
+    # Длина равна длине текста, изначально все символы свободны (False)
+    occupied = [False] * len(text)
+
+    hints = {}
+
+    for match in all_matches:
+        start, end = match['start'], match['end']
+
+        # Проверяем, свободен ли ХОТЯ БЫ ОДИН символ для этого слова.
+        # Если слово ПОЛНОСТЬЮ внутри уже занятого отрезка, any() вернет True,
+        # и мы инвертируем это в False (пропускаем).
+        # Если это пересечение краями (что редко для токенов слов), мы его тоже не берем.
+        if any(occupied[start:end + 1]):
+            continue
+
+        # Отмечаем символы этого совпадения как занятые
+        for i in range(start, end + 1):
+            occupied[i] = True
+
+        # Шаг 4: Формируем финальный словарь подсказок
+        original_word = text[start: end + 1]
+        translation_data = match['data']
+
+        if isinstance(translation_data, (set, list)):
+            current_set = set(translation_data)
+        else:
+            current_set = {str(translation_data)}
+
+        if original_word in hints:
+            hints[original_word].update(current_set)
+        else:
+            hints[original_word] = current_set
 
     return hints
 

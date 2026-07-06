@@ -517,7 +517,7 @@ class VLLMService:
             return response
 
     async def __get_phrases__(self, session_factory, dataclass: HandbookTranslateData | DrinkTranslateData,
-                              last_id, cleaner_auto, translator_auto) -> list:
+                              last_id, cleaner_auto, translator_auto) -> Tuple[list, int]:
         """
         получение данных для перевода
         """
@@ -533,12 +533,14 @@ class VLLMService:
             # Вход: [(id, text), ...] -> Выход: [(id, revised_text), ...]
             revised_phrases = []
             for phrase_id, txt, descr in phrases:
+                # очистка от мусора
                 revised_text = clean_text_with_aho(txt, cleaner_auto)
                 revised_phrases.append((phrase_id, revised_text, descr))
             # Шаг 2. Поиск подсказок перевода по уже очищенному тексту с помощью второго бора
             # Вход: [(id, revised_text), ...] -> Выход: [(id, revised_text, {word: set(str)}), ...]
-            final_phrases = []
+            final_phrases: list = []
             for phrase_id, revised_text, descr in revised_phrases:
+                # подборка подсказок
                 translation_hints = get_translations_with_aho(revised_text, translator_auto)
                 if translation_hints:
                     print(f'{translation_hints=}')
@@ -677,4 +679,3 @@ class TranslateHelperService(SetArrayService, Service):
         # 2 цикл по списку 1
         # 2.1. выборка записей по origin.icontaint(word)
         # 2.2. перевод с подсказками
-
