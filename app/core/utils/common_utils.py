@@ -1016,7 +1016,7 @@ def rich_print(data: List[Dict], title: str):
                          style="cyan",
                          justify="left",
                          no_wrap=False,
-                         min_width=15,
+                         min_width=10,
                          overflow="fold")
     for val in data:
         v = tuple(str(v) for v in val.values())
