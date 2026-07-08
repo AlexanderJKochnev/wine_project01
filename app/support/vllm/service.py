@@ -1,17 +1,15 @@
 # app.support.vllm.service.py
 import time
 from collections import defaultdict
-from typing import Dict, List, Sequence, Tuple, Type
+from typing import Dict, List, Sequence, Tuple
 
-from fastapi import HTTPException, Request  # , BackgroundTasks,
+from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy import and_, func, or_, select, text, update
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
-from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.services.array_service import SetArrayService
 from app.core.services.service import Service
 from app.core.services.translate_service import TranslationService
@@ -655,7 +653,8 @@ class TranslateHelperService(SetArrayService, Service):
         """
             получение словаря (для corasik
         """
-        stmt = select(cls.model.word, cls.model.drow).filter_by(**filter)
+        stmt = (select(cls.model.word, cls.model.drow).filter_by(**filter)
+                .filter(func.array_length(cls.model.tags, 1) > 0))
         response = await session.execute(stmt)
         result = dict(response.tuples().all())
         if filter.get('shit'):
