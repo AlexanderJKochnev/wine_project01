@@ -654,7 +654,7 @@ class TranslateHelperService(SetArrayService, Service):
             получение словаря (для corasik
         """
         stmt = (select(cls.model.word, cls.model.drow).filter_by(**filter)
-                .filter(func.array_length(cls.model.tags, 1) > 0))
+                .filter(func.array_length(cls.model.drow, 1) > 0))
         response = await session.execute(stmt)
         result = dict(response.tuples().all())
         if filter.get('shit'):
