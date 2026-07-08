@@ -136,7 +136,6 @@ class TranslationService:
         # phrase = pre_process_wine_text(phrase)
         # Вместо текстовой строки генерируем массив ролей (System / User)
         messages = self._build_messages(system_prompt, user_prompt, lang, phrase, drink)
-        logger.warning(messages)
         request_params = self._prepare_params(**params)
         request_params["messages"] = messages
         logger.warning(f'{messages=}')
@@ -168,6 +167,7 @@ class TranslationService:
     ) -> Dict[str, Any]:
         """Обработка одной конкретной комбинации параметров и текстов"""
         messages = self._build_messages(s_prompt, u_prompt, lang, phrase, drink, translation_hint)
+        logger.warning(messages)
         request_params = self._prepare_params(**single_params)
         request_params["messages"] = messages
         try:
