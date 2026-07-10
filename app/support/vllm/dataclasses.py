@@ -14,7 +14,7 @@ from sqlalchemy.orm import joinedload
 from app.core.config.project_config import settings
 from app.core.enum import HANDBOOKS
 from app.core.utils.ahocorasick import get_extractor
-from app.core.utils.common_utils import distinct_glue
+from app.core.utils.common_utils import distinct_glue, jprint
 from app.core.utils.pydantic_utils import inst_dict
 from app.support import Subcategory
 from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
@@ -106,6 +106,7 @@ class DrinkTranslateData:
                                                              item['category'].get('name')),
             blacklist=('other', 'brandy', 'прочее', 'бренди')
         )) for item in subcat_dict}
+        jprint(drink)
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
