@@ -40,7 +40,7 @@ class DrinkTranslateData:
     expert_user_prompt: tuple
     cleaner_auto: Optional[ahocorasick.Automaton] = None
     translator_auto: Optional[ahocorasick.Automaton] = None
-    descr: Optional[str] = None  # описание - совместимость с Handbook
+    descr: Optional[dict] = None  # описание - совместимость с Handbook
 
     @classmethod
     async def load_from_db(cls,
@@ -106,7 +106,6 @@ class DrinkTranslateData:
                                                              item['category'].get('name')),
             blacklist=('other', 'brandy', 'прочее', 'бренди')
         )) for item in subcat_dict}
-        jprint(drink)
 
         # 2. Возвращаем уже заполненный датакласс
         return cls(system_prompt=system_prompt,
@@ -125,7 +124,8 @@ class DrinkTranslateData:
                    cleaner_auto=cleaner_auto,
                    subcategory_ids=subcategory_ids,
                    expert_system_prompt=expert_system_prompt,
-                   expert_user_prompt=expert_user_prompt)
+                   expert_user_prompt=expert_user_prompt,
+                   descr=drink)
 
 
 @dataclass(slots=True)

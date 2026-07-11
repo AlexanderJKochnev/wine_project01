@@ -332,7 +332,7 @@ class VLLMService:
                 final_phrases, last_id = await self.__get_phrases__(session_factory, dataclass, last_id, cleaner_auto,
                                                                     translator_auto)
                 if len(final_phrases) == 0:
-                    logger.critical(f'{len(final_phrases)=} ============')
+                    # logger.critical(f'{len(final_phrases)=} ============')
                     break
                 # 4.0 translate / evaluate / error collection / save to tmp_table / quality assurance
                 quality, err = await self.__translate_evaluate__(translation_service,
