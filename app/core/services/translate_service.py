@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Tuple
 from openai import AsyncOpenAI
 from loguru import logger  # noqa: F401
 
-from app.core.utils.common_utils import replaceX
+from app.core.utils.common_utils import jprint, replaceX
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 
 
@@ -257,7 +257,8 @@ class TranslationService:
         request_params = self._prepare_params(temperature=0.0)
         request_params["messages"] = [{"role": "system", "content": system_content},
                                       {"role": "user", "content": user_content}]
-        logger.warning(f'{request_params=}')
+        logger.warning('request_params')
+        jprint(request_params)
 
         try:
             async with semaphore:
