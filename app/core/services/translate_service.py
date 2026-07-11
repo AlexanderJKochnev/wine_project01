@@ -257,6 +257,7 @@ class TranslationService:
         request_params = self._prepare_params(temperature=0.0)
         request_params["messages"] = [{"role": "system", "content": system_content},
                                       {"role": "user", "content": user_content}]
+        logger.warning(f'{request_params=}')
 
         try:
             async with semaphore:
