@@ -51,7 +51,8 @@ class ServiceManager:
     async def start(self):
         """Запустить фоновую очистку"""
         self._running = True
-        await asyncio.create_task(self._cleanup())
+        self._cleanup_task = asyncio.create_task(self._cleanup())
+        await asyncio.sleep(0)
 
     async def stop(self):
         """Остановить и выгрузить всё"""
