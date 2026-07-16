@@ -56,8 +56,9 @@ class TranslationService(BaseService):
             self.http_client = httpx.AsyncClient(
                 limits=httpx.Limits(
                     max_keepalive_connections=5, max_connections=10, keepalive_expiry=30.0
-                ), timeout=httpx.Timeout(60.0, connect=10.0), http2=False
+                ), timeout=httpx.Timeout(60.0, connect=10.0), http2=True
             )
+            await self.http_client.__aenter__()
 
         self.client = AsyncOpenAI(
             base_url=self.config.get("base_url", "http://vllm-node:8000/v1/"), api_key="token-not-needed",
