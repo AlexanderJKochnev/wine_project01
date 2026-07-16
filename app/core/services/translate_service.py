@@ -11,43 +11,73 @@ from loguru import logger  # noqa: F401
 from app.core.utils.common_utils import jprint, replaceX
 from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateData
 
+from abc import ABC, abstractmethod
+from typing import Optional
 
-class TranslationService:
+
+class BaseService(ABC):
+    """Базовый класс для всех сервисов"""
+
     def __init__(self):
-        self.http_client = httpx.AsyncClient(
-            limits=httpx.Limits(
-                max_keepalive_connections=5,  # ← жесткий лимит
-                max_connections=10, keepalive_expiry=30.0
-            ), timeout=httpx.Timeout(60.0, connect=10.0),
-            # http2=False  # ← дополнительно отключаем HTTP/2 или true пробовать
-        )
-        self.client = AsyncOpenAI(
-            base_url='http://vllm-node:8000/v1/',
-            api_key="token-not-needed",
-            # test
-            http_client=self.http_client,
-            max_retries=0  # ← отключаем ретраи
-        )
-        # Имя модели должно совпадать с тем, как она примонтирована/названа в vLLM
-        self.model_name = "/model"
+        self._closed = False
+        self.http_client: Optional[httpx.AsyncClient] = None
+
+    @abstractmethod
+    async def initialize(self):
+        """Инициализация сервиса (создание клиентов и т.д.)"""
+        pass
+
+    @abstractmethod
+    async def close(self):
+        """Закрытие ресурсов"""
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> bool:
+        """Проверка работоспособности сервиса"""
+        pass
+
+    def is_closed(self) -> bool:
+        return self._closed
+
+
+class TranslationService(BaseService):
+    def __init__(self, config: dict = None):
+        super().__init__()
+        self.config = config or {}
+        self.client = None
+        self.model_name = self.config.get("model", "/model")
         self.lang_map = {'ru': 'Russian', 'en': 'English', 'de': 'German', 'fr': 'French', 'es': 'Spanish',
                          'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese'}
-        self.hang = ("Описание: «", "Перевод: «", "Описание: ", "Перевод: ")
 
-        # ШАГ 3: Закрытие
-        async def close(self):
-            """Явное закрытие"""
+    async def initialize(self):
+        """Инициализация сервиса"""
+        if self.http_client is None:
+            self.http_client = httpx.AsyncClient(
+                limits=httpx.Limits(
+                    max_keepalive_connections=5, max_connections=10, keepalive_expiry=30.0
+                ), timeout=httpx.Timeout(60.0, connect=10.0), http2=False
+            )
+
+        self.client = AsyncOpenAI(
+            base_url=self.config.get("base_url", "http://vllm-node:8000/v1/"), api_key="token-not-needed",
+            http_client=self.http_client, max_retries=0
+        )
+        return self
+
+    async def close(self):
+        """Закрытие ресурсов"""
+        if not self._closed and self.http_client:
             await self.http_client.aclose()
-            # Если у AsyncOpenAI есть внутренние клиенты:
-            if hasattr(self.client, '_client'):
-                await self.client._client.aclose()
+            self._closed = True
 
-        # Контекстный менеджер для автоматического закрытия
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            await self.close()
+    async def health_check(self) -> bool:
+        """Проверка работоспособности"""
+        try:
+            # Простой пинг
+            return self.client is not None
+        except Exception:
+            return False
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
                         drink: str = None, hints: dict = None) -> list:

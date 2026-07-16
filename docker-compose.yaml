@@ -138,51 +138,6 @@ services:
       - vllm_network
       - clickhouse_network
 
-  mongo:
-    logging:
-      driver: ${LOGGER_DRIVER}
-      options:
-        max-size: ${MAX_SIZE}
-        max-file: ${MAX_FILE}
-    image: mongo:local
-    # image: ghcr.io/alexanderjkochnev/mongo:4.4.20
-    hostname: ${MONGO_HOSTNAME}
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-      MONGO_INITDB_DATABASE: admin
-    expose:
-      - "${MONGO_INN_PORT}"
-    volumes:
-      - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_mongodb_data:/data/db
-      - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    command: >
-      mongod
-      --bind_ip_all
-      --wiredTigerCacheSizeGB 4
-      --storageEngine wiredTiger
-      --journalCommitInterval 500
-      --syncdelay 300
-      --nojournal
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo localhost:${MONGO_INN_PORT}/admin --quiet --username admin --password admin
-      interval: 10s
-      timeout: 10s
-      retries: 30
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 8G
-        reservations:
-          cpus: '1'
-          memory: 2G
-    networks:
-      mongodb_network:
-        # ipv4_address: ${IP_MONGO}
-
   preact_front:
     logging:
       driver: ${LOGGER_DRIVER}
@@ -275,7 +230,7 @@ volumes:
   migration_volume: # alembic migrations
   pg_data: # postgresql data
   pg_dump: # postgres dump/restore
-  mongodb_data:
+  # mongodb_data:
   upload_volume:
   # certs_data:
   # certbot_www:
@@ -291,11 +246,11 @@ networks:
     ipam:
       config:
         - subnet: ${SUBNET_PGBOUNCER}
-  mongodb_network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: ${SUBNET_MONGO}
+  # mongodb_network:
+  #   driver: bridge
+  #   ipam:
+  #     config:
+  #       - subnet: ${SUBNET_MONGO}
   preact_network:
     driver: bridge
     ipam:
@@ -304,18 +259,6 @@ networks:
   nginx_gateway_shared_network:
     driver: bridge
     external: true
-  # ollama_network:
-  #   driver: bridge
-  #   external: true
-  #   name: ollama_ollama_network
-  # redis_network:
-  #   driver: bridge
-  #   external: true
-  #  name: ollama_redis_network
-  # searxng_network:
-  #   driver: bridge
-  #   external: true
-  #   name: ollama_searxng_network
   vllm_network:
     name: vllm_network
     driver: bridge

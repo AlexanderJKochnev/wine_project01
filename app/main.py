@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from typing import List, Optional
 
 from fastapi.responses import JSONResponse
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from loguru import logger
@@ -19,9 +19,11 @@ from app.auth.routers import auth_router, user_router
 from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
 # from app.core.config.database.ollama_async import get_ollama_manager
-from app.core.config.database.db_mongo import MongoDBManager, get_mongodb
+# from app.core.config.database.db_mongo import MongoDBManager, get_mongodb
 # from app.core.config.database.redis_async import redis_manager
-from motor.motor_asyncio import AsyncIOMotorDatabase
+# from motor.motor_asyncio import AsyncIOMotorDatabase
+
+from app.core.services.vllm_service_manager import service_manager
 from app.mongodb.router import router as MongoRouter
 from app.preact.create.router import CreateRouter
 from app.preact.get.router import GetRouter
@@ -89,11 +91,9 @@ async def lifespan(app: FastAPI):
         )  # Если БД не отвечает, часто нет смысла запускать приложение  # raise e
     await init_db_extensions()
     logger.success("расширения Postgresql установлены")
-    await MongoDBManager.connect()  # Подключаем Mongo
-    logger.success("Lifespan: соединение с MongoDB установлены")
-    # await init_db_extensions()  # подключение расщирений Postgresql
-    logger.success("Lifespan: расширения для PostgreSQL установлены")
-    # CLICKHOUSE
+    # await MongoDBManager.connect()  # Подключаем Mongo
+    # logger.success("Lifespan: соединение с MongoDB установлены")
+
     # CLICKHOUSE MANAGER INITIATE
     ch_manager = ClickHouseManager()
     await ch_manager.connect()
@@ -102,15 +102,16 @@ async def lifespan(app: FastAPI):
     app.state.ch_repo_factory = ClickHouseRepositoryFactory(ch_manager.client)
     app.state.seaweed_fids_default = await get_dump(app.state.ch_client)
     logger.success(f'заглушка для изображний инициализирована {app.state.seaweed_fids_default}')
-    # app.state.ch_client = await ch_manager.connect()
-    #  app.state.ch_client = global_ch_manager.client
     logger.success("✅ ClickHouse connected")
-    # seaweed
+
+    # SEAWEED
     await init_seaweed(master_url="http://seaweedfs_master:9333")
     logger.success('✅ Seaweed connected with url "http://seaweedfs_master:9333"')
-    # global _embedding_service
-    # _embedding_service = EmbeddingService()
-    # logger.success("✅ Query model loaded (Static, CPU, 50MB)")
+
+    # VLLM SERVICE MANAGER
+    # service_manager = ServiceManager(idle_timeout_minutes=10)
+    await service_manager.start()
+    logger.success("✅ VLLM Service manager started")
     yield
 
     # --- SHUTDOWN ---
@@ -122,9 +123,10 @@ async def lifespan(app: FastAPI):
     # except asyncio.CancelledError:
     #     pass
     await DatabaseManager.engine.dispose()
-    await MongoDBManager.disconnect()
+    # await MongoDBManager.disconnect()
     await ch_manager.close()
     await close_seaweed()
+    await service_manager.stop()
     # await redis_manager.disconnect()
 
 app = FastAPI(title="Hybrid PostgreSQL-MongoDB API",
@@ -257,6 +259,7 @@ async def read_root():
     return {"message": "Hybrid PostgreSQL (auth) + MongoDB (files) API"}
 
 
+"""
 @app.get("/health")
 async def health_check(mongo_db: AsyncIOMotorDatabase = Depends(get_mongodb)):
     status_info = {"status": "mongodb healthy",
@@ -271,3 +274,4 @@ async def health_check(mongo_db: AsyncIOMotorDatabase = Depends(get_mongodb)):
             status_info["status"] = "degraded"
 
     return status_info
+"""
