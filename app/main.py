@@ -39,14 +39,11 @@ from app.auth.routers import auth_router, user_router
 # from app.core.config.project_config import settings
 from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
+print("🔍 ИМПОРТ 1: TranslationService")
 from app.core.services.translate_service import TranslationService
-# from app.core.config.database.ollama_async import get_ollama_manager
-# from app.core.config.database.db_mongo import MongoDBManager, get_mongodb
-# from app.core.config.database.redis_async import redis_manager
-# from motor.motor_asyncio import AsyncIOMotorDatabase
-
+print("🔍 ИМПОРТ 1: ServiceManager")
 from app.core.services.vllm_service_manager import ServiceManager
-from app.mongodb.router import router as MongoRouter
+print("🔍 ИМПОРТ 1: CreateRouter")
 from app.preact.create.router import CreateRouter
 from app.preact.get.router import GetRouter
 from app.preact.read.router import ReadRouter
@@ -226,7 +223,7 @@ app.include_router(WriterRuleRouter().router)
 # app.include_router(OllamaRouter().router)
 app.include_router(VllmRouter().router)
 app.include_router(SeaweedsRouter().router)
-app.include_router(MongoRouter)
+# app.include_router(MongoRouter)
 app.include_router(HandbookRouter().router)
 app.include_router(HandbookRouterPage().router)
 app.include_router(CreateRouter().router)
