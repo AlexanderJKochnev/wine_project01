@@ -54,13 +54,16 @@ from app.preact.patch.router import PatchRouter
 from app.support.api.router import ApiRouter
 # from app.support.clickhouse.service import EmbeddingService
 # -------ИМПОРТ РОУТЕРОВ----------
+print("🔍 ИМПОРТ 1: GemmaRouter")
 from app.support.gemma.router import GemmaRouter
+print("🔍 ИМПОРТ 1: GemmaRouter after")
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
 # from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
+print("🔍 ИМПОРТ 1: ItemRouter")
 from app.support.item.router_item_view import ItemViewRouter
 from app.support.region.router import RegionRouter
 from app.support.subcategory.router import SubcategoryRouter
@@ -72,6 +75,7 @@ from app.support.varietal.router import VarietalRouter
 from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter, OrchestratorRouter,
                                        ImageRouter, RawdataRouter, RegistryRouter)
 from app.support.websearch.router import router as web_router
+print("🔍 ИМПОРТ 1: web_router")
 from app.support.ollama.router import PromptRouter, ISOLanguageRouter, ProptionRouter, WriterRuleRouter
 from app.support.lwin.router import LwinRouter
 from app.support.producer.router import ProducerRouter, ProducerTitleRouter
