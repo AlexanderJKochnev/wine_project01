@@ -276,7 +276,6 @@ class TranslationService:
             text_score = parsed_eval.get("text_score", 0)
             reasoning = parsed_eval.get("reasoning", "")
             errors = parsed_eval.get("errors", "")
-            print(f'{errors=}========================================')
 
         except Exception as e:
             duration_s = 0
@@ -436,7 +435,8 @@ class TranslationService:
             lines = ["\n"]
             for word, translation_set in hints.items():
                 variants = ", ".join(f"'{t}'" for t in sorted(translation_set))
-                lines.append(f"- '{word}': can be translated as {variants}")
+                # lines.append(f"- '{word}': can be translated as {variants}")
+                lines.append(f"- '{word}': {variants}")
             hints_str = "\n".join(lines)
 
         return template.format(
