@@ -1,29 +1,23 @@
 # app/main.py
-# import httpx
-import os
-import sys
-import logging
+# import os
+# import sys
+# import logging
 
 # Включаем логирование multiprocessing ДО ВСЕХ ИМПОРТОВ
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 # Включаем дебаг multiprocessing
-import multiprocessing
-multiprocessing.util.log_to_stderr(logging.DEBUG)
+# import multiprocessing
+# multiprocessing.util.log_to_stderr(logging.DEBUG)
 
 # Логируем момент создания семафоров
-import multiprocessing.resource_tracker as rt
-rt._DEBUG = True
+# import multiprocessing.resource_tracker as rt
+# rt._DEBUG = True
 
-print("🔍 Начинаем импорты...")
-print("=" * 60)
-
+# print("🔍 Начинаем импорты...")
+# print("=" * 60)
 
 import asyncio
-import multiprocessing
-import logging
-
-# from app.events import event, pg_listen_worker  # noqa: F401
 from contextlib import asynccontextmanager
 from typing import List, Optional
 
@@ -84,6 +78,8 @@ from app.support.merging.router import MergingRouter
 from app.support.item.router_item_image import ItemImageRouter
 from app.support.clickhouse.router import ClickImportRouter
 from app.support.tasting.router import BaseIngredientRouter, BodyRouter, GlasswareRouter, ScaleRouter, TastingNoteRouter
+
+
 logger.info('start initialisation')
 
 _seaweeds_fids_dump: Optional[List[str]] = None
@@ -94,6 +90,15 @@ async def lifespan(app: FastAPI):
     """
         открытие асинхронных соединений с сервисами
     """
+    logger.remove()  # Удаляем стандартный обработчик
+    std_id = logger.add(
+        sys.stdout, colorize=True,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        level="DEBUG", enqueue=True  # ВАЖНО: делает логирование неблокирующим (использует очередь)
+    )
+    log_id = logger.add("logs/app.log", rotation="100 MB", retention="10 days", compression="zip", enqueue=True)
+    logger.success('logger инициализирован')
     DatabaseManager.__init__()
     logger.info("Lifespan: Инициализация ресурсов...")
 
@@ -142,12 +147,18 @@ async def lifespan(app: FastAPI):
     # except asyncio.CancelledError:
     #     pass
     await DatabaseManager.engine.dispose()
-    # await MongoDBManager.disconnect()
+    logger.success('DatabaseManager stopped')
     await ch_manager.close()
+    logger.success('ChManager stopped')
     await close_seaweed()
+    logger.success('Seaweed stopped')
     await service_manager.stop()
+    logger.success('ServiceManager stopped')
     # await redis_manager.disconnect()
-
+    logger.remove(std_id)
+    logger.remove(log_id)
+    await logger.complete()
+    print('logger closed')
 
 app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               lifespan=lifespan,
@@ -157,20 +168,6 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
                   "filter": True  # Полезный бонус: добавляет строку поиска в Swagger
               }
               )
-print("🔍 ИМПОРТ 1")
-logger.remove()  # Удаляем стандартный обработчик
-print("🔍 ИМПОРТ 2")
-logger.add(
-    sys.stdout,
-    colorize=True,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | "
-           "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    level="DEBUG",
-    enqueue=True  # ВАЖНО: делает логирование неблокирующим (использует очередь)
-)
-print("🔍 ИМПОРТ 3")
-logger.add("logs/app.log", rotation="500 MB", retention="10 days", compression="zip", enqueue=True)
-print("🔍 ИМПОРТ 4")
 
 
 @app.middleware("http")
@@ -278,7 +275,6 @@ app.include_router(TranslateHelperRouter().router)
 # app.include_router(ArqWorkerRouter)
 app.include_router(auth_router)
 app.include_router(user_router)
-
 
 
 @app.get("/")
