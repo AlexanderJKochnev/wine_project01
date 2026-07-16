@@ -3,6 +3,8 @@ import asyncio
 import json
 import time
 from typing import Dict, Any, List, Tuple
+
+import httpx
 from openai import AsyncOpenAI
 from loguru import logger  # noqa: F401
 
@@ -12,60 +14,40 @@ from app.support.vllm.dataclasses import DrinkTranslateData, HandbookTranslateDa
 
 class TranslationService:
     def __init__(self):
+        self.http_client = httpx.AsyncClient(
+            limits=httpx.Limits(
+                max_keepalive_connections=5,  # ← жесткий лимит
+                max_connections=10, keepalive_expiry=30.0
+            ), timeout=httpx.Timeout(60.0, connect=10.0),
+            http2=False  # ← дополнительно отключаем HTTP/2 или true пробовать
+        )
         self.client = AsyncOpenAI(
-            base_url='http://vllm-node:8000/v1/', api_key="token-not-needed"
+            base_url='http://vllm-node:8000/v1/',
+            api_key="token-not-needed",
+            # test
+            http_client=self.http_client,
+            max_retries=0  # ← отключаем ретраи
         )
         # Имя модели должно совпадать с тем, как она примонтирована/названа в vLLM
         self.model_name = "/model"
         self.lang_map = {'ru': 'Russian', 'en': 'English', 'de': 'German', 'fr': 'French', 'es': 'Spanish',
                          'it': 'Italian', 'zh': 'Chinese', 'ja': 'Japanese'}
         self.hang = ("Описание: «", "Перевод: «", "Описание: ", "Перевод: ")
-        self.EXPERT_SYSTEM_PROMPT = """
-        You are an expert wine writer and professional translator.
-        Your task is to critically evaluate the quality of the translation provided.
-        Compare the Original Text and the Translated Text based on two criteria:
-        1. text_quality (1-10) [HIGH PRIORITY]: Evaluate the target language ({lang}). It must sound like natural,
-        fluent, and elegant wine/spirit journalism (e.g., in the style of Bunin, Maugham, or elite wine magazines). Check for:
-           - Flawless grammar, proper gender/case agreements, and natural sentence structures.
-           - ABSOLUTE ZERO TOLERANCE for literal translation (calque). Phrases like "fruit of the winery", "hits of pepper",
-            "wine's body" translated literally must be heavily penalized.
-           - It must sound like it was originally written by a native {lang} writer, not a machine.
-        2. translation_quality (1-10): Evaluate accuracy. It must capture the correct meaning, factual data (percentages, years, names),
-        and professional alcohol industry terminology (casks, finish, tannins, varieties) without inventing fake details.
 
-        [ERROR DETECTION]: Identify all translation errors, stylistic flaws, and literal calques.
-        For each issue, extract a tuple containing: (1) the exact original segment,
-        (2) the incorrect translation segment, and (3) your corrected version.
+        # ШАГ 3: Закрытие
+        async def close(self):
+            """Явное закрытие"""
+            await self.http_client.aclose()
+            # Если у AsyncOpenAI есть внутренние клиенты:
+            if hasattr(self.client, '_client'):
+                await self.client._client.aclose()
 
-        CRITICAL LOGIC RULES TO PREVENT FALSE POSITIVES:
-        - NEVER list an error where your "corrected version" is identical or semantically 100% equal to the "incorrect translation segment".
-        - If the translation used a valid option from the provided Glossary/Hints, it is 100% CORRECT. Do not treat it as an error.
-        - Before generating JSON, double-check every item in the "errors" list. If the "incorrect translation segment" and "your corrected version" match, REMOVE it from the list.
-        - If the "errors" list becomes empty after this check, you MUST give a score of 10 for both translation_score and text_score.
-        - Once again: if there is no errors in "errors" list, you MUST give a score of 10 for both translation_score
-        and text_score.
+        # Контекстный менеджер для автоматического закрытия
+        async def __aenter__(self):
+            return self
 
-        CRITICAL FORMATTING: The third element of the error tuple MUST contain ONLY the corrected translation.
-        Do not include any explanations, definitions, parentheses, or alternative options.
-        If there are no errors, return an empty list.
-
-        You must strictly return ONLY a JSON object with no markdown formatting, no code blocks, and no extra text.
-        JSON schema:
-        {{
-          "translation_score": int,
-          "text_score": int,
-          "reasoning": "Short explanation of your choice in English",
-          "errors": [
-            ["original text segment", "incorrect translation segment", "ONLY the correct translation without any comments or brackets"]
-          ]
-        }}
-        """
-
-        self.EXPERT_USER_PROMPT = """Subject Info: {subject_info}
-        Original Text: "{origin}"
-        Translated Text: "{result}"{translation_hints}
-
-        Analyze the text, find all translation and stylistic errors using the rules and the Approved Glossary, and evaluate the translation now."""
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            await self.close()
 
     def _build_messages(self, system_prompt: str, user_prompt: str, lang_code: str, phrase: str,
                         drink: str = None, hints: dict = None) -> list:
@@ -244,15 +226,6 @@ class TranslationService:
                                                       row['origin'],
                                                       row['result'],
                                                       row['hint'])
-        """
-        system_content = self.EXPERT_SYSTEM_PROMPT.format(lang=target_lang)
-        user_content = self.render_expert_user_prompt(self.EXPERT_USER_PROMPT,
-                                                      row['drink'],
-                                                      row['origin'],
-                                                      row['result'],
-                                                      row['hint']
-                                                      )
-        """
         # Для экспертной оценки всегда используем температуру 0.0
         request_params = self._prepare_params(temperature=0.0)
         request_params["messages"] = [{"role": "system", "content": system_content},
