@@ -39,11 +39,8 @@ from app.auth.routers import auth_router, user_router
 # from app.core.config.project_config import settings
 from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
-print("🔍 ИМПОРТ 1: TranslationService")
 from app.core.services.translate_service import TranslationService
-print("🔍 ИМПОРТ 1: ServiceManager")
 from app.core.services.vllm_service_manager import ServiceManager
-print("🔍 ИМПОРТ 1: CreateRouter")
 from app.preact.create.router import CreateRouter
 from app.preact.get.router import GetRouter
 from app.preact.read.router import ReadRouter
@@ -54,16 +51,13 @@ from app.preact.patch.router import PatchRouter
 from app.support.api.router import ApiRouter
 # from app.support.clickhouse.service import EmbeddingService
 # -------ИМПОРТ РОУТЕРОВ----------
-print("🔍 ИМПОРТ 1: GemmaRouter")
 from app.support.gemma.router import GemmaRouter
-print("🔍 ИМПОРТ 1: GemmaRouter after")
 from app.support.category.router import CategoryRouter
 from app.support.country.router import CountryRouter
 # from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
 from app.support.item.router import ItemRouter
-print("🔍 ИМПОРТ 1: ItemRouter")
 from app.support.item.router_item_view import ItemViewRouter
 from app.support.region.router import RegionRouter
 from app.support.subcategory.router import SubcategoryRouter
@@ -75,7 +69,6 @@ from app.support.varietal.router import VarietalRouter
 from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter, OrchestratorRouter,
                                        ImageRouter, RawdataRouter, RegistryRouter)
 from app.support.websearch.router import router as web_router
-print("🔍 ИМПОРТ 1: web_router")
 from app.support.ollama.router import PromptRouter, ISOLanguageRouter, ProptionRouter, WriterRuleRouter
 from app.support.lwin.router import LwinRouter
 from app.support.producer.router import ProducerRouter, ProducerTitleRouter
@@ -102,7 +95,9 @@ async def lifespan(app: FastAPI):
     """
         открытие асинхронных соединений с сервисами
     """
+    print("🔍 ИМПОРТ 1: DatabaseManager")
     DatabaseManager.__init__()
+    print("🔍 ИМПОРТ 1: DatabaseManager")
     logger.info("Lifespan: Инициализация ресурсов...")
 
     try:
@@ -112,29 +107,38 @@ async def lifespan(app: FastAPI):
         logger.critical(
             f"Lifespan: ОШИБКА ПОДКЛЮЧЕНИЯ К БД: {e}, {DatabaseManager.connection_string=}"
         )  # Если БД не отвечает, часто нет смысла запускать приложение  # raise e
+    print("🔍 ИМПОРТ 1: init_db_extensions")
     await init_db_extensions()
     logger.success("расширения Postgresql установлены")
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
     # CLICKHOUSE MANAGER INITIATE
+    print("🔍 ИМПОРТ 1: ClickManager")
     ch_manager = ClickHouseManager()
+    print("🔍 ИМПОРТ 1: ClickManager")
     await ch_manager.connect()
     app.state.ch_manager = ch_manager
     app.state.ch_client = ch_manager.client
     app.state.ch_repo_factory = ClickHouseRepositoryFactory(ch_manager.client)
     app.state.seaweed_fids_default = await get_dump(app.state.ch_client)
+    print("🔍 ИМПОРТ 1: ClickManager")
     logger.success(f'заглушка для изображний инициализирована {app.state.seaweed_fids_default}')
     logger.success("✅ ClickHouse connected")
 
     # SEAWEED
+    print("🔍 ИМПОРТ 1: Seaweed")
     await init_seaweed(master_url="http://seaweedfs_master:9333")
     logger.success('✅ Seaweed connected with url "http://seaweedfs_master:9333"')
+    print("🔍 ИМПОРТ 1: Seaweed")
 
     # VLLM SERVICE MANAGER
     service_manager = ServiceManager(idle_timeout_minutes=10)
+    print("🔍 ИМПОРТ 1: ServiceManager")
     await service_manager.start()
+    print("🔍 ИМПОРТ 1: ServiceManager")
     app.state.service_manager = service_manager
+    print("🔍 ИМПОРТ 1: ServiceManager")
     service_manager.register("translation", TranslationService)
     logger.success("✅ VLLM Service manager started")
 
