@@ -431,7 +431,7 @@ class TranslationService:
         hints_str = ""
 
         if hints:
-            lines = ["\n\nApproved Glossary Hints (These variants are verified and absolutely correct):"]
+            lines = ["\n"]
             for word, translation_set in hints.items():
                 variants = ", ".join(f"'{t}'" for t in sorted(translation_set))
                 lines.append(f"- '{word}': can be translated as {variants}")
