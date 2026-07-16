@@ -131,7 +131,7 @@ def ResponseStreaming(content: bytes, **kwargs):
 def ResponseJust(content: bytes):
     # media_type, content_type, mime_type
     headers = generate_image_headers(content)
-    logger.info(f'{len(content)=}')
+    # logger.info(f'{len(content)=}')
     return Response(content=content,
                     media_type=headers.get("Content-Type"),
                     headers=headers)

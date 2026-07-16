@@ -115,6 +115,8 @@ async def lifespan(app: FastAPI):
     app.state.service_manager = service_manager
     service_manager.register("translation", TranslationService)
     logger.success("✅ VLLM Service manager started")
+
+    logger.success("✅ FastAPI started")
     yield
 
     # --- SHUTDOWN ---
