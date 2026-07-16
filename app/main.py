@@ -1,6 +1,8 @@
 # app/main.py
 # import httpx
 import asyncio
+import multiprocessing
+import logging
 
 # from app.events import event, pg_listen_worker  # noqa: F401
 from contextlib import asynccontextmanager
@@ -71,6 +73,7 @@ from app.support.clickhouse.router import ClickImportRouter
 from app.support.tasting.router import BaseIngredientRouter, BodyRouter, GlasswareRouter, ScaleRouter, TastingNoteRouter
 
 logger.info('start initialisation')
+multiprocessing.util.log_to_stderr(logging.DEBUG)
 
 _seaweeds_fids_dump: Optional[List[str]] = None
 
