@@ -18,6 +18,7 @@ from app.auth.routers import auth_router, user_router
 # from app.core.config.project_config import settings
 from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
+from app.core.services.translate_service import TranslationService
 # from app.core.config.database.ollama_async import get_ollama_manager
 # from app.core.config.database.db_mongo import MongoDBManager, get_mongodb
 # from app.core.config.database.redis_async import redis_manager
@@ -112,6 +113,7 @@ async def lifespan(app: FastAPI):
     service_manager = ServiceManager(idle_timeout_minutes=10)
     await service_manager.start()
     app.state.service_manager = service_manager
+    service_manager.register("translation", TranslationService)
     logger.success("✅ VLLM Service manager started")
     yield
 

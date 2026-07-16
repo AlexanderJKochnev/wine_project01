@@ -19,9 +19,9 @@ class ServiceManager:
         self._running: bool = False  # флаг работы фоновой очистки
         self._cleanup_task = None  # ссылка на фоновую задачу (чтобы отменить при stop)
 
-        for cls in BaseService.__subclasses__():
-            name = cls.__name__.lower().replace('service', '')  # TranslationService → translation
-            self.register(name, cls)
+        # for cls in BaseService.__subclasses__():
+        #     name = cls.__name__.lower().replace('service', '')  # TranslationService → translation
+        #     self.register(name, cls)
 
     def register(self, name: str, cls, config: dict = None):
         """Зарегистрировать тип сервиса"""
