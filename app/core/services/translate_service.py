@@ -270,11 +270,13 @@ class TranslationService:
             raw_content = response.choices[0].message.content.strip()
             clean_json = raw_content.replace("```json", "").replace("```", "").strip()
             parsed_eval = json.loads(clean_json)
-
+            logger.critical(1)
+            jprint(parsed_eval)
             t_score = parsed_eval.get("translation_score", 0)
             text_score = parsed_eval.get("text_score", 0)
             reasoning = parsed_eval.get("reasoning", "")
             errors = parsed_eval.get("errors", "")
+            print(f'{errors=}========================================')
 
         except Exception as e:
             duration_s = 0
