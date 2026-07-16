@@ -56,7 +56,8 @@ class TranslationService(BaseService):
             self.http_client = httpx.AsyncClient(
                 limits=httpx.Limits(
                     max_keepalive_connections=5, max_connections=10, keepalive_expiry=30.0
-                ), timeout=httpx.Timeout(60.0, connect=10.0), http2=True
+                ), timeout=httpx.Timeout(60.0, connect=10.0),
+                # http2=True
             )
             await self.http_client.__aenter__()
 
