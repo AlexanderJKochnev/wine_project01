@@ -84,7 +84,7 @@ from app.support.merging.router import MergingRouter
 from app.support.item.router_item_image import ItemImageRouter
 from app.support.clickhouse.router import ClickImportRouter
 from app.support.tasting.router import BaseIngredientRouter, BodyRouter, GlasswareRouter, ScaleRouter, TastingNoteRouter
-
+print("🔍 ИМПОРТ 1: last import")
 logger.info('start initialisation')
 
 _seaweeds_fids_dump: Optional[List[str]] = None
