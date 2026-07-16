@@ -2,6 +2,8 @@
 import asyncio
 from datetime import datetime
 
+from loguru import logger
+
 from app.core.services.translate_service import BaseService
 
 
@@ -40,9 +42,11 @@ class ServiceManager:
     async def unload(self, name: str):
         """Выгрузить сервис"""
         if name in self._services:
+            logger.info(f"🔄 Unloading: {name}")
             await self._services[name].close()
             del self._services[name]
             self._last_used.pop(name, None)
+            logger.info(f"✅ Unloaded: {name}")
 
     async def unload_all(self):
         for name in list(self._services.keys()):
