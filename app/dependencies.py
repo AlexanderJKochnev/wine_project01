@@ -6,7 +6,6 @@ from clickhouse_connect.driver.asyncclient import AsyncClient as ClickAsyncClien
 from fastapi import Request
 
 # from app.core.services.translate_service import TranslationService
-from app.core.services.vllm_service_manager import service_manager
 # from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
 from app.core.utils.translation_utils import fill_missing_translations
 
@@ -37,11 +36,12 @@ def get_translator_func() -> Callable[[Dict[str, Any], Optional[bool]], Awaitabl
 
 
 @lru_cache
-def get_translation_service1() -> TranslationService:
+def get_translation_service1():
     """DI для сервиса перевода"""
     pass
     # return TranslationService()
 
 
-async def get_translation_service():
+async def get_translation_service(request: Request):
+    service_manager = request.app.state.service_manager
     return await service_manager.get("translation")

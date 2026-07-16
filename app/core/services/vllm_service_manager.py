@@ -67,6 +67,3 @@ class ServiceManager:
             for name, last_used in list(self._last_used.items()):
                 if (now - last_used).total_seconds() > self.idle_timeout * 60:
                     await self.unload(name)
-
-
-service_manager = ServiceManager(idle_timeout_minutes=10)

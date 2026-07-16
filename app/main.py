@@ -23,7 +23,7 @@ from app.core.config.database.db_async import DatabaseManager, init_db_extension
 # from app.core.config.database.redis_async import redis_manager
 # from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.core.services.vllm_service_manager import service_manager
+from app.core.services.vllm_service_manager import ServiceManager
 from app.mongodb.router import router as MongoRouter
 from app.preact.create.router import CreateRouter
 from app.preact.get.router import GetRouter
@@ -109,8 +109,9 @@ async def lifespan(app: FastAPI):
     logger.success('✅ Seaweed connected with url "http://seaweedfs_master:9333"')
 
     # VLLM SERVICE MANAGER
-    # service_manager = ServiceManager(idle_timeout_minutes=10)
+    service_manager = ServiceManager(idle_timeout_minutes=10)
     await service_manager.start()
+    app.state.service_manager = service_manager
     logger.success("✅ VLLM Service manager started")
     yield
 
