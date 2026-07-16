@@ -50,6 +50,7 @@ class ServiceManager:
 
     async def unload_all(self):
         for name in list(self._services.keys()):
+            logger.success(f'unloaded {name}')
             await self.unload(name)
 
     async def start(self):
@@ -61,8 +62,9 @@ class ServiceManager:
     async def stop(self):
         """Остановить и выгрузить всё"""
         self._running = False
-        for name in list(self._services.keys()):
-            await self.unload(name)
+        await self.unload_all()
+        # for name in list(self._services.keys()):
+        #     await self.unload(name)
 
     async def _cleanup(self):
         """Фоновая очистка неиспользуемых сервисов"""
