@@ -147,7 +147,7 @@ async def lifespan(app: FastAPI):
     await close_seaweed()
     await service_manager.stop()
     # await redis_manager.disconnect()
-print("🔍 ИМПОРТ 1: before app")
+
 
 app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               lifespan=lifespan,
@@ -168,7 +168,7 @@ logger.add(
     enqueue=True  # ВАЖНО: делает логирование неблокирующим (использует очередь)
 )
 logger.add("logs/app.log", rotation="500 MB", retention="10 days", compression="zip", enqueue=True)
-
+print("🔍 ИМПОРТ 1: after logger")
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
