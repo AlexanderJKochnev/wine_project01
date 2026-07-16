@@ -84,7 +84,6 @@ from app.support.merging.router import MergingRouter
 from app.support.item.router_item_image import ItemImageRouter
 from app.support.clickhouse.router import ClickImportRouter
 from app.support.tasting.router import BaseIngredientRouter, BodyRouter, GlasswareRouter, ScaleRouter, TastingNoteRouter
-print("🔍 ИМПОРТ 1: last import")
 logger.info('start initialisation')
 
 _seaweeds_fids_dump: Optional[List[str]] = None
@@ -95,9 +94,7 @@ async def lifespan(app: FastAPI):
     """
         открытие асинхронных соединений с сервисами
     """
-    print("🔍 ИМПОРТ 1: DatabaseManager")
     DatabaseManager.__init__()
-    print("🔍 ИМПОРТ 1: DatabaseManager")
     logger.info("Lifespan: Инициализация ресурсов...")
 
     try:
@@ -107,38 +104,29 @@ async def lifespan(app: FastAPI):
         logger.critical(
             f"Lifespan: ОШИБКА ПОДКЛЮЧЕНИЯ К БД: {e}, {DatabaseManager.connection_string=}"
         )  # Если БД не отвечает, часто нет смысла запускать приложение  # raise e
-    print("🔍 ИМПОРТ 1: init_db_extensions")
     await init_db_extensions()
     logger.success("расширения Postgresql установлены")
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
     # CLICKHOUSE MANAGER INITIATE
-    print("🔍 ИМПОРТ 1: ClickManager")
     ch_manager = ClickHouseManager()
-    print("🔍 ИМПОРТ 1: ClickManager")
     await ch_manager.connect()
     app.state.ch_manager = ch_manager
     app.state.ch_client = ch_manager.client
     app.state.ch_repo_factory = ClickHouseRepositoryFactory(ch_manager.client)
     app.state.seaweed_fids_default = await get_dump(app.state.ch_client)
-    print("🔍 ИМПОРТ 1: ClickManager")
     logger.success(f'заглушка для изображний инициализирована {app.state.seaweed_fids_default}')
     logger.success("✅ ClickHouse connected")
 
     # SEAWEED
-    print("🔍 ИМПОРТ 1: Seaweed")
     await init_seaweed(master_url="http://seaweedfs_master:9333")
     logger.success('✅ Seaweed connected with url "http://seaweedfs_master:9333"')
-    print("🔍 ИМПОРТ 1: Seaweed")
 
     # VLLM SERVICE MANAGER
     service_manager = ServiceManager(idle_timeout_minutes=10)
-    print("🔍 ИМПОРТ 1: ServiceManager")
     await service_manager.start()
-    print("🔍 ИМПОРТ 1: ServiceManager")
     app.state.service_manager = service_manager
-    print("🔍 ИМПОРТ 1: ServiceManager")
     service_manager.register("translation", TranslationService)
     logger.success("✅ VLLM Service manager started")
 
@@ -160,7 +148,7 @@ async def lifespan(app: FastAPI):
     await service_manager.stop()
     # await redis_manager.disconnect()
 
-app = FastAPI(title="Hybrid PostgreSQL-MongoDB API",
+app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               lifespan=lifespan,
               swagger_ui_parameters={
                   "docExpansion": "none",  # Сворачивает всё: и теги, и операции
@@ -201,6 +189,7 @@ async def log_requests(request: Request, call_next):
 
     return response
 
+print("🔍 ИМПОРТ 1: middleware http")
 
 @app.exception_handler(AppBaseException)
 async def app_exception_handler(request: Request, exc: AppBaseException):
@@ -208,6 +197,9 @@ async def app_exception_handler(request: Request, exc: AppBaseException):
         status_code=exc.status_code,
         content={"detail": exc.message},
     )
+
+print("🔍 ИМПОРТ 2: middleware http")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -219,7 +211,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+print("🔍 ИМПОРТ 3: middleware http")
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # минимальный размер для сжатия
+print("🔍 ИМПОРТ 4: middleware http")
 
 app.include_router(ApiRouter().router)
 app.include_router(GemmaRouter().router)
@@ -230,6 +225,8 @@ app.include_router(ProptionRouter().router)
 app.include_router(WriterRuleRouter().router)
 # app.include_router(OllamaRouter().router)
 app.include_router(VllmRouter().router)
+print("🔍 ИМПОРТ 5: middleware http")
+
 app.include_router(SeaweedsRouter().router)
 # app.include_router(MongoRouter)
 app.include_router(HandbookRouter().router)
@@ -283,6 +280,7 @@ app.include_router(TranslateHelperRouter().router)
 # app.include_router(ArqWorkerRouter)
 app.include_router(auth_router)
 app.include_router(user_router)
+print("🔍 ИМПОРТ 6: middleware http")
 
 
 @app.get("/")
