@@ -258,7 +258,7 @@ class TranslationService:
         request_params["messages"] = [{"role": "system", "content": system_content},
                                       {"role": "user", "content": user_content}]
         logger.warning('request_params')
-        jprint(request_params)
+        jprint(f'{request_params}')
 
         try:
             async with semaphore:

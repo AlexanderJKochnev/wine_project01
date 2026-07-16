@@ -5,7 +5,7 @@ from typing import Dict, List, Sequence, Tuple
 
 from fastapi import HTTPException  # , BackgroundTasks,
 from loguru import logger
-from openai import AsyncOpenAI
+# from openai import AsyncOpenAI
 from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,10 +45,12 @@ class VLLMService:
 
     def __init__(self):
         # vLLM по умолчанию работает на http://localhost:8000/v1
+        """
         self.client = AsyncOpenAI(
             base_url='http://vllm-node:8000/v1/',
             api_key="token-not-needed"
         )
+        """
         self.model_name = "/model"
 
     @staticmethod
