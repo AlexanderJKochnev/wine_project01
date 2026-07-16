@@ -157,8 +157,9 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
                   "filter": True  # Полезный бонус: добавляет строку поиска в Swagger
               }
               )
-print("🔍 ИМПОРТ 1: after app")
+print("🔍 ИМПОРТ 1")
 logger.remove()  # Удаляем стандартный обработчик
+print("🔍 ИМПОРТ 2")
 logger.add(
     sys.stdout,
     colorize=True,
@@ -167,8 +168,10 @@ logger.add(
     level="DEBUG",
     enqueue=True  # ВАЖНО: делает логирование неблокирующим (использует очередь)
 )
+print("🔍 ИМПОРТ 3")
 logger.add("logs/app.log", rotation="500 MB", retention="10 days", compression="zip", enqueue=True)
-print("🔍 ИМПОРТ 1: after logger")
+print("🔍 ИМПОРТ 4")
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
