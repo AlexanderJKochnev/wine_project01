@@ -147,6 +147,7 @@ async def lifespan(app: FastAPI):
     await close_seaweed()
     await service_manager.stop()
     # await redis_manager.disconnect()
+print("🔍 ИМПОРТ 1: before app")
 
 app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               lifespan=lifespan,
@@ -156,7 +157,7 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
                   "filter": True  # Полезный бонус: добавляет строку поиска в Swagger
               }
               )
-
+print("🔍 ИМПОРТ 1: after app")
 logger.remove()  # Удаляем стандартный обработчик
 logger.add(
     sys.stdout,
@@ -189,7 +190,6 @@ async def log_requests(request: Request, call_next):
 
     return response
 
-print("🔍 ИМПОРТ 1: middleware http")
 
 @app.exception_handler(AppBaseException)
 async def app_exception_handler(request: Request, exc: AppBaseException):
@@ -197,8 +197,6 @@ async def app_exception_handler(request: Request, exc: AppBaseException):
         status_code=exc.status_code,
         content={"detail": exc.message},
     )
-
-print("🔍 ИМПОРТ 2: middleware http")
 
 
 app.add_middleware(
@@ -211,10 +209,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-print("🔍 ИМПОРТ 3: middleware http")
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # минимальный размер для сжатия
-print("🔍 ИМПОРТ 4: middleware http")
 
 app.include_router(ApiRouter().router)
 app.include_router(GemmaRouter().router)
@@ -225,7 +221,6 @@ app.include_router(ProptionRouter().router)
 app.include_router(WriterRuleRouter().router)
 # app.include_router(OllamaRouter().router)
 app.include_router(VllmRouter().router)
-print("🔍 ИМПОРТ 5: middleware http")
 
 app.include_router(SeaweedsRouter().router)
 # app.include_router(MongoRouter)
@@ -280,7 +275,7 @@ app.include_router(TranslateHelperRouter().router)
 # app.include_router(ArqWorkerRouter)
 app.include_router(auth_router)
 app.include_router(user_router)
-print("🔍 ИМПОРТ 6: middleware http")
+
 
 
 @app.get("/")
