@@ -238,7 +238,7 @@ services:
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
-      - redis_search_data:/data
+      - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_redis_search_data:/data
     restart: unless-stopped
     networks:
       - redis_network
@@ -249,6 +249,7 @@ volumes:
   pg_dump: # postgres dump/restore
   # mongodb_data:
   upload_volume:
+  redis_search_data:
   # certs_data:
   # certbot_www:
 
