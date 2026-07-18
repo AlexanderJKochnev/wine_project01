@@ -129,7 +129,7 @@ services:
     networks:
       # - postgres_network  # расскомментировать для теста
       - pgbouncer_network # Для связи с pgbouncer
-      # - redis_network    # Для связи с redis
+      - redis_network    # Для связи с redis
       # - ollama_network
       # - searxng_network
       # - mongodb_network
@@ -225,6 +225,23 @@ services:
       pgbouncer_network:
         # ipv4_address: ${IP_PGBOUNCER}
       
+  
+  search_cache:
+    logging:
+      driver: ${LOGGER_DRIVER}
+      options:
+        max-size: ${MAX_SIZE}
+        max-file: ${MAX_FILE}
+    image: redis:local
+    container_name: fast_search_redis
+    command: redis-server --appendonly yes --requirepass strong_search_password_2026
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    volumes:
+      - redis_search_data:/data
+    restart: unless-stopped
+    networks:
+      - redis_network
 
 volumes:
   migration_volume: # alembic migrations
@@ -246,6 +263,11 @@ networks:
     ipam:
       config:
         - subnet: ${SUBNET_PGBOUNCER}
+  redis_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SUBNET_REDIS}
   # mongodb_network:
   #   driver: bridge
   #   ipam:

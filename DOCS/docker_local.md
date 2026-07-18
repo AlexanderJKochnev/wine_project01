@@ -8,4 +8,5 @@ chattr +c /mnt/hdd_data/@docker_library
 # запуск скрипта
 1. cd docker_library
 2. bash sync_library.sh
+3. 
 # 
