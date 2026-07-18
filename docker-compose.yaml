@@ -225,7 +225,7 @@ services:
       pgbouncer_network:
         # ipv4_address: ${IP_PGBOUNCER}
       
-  
+
   search_cache:
     logging:
       driver: ${LOGGER_DRIVER}
