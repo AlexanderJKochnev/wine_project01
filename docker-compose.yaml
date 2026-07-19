@@ -234,7 +234,7 @@ services:
         max-file: ${MAX_FILE}
     image: redis:local
     container_name: fast_search_redis
-    command: redis-server --appendonly yes --requirepass strong_search_password_2026
+    command: redis-server --appendonly yes --requirepass ${REDIS_PWD}
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:

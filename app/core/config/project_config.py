@@ -175,6 +175,7 @@ class Settings(BaseSettings):
     # === настройки redis/arq
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
+    REDIS_PWD: str = 'strong_search_password_2026'
     ARQ_TASK_TIMEOUT: int = 300  # 5 минут на задачу по умолчанию
     ARQ_MAX_TRIES: int = 3  # максимум 3 попытки
     ARQ_MIN_DELAY: int = 3
