@@ -9,9 +9,9 @@ alembic==1.16.4
 asyncpg==0.29.0
 python-jose==3.5.0
 passlib==1.7.4
-pytest~=8.4.1
-pytest-asyncio
-pytest-cov
+# pytest~=8.4.1
+# pytest-asyncio
+# pytest-cov
 pillow~=11.3.0
 psycopg[binary,pool]
 psycopg2-binary
@@ -46,7 +46,7 @@ arq>=0.25
 Faker~=37.5.3
 python-magic~=0.4.27
 #для работы python-magic нужно: brew install libmagic
-SQLAlchemy~=2.0.43
+# SQLAlchemy~=2.0.43
 pydantic~=2.11.7
 pydantic_core~=2.33.2
 starlette~=0.47.2
@@ -65,11 +65,10 @@ cachetools
 pypika
 pymorphy3
 pymorphy3-dicts-ru
-# nltk
-# datasketch
 numpy==1.26.4
 pymorphy2==0.9.1
 nltk==3.9.4
 redis==5.0.1
 aiohttp==3.13.4
 datasketch==1.10.0
+pyahocorasick
