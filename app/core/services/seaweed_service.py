@@ -37,7 +37,7 @@ from app.core.utils.image_webp import process_image_to_webp
 from app.core.utils.pydantic_utils import get_repo
 from app.dependencies import ClickHouseRepositoryFactory, get_clickhouse_repository_factory
 from loguru import logger  # NOQA: F401
-from app.mongodb.service import ThumbnailImageService
+# from app.mongodb.service import ThumbnailImageService
 
 
 class SeaweedsService:
@@ -329,7 +329,8 @@ class SeaweedsService:
         return result
 
     async def transfer_tierX(self, batch: int, background_tasks: BackgroundTasks, session: AsyncSession,
-                             image_service: ThumbnailImageService):
+                             image_service  # : ThumbnailImageService
+                             ):
         """
             перенос mongodb -> seaweed
             запускать только ОДИН РАЗ
@@ -365,7 +366,7 @@ class SeaweedsService:
             result[id] = response
         return result
 
-    async def transfer_tier2(self, session: AsyncSession, image_service: ThumbnailImageService):
+    async def transfer_tier2(self, session: AsyncSession):
         # запись thumbnails seaweed_fids
         result: dict = {}
         repository = get_repo('Item')
@@ -385,7 +386,8 @@ class SeaweedsService:
                 result[id] = res
         return result
 
-    async def transfer_tier3(self, session: AsyncSession, image_service: ThumbnailImageService):
+    async def transfer_tier3(self, session: AsyncSession, image_service  # : ThumbnailImageService
+                             ):
         # запись thumbnails seaweed_fids
         result: dict = {}
         repository = get_repo('Item')
@@ -468,7 +470,7 @@ class SeaweedsService:
         return content
 
     async def transfer_tier1(self, batch: int, background_tasks: BackgroundTasks, session: AsyncSession,
-                             image_service: ThumbnailImageService
+                             image_service  # : ThumbnailImageService
                              ):
         """ IMPORT IMAGES FROM MONGO TO SEAWEED IN BACKGROUND """
         repository = get_repo('Item')
