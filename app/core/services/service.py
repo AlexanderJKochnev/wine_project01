@@ -23,7 +23,7 @@ from app.core.utils.converters import list_move
 from app.core.utils.pydantic_utils import (get_data_for_search, get_repo, inst_dict, list_dict, make_paginated_response,
                                            prepare_search_string)
 from app.core.utils.reindexation import reindex_items
-from app.mongodb.service import ThumbnailImageService
+# from app.mongodb.service import ThumbnailImageService
 from app.service_registry import get_search_dependencies, register_service
 
 # from app.core.utils.common_utils import jprint
@@ -623,45 +623,6 @@ class Service(metaclass=ServiceMeta):
         #     skip_keys=cls.skip_keys
         # )
         logger.warning("background_tasks.add_task: status: ok")
-
-    @classmethod
-    async def get_image_by_id(self, id: int,
-                              repository: Repository,
-                              model: ModelType,
-                              session: AsyncSession,
-                              image_service: ThumbnailImageService) -> bytes:
-        """
-            получение полноразмерного изображения по id напитка (mongo_db_
-        """
-        #  ПОИСК КОЛОНКИ image_id
-        if not has_column(model, 'image_id'):
-            raise HTTPException(status_code=422, detail=f'{model.__name__} model has no images at all')
-        # 1. получение image_id by id
-        image_id = await repository.get_image_id(id, model, session)
-        if not image_id:
-            raise HTTPException(status_code=402, detail=f'instance {model.__name__} with {id=} not found')
-        # 2. получение image by image_id
-        image: bytes = await image_service.get_full_image(image_id)
-        return image
-
-    @classmethod
-    async def get_thumbnail_by_id(
-        self, id: int, repository: Repository, model: ModelType, session: AsyncSession,
-        image_service: ThumbnailImageService
-    ) -> bytes:
-        """
-            получение полноразмерного изображения по id напитка
-        """
-        #  ПОИСК КОЛОНКИ image_id
-        if not has_column(model, 'image_id'):
-            raise HTTPException(status_code=422, detail=f'{model.__name__} model has no images at all')
-        # 1. получение image_id by id
-        image_id = await repository.get_image_id(id, model, session)
-        if not image_id:
-            raise HTTPException(status_code=402, detail=f'instance {model.__name__} with {id=} not found')
-        # 2. получение thumbnail by image_id
-        image: bytes = await image_service.get_thumbnail(image_id)
-        return image
 
     @classmethod
     async def clicksearch(cls, search: str, mode: str,

@@ -20,7 +20,7 @@ from app.core.utils.pydantic_utils import inst_dict
 
 class ArrayService:
     """
-        service  ice layer для работы с полями  ARRAY[]
+        service layer для работы с полями  ARRAY[]
     """
 
     @classmethod
