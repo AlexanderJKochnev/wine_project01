@@ -14,7 +14,7 @@ from app.core.utils.hashes import FastImageHasher
 from app.core.utils.headers import content_type_magic, make_meta
 from app.core.utils.image_processor import ImageProcessingConfig, ImageProcessor
 from app.core.utils.reindexation import extract_text_optimized  # , extract_text_ultra_fast
-from app.mongodb.service import ThumbnailImageService
+# from app.mongodb.service import ThumbnailImageService
 
 
 class Background:
@@ -295,7 +295,7 @@ class Background:
     @classmethod
     @background_unique
     async def run_mongo_to_seaweed(
-            cls, repository, model, image_service: ThumbnailImageService,
+            cls, repository, model, image_service,  # : ThumbnailImageService,
             click_repo: ClickHouseRepository, fs,
             session_factory):
         """
