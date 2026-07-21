@@ -1,5 +1,5 @@
 # app.core.service.array_service.py
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List
 from random import randint
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,10 +11,9 @@ from app.core.repositories.array_repository import ArrayRepository, SetArrayRepo
 from app.core.services.seaweed_service import SeaweedsService
 from app.core.utils.alchemy_utils import has_column
 from app.core.utils.common_utils import jprint
-from app.core.utils.image_utils import get_default_image
 from app.core.utils.io_utils import get_font_list
 from app.core.utils.pillow_generator import TextConfig, generate_text_image, TextConfigAdaptive
-from app.core.utils.color_palette import auto_match_colors_old, auto_match_colors
+from app.core.utils.color_palette import auto_match_colors_old
 from app.core.utils.pydantic_utils import inst_dict
 
 

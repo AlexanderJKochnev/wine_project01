@@ -39,6 +39,12 @@ from app.dependencies import ClickHouseRepositoryFactory, get_clickhouse_reposit
 from loguru import logger  # NOQA: F401
 # from app.mongodb.service import ThumbnailImageService
 
+"""
+    SeaweedService для прямого общения с SeaweedRepository
+    для работы используются fid и tags (id изображений и их тэги)
+    для поиска/получения изобоажений по id записи - используй методы ArrayService
+"""
+
 
 class SeaweedsService:
     def __init__(self, fs: SeaweedFSManager = Depends(get_swfs),

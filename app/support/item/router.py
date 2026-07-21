@@ -17,7 +17,7 @@ from app.core.routers.search_router import SearchRouter
 from app.core.services.seaweed_service import SeaweedsService
 # from fastapi.responses import StreamingResponse
 from app.core.utils.io_utils import ResponseStreaming
-from app.mongodb.service import ThumbnailImageService
+# from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (FileUpload, ItemCreate, ItemCreatePreact, ItemCreateRelation,

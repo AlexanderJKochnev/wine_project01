@@ -16,7 +16,7 @@ from app.core.utils.pydantic_utils import orresponse
 from app.core.config.database.db_async import get_db
 from app.core.utils.common_utils import back_to_the_future, delta_data
 # from app.mongodb.models import FileListResponse
-from app.mongodb.service import ThumbnailImageService
+# from app.mongodb.service import ThumbnailImageService
 from app.support.item.router import ItemRouter
 # from app.support.item.schemas import ItemApi
 from app.support.api.service import ApiService
@@ -68,40 +68,6 @@ class ApiRouter(ItemRouter):
         # NOT CONTRACT BUT JUST IN CASE
         self.router.add_api_route("/thumbnail/{id}", self.get_thumbnail_by_id, methods=["GET"],
                                   openapi_extra={'x-request-schema': None}, )
-
-    async def get_images_after_date(
-        self,
-        after_date: datetime = Query(delta, description="Дата в формате ISO 8601 (например, 2024-01-01T00:00:00Z)"),
-        page: int = Query(1, ge=1, description="Номер страницы"),
-        per_page: int = Query(10, ge=1, le=1000, description="Количество элементов на страницу"),
-        image_service: ThumbnailImageService = Depends()
-    ):
-        """
-        Получение постраничного списка id изображений, созданных после заданной даты.
-        по умолчанию за 2 года но сейчас
-        """
-        try:
-            after_date = back_to_the_future(after_date)
-            return await image_service.get_images_after_date(after_date, page, per_page)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-    async def get_images_list_after_date(self, after_date: datetime = Query(delta,
-                                                                            description="Дата в формате ISO "
-                                                                                        "8601 (например, "
-                                                                                        "2024-01-01T00:00:00Z)"),
-                                         image_service: ThumbnailImageService = Depends()) -> dict:
-        """
-        список всех изображений в базе данных без страниц
-        :return: возвращает список кортежей (id файла, имя файла)
-        """
-        try:
-            # Проверяем, что дата не в будущем
-            after_date = back_to_the_future(after_date)
-            result = await image_service.get_images_list_after_date(after_date)
-            return orresponse({a: b for b, a in result})
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
 
     async def get_api(self, request: Request, id: int, session: AsyncSession = Depends(get_db)) -> dict:
         """
