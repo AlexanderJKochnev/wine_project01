@@ -37,7 +37,6 @@ from app.core.utils.image_webp import process_image_to_webp
 from app.core.utils.pydantic_utils import get_repo
 from app.dependencies import ClickHouseRepositoryFactory, get_clickhouse_repository_factory
 from loguru import logger  # NOQA: F401
-# from app.mongodb.service import ThumbnailImageService
 
 """
     SeaweedService для прямого общения с SeaweedRepository
@@ -118,6 +117,7 @@ class SeaweedsService:
         2. преобраование (удаление фона, уменьшение размера
         3. создание thumbnail
         4. загрузка в базу данных
+        return {'tags': tags, 'fid': fid, 'fid_thumb': fid_thumb}, content_data
         """
         # 0. get hash
         source_hash = FastImageHasher.xxhash64(content)
@@ -146,18 +146,20 @@ class SeaweedsService:
                 fid, fid_thumb, full_data, thumb_data,
                 description, source_hash, table, meta_data.get('full_mime_type')
             )
-            logger.warning(f'{meta=}')
+            # logger.warning(f'{meta=}')
             # 4.2. saving
             await self.click_repo.create(meta)
-        # возврат результата
-        match content_include:
-            case 0:
-                result = {'test': source_hash}, None
-            case 1:
-                result = {'test': source_hash}, full_data
-            case _:
-                result = {'test': source_hash}, thumb_data
-        return result
+            # возврат результата
+            result = {'tags': meta.get('tags'), 'fid': fid, 'fid_thumb': fid_thumb}
+            match content_include:
+                case 0:
+                    return result, None
+                case 1:
+                    return result, full_data
+                case _:
+                    return result, thumb_data
+        else:
+            raise HTTPException(status_code=500, detail='обработка изображения не удалась')
 
     async def create_img_light(self, content: bytes, description: str, table: str,
                                content_include: int = 1
@@ -207,7 +209,7 @@ class SeaweedsService:
                 result = {'test': source_hash}, thumb_data
         return result
 
-    async def delete_img(self, fid: str, table: str):
+    async def delete_img(self, fid: str, table: str) -> bool:
         """
         удаление изображения
         1. поиск в clickhouse by fid
@@ -319,7 +321,7 @@ class SeaweedsService:
         result: List[dict] = await self.click_repo.exact_search(tag_value)
         return result
 
-    async def search_image_by_tag(self, tag_value: str, image_type: int):
+    async def search_image_by_tag(self, tag_value: str, image_type: int) -> bytes:
         """
             поиск изображеня по тегу
             возвращает 1 - полное изображение

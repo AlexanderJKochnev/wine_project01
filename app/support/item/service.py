@@ -3,39 +3,35 @@ import asyncio
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, Union
 
-from deepdiff import DeepDiff
 # from sqlalchemy.sql.elements import Label
 from fastapi import BackgroundTasks, HTTPException, Request
 from loguru import logger  # noqa: F401
-from pydantic import TypeAdapter, ValidationError
-from sqlalchemy import func, or_, select, text
+from pydantic import TypeAdapter
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config.database.seaweed_async import SeaweedFSManager
-from app.core.hash_norm import get_hashes_for_item
+# from app.core.schemas.base import PaginatedResponse
+from app.core.repositories.clickhouse_repository import ClickHouseRepository
 from app.core.services.array_service import ArrayService
 from app.core.services.search_service import SearchService
 from app.core.services.service import Service
 from app.core.types import ModelType
 from app.core.utils.alchemy_utils import transform, transform_list_view
 from app.core.utils.backgound_tasks import background
-from app.core.utils.common_utils import flatten_dict_with_localized_fields, jprint, \
+from app.core.utils.common_utils import flatten_dict_with_localized_fields, \
     localized_field_with_replacement  # , delta_data
-from app.core.utils.converters import read_convert_json
 from app.core.utils.image_utils import get_default_image
 from app.core.utils.pydantic_utils import get_field_name, inst_dict, list_dict, make_paginated_response
 from app.core.utils.reindexation import extract_text_ultra_fast
-# from app.core.schemas.base import PaginatedResponse
-from app.core.repositories.clickhouse_repository import ClickHouseRepository
-from app.mongodb.service import ThumbnailImageService
 from app.support import Drink, Item
 from app.support.drink.repository import DrinkRepository
 from app.support.drink.schemas import DrinkCreate, DrinkUpdate
 from app.support.drink.service import DrinkService
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (ItemCreate, ItemCreatePreact, ItemCreateRelation, ItemDetailManyToManyLocalized,
-                                      ItemListView, ItemRead, ItemReadRelation, ItemUpdate,
+                                      ItemListView, ItemRead, ItemUpdate,
                                       ItemUpdatePreact)  # ItemApiLangNonLocalized, ItemApiLangLocalized, ItemApiLang,
 
 _REINDEX_LOCK = asyncio.Lock()
@@ -238,8 +234,10 @@ class ItemService(ArrayService, SearchService, Service):
         await cls.pre_run_background_task(drink_id, background_tasks, DrinkRepository, Drink)
         return result
 
+    """
     @classmethod
-    async def direct_upload(cls, file_name: dict, session: AsyncSession, image_service: ThumbnailImageService) -> dict:
+    async def direct_upload(cls, file_name: dict, session: AsyncSession,
+                            image_service: ArrayService) -> dict:
         try:
             # получаем список кортежей (image_name, image_id)
             result: dict = {'total_input': 0,
@@ -294,7 +292,7 @@ class ItemService(ArrayService, SearchService, Service):
             return result
         except Exception as exc:
             print(f'{exc=}')
-
+    """
     @classmethod
     async def get_one(cls,
                       id: int,

@@ -14,7 +14,6 @@ from app.core.utils.hashes import FastImageHasher
 from app.core.utils.headers import content_type_magic, make_meta
 from app.core.utils.image_processor import ImageProcessingConfig, ImageProcessor
 from app.core.utils.reindexation import extract_text_optimized  # , extract_text_ultra_fast
-# from app.mongodb.service import ThumbnailImageService
 
 
 class Background:
@@ -317,8 +316,8 @@ class Background:
             nonlocal ids
             nonlocal tags
             nonlocal hashes
-            nonlocal updates
-            nonlocal click_meta
+            # nonlocal updates
+            # nonlocal click_meta
             result = await processor_fast.process_batch(contents, remove_bg=True)
             for id, content, tag, shash, (full_data, thumb_data, _) in zip(
                     ids, contents, tags, hashes, result):

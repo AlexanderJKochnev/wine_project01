@@ -15,11 +15,11 @@ from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
 from app.core.config.database.seaweed_async import get_swfs, SeaweedFSManager
 from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
+from app.core.services.array_service import ArrayService
 from app.core.utils.io_utils import ResponseStreaming
 from app.core.utils.pydantic_utils import orresponse
 from app.core.schemas.base import PaginatedResponse
 from app.dependencies import get_clickhouse_repository_factory, get_translator_func
-from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import ItemListView, ItemUpdatePreact
@@ -223,7 +223,7 @@ class ItemViewRouter:
                                 data: str = Form(..., description="JSON string of ItemUpdatePreact"),
                                 file: UploadFile = File(None),
                                 session: AsyncSession = Depends(get_db),
-                                image_service: ThumbnailImageService = Depends()
+                                image_service: ArrayService = Depends()
                                 ):  # ItemCreateResponseSchema:
         """
         ЭТОТ МЕТОД ОСНОВНОЙ! update_item_drink в item.router.py ОТСТАЕТ И НЕ ИСПОЛЬЗУЕТСЯ

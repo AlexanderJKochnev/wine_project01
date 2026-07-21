@@ -6,16 +6,15 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
+from app.core.services.array_service import ArrayService
 # from app.core.config.project_config import settings
 from app.core.utils.exception_handler import ValidationError_handler
 from app.core.routers.base import BaseRouter
-from app.mongodb.service import ThumbnailImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
-from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelation, DrinkCreateResponseSchema,
-                                       DrinkFoodLinkUpdate, DrinkRead, DrinkUpdate,
-                                       DrinkReadRelation
+from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelation,
+                                       DrinkFoodLinkUpdate, DrinkUpdate
                                        )
 # from app.support.drink.service import DrinkService
 # from app.support.drink.repository import DrinkRepository
@@ -28,7 +27,6 @@ class DrinkRouter(BaseRouter):
             model=Drink,
             prefix=prefix,
             include_in_schema=True)
-        # self.image_service: ThumbnailImageService = Depends()
 
     def setup_routes(self):
         super().setup_routes()
@@ -95,7 +93,7 @@ class DrinkRouter(BaseRouter):
                                     data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
-                                    image_service: ThumbnailImageService = Depends()
+                                    image_service: ArrayService = Depends()
                                     ):
         """
         Создание одной записи с зависимостями - если в таблице есть зависимости

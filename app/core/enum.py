@@ -125,3 +125,11 @@ DRINK_FIELD = {'description': 'описание напитка',
                'madeof': 'сырье для производства напитка',
                'display_name': 'полное наименовение напитка, включает производителя, регион, аппеласьон'}
 Drinkfield = Enum('fieldname', {fieldname: fieldname for fieldname in DRINK_FIELD.keys()})
+
+# image processing
+IMAGE_PROCESSING = {'PNG: формат без сжатия, большой размер файла. Не оптимальный': 1,
+                    'WEBP: старый вариант WEBP не поддерживает прозрачный фон': 2,
+                    'WEBP LOSSLESS: WEBP без потерь, подходит для thumbnail и графики': 3,
+                    'WEBP LOSSY: WEBP со сжатием, подходит для фотографий': 4
+                    }
+ImageProcessing = Enum('fieldname', {fieldname: fieldname for fieldname in IMAGE_PROCESSING.keys()})

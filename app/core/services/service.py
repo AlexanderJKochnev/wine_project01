@@ -23,7 +23,6 @@ from app.core.utils.converters import list_move
 from app.core.utils.pydantic_utils import (get_data_for_search, get_repo, inst_dict, list_dict, make_paginated_response,
                                            prepare_search_string)
 from app.core.utils.reindexation import reindex_items
-# from app.mongodb.service import ThumbnailImageService
 from app.service_registry import get_search_dependencies, register_service
 
 # from app.core.utils.common_utils import jprint

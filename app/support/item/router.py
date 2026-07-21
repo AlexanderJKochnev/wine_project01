@@ -14,10 +14,10 @@ from app.core.enum import CliSearchMode
 from app.core.routers.base import BaseRouter
 from app.core.routers.mixin_router import ArrayRouter
 from app.core.routers.search_router import SearchRouter
+from app.core.services.array_service import ArrayService
 from app.core.services.seaweed_service import SeaweedsService
 # from fastapi.responses import StreamingResponse
 from app.core.utils.io_utils import ResponseStreaming
-# from app.mongodb.service import ThumbnailImageService
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
 from app.support.item.schemas import (FileUpload, ItemCreate, ItemCreatePreact, ItemCreateRelation,
@@ -37,7 +37,6 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
             auth_dependency=auth_dependency,
             **kwargs
         )
-        self.image_service: ThumbnailImageService = Depends()
 
     def setup_routes(self):
         self.router.add_api_route(
@@ -123,8 +122,9 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
 
     async def direct_import_data(self, data: FileUpload,
                                  session: AsyncSession = Depends(get_db),
-                                 image_service: ThumbnailImageService = Depends()):   # DirectUploadSchema:
+                                 image_service: ArrayService = Depends()):   # DirectUploadSchema:
         """
+        артефакт от mongodb
         Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
         на сервере поместить файл data.json в директорию UPLOAD_DIR,
         в ту же директорию разместить файлы с изображениями.
@@ -133,7 +133,7 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
         операция длительная - наберитесь терпения
         """
         # добавление изображений  images={'number of images': 150, 'loaded images': 149}
-        _ = await image_service.direct_upload_image()
+        # _ = await image_service.direct_upload_image()
         # имя json файла для импорта
         file_name = data.filename
         result = await self.service.direct_upload(file_name, session, image_service)
@@ -143,9 +143,10 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
                                     data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
-                                    image_service: ThumbnailImageService = Depends()
+                                    image_service: ArrayService = Depends()
                                     ):
         """
+        артефакт от mongodb
         Создание одной записи с зависимостями - если в таблице есть зависимости
         они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
         кроме того будет добавлено изображение.
@@ -186,7 +187,7 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
                                 data: str = Form(..., description="JSON string of ItemCreatePreact"),
                                 file: UploadFile = File(None),
                                 session: AsyncSession = Depends(get_db),
-                                image_service: ThumbnailImageService = Depends()
+                                image_service: ArrayService = Depends()
                                 ):
         """
         Создание записи Item & Drink и всеми связями - endpoint for preact
@@ -226,7 +227,7 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
                                 data: str = Form(..., description="JSON string of ItemUpdatePreact"),
                                 file: UploadFile = File(None),
                                 session: AsyncSession = Depends(get_db),
-                                image_service: ThumbnailImageService = Depends()
+                                image_service: ArrayService = Depends()
                                 ):  # ItemCreateResponseSchema:
         """
         Обновление записи Item & Drink и всеми связями PREACT
@@ -237,12 +238,9 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
         try:
             data_dict = json.loads(data)
             data_dict['drink_action'] = 'update'
-            from app.core.utils.common_utils import jprint
-            # jprint(data_dict)
 
             if file:
                 image_dict = await image_service.upload_image(file, description=data_dict.get('title'))
-                jprint(image_dict)
                 data_dict['image_id'] = image_dict.get('id')
                 data_dict['image_path'] = image_dict.get('filename')
             item_drink_data = ItemUpdatePreact(**data_dict)
@@ -270,7 +268,7 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
 
     async def direct_import_single_data(self, id: str = Path(..., description="ID элемента"),
                                         session: AsyncSession = Depends(get_db),
-                                        image_service: ThumbnailImageService = Depends()):
+                                        image_service: ArrayService = Depends()):
         """
         Импорт записей с зависимостями. Для того что бы выполнить импорт нужно
         на сервере поместить файл data.json в директорию UPLOAD_DIR, в ту же директорию разместить файлы с
@@ -312,7 +310,6 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
 
     async def get_thumbnail_by_id(
             self, request: Request, id: int, session: AsyncSession = Depends(get_db),
-            # image_service: ThumbnailImageService = Depends(),
             image_service: SeaweedsService = Depends()
     ):
         """
@@ -324,7 +321,6 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
         return ResponseStreaming(image_data)
 
     async def get_image_by_id(self, request: Request, id: int, session: AsyncSession = Depends(get_db),
-                              # image_service: ThumbnailImageService = Depends()
                               image_service: SeaweedsService = Depends()
                               ):
         """

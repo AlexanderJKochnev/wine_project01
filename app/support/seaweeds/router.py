@@ -1,6 +1,6 @@
 # app.core.support.seaweeds.router.py
 from typing import List, Literal
-from app.core.enum import Alignment, COLORS
+from app.core.enum import Alignment, COLORS, DRINK_FIELD, ImageProcessing
 from fastapi import File, HTTPException, Path, Query, UploadFile, BackgroundTasks, Request
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +11,6 @@ from app.core.config.database.db_async import get_db
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.services.seaweed_service import SeaweedsService
 from app.core.utils.pydantic_utils import get_service
-from app.mongodb.service import ThumbnailImageService
 
 
 """
@@ -52,13 +51,6 @@ class SeaweedsRouter:
             "", self.get, methods=["GET"],
             openapi_extra={'x-request-schema': None}
         )
-        """
-        self.router.add_api_route(
-            "/transfer", self.transfer_mongoo_sea,
-            methods=["GET"],
-            openapi_extra={'x-request-schema': None}
-        )
-        """
         self.router.add_api_route(
             "/{fid}", self.get_by_fid, methods=["GET"],
             openapi_extra={'x-request-schema': None}
@@ -106,17 +98,18 @@ class SeaweedsRouter:
     async def create_img(self,
                          description: str = Query(..., description='ключевые слова по которым можно найти '
                                                   'изображение'),
+                         processor_type: ImageProcessing = Query(..., description='выбор процессора'),
                          table_name: str = Query('items', description='имя таблицы для которой '
                                                                       'предназначено изображение. items'),
                          content_type: int = Query(0, description='возвращает результат: 0 - ничего, '
                                                    '1 - полное изображение, 2 - thumbnail'),
-                         processor_type: int = Query(4, description='выбор процессора'),
                          file: UploadFile = File(...),
                          service: SeaweedsService = Depends()):
         try:
             content = await file.read()
+            processor = DRINK_FIELD.get(processor_type)
             # response: (meta, content | None)
-            meta, content = await service.create_img2(content, description, table_name, content_type, processor_type)
+            meta, content = await service.create_img2(content, description, table_name, content_type, processor)
             if content:
                 kwargs = {key: val for key, val in meta.items() if key in ('fid', 'fid_thumb', 'tags')}
                 if isinstance(content, list):
@@ -230,6 +223,7 @@ class SeaweedsRouter:
         return ResponseStreaming(image_data)
         # return StreamingResponse(**image_data)
 
+    """
     async def transfer_mongoo_sea(self, batch: int, background_tasks: BackgroundTasks,
                                   session: AsyncSession = Depends(get_db),
                                   service: SeaweedsService = Depends(),
@@ -242,6 +236,7 @@ class SeaweedsRouter:
         # новый encoder webp
         response = await service.transfer_tier1(batch, background_tasks, session, image_service)
         return {'result': response}
+        """
 
     async def test_create_img(self,
                               file: UploadFile = File(...),

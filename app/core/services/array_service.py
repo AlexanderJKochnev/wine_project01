@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from random import randint
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request, UploadFile
 from app.core.repositories.sqlalchemy_repository import Repository
 from app.core.schemas.base import BaseModel
 from app.core.types import ModelType
@@ -261,6 +261,54 @@ class ArrayService:
         rx = randint(0, x - 1)
         font = font_list[rx]
         return await cls.generate_image_by_id_v2(id, font, session, bg_opacity)
+
+    # методы для совместимости с mongodb/service
+    @classmethod
+    async def delete_image(cls, image_id: str, table: str = 'items', image_service: SeaweedsService = Depends()
+                           ):
+        """
+           удаление одного изображения и его thumbnail по fid
+        """
+        return await image_service.delete_img(image_id, table)
+
+    @classmethod
+    async def get_full_image(cls, file_id: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """Получить полноразмерное изображение - по fid"""
+        image: bytes = await image_service.get_image(file_id)
+        return image
+
+    @classmethod
+    async def get_thumbnail(cls, file_id: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """Получить thumbnail by fid"""
+        image: bytes = await image_service.get_thumb_by_fid(file_id)
+        return image
+
+    @classmethod
+    async def get_full_image_by_filename(cls, file_name: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """ Получить полноразмерное изображение по имени файла
+            в seaweeds вместо имени файла используется tags который состоит из названия напитка
+            поиск по нему
+        """
+        image: bytes = await image_service.search_image_by_tag(file_name, 1)
+        return image
+
+    @classmethod
+    async def get_thumbnail_by_filename(self, file_name: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """Получить thumbnail (для списков) - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+        image: bytes = await image_service.search_image_by_tag(file_name, 2)
+        return image
+
+    @classmethod
+    async def upload_image(
+            self, file: UploadFile, description: str, image_service: SeaweedsService = Depends()) -> Dict[str, Any]:
+        """
+            сохраняет полное изображение и thumbnail
+        """
+        content = await file.read()
+        result, content = await image_service.create_img2(content, description, 'item', 1, 4)
+        # {'tags': tags, 'fid': fid, 'fid_thumb': fid_thumb}, content_data
+        # return filename, result.get('id'), content
+        return result.get('tags'), result.get('id'), content
 
 
 class SetArrayService:
