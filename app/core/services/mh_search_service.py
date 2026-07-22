@@ -7,7 +7,8 @@
 import re
 from typing import List
 from datasketch import MinHash
-from search_repository import MinHashSearchRepository
+
+from app.core.repositories.minhash_repository import MinHashSearchRepository
 
 
 class MinHashSearchService:
