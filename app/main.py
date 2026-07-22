@@ -137,9 +137,16 @@ async def lifespan(app: FastAPI):
     # REDIS
     redis_manager = RedisManager()
     await redis_manager.connect()
-
     await redis_manager.init_lsh_driver()
     app.state.redis_manager = redis_manager
+    # проверка индекса в redis
+    lsh_driver = redis_manager.get_lsh_driver()
+    # низкоуровневый асинхронный клиент самого драйвера и смотрим, есть ли ключи
+    async_redis_client = lsh_driver.storage.keys_keys
+    index_exists = await async_redis_client.keys(b"doc_*")
+
+    if not index_exists:
+        logger.warning('index is not available')
 
     logger.success("✅ FastAPI started")
     yield
