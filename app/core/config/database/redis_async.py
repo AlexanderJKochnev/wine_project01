@@ -50,7 +50,7 @@ class RedisManager:
 
             # Конфигурация для асинхронного бэкенда datasketch
             storage_config = {'type': 'aioredis',  # В асинхронном модуле тип называется aioredis
-                              'redis': {'redis': shared_async_client}}
+                              'config': {'redis': shared_async_client}}
 
             self.lsh_driver = await AsyncMinHashLSH(
                 threshold=self._threshold, num_perm=self._num_perm, storage_config=storage_config
