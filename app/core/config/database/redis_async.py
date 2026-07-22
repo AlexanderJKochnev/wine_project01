@@ -38,27 +38,30 @@ class RedisManager:
 
     def init_lsh_driver(self) -> None:
         """
-        Самостоятельный метод инициализации тяжелого драйвера нечеткого поиска.
-        Позволяет управлять поиском независимо от остального Redis.
+        Метод независимой инициализации драйвера нечеткого поиска.
+        Использует явный импорт хранилища, полностью защищенный от KeyError.
         """
         try:
             logger.info("⏳ Инициализация драйвера MinHashLSH...")
-            # Создаем изолированный синхронный клиент под нужды datasketch
-            # sync_client = redis.Redis(host=self._host, port=self._port, password=self._password, db=0)
 
-            # Чтение метаданных и разворачивание бакетов происходит здесь
+            # 1. Импортируем бэкенд-класс напрямую, обходя баги автоимпорта datasketch
+            from datasketch.storage import RedisStorage
+
+            # 2. Создаем конфигурационный словарь для встроенного плагина
+            storage_config = {'type': 'redis',
+                              'config': {'host': self._host, 'port': self._port, 'password': self._password, 'db': 0}}
+
+            # 3. Принудительно регистрируем плагин в словаре datasketch, если его там нет
+            from datasketch.lsh import _storage_protocols
+            _storage_protocols['redis'] = RedisStorage
+
+            # 4. Инициализируем нативный тяжелый драйвер
             self.lsh_driver = MinHashLSH(
-                threshold=self._threshold,
-                num_perm=self._num_perm,
-                storage_config={'type': 'redis',
-                                'config': {'host': self._host,
-                                           'port': self._port,
-                                           'password': self._password,
-                                           'db': 0}}
+                threshold=self._threshold, num_perm=self._num_perm, storage_config=storage_config
             )
             logger.info("✅ Redis Manager: Драйвер MinHashLSH успешно развернут")
+
         except Exception as e:
-            # Логируем ошибку, но НЕ бросаем raise, чтобы приложение продолжало жить без поиска!
             logger.error(f"⚠️ Не удалось инициализировать MinHashLSH: {e}. Поиск временно недоступен.")
             self.lsh_driver = None
 
