@@ -226,7 +226,7 @@ services:
         # ipv4_address: ${IP_PGBOUNCER}
       
 
-  search_cache:
+  redis:
     logging:
       driver: ${LOGGER_DRIVER}
       options:
