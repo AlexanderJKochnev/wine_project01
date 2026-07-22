@@ -44,12 +44,17 @@ class RedisManager:
         try:
             logger.info("⏳ Инициализация драйвера MinHashLSH...")
             # Создаем изолированный синхронный клиент под нужды datasketch
-            sync_client = redis.Redis(host=self._host, port=self._port, password=self._password, db=0)
+            # sync_client = redis.Redis(host=self._host, port=self._port, password=self._password, db=0)
 
             # Чтение метаданных и разворачивание бакетов происходит здесь
             self.lsh_driver = MinHashLSH(
-                threshold=self._threshold, num_perm=self._num_perm,
-                storage_config={'type': 'redis', 'config': {'redis': sync_client}}
+                threshold=self._threshold,
+                num_perm=self._num_perm,
+                storage_config={'type': 'redis',
+                                'config': {'host': self._host,
+                                           'port': self._port,
+                                           'password': self._password,
+                                           'db': 0}}
             )
             logger.info("✅ Redis Manager: Драйвер MinHashLSH успешно развернут")
         except Exception as e:
