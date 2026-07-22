@@ -29,7 +29,7 @@ class RedisManager:
             max_connections=20  # подбор - зависит от количества асинхронных задач
         )
         # Проверка: создаем временный клиент и пингуем базу
-        async_client = AsyncRedis(connection_pool=self.pool)
+        async_client = AsyncRedis(connection_pool=self.async_pool)
         try:
             await async_client.ping()
             logger.info("✅ Redis connected successfully")
