@@ -15,12 +15,12 @@ class RedisManager:
         self._password: str = settings.REDIS_PWD
         self._threshold: float = settings.SIMILARITY_THRESHOLD
         self._num_perm: int = settings.NUM_PERM
-        self.async_pool: Optional[ConnectionPool] = None
+        self.pool: Optional[ConnectionPool] = None
         self.lsh_driver: Optional[AsyncMinHashLSH] = None
 
     async def connect(self):
         """Асинхронная инициализация пула и проверка связи"""
-        self.async_pool = ConnectionPool(
+        self.pool = ConnectionPool(
             host=self._host,
             port=self._port,
             password=self._password,
@@ -29,7 +29,7 @@ class RedisManager:
             max_connections=20  # подбор - зависит от количества асинхронных задач
         )
         # Проверка: создаем временный клиент и пингуем базу
-        async_client = AsyncRedis(connection_pool=self.async_pool)
+        async_client = AsyncRedis(connection_pool=self.pool)
         try:
             await async_client.ping()
             logger.info("✅ Redis connected successfully")
