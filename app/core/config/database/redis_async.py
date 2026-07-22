@@ -46,18 +46,18 @@ class RedisManager:
 
             # 1. Импортируем бэкенд-класс напрямую, обходя баги автоимпорта datasketch
             from datasketch.storage import RedisStorage
-
+            redis_storage = RedisStorage(
+                host=self._host, port=self._port, password=self._password, db=0
+            )
             # 2. Создаем конфигурационный словарь для встроенного плагина
             storage_config = {'type': 'redis',
                               'config': {'host': self._host, 'port': self._port, 'password': self._password, 'db': 0}}
 
             # 3. Принудительно регистрируем плагин в словаре datasketch, если его там нет
-            from datasketch.lsh import _storage_protocols
-            _storage_protocols['redis'] = RedisStorage
 
             # 4. Инициализируем нативный тяжелый драйвер
             self.lsh_driver = MinHashLSH(
-                threshold=self._threshold, num_perm=self._num_perm, storage_config=storage_config
+                threshold=self._threshold, num_perm=self._num_perm, storage=redis_storage
             )
             logger.info("✅ Redis Manager: Драйвер MinHashLSH успешно развернут")
 
