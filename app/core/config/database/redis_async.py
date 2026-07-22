@@ -1,25 +1,26 @@
 # app.core.config.databse.redis_async.py
-import redis
-from datasketch import MinHashLSH
-from redis.asyncio import ConnectionPool as AsyncConnectionPool, Redis as AsyncRedis
-# синхронный redis только для datascetch
+
+from typing import Optional
+from redis.asyncio import ConnectionPool, Redis as AsyncRedis
+from datasketch.aio import AsyncMinHashLSH  # Нативный асинхронный драйвер
+
 from app.core.config.project_config import settings
 from loguru import logger
 
 
 class RedisManager:
     def __init__(self):
-        self.pool: AsyncConnectionPool = None
         self._host: str = settings.REDIS_HOST
         self._port: int = settings.REDIS_PORT
         self._password: str = settings.REDIS_PWD
         self._threshold: float = settings.SIMILARITY_THRESHOLD
         self._num_perm: int = settings.NUM_PERM
-        self.lsh_driver: MinHashLSH = None
+        self.async_pool: Optional[ConnectionPool] = None
+        self.lsh_driver: Optional[AsyncMinHashLSH] = None
 
     async def connect(self):
         """Асинхронная инициализация пула и проверка связи"""
-        self.pool = AsyncConnectionPool(
+        self.async_pool = ConnectionPool(
             host=self._host,
             port=self._port,
             password=self._password,
@@ -36,33 +37,27 @@ class RedisManager:
             logger.error(f"❌ Redis connection failed: {e}")
             raise e
 
-    def init_lsh_driver(self) -> None:
+    async def init_lsh_driver(self) -> None:
         """
-        Метод независимой инициализации драйвера нечеткого поиска.
-        Использует явный импорт хранилища, полностью защищенный от KeyError.
+        Асинхронная инициализация тяжелого драйвера поиска.
+        Использует aioredis/redis.asyncio бэкенд из общего пула.
         """
         try:
-            logger.info("⏳ Инициализация драйвера MinHashLSH...")
+            logger.info("⏳ Инициализация асинхронного драйвера AsyncMinHashLSH...")
 
-            # 1. Импортируем бэкенд-класс напрямую, обходя баги автоимпорта datasketch
-            # from datasketch.storage import RedisStorage
+            # Получаем асинхронного клиента из нашего пула
+            shared_async_client = self.get_async_client()
 
-            # 2. Создаем конфигурационный словарь для встроенного плагина
-            storage_config = {'type': 'redis',
-                              'redis': {'host': self._host, 'port': self._port,
-                                        'password': self._password, 'db': 0},
-                              "redis_buffer": {"transaction": True}}
-            storage_config = {"type": "redis", "basename": b"my_lsh_index",  # опционально, для уникальности ключей
-                              "redis": {"host": self._host, "port": self._port, "password": self._password, "db": 0, }}
+            # Конфигурация для асинхронного бэкенда datasketch
+            storage_config = {'type': 'aioredis',  # В асинхронном модуле тип называется aioredis
+                              'config': {'redis': shared_async_client}}
 
-            # Инициализируем MinHashLSH с storage_config
-            self.lsh_driver = MinHashLSH(
+            self.lsh_driver = AsyncMinHashLSH(
                 threshold=self._threshold, num_perm=self._num_perm, storage_config=storage_config
             )
-            logger.info("✅ Redis Manager: Драйвер MinHashLSH успешно развернут")
-
+            logger.info("✅ Redis Manager: Драйвер AsyncMinHashLSH успешно развернут")
         except Exception as e:
-            logger.error(f"⚠️ Не удалось инициализировать MinHashLSH: {e}. Поиск временно недоступен.")
+            logger.error(f"⚠️ Ошибка инициализации AsyncMinHashLSH: {e}. Поиск отключен.")
             self.lsh_driver = None
 
     def disable_lsh_driver(self) -> None:
@@ -82,11 +77,7 @@ class RedisManager:
             raise RuntimeError("Redis pool is not initialized")
         return AsyncRedis(connection_pool=self.pool)
 
-    def get_search_driver_client(self) -> redis.Redis:
-        """
-        ФАБРИКА КЛИЕНТА: Создает и настраивает специфичного клиента-драйвера.
-        Репозиторий получит этот объект как абстрактный 'клиент базы данных'.
-        """
-        return redis.Redis(
-            host=self._host, port=self._port, password=self._password, db=0, decode_responses=False
-        )
+    def get_lsh_driver(self) -> AsyncMinHashLSH:
+        if not self.lsh_driver:
+            raise RuntimeError("Драйвер AsyncMinHashLSH в данный момент отключен.")
+        return self.lsh_driver
