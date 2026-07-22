@@ -46,12 +46,11 @@ class RedisManager:
 
             # 1. Импортируем бэкенд-класс напрямую, обходя баги автоимпорта datasketch
             from datasketch.storage import RedisStorage
-            redis_storage = RedisStorage(
-                host=self._host, port=self._port, password=self._password, db=0
-            )
+
             # 2. Создаем конфигурационный словарь для встроенного плагина
             storage_config = {'type': 'redis',
                               'config': {'host': self._host, 'port': self._port, 'password': self._password, 'db': 0}}
+            redis_storage = RedisStorage(config=storage_config)
 
             # 3. Принудительно регистрируем плагин в словаре datasketch, если его там нет
 
