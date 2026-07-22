@@ -63,7 +63,6 @@ from app.support.sweetness.router import SweetnessRouter
 from app.support.varietal.router import VarietalRouter
 from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter, OrchestratorRouter,
                                        ImageRouter, RawdataRouter, RegistryRouter)
-from app.support.websearch.router import router as web_router
 from app.support.ollama.router import PromptRouter, ISOLanguageRouter, ProptionRouter, WriterRuleRouter
 from app.support.lwin.router import LwinRouter
 from app.support.producer.router import ProducerRouter, ProducerTitleRouter
@@ -138,6 +137,9 @@ async def lifespan(app: FastAPI):
     # REDIS
     redis_manager = RedisManager()
     await redis_manager.connect()
+
+    redis_manager.init_lsh_driver()
+    app.state.redis_manager = redis_manager
 
     logger.success("✅ FastAPI started")
     yield
@@ -219,7 +221,6 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)  # минимальный 
 
 app.include_router(ApiRouter().router)
 app.include_router(GemmaRouter().router)
-app.include_router(web_router)
 app.include_router(LwinRouter().router)
 app.include_router(PromptRouter().router)
 app.include_router(ProptionRouter().router)

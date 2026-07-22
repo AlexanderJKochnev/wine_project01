@@ -4,61 +4,59 @@
     ищет с опечатками и огрмной скоростью (проверить)
     ищет похожие записи
 """
-
-import asyncio
 import re
-import threading
 from typing import List
-import redis
-from datasketch import MinHash, MinHashLSH
+from datasketch import MinHash
+
+from app.core.repositories.minhash_repository import MinHashSearchRepository
 
 
 class MinHashSearchService:
     """
-        Сервис нечеткого поиска, полностью изолированный от логики подключения.
-        # threshold - порог схожести Жаккара (0.5 = совпадение текста на 50%)
-        # num_perm - размер сигнатуры (128 чисел на строку - стандарт для баланса точности и памяти)
+    Сервисный слой бизнес-логики.
+    Отвечает за подготовку данных (парсинг, шинглы, MinHash) и работу с репозиторием.
     """
 
-    def __init__(self, redis_client: redis.Redis, threshold: float = 0.5, num_perm: int = 128):
-        self._num_perm = num_perm
-        self._write_lock = threading.Lock()
+    def __init__(self, repository: MinHashSearchRepository):
+        self._repo = repository
 
-        # Инициализируем LSH, передавая готовый синхронный клиент
-        self.lsh = MinHashLSH(
-            threshold=threshold, num_perm=num_perm,
-            storage_config={'type': 'redis', 'config': {'redis': redis_client}}
-        )
-
-    def _build_minhash(self, text: str) -> MinHash:
-        m = MinHash(num_perm=self._num_perm)
+    def _prepare_minhash(self, text: str) -> MinHash:
+        """Бизнес-логика: нормализация текста и построение MinHash сигнатуры."""
+        # Берем num_perm из репозитория (который взял его из драйвера)
+        m = MinHash(num_perm=self._repo.num_perm)
         if not text:
             return m
+
+        # Очистка текста от мусора
         clean_text = re.sub(r'[^a-zа-я0-9\s]', '', text.lower())
+
+        # Нарезка на 4-граммы символов
         shingles = [clean_text[i:i + 4] for i in range(len(clean_text) - 3)]
+
         for shingle in shingles:
             m.update(shingle.encode('utf-8'))
         return m
 
-    def update_index(self, entity_id: int, full_text: str) -> None:
-        """Потокобезопасное синхронное обновление для BackgroundTasks."""
-        new_hash = self._build_minhash(full_text)
+    async def update_index(self, entity_id: int, full_text: str) -> None:
+        """Бизнес-логика обновления индекса для сущности."""
+        minhash = self._prepare_minhash(full_text)
         key = f"doc_{entity_id}"
+        await self._repo.save(key, minhash)
 
-        with self._write_lock:
-            try:
-                self.lsh.remove(key)
-            except ValueError:
-                pass
-            self.lsh.insert(key, new_hash)
+    async def remove_from_index(self, entity_id: int) -> None:
+        """Бизнес-логика удаления сущности из индекса."""
+        key = f"doc_{entity_id}"
+        await self._repo.delete(key)
 
     async def search_similar(self, user_query: str) -> List[int]:
-        """Асинхронный поиск без блокировки event loop."""
+        """Бизнес-логика нечеткого поиска."""
         if not user_query.strip():
             return []
 
-        loop = asyncio.get_running_loop()
-        query_hash = await loop.run_in_executor(None, self._build_minhash, user_query)
-        matched_keys = await loop.run_in_executor(None, self.lsh.query, query_hash)
+        query_minhash = self._prepare_minhash(user_query)
 
+        # Вызываем полностью асинциированный метод репозитория
+        matched_keys = await self._repo.find_similar(query_minhash)
+
+        # Конвертируем строковые ключи драйвера в понятные для Postgres ID
         return [int(key.split('_')[1]) for key in matched_keys]

@@ -1,7 +1,8 @@
 # app.core.config.databse.redis_async.py
+import redis
+from datasketch import MinHashLSH
 from redis.asyncio import ConnectionPool as AsyncConnectionPool, Redis as AsyncRedis
 # синхронный redis только для datascetch
-from redis import Redis
 from app.core.config.project_config import settings
 from loguru import logger
 
@@ -9,19 +10,19 @@ from loguru import logger
 class RedisManager:
     def __init__(self):
         self.pool: AsyncConnectionPool = None
-        self._host = None
-        self._port = None
-        self._password = None
+        self._host: str = settings.REDIS_HOST
+        self._port: int = settings.REDIS_PORT
+        self._password: str = settings.REDIS_PWD
+        self._threshold: float = settings.SIMILARITY_THRESHOLD
+        self._num_perm: int = settings.NUM_PERM
+        self.lsh_driver: MinHashLSH = None
 
-    async def connect(self, host: str, port: int):
+    async def connect(self):
         """Асинхронная инициализация пула и проверка связи"""
-        host = settings.REDIS_HOST
-        port = settings.REDIS_PORT
-        password = settings.REDIS_PWD
         self.pool = AsyncConnectionPool(
-            host=host,
-            port=port,
-            password=password,
+            host=self._host,
+            port=self._port,
+            password=self._password,
             db=0,
             decode_responses=False,  # False для работы со сжатыми (bytes) данными
             max_connections=20  # подбор - зависит от количества асинхронных задач
@@ -35,25 +36,49 @@ class RedisManager:
             logger.error(f"❌ Redis connection failed: {e}")
             raise e
 
+    def init_lsh_driver(self) -> None:
+        """
+        Самостоятельный метод инициализации тяжелого драйвера нечеткого поиска.
+        Позволяет управлять поиском независимо от остального Redis.
+        """
+        try:
+            logger.info("⏳ Инициализация драйвера MinHashLSH...")
+            # Создаем изолированный синхронный клиент под нужды datasketch
+            sync_client = redis.Redis(host=self._host, port=self._port, password=self._password, db=0)
+
+            # Чтение метаданных и разворачивание бакетов происходит здесь
+            self.lsh_driver = MinHashLSH(
+                threshold=self._threshold, num_perm=self._num_perm,
+                storage_config={'type': 'redis', 'config': {'redis': sync_client}}
+            )
+            logger.info("✅ Redis Manager: Драйвер MinHashLSH успешно развернут")
+        except Exception as e:
+            # Логируем ошибку, но НЕ бросаем raise, чтобы приложение продолжало жить без поиска!
+            logger.error(f"⚠️ Не удалось инициализировать MinHashLSH: {e}. Поиск временно недоступен.")
+            self.lsh_driver = None
+
+    def disable_lsh_driver(self) -> None:
+        """Метод для динамического отключения поиска 'на лету' без остановки Redis."""
+        self.lsh_driver = None
+        logger.warning("🛑 Драйвер MinHashLSH отключен. Поисковые функции деактивированы.")
+
     async def disconnect(self):
         """Асинхронное закрытие всех соединений"""
         if self.pool:
             await self.pool.disconnect()
             logger.info("🛑 Redis pool disconnected")
 
-    def get_client(self) -> Redis:
-        """Возвращает готовый клиент, привязанный к пулу"""
-        return Redis(connection_pool=self.pool)
+    def get_async_client(self) -> AsyncRedis:
+        """Возвращает асинхронный клиент для эндпоинтов (кэш, сессии)."""
+        if not self.pool:
+            raise RuntimeError("Redis pool is not initialized")
+        return AsyncRedis(connection_pool=self.pool)
 
-    def get_sync_client(self) -> Redis:
+    def get_search_driver_client(self) -> redis.Redis:
         """
-        Возвращает синхронный клиент, настроенный на те же параметры.
-        Он будет создаваться на лету внутри сервиса для datasketch.
+        ФАБРИКА КЛИЕНТА: Создает и настраивает специфичного клиента-драйвера.
+        Репозиторий получит этот объект как абстрактный 'клиент базы данных'.
         """
-        return Redis(
-            host=self._host,
-            port=self._port,
-            password=self._password,
-            db=0,
-            decode_responses=False
+        return redis.Redis(
+            host=self._host, port=self._port, password=self._password, db=0, decode_responses=False
         )

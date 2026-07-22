@@ -1,10 +1,15 @@
 # app/dependencies.py
 from functools import lru_cache
 from typing import Any, Awaitable, Callable, Dict, Optional
+
+from app.core.config.database.redis_async import RedisManager
 from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
 from clickhouse_connect.driver.asyncclient import AsyncClient as ClickAsyncClient
+from redis.asyncio import Redis as AsyncRedis
 from fastapi import Request
 
+from app.core.repositories.minhash_repository import MinHashSearchRepository
+from app.core.services.mh_search_service import MinHashSearchService
 # from app.core.services.translate_service import TranslationService
 # from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
 from app.core.utils.translation_utils import fill_missing_translations
@@ -35,13 +40,25 @@ def get_translator_func() -> Callable[[Dict[str, Any], Optional[bool]], Awaitabl
     return fill_missing_translations
 
 
-@lru_cache
-def get_translation_service1():
-    """DI для сервиса перевода"""
-    pass
-    # return TranslationService()
-
-
 async def get_translation_service(request: Request):
     service_manager = request.app.state.service_manager
     return await service_manager.get("translation")
+
+
+def get_redis_client(request: Request) -> AsyncRedis:
+    """Отдать чистый асинхронный клиент Redis в эндпоинт."""
+    redis_manager = request.app.state.redis_manager
+    return redis_manager.get_async_client()
+
+
+def get_search_service(request: Request) -> MinHashSearchService:
+    redis_infra_manager: RedisManager = request.app.state.redis_manager
+
+    # 1. Извлекаем синглтон-драйвер LSH
+    lsh_driver = redis_infra_manager.get_lsh_driver()
+
+    # 2. Создаем репозиторий, инжектируя только драйвер
+    search_repo = MinHashSearchRepository(lsh_driver=lsh_driver)
+
+    # 3. Возвращаем сервисный слой
+    return MinHashSearchService(repository=search_repo)
