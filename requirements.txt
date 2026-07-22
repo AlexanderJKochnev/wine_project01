@@ -26,7 +26,8 @@ bson
 cachetools
 cityhash
 clickhouse-connect[async]==0.12.0rc1
-datasketch==1.10.0
+# datasketch==1.10.0
+datasketch[redis]>=2.0.0
 deepdiff~=8.6.1
 email-validator
 Faker~=37.5.3
