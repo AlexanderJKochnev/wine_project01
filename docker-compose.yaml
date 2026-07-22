@@ -241,7 +241,8 @@ services:
       - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_redis_search_data:/data
     restart: unless-stopped
     networks:
-      - redis_network
+      redis_network:
+          ipv4_address: ${IP_REDIS}
 
 volumes:
   migration_volume: # alembic migrations
