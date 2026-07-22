@@ -202,8 +202,11 @@ class Settings(BaseSettings):
     HF_MODEL_NAME: str = "google/translategemma-4b-it"
     HF_REQUESTS_PER_MINUTE: int = 5  # Rate limit for HuggingFace API
     HF_REQUESTS_PER_DAY: int = 100   # Daily limit for HuggingFace API
-    # === ПОИСКОВЫЙ СЕРВИС
+    # === ПОИСКОВЫЙ СЕРВИС MINHASH_SERVICE
     SIMILARITY_THRESHOLD: float = 0.2  # толерантность поиска от 0 (мусор) до 1 (строго)
+    # num_perm - размер сигнатуры (128 чисел на строку - стандарт для баланса точности и памяти)
+    NUM_PERM = 128
+
     # === DATA_DELTA YEARS количество лет назад
     DATA_DELTA: int = 10
     OLLAMA_HOST: str = 'http://localhost:11434'

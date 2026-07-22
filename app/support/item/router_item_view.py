@@ -88,7 +88,7 @@ class ItemViewRouter:
             summary="Поиск элементов по hash index + word..",
             openapi_extra={'x-request-schema': None}
         )
-        # 5. Маршрут для поиска элементов с использованием хэш индекса ЗАМЕНИТЬ НА FTS
+        # 5. Маршрут для поиска элементов с использование FTS индекса
         self.router.add_api_route(
             "/search_smart_page/{lang}",
             self.search_smart_keyset,
@@ -210,7 +210,7 @@ class ItemViewRouter:
                                   boost: float = Query(15.0, description="заглушка"),
                                   session: AsyncSession = Depends(get_db)
                                   ):
-        """ USED ONLY FOR ITEMS_PREACT! IT IS VERY IMPORTANT
+        """ USED ONLY FOR ITEMS_PREACT! IT IS VERY IMPORTANT! FTS SEARCH
             ItemService.execute_smart_search_page -> app.core.utils.alchemy_utils.transform_list_view
         """
         result = await self.service.execute_smart_search_page(request, lang, search_str, session, limit,

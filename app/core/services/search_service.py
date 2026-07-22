@@ -1,8 +1,7 @@
 # app.core.service.search_service.py
 """
-    базовый класс для поиска
+    базовый класс для полнотекстового поиска
 """
-from loguru import logger
 from fastapi import Request
 from typing import NamedTuple, Optional
 from app.core.repositories.search_repository import SearchRepository
@@ -22,6 +21,9 @@ class CleanedSearchQuery(NamedTuple):
 
 
 class SearchService:
+    """
+        класс для полнотекстового поиска
+    """
     @staticmethod
     def prepare_query(user_input: str, cursor: Optional[int] = None) -> Optional[CleanedSearchQuery]:
         """

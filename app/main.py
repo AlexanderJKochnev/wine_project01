@@ -30,6 +30,7 @@ from loguru import logger
 import sys
 from time import perf_counter
 from app.auth.routers import auth_router, user_router
+from app.core.config.database.redis_async import RedisManager
 # from app.core.config.project_config import settings
 from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
@@ -134,6 +135,9 @@ async def lifespan(app: FastAPI):
     app.state.service_manager = service_manager
     service_manager.register("translation", TranslationService)
     logger.success("✅ VLLM Service manager started")
+    # REDIS
+    redis_manager = RedisManager()
+    await redis_manager.connect()
 
     logger.success("✅ FastAPI started")
     yield
@@ -154,7 +158,8 @@ async def lifespan(app: FastAPI):
     logger.success('Seaweed stopped')
     await service_manager.stop()
     logger.success('ServiceManager stopped')
-    # await redis_manager.disconnect()
+    await redis_manager.disconnect()
+    logger.success('RedisManager stopped')
     logger.remove(std_id)
     logger.remove(log_id)
     await logger.complete()
