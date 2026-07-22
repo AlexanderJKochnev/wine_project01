@@ -235,8 +235,8 @@ services:
     image: redis:local
     container_name: fast_search_redis
     command: redis-server --appendonly yes --requirepass ${REDIS_PWD}
-    ports:
-      - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
+    # ports:
+    #   - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_redis_search_data:/data
     restart: unless-stopped
