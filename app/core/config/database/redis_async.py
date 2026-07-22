@@ -49,7 +49,9 @@ class RedisManager:
 
             # 2. Создаем конфигурационный словарь для встроенного плагина
             storage_config = {'type': 'redis',
-                              'config': {'host': self._host, 'port': self._port, 'password': self._password, 'db': 0}}
+                              'redis': {'host': self._host, 'port': self._port,
+                                        'password': self._password, 'db': 0},
+                              "redis_buffer": {"transaction": True}}
             redis_storage = RedisStorage(config=storage_config)
 
             # 3. Принудительно регистрируем плагин в словаре datasketch, если его там нет
