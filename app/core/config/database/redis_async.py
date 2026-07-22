@@ -46,11 +46,12 @@ class RedisManager:
             logger.info("⏳ Инициализация асинхронного драйвера AsyncMinHashLSH...")
 
             # Получаем асинхронного клиента из нашего пула
-            shared_async_client = self.get_async_client()
+            # shared_async_client = self.get_async_client()
 
             # Конфигурация для асинхронного бэкенда datasketch
-            storage_config = {'type': 'aioredis',  # В асинхронном модуле тип называется aioredis
-                              'redis': shared_async_client}
+            storage_config = {"type": "aioredis",
+                              "redis": {"host": self._host, "port": self._port, "password": self._password, "db": 0,
+                                        "decode_responses": False}}
 
             self.lsh_driver = await AsyncMinHashLSH(
                 threshold=self._threshold, num_perm=self._num_perm, storage_config=storage_config
