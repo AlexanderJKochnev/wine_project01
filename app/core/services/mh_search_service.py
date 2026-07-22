@@ -35,3 +35,5 @@ class MinHashSearchService:
         query_minhash = self._prepare_minhash(user_query)
         matched_keys = await self._repo.find_similar(query_minhash)
         return [int(key.split('_')[1]) for key in matched_keys]
+
+
