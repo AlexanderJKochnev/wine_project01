@@ -205,7 +205,7 @@ class Settings(BaseSettings):
     # === ПОИСКОВЫЙ СЕРВИС MINHASH_SERVICE
     SIMILARITY_THRESHOLD: float = 0.2  # толерантность поиска от 0 (мусор) до 1 (строго)
     # num_perm - размер сигнатуры (128 чисел на строку - стандарт для баланса точности и памяти)
-    NUM_PERM = 128
+    NUM_PERM: int = 128
 
     # === DATA_DELTA YEARS количество лет назад
     DATA_DELTA: int = 10
