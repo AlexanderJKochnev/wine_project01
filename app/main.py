@@ -138,7 +138,7 @@ async def lifespan(app: FastAPI):
     redis_manager = RedisManager()
     await redis_manager.connect()
 
-    redis_manager.init_lsh_driver()
+    await redis_manager.init_lsh_driver()
     app.state.redis_manager = redis_manager
 
     logger.success("✅ FastAPI started")
