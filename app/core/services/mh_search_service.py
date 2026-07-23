@@ -7,14 +7,13 @@
 import asyncio
 import re
 
-from fastapi import Depends
 from loguru import logger
 from typing import AsyncGenerator, List, Tuple
 from datasketch import MinHash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config.database.db_async import get_db
+from app.core.config.database.db_async import DatabaseManager
 from app.core.config.project_config import settings
 from app.core.models.base_model import get_model_by_name
 from app.core.repositories.minhash_repository import MinHashSearchRepository
@@ -49,6 +48,7 @@ class MinHashCreateIndex(MinHashRootService):
     """
         run_sync_background:            запуск фонового создания индекса
     """
+
     def __init__(self, lsh_driver, model_name: str = 'Item',
                  field_name: str = 'search_content'):
         self.lsh_driver = lsh_driver
@@ -69,49 +69,53 @@ class MinHashCreateIndex(MinHashRootService):
         Безопасный воркер прогрева.
         Разрывает связь между скоростью чтения из Postgres и скоростью записи в Redis.
         """
-        try:
-            logger.warning("⚠️ Поисковый индекс пуст. Запуск безопасного фонового прогрева...")
-            lsh_driver = self.lsh_driver
-            # session = self._session
-            # Получаем асинхронный генератор (курсор) из Postgres-репозитория
-            db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(self.model_name,
-                                                                                           self.field_name,
-                                                                                           self.BATH_SIZE)
 
-            while True:
-                # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
-                # База данных сразу понимает, что мы активны, и таймаут сбрасывается
-                chunk: List[Tuple[int, str]] = []
+        async with DatabaseManager.session_maker() as session:
+            try:
+                logger.warning("⚠️ Поисковый индекс пуст. Запуск безопасного фонового прогрева...")
+                lsh_driver = self.lsh_driver
+                # session = self._session
+                # Получаем асинхронный генератор (курсор) из Postgres-репозитория
+                db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(self.model_name,
+                                                                                               self.field_name,
+                                                                                               self.BATH_SIZE)
 
-                async for entity_id, full_text in db_stream:
-                    if full_text:
-                        chunk.append((entity_id, full_text))
-                    if len(chunk) >= self.BATCH_SIZE:
-                        break  # Выходим из итератора, давая Postgres передышку
-                # Если данных больше нет — выходим из основного цикла
-                if not chunk:
-                    break
+                while True:
+                    # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
+                    # База данных сразу понимает, что мы активны, и таймаут сбрасывается
+                    chunk: List[Tuple[int, str]] = []
 
-                # 2. И только ПОСЛЕ того, как пачка уже лежит в памяти Python,
-                # мы запускаем тяжелую обработку и отправку хэшей в Redis
-                tasks = [self._index_single_record(lsh_driver, eid, text) for eid, text in chunk]
-                await asyncio.gather(*tasks)
+                    async for entity_id, full_text in db_stream:
+                        if full_text:
+                            chunk.append((entity_id, full_text))
+                        if len(chunk) >= self.BATCH_SIZE:
+                            break  # Выходим из итератора, давая Postgres передышку
+                    # Если данных больше нет — выходим из основного цикла
+                    if not chunk:
+                        break
 
-                # Очищаем память
-                chunk.clear()
+                    # 2. И только ПОСЛЕ того, как пачка уже лежит в памяти Python,
+                    # мы запускаем тяжелую обработку и отправку хэшей в Redis
+                    tasks = [self._index_single_record(lsh_driver, eid, text) for eid, text in chunk]
+                    await asyncio.gather(*tasks)
 
-                # Небольшая микро-пауза, чтобы дать Event Loop обработать другие задачи API
-                await asyncio.sleep(0.01)
+                    # Очищаем память
+                    chunk.clear()
 
-            logger.info("✅ Асинхронный прогрев базы хэшей успешно завершен!")
+                    # Небольшая микро-пауза, чтобы дать Event Loop обработать другие задачи API
+                    await asyncio.sleep(0.01)
 
-        except Exception as e:
-            logger.error(f"❌ Критическая ошибка во время фонового прогрева: {e}")
+                logger.info("✅ Асинхронный прогрев базы хэшей успешно завершен!")
+
+            except Exception as e:
+                logger.error(f"❌ Критическая ошибка во время фонового прогрева: {e}")
+            finally:
+                await session.close()
 
     async def stream_all_search_data(self,
                                      model_name: str,
                                      field_name: str, chunk: int,
-                                     session: AsyncSession = Depends(get_db)
+                                     session: AsyncSession
                                      ) -> AsyncGenerator[Tuple[int, str], None]:
         """
         стриминг агрегированных текстовых данных.
