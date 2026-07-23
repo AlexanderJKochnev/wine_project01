@@ -57,8 +57,7 @@ def _sync_process_chunk(chunk: List[Tuple[int, str]], root_service: MinHashRootS
         minhash = root_service._prepare_minhash(full_text)
         processed.append((f"doc_{entity_id}", minhash))
         if n % 100 == 0:
-            cc += n
-            logger.info(f'обработано {cc} записей')
+            logger.info(f'обработано {n} записей')
     return processed
 
 
@@ -112,8 +111,8 @@ class MinHashCreateIndex(MinHashRootService):
                         except StopAsyncIteration:
                             logger.info('Генератор закончился')
                             break
-                        logger.critical(f'{len(chunk)} || {chunk[-1][0]}')
-                            # Если данных больше нет — выходим
+                        logger.critical(f'{len(chunk)} || id_first={chunk[0][0]}, id_last={chunk[-1][0]}')
+                        # Если данных больше нет — выходим
                         if not chunk:
                             break
 
