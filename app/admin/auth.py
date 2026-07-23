@@ -14,42 +14,42 @@ from app.auth.repository import UserRepository
 
 # ========== 1. MIDDLEWARE ДЛЯ СЕССИЙ ==========
 def setup_auth_middleware(app: FastAPI):
-    """Добавляет SessionMiddleware для хранения данных о входе"""
-    secret_key = app_settings.SECRET_KEY or os.urandom(32).hex()
+    secret_key = app_settings.secret_key or os.urandom(32).hex()
     app.add_middleware(
         SessionMiddleware, secret_key=secret_key, session_cookie="admin_session", max_age=60 * 60 * 24 * 7,
-        # 7 дней
-        same_site="lax", https_only=False,  # В продакшене True
-    )
+        same_site="lax", https_only=False, )
 
 
-# ========== 2. ПРОВАЙДЕР АВТОРИЗАЦИИ ==========
-class AdminAuthProvider:
-    """Провайдер авторизации для fastapi-amis-admin"""
+# ========== 2. КЛАСС АВТОРИЗАЦИИ ==========
+class AdminAuth:
+    """
+    Класс авторизации для fastapi-amis-admin.
+    AdminSite принимает объект auth с методами get_current_user и login.
+    """
 
-    async def get_current_admin(self, request: Request) -> dict | None:
-        """Проверяет, авторизован ли пользователь и является ли он админом"""
+    def __init__(self):
+        self.login_path = "/admin/auth/login"
+        self.logout_path = "/admin/auth/logout"
+
+    async def get_current_user(self, request: Request) -> dict | None:
+        """Проверяет авторизацию пользователя"""
         user_id = request.session.get("user_id")
         if not user_id:
             return None
 
         async for session in get_async_session():
-            # Проверяем, существует ли пользователь и является ли суперпользователем
             user = await session.get(User, user_id)
             if user and user.is_superuser and user.is_active:
-                return {"id": user.id, "username": user.username, }
+                return {"id": user.id, "username": user.username, "avatar": None, }
         return None
 
     async def login(self, request: Request, username: str, password: str) -> dict | None:
         """Аутентификация пользователя"""
         async for session in get_async_session():
-            # Используем ваш существующий метод authenticate из UserRepository
             user = await UserRepository.authenticate(username, password, session)
-            if user:
-                # Проверяем, что пользователь - суперпользователь (админ)
-                if user.is_superuser and user.is_active:
-                    request.session["user_id"] = user.id
-                    return {"id": user.id, "username": user.username, }
+            if user and user.is_superuser and user.is_active:
+                request.session["user_id"] = user.id
+                return {"id": user.id, "username": user.username, }
         return None
 
     async def logout(self, request: Request):
@@ -64,13 +64,20 @@ def init_admin(app: FastAPI):
     # Добавляем middleware для сессий
     setup_auth_middleware(app)
 
+    # Создаем объект авторизации
+    auth = AdminAuth()
+
     # Настройки админки
     settings = Settings(
-        database_url_async=app_settings.database_url, auth_provider=AdminAuthProvider()
+        database_url_async=app_settings.database_url,  # 🔑 КЛЮЧЕВОЙ МОМЕНТ: передаем auth в Settings
+        auth=auth, )
+
+    # Создаем AdminSite с указанием пути
+    admin_site = AdminSite(
+        settings=settings, site_path="/admin"
     )
 
-    # Создаем и монтируем админку
-    admin_site = AdminSite(settings=settings)
+    # Монтируем к приложению
     admin_site.mount_app(app)
 
     return admin_site
