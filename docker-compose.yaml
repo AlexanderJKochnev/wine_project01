@@ -129,7 +129,7 @@ services:
     networks:
       # - postgres_network  # расскомментировать для теста
       - pgbouncer_network # Для связи с pgbouncer
-      - redis_network    # Для связи с redis
+      # - redis_network    # Для связи с redis
       # - ollama_network
       # - searxng_network
       # - mongodb_network
@@ -226,23 +226,21 @@ services:
         # ipv4_address: ${IP_PGBOUNCER}
       
 
-  redis:
-    logging:
-      driver: ${LOGGER_DRIVER}
-      options:
-        max-size: ${MAX_SIZE}
-        max-file: ${MAX_FILE}
-    image: redis:local
-    container_name: fast_search_redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PWD}
-    # ports:
-    #   - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
-    volumes:
-      - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_redis_search_data:/data
-    restart: unless-stopped
-    networks:
-      redis_network:
-          ipv4_address: ${IP_REDIS}
+  # redis:
+  #   logging:
+  #     driver: ${LOGGER_DRIVER}
+  #     options:
+  #       max-size: ${MAX_SIZE}
+  #       max-file: ${MAX_FILE}
+  #   image: redis:local
+  #   container_name: fast_search_redis
+  #   command: redis-server --appendonly yes --requirepass ${REDIS_PWD}
+  #   volumes:
+  #     - ${BIND_VOLUMES}/${COMPOSE_PROJECT_NAME}_redis_search_data:/data
+  #   restart: unless-stopped
+  #   networks:
+  #     redis_network:
+  #         ipv4_address: ${IP_REDIS}
 
 volumes:
   migration_volume: # alembic migrations
@@ -250,7 +248,7 @@ volumes:
   pg_dump: # postgres dump/restore
   # mongodb_data:
   upload_volume:
-  redis_search_data:
+  # redis_search_data:
   # certs_data:
   # certbot_www:
 
@@ -265,11 +263,11 @@ networks:
     ipam:
       config:
         - subnet: ${SUBNET_PGBOUNCER}
-  redis_network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: ${SUBNET_REDIS}
+  # redis_network:
+  #   driver: bridge
+  #   ipam:
+  #     config:
+  #       - subnet: ${SUBNET_REDIS}
   # mongodb_network:
   #   driver: bridge
   #   ipam:
