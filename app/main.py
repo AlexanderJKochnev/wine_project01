@@ -21,16 +21,21 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import List, Optional
 
+from fastapi_amis_admin.admin.settings import Settings
+from fastapi_amis_admin.admin.site import AdminSite
+from fastapi_amis_admin.admin import admin
+from fastapi_amis_admin.amis.components import Page
+
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_matrix_admin import MatrixAdmin
 from starlette.middleware.gzip import GZipMiddleware
 from loguru import logger
 # from fastapi import BackgroundTasks
 import sys
 from time import perf_counter
 from app.auth.routers import auth_router, user_router
+from app.core.config.database.db_config import settings_db
 from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
 from app.core.services.translate_service import TranslationService
@@ -84,10 +89,15 @@ logger.info('start initialisation')
 
 _seaweeds_fids_dump: Optional[List[str]] = None
 
-admin = MatrixAdmin(
-    secret_key="heavy_duty_PassWord_Non19823yhskjhb",
-    title="Моя Панель"
-)
+
+settings = Settings(database_url_async=settings_db.database_url)
+site = AdminSite(settings=settings)
+
+
+@site.register_admin
+class HelloWorldPageAdmin(admin.PageAdmin):
+    page_schema = 'Моя первая страница'  # Название в меню
+    page = Page(title='Заголовок', body='Привет, мир!')  # Содержание страницы
 
 
 @asynccontextmanager
