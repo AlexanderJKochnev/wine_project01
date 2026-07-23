@@ -68,7 +68,7 @@ class MinHashCreateIndex(MinHashRootService):
             lsh_driver = self.lsh_driver
             session = self._session
             # Получаем асинхронный генератор (курсор) из Postgres-репозитория
-            db_stream: AsyncGenerator[Tuple[int, str], None] = session.stream_all_search_data()
+            db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data()
 
             while True:
                 # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
