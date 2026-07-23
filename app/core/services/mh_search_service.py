@@ -26,7 +26,7 @@ class MinHashRootService:
     """
     def __init__(self):
         self._repo = None
-        self.BATH_SIZE = settings.MINHASH_BATCH_SIZE
+        self.BATCH_SIZE = settings.MINHASH_BATCH_SIZE
         self.CLEAN_RE = re.compile(r'[^a-zа-я0-9\s]')
         self.num_perm = settings.NUM_PERM
         self.shingle = settings.SHINGLE
@@ -80,7 +80,7 @@ class MinHashCreateIndex(MinHashRootService):
                 # Получаем асинхронный генератор (курсор) из Postgres-репозитория
                 db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(self.model_name,
                                                                                                self.field_name,
-                                                                                               self.BATH_SIZE,
+                                                                                               self.BATCH_SIZE,
                                                                                                session)
 
                 while True:
