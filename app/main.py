@@ -146,7 +146,7 @@ async def lifespan(app: FastAPI):
     # async_redis_client = lsh_driver.storage.keys_keys
     is_index_empty = await lsh_driver.is_empty()
     if is_index_empty:
-        logger.warning('index is not available. cюда прогрев')
+        logger.warning('index is not available')
         from app.core.services.mh_search_service import MinHashCreateIndex
         mhcreateindex = MinHashCreateIndex(lsh_driver)
         asyncio.create_task(mhcreateindex.execute_heavy_warmup())

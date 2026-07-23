@@ -24,6 +24,7 @@ class MinHashRootService:
         базовый класс для MinHashSearchService и MinHashCreateIndex
         содержит общие переменные и методы
     """
+
     def __init__(self):
         self._repo = None
         self.BATCH_SIZE = settings.MINHASH_BATCH_SIZE
@@ -43,6 +44,18 @@ class MinHashRootService:
         for shingle in shingles:
             m.update(shingle.encode('utf-8'))
         return m
+
+
+def _sync_process_chunk(chunk: List[Tuple[int, str]], root_service: MinHashRootService) -> List[Tuple[str, MinHash]]:
+    """
+        Синхронный пакетный расчет хэшей в фоновом потоке ОС.
+        Разгружает Event Loop, предотвращая зависание FastAPI при старте.
+    """
+    processed = []
+    for entity_id, full_text in chunk:
+        minhash = root_service._prepare_minhash(full_text)
+        processed.append((f"doc_{entity_id}", minhash))
+    return processed
 
 
 class MinHashCreateIndex(MinHashRootService):
@@ -71,21 +84,20 @@ class MinHashCreateIndex(MinHashRootService):
         Безопасный воркер прогрева.
         Разрывает связь между скоростью чтения из Postgres и скоростью записи в Redis.
         """
-
         async with DatabaseManager.session_maker() as session:
             try:
                 logger.warning("⚠️ Поисковый индекс пуст. Запуск безопасного фонового прогрева...")
                 lsh_driver = self.lsh_driver
-                # session = self._session
-                # Получаем асинхронный генератор (курсор) из Postgres-репозитория
-                db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(self.model_name,
-                                                                                               self.field_name,
-                                                                                               self.BATCH_SIZE,
-                                                                                               session)
+
+                # Безопасно получаем асинхронный клиент Redis из драйвера для работы с пайплайнами
+                async_redis_client = lsh_driver.storage.keys_keys
+
+                db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(
+                    self.model_name, self.field_name, self.BATCH_SIZE, session
+                )
 
                 while True:
                     # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
-                    # База данных сразу понимает, что мы активны, и таймаут сбрасывается
                     chunk: List[Tuple[int, str]] = []
 
                     async for entity_id, full_text in db_stream:
@@ -93,20 +105,33 @@ class MinHashCreateIndex(MinHashRootService):
                             chunk.append((entity_id, full_text))
                         if len(chunk) >= self.BATCH_SIZE:
                             break  # Выходим из итератора, давая Postgres передышку
+
                     # Если данных больше нет — выходим из основного цикла
                     if not chunk:
                         break
 
-                    # 2. И только ПОСЛЕ того, как пачка уже лежит в памяти Python,
-                    # мы запускаем тяжелую обработку и отправку хэшей в Redis
-                    tasks = [self._index_single_record(lsh_driver, eid, text) for eid, text in chunk]
-                    await asyncio.gather(*tasks)
+                    # 2. ПАРАЛЛЕЛИЗМ: Выносим тяжелый CPU-расчет хэшей пачки в отдельный поток ОС.
+                    # Основной поток FastAPI свободен и мгновенно отвечает клиентам.
+                    hashed_chunk = await asyncio.to_thread(_sync_process_chunk, chunk, self)
 
-                    # Очищаем память
+                    # 3. КОНВЕЙЕРИЗАЦИЯ (Защита от Error 99): Пишем всю пачку одним сетевым пакетом
+                    async with async_redis_client.pipeline(transaction=False) as pipe:
+                        for key, minhash in hashed_chunk:
+                            try:
+                                await lsh_driver.remove(key, p=pipe)
+                            except ValueError:
+                                pass
+                            await lsh_driver.insert(key, minhash, p=pipe)
+
+                        # Выстрел пакета команд в сеть Redis
+                        await pipe.execute()
+
+                    # Очищаем память, помогая Garbage Collector
                     chunk.clear()
+                    hashed_chunk.clear()
 
                     # Небольшая микро-пауза, чтобы дать Event Loop обработать другие задачи API
-                    await asyncio.sleep(0.01)
+                    await asyncio.sleep(0.001)
 
                 logger.info("✅ Асинхронный прогрев базы хэшей успешно завершен!")
 
@@ -115,31 +140,29 @@ class MinHashCreateIndex(MinHashRootService):
             finally:
                 await session.close()
 
-    async def stream_all_search_data(self,
-                                     model_name: str,
-                                     field_name: str, chunk: int,
-                                     session: AsyncSession
-                                     ) -> AsyncGenerator[Tuple[int, str], None]:
+    async def stream_all_search_data(
+            self, model_name: str, field_name: str, chunk: int, session: AsyncSession
+    ) -> AsyncGenerator[Tuple[int, str], None]:
         """
         стриминг агрегированных текстовых данных.
         Использует серверный курсор через yield_per для удержания памяти RAM в пределах нормы.
         """
-        model = get_model_by_name('Item')
-        # 1. Формируем базовый запрос
-        # chunk = 5000 заставляем SQLAlchemy запрашивать данные у драйвера именно такими пачками
+        model = get_model_by_name(model_name)
+
         if not hasattr(model, field_name):
             raise AttributeError(f"Model {model.__name__} has no attribute '{field_name}'")
+
         field_attr = getattr(model, field_name)
-        query = (select(model.id, field_attr)
-                 .where(field_attr.isnot(None), field_attr != '')
-                 .order_by(model.id))
-        # 2. Запускаем асинхронный стрим через специальный метод сессии
+        query = (select(model.id, field_attr).where(field_attr.isnot(None), field_attr != '').order_by(model.id))
+
+        # Запускаем асинхронный стрим с передачей yield_per через параметры исполнения
         result_stream = await session.stream(
             query.execution_options(yield_per=chunk)
         )
-        # 3. Лениво итерируемся по строкам из сетевого буфера драйвера
+
+        # Лениво итерируемся по строкам
         async for row in result_stream:
-            # row - объект SQLAlchemy, распаковываем в Tuple
+            # Безопасная распаковка строки SQLAlchemy 2.0 без обращения по индексам
             entity_id, full_text = row
             yield entity_id, full_text
 
