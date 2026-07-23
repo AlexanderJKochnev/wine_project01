@@ -71,6 +71,6 @@ def init_admin(app: FastAPI):
 
     # Создаем и монтируем админку
     admin_site = AdminSite(settings=settings)
-    admin_site.mount_app(app, path="/admin")
+    admin_site.mount_app(app)
 
     return admin_site
