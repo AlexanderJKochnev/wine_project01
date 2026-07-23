@@ -24,11 +24,12 @@ class MinHashRootService:
         базовый класс для MinHashSearchService и MinHashCreateIndex
         содержит общие переменные и методы
     """
-    _repo = None
-    BATH_SIZE = settings.MINHASH_BATCH_SIZE
-    CLEAN_RE = re.compile(r'[^a-zа-я0-9\s]')
-    num_perm = settings.NUM_PERM
-    shingle = settings.SHINGLE
+    def __init__(self):
+        self._repo = None
+        self.BATH_SIZE = settings.MINHASH_BATCH_SIZE
+        self.CLEAN_RE = re.compile(r'[^a-zа-я0-9\s]')
+        self.num_perm = settings.NUM_PERM
+        self.shingle = settings.SHINGLE
 
     def _prepare_minhash(self, text: str) -> MinHash:
         """
@@ -51,6 +52,7 @@ class MinHashCreateIndex(MinHashRootService):
 
     def __init__(self, lsh_driver, model_name: str = 'Item',
                  field_name: str = 'search_content'):
+        super().__init__()
         self.lsh_driver = lsh_driver
         self.model_name = model_name
         self.field_name = field_name
@@ -144,6 +146,7 @@ class MinHashCreateIndex(MinHashRootService):
 
 class MinHashSearchService(MinHashRootService):
     def __init__(self, repository: MinHashSearchRepository):
+        super().__init__()
         self._repo = repository
 
     async def update_index(self, entity_id: int, full_text: str) -> None:
