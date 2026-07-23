@@ -112,7 +112,7 @@ class MinHashCreateIndex(MinHashRootService):
                         except StopAsyncIteration:
                             logger.info('Генератор закончился')
                             break
-
+                        logger.critical(f'{len(chunk)} || {chunk[-1][0]}')
                             # Если данных больше нет — выходим
                         if not chunk:
                             break
