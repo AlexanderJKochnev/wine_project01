@@ -66,6 +66,7 @@ rich~=14.1.0
 setuptools<81
 # sqladmin==0.21.0
 sqlalchemy-utils
+sqlmodel==0.0.30
 starlette~=0.47.2
 uvloop
 xxhash
