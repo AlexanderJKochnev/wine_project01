@@ -90,48 +90,44 @@ class MinHashCreateIndex(MinHashRootService):
                 lsh_driver = self.lsh_driver
 
                 # Безопасно получаем асинхронный клиент Redis из драйвера для работы с пайплайнами
-                async_redis_client = lsh_driver.storage.keys_keys
-
+                # async_redis_client = lsh_driver.storage.keys_keys
                 db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(
                     self.model_name, self.field_name, self.BATCH_SIZE, session
                 )
+                async with lsh_driver.insertion_session(batch_size=self.BATCH_SIZE) as session_lsh:
+                    while True:
+                        # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
+                        chunk: List[Tuple[int, str]] = []
 
-                while True:
-                    # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
-                    chunk: List[Tuple[int, str]] = []
+                        async for entity_id, full_text in db_stream:
+                            if full_text:
+                                chunk.append((entity_id, full_text))
+                            if len(chunk) >= self.BATCH_SIZE:
+                                break
 
-                    async for entity_id, full_text in db_stream:
-                        if full_text:
-                            chunk.append((entity_id, full_text))
-                        if len(chunk) >= self.BATCH_SIZE:
-                            break  # Выходим из итератора, давая Postgres передышку
+                            # Если данных больше нет — выходим
+                        if not chunk:
+                            break
 
-                    # Если данных больше нет — выходим из основного цикла
-                    if not chunk:
-                        break
+                        # 2. ПАРАЛЛЕЛИЗМ: Выносим тяжелый CPU-расчет хэшей пачки в отдельный поток ОС.
+                        hashed_chunk = await asyncio.to_thread(_sync_process_chunk, chunk, self)
 
-                    # 2. ПАРАЛЛЕЛИЗМ: Выносим тяжелый CPU-расчет хэшей пачки в отдельный поток ОС.
-                    # Основной поток FastAPI свободен и мгновенно отвечает клиентам.
-                    hashed_chunk = await asyncio.to_thread(_sync_process_chunk, chunk, self)
-
-                    # 3. КОНВЕЙЕРИЗАЦИЯ (Защита от Error 99): Пишем всю пачку одним сетевым пакетом
-                    async with async_redis_client.pipeline(transaction=False) as pipe:
+                        # 3. Вставляем через insertion_session (автоматический батчинг)
                         for key, minhash in hashed_chunk:
+                            # Удаляем старый ключ если есть (через session_lsh)
                             try:
-                                await lsh_driver.remove(key, p=pipe)
+                                await session_lsh.remove(key)
                             except ValueError:
                                 pass
-                            await lsh_driver.insert(key, minhash, p=pipe)
+                            # Вставляем новый
+                            await session_lsh.insert(key, minhash)
 
-                        # Выстрел пакета команд в сеть Redis
-                        await pipe.execute()
+                        # Очищаем память
+                        chunk.clear()
+                        hashed_chunk.clear()
 
-                    # Очищаем память, помогая Garbage Collector
-                    chunk.clear()
-                    hashed_chunk.clear()
-
-                    # Небольшая микро-пауза, чтобы дать Event Loop обработать другие задачи API
-                    await asyncio.sleep(0.001)
+                        # Небольшая пауза для Event Loop
+                        await asyncio.sleep(0.001)
 
                 logger.info("✅ Асинхронный прогрев базы хэшей успешно завершен!")
 
