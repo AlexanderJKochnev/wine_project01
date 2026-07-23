@@ -20,7 +20,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from typing import List, Optional
-
+from app.admin.models import register_all_models
 from fastapi_amis_admin.admin.settings import Settings
 from fastapi_amis_admin.admin.site import AdminSite
 from fastapi_amis_admin.admin import admin
@@ -34,6 +34,7 @@ from loguru import logger
 # from fastapi import BackgroundTasks
 import sys
 from time import perf_counter
+from app.admin.auth import init_admin
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.db_config import settings_db
 from app.core.exceptions import AppBaseException
@@ -90,14 +91,14 @@ logger.info('start initialisation')
 _seaweeds_fids_dump: Optional[List[str]] = None
 
 
-settings = Settings(database_url_async=settings_db.database_url)
-site = AdminSite(settings=settings)
+# settings = Settings(database_url_async=settings_db.database_url)
+# site = AdminSite(settings=settings)
 
 
-@site.register_admin
-class HelloWorldPageAdmin(admin.PageAdmin):
-    page_schema = 'Моя первая страница'  # Название в меню
-    page = Page(title='Заголовок', body='Привет, мир!')  # Содержание страницы
+# @site.register_admin
+# class HelloWorldPageAdmin(admin.PageAdmin):
+#     page_schema = 'Моя первая страница'  # Название в меню
+#     page = Page(title='Заголовок', body='Привет, мир!')  # Содержание страницы
 
 
 @asynccontextmanager
@@ -190,6 +191,10 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
                   "filter": True  # Полезный бонус: добавляет строку поиска в Swagger
               }
               )
+
+admin_site = init_admin(app)
+
+register_all_models(admin_site)
 
 
 @app.middleware("http")
@@ -302,7 +307,7 @@ app.include_router(user_router)
 async def read_root():
     return {"message": "Hybrid PostgreSQL (auth) + MongoDB (files) API"}
 
-site.mount_app(app)
+# site.mount_app(app)
 
 """
 @app.get("/health")

@@ -71,3 +71,5 @@ starlette~=0.47.2
 uvloop
 xxhash
 zstandard
+
+fastapi-user-auth
