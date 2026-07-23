@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.project_config import settings
+from app.core.models.base_model import get_model_by_name
 from app.core.repositories.minhash_repository import MinHashSearchRepository
 
 
@@ -45,9 +46,12 @@ class MinHashCreateIndex(MinHashRootService):
     """
         run_sync_background:            запуск фонового создания индекса
     """
-    def __init__(self, lsh_driver, session: AsyncSession):
+    def __init__(self, lsh_driver, session: AsyncSession, model_name: str = 'Item',
+                 field_name: str = 'search_content'):
         self._session = session
         self.lsh_driver = lsh_driver
+        self.model_name = model_name
+        self.field_name = field_name
 
     async def _index_single_record(self, lsh_driver, entity_id: int, full_text: str) -> None:
         minhash = self._prepare_minhash(full_text)
@@ -66,9 +70,11 @@ class MinHashCreateIndex(MinHashRootService):
         try:
             logger.warning("⚠️ Поисковый индекс пуст. Запуск безопасного фонового прогрева...")
             lsh_driver = self.lsh_driver
-            session = self._session
+            # session = self._session
             # Получаем асинхронный генератор (курсор) из Postgres-репозитория
-            db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data()
+            db_stream: AsyncGenerator[Tuple[int, str], None] = self.stream_all_search_data(self.model_name,
+                                                                                           self.field_name,
+                                                                                           self.BATH_SIZE)
 
             while True:
                 # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
@@ -101,7 +107,7 @@ class MinHashCreateIndex(MinHashRootService):
             logger.error(f"❌ Критическая ошибка во время фонового прогрева: {e}")
 
     async def stream_all_search_data(self,
-                                     model,
+                                     model_name: str,
                                      field_name: str, chunk: int,
                                      # session: AsyncSession
                                      ) -> AsyncGenerator[Tuple[int, str], None]:
@@ -109,6 +115,7 @@ class MinHashCreateIndex(MinHashRootService):
         стриминг агрегированных текстовых данных.
         Использует серверный курсор через yield_per для удержания памяти RAM в пределах нормы.
         """
+        model = get_model_by_name('Item')
         session = self._session
         # 1. Формируем базовый запрос
         # chunk = 5000 заставляем SQLAlchemy запрашивать данные у драйвера именно такими пачками
