@@ -15,7 +15,7 @@ from app.auth.repository import UserRepository
 # ========== 1. MIDDLEWARE ДЛЯ СЕССИЙ ==========
 def setup_auth_middleware(app: FastAPI):
     """Добавляет SessionMiddleware для хранения данных о входе"""
-    secret_key = app_settings.secret_key or os.urandom(32).hex()
+    secret_key = app_settings.SECRET_KEY or os.urandom(32).hex()
     app.add_middleware(
         SessionMiddleware, secret_key=secret_key, session_cookie="admin_session", max_age=60 * 60 * 24 * 7,
         # 7 дней
