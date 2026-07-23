@@ -31,7 +31,8 @@ deepdiff~=8.6.1
 email-validator
 Faker~=37.5.3
 fastapi[all]~=0.116.1
-fastapi_amis_admin
+# fastapi_amis_admin
+fastapi_amis_admin[sqlmodel]
 httpx~=0.28.1
 ijson~=3.4.0.post0
 loguru==0.7.3
