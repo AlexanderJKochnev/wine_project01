@@ -128,17 +128,6 @@ async def lifespan(app: FastAPI):
     logger.success("расширения Postgresql установлены")
     app.state.pg_engine = DatabaseManager.engine
 
-    logger.info("Настройка MatrixAdmin...")
-    # 3. Привязка приложения и движка к админке
-    admin.mount_to_app(app, engine=DatabaseManager.engine)
-
-    # 4. Автоматическое обнаружение моделей
-    admin.auto_discover(Base)
-
-    # Автоматически регистрируем все модели из Base
-    # Здесь предполагается, что у вас есть глобальный объект Base
-    admin.auto_discover(Base)
-    print("Админка успешно настроена!")
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
