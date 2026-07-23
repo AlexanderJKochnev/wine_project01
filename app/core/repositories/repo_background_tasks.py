@@ -1,10 +1,13 @@
 # app.core.repositories.repo_backround_tasks.py
 import asyncio
-from typing import Any, Optional, Dict
+import re
+from typing import Any, AsyncGenerator, Optional, Dict, Tuple
+
+from datasketch import MinHash
 from loguru import logger
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.sql.selectable import Select
 from app.core.config.project_config import settings
 from app.core.models.base_model import get_model_by_name
 from app.core.repositories.clickhouse_repository import ClickHouseRepository
@@ -42,6 +45,7 @@ class Background:
     ):
         """ Точка входа для фоновой синхронизации поля search_content
             если start_model = None: полная реиндексация
+            СЮДА ВРЕЗАТЬ ВСЕ ЧТО ЗАВИСИТ ОТ ПОЛЯ
         """
         if start_model:
             task_name = f"{start_model.__name__}_{start_id}"
@@ -406,3 +410,89 @@ class Background:
             fid, fid_thumb, tags = res.values()
             return fid, fid_thumb
         return None
+
+
+class MinHashCreateIndex:
+    """
+        run_sync_background:            запуск фонового создания индекса
+    """
+    BATCH_SIZE = 5000
+    CLEAN_RE = re.compile(r'[^a-zа-я0-9\s]')
+
+    @classmethod
+    def _prepare_minhash(cls, text: str, num_perm: int) -> MinHash:
+        """
+            преобразование текста в minhash shingles
+            
+        """
+        m = MinHash(num_perm=num_perm)
+        if not text:
+            return m
+        clean_text = cls.CLEAN_RE.sub('', text.lower())
+        shingles = [clean_text[i:i + 4] for i in range(len(clean_text) - 3)]
+        for shingle in shingles:
+            m.update(shingle.encode('utf-8'))
+        return m
+
+    @classmethod
+    @background_unique
+    async def run_sync_background(
+            cls, model, field_name: str, session_factory):
+        """ Точка входа для фонового создания индекса по полю field_name модели model
+        """
+        task_name = f"{model.__name__}_{field_name}"
+        logger.info(f"🚀 Начало фонового созданя индекса : {task_name}")
+
+        async with session_factory() as session:
+            try:
+                
+                stmt = select(model.id, ).where(ItemModel.drink_id.isnot(None))
+                # Получаем ID пар для обработки (индекс hash)
+                pairs = await cls._get_item_drink_pairs(
+                        session, start_model, start_id, path_str
+                        )
+                
+                if not pairs:
+                    logger.warning(f"⚠️ Нет данных для синхронизации: {task_name}")
+                    return
+                
+                logger.info(f"📊 Найдено {len(pairs)} записей для обработки")
+                # Обрабатываем с прогресс-баром
+                updated_count = await cls._process_pairs(
+                        session, pairs, skip_keys
+                        )
+                
+                await session.commit()
+                logger.success(f"✅ Синхронизация завершена: {task_name}, обновлено {updated_count} записей")
+            
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"❌ Ошибка синхронизации {task_name}: {e}")
+                raise
+
+    @classmethod
+    async def stream_all_search_data(cls,
+                                     model,
+                                     field_name: str, chunk: int,
+                                     session: AsyncSession) -> AsyncGenerator[Tuple[int, str], None]:
+        """
+        Асинциированный стриминг агрегированных текстовых данных.
+        Использует серверный курсор через yield_per для удержания памяти RAM в пределах нормы.
+        """
+        # 1. Формируем базовый запрос
+        # chunk = 5000 заставляем SQLAlchemy запрашивать данные у драйвера именно такими пачками
+        if not hasattr(model, field_name):
+            raise AttributeError(f"Model {model.__name__} has no attribute '{field_name}'")
+        field_attr = getattr(model, field_name)
+        query = (select(model.id, field_attr)
+                 .where(field_attr.isnot(None), field_attr != '')
+                 .order_by(model.id))
+        # 2. Запускаем асинхронный стрим через специальный метод сессии
+        result_stream = await session.stream(
+            query.execution_options(yield_per=chunk)
+        )
+        # 3. Лениво итерируемся по строкам из сетевого буфера драйвера
+        async for row in result_stream:
+            # row - это специальный объект SQLAlchemy, распаковываем его в Tuple
+            entity_id, full_text = row
+            yield entity_id, full_text

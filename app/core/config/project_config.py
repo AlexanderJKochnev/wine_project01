@@ -180,6 +180,7 @@ class Settings(BaseSettings):
     ARQ_MAX_TRIES: int = 3  # максимум 3 попытки
     ARQ_MIN_DELAY: int = 3
     ARQ_MAX_DELAY: int = 10
+    MINHASH_BATCH_SIZE: int = 5000
 
     # === EMAIL SETTINGS ===
     EMAIL_HOST: str = "smtp.gmail.com"
@@ -206,6 +207,8 @@ class Settings(BaseSettings):
     SIMILARITY_THRESHOLD: float = 0.2  # толерантность поиска от 0 (мусор) до 1 (строго)
     # num_perm - размер сигнатуры (128 чисел на строку - стандарт для баланса точности и памяти)
     NUM_PERM: int = 128
+    # длина шигла (куска текста по кторому берется minhash)
+    SHINGLE: int = 4
 
     # === DATA_DELTA YEARS количество лет назад
     DATA_DELTA: int = 10
