@@ -6,12 +6,15 @@
 """
 import asyncio
 import re
+
+from fastapi import Depends
 from loguru import logger
 from typing import AsyncGenerator, List, Tuple
 from datasketch import MinHash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config.database.db_async import get_db
 from app.core.config.project_config import settings
 from app.core.models.base_model import get_model_by_name
 from app.core.repositories.minhash_repository import MinHashSearchRepository
@@ -46,9 +49,8 @@ class MinHashCreateIndex(MinHashRootService):
     """
         run_sync_background:            запуск фонового создания индекса
     """
-    def __init__(self, lsh_driver, session: AsyncSession, model_name: str = 'Item',
+    def __init__(self, lsh_driver, model_name: str = 'Item',
                  field_name: str = 'search_content'):
-        self._session = session
         self.lsh_driver = lsh_driver
         self.model_name = model_name
         self.field_name = field_name
@@ -109,14 +111,13 @@ class MinHashCreateIndex(MinHashRootService):
     async def stream_all_search_data(self,
                                      model_name: str,
                                      field_name: str, chunk: int,
-                                     # session: AsyncSession
+                                     session: AsyncSession = Depends(get_db)
                                      ) -> AsyncGenerator[Tuple[int, str], None]:
         """
         стриминг агрегированных текстовых данных.
         Использует серверный курсор через yield_per для удержания памяти RAM в пределах нормы.
         """
         model = get_model_by_name('Item')
-        session = self._session
         # 1. Формируем базовый запрос
         # chunk = 5000 заставляем SQLAlchemy запрашивать данные у драйвера именно такими пачками
         if not hasattr(model, field_name):

@@ -147,10 +147,9 @@ async def lifespan(app: FastAPI):
     is_index_empty = await lsh_driver.is_empty()
     if is_index_empty:
         logger.warning('index is not available. cюда прогрев')
-        async with DatabaseManager.session_maker() as session:
-            from app.core.services.mh_search_service import MinHashCreateIndex
-            mhcreateindex = MinHashCreateIndex(lsh_driver, session)
-            asyncio.create_task(mhcreateindex.execute_heavy_warmup())
+        from app.core.services.mh_search_service import MinHashCreateIndex
+        mhcreateindex = MinHashCreateIndex(lsh_driver)
+        asyncio.create_task(mhcreateindex.execute_heavy_warmup())
     logger.success("✅ FastAPI started")
     yield
 
