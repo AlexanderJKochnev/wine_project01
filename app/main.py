@@ -84,6 +84,11 @@ logger.info('start initialisation')
 
 _seaweeds_fids_dump: Optional[List[str]] = None
 
+admin = MatrixAdmin(
+    secret_key="heavy_duty_PassWord_Non19823yhskjhb",
+    title="Моя Панель"
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -114,11 +119,11 @@ async def lifespan(app: FastAPI):
     app.state.pg_engine = DatabaseManager.engine
 
     logger.info("Настройка MatrixAdmin...")
-    admin = MatrixAdmin(
-        app,  # Передаем объект приложения
-        engine=DatabaseManager.engine,
-        secret_key="heavy_duty_PassWord_Non19823yhskjhb"
-    )
+    # 3. Привязка приложения и движка к админке
+    admin.mount_to_app(app, engine=DatabaseManager.engine)
+
+    # 4. Автоматическое обнаружение моделей
+    admin.auto_discover(Base)
 
     # Автоматически регистрируем все модели из Base
     # Здесь предполагается, что у вас есть глобальный объект Base
