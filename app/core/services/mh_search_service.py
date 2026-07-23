@@ -56,7 +56,7 @@ def _sync_process_chunk(chunk: List[Tuple[int, str]], root_service: MinHashRootS
     for n, (entity_id, full_text) in enumerate(chunk):
         minhash = root_service._prepare_minhash(full_text)
         processed.append((f"doc_{entity_id}", minhash))
-        if n % 10 == 0:
+        if n % 100 == 0:
             cc += n
             logger.info(f'обработано {cc} записей')
     return processed
@@ -103,11 +103,15 @@ class MinHashCreateIndex(MinHashRootService):
                         # 1. МОЛНИЕНОСНО забираем 5000 строк из сетевого буфера Postgres
                         chunk: List[Tuple[int, str]] = []
 
-                        async for entity_id, full_text in db_stream:
-                            if full_text:
-                                chunk.append((entity_id, full_text))
-                            if len(chunk) >= self.BATCH_SIZE:
-                                break
+                        try:
+                            async for entity_id, full_text in db_stream:
+                                if full_text:
+                                    chunk.append((entity_id, full_text))
+                                if len(chunk) >= self.BATCH_SIZE:
+                                    break
+                        except StopAsyncIteration:
+                            logger.info('Генератор закончился')
+                            break
 
                             # Если данных больше нет — выходим
                         if not chunk:
