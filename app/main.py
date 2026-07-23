@@ -24,6 +24,7 @@ from typing import List, Optional
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_matrix_admin import MatrixAdmin
 from starlette.middleware.gzip import GZipMiddleware
 from loguru import logger
 # from fastapi import BackgroundTasks
@@ -34,6 +35,7 @@ from app.core.exceptions import AppBaseException
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
 from app.core.services.translate_service import TranslationService
 from app.core.services.vllm_service_manager import ServiceManager
+from app.core.models.base_model import Base
 from app.preact.create.router import CreateRouter
 from app.preact.get.router import GetRouter
 from app.preact.read.router import ReadRouter
@@ -109,6 +111,19 @@ async def lifespan(app: FastAPI):
         )  # Если БД не отвечает, часто нет смысла запускать приложение  # raise e
     await init_db_extensions()
     logger.success("расширения Postgresql установлены")
+    app.state.pg_engine = DatabaseManager.engine
+
+    logger.info("Настройка MatrixAdmin...")
+    admin = MatrixAdmin(
+        app,  # Передаем объект приложения
+        engine=DatabaseManager.engine,
+        secret_key="heavy_duty_PassWord_Non19823yhskjhb"
+    )
+
+    # Автоматически регистрируем все модели из Base
+    # Здесь предполагается, что у вас есть глобальный объект Base
+    admin.auto_discover(Base)
+    print("Админка успешно настроена!")
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
