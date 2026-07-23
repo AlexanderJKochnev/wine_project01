@@ -302,6 +302,7 @@ app.include_router(user_router)
 async def read_root():
     return {"message": "Hybrid PostgreSQL (auth) + MongoDB (files) API"}
 
+site.mount_app(app)
 
 """
 @app.get("/health")
