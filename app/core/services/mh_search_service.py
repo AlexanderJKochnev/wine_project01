@@ -52,9 +52,13 @@ def _sync_process_chunk(chunk: List[Tuple[int, str]], root_service: MinHashRootS
         Разгружает Event Loop, предотвращая зависание FastAPI при старте.
     """
     processed = []
-    for entity_id, full_text in chunk:
+    cc: int = 0
+    for n, (entity_id, full_text) in enumerate(chunk):
         minhash = root_service._prepare_minhash(full_text)
         processed.append((f"doc_{entity_id}", minhash))
+        if n % 10 == 0:
+            cc += n
+            logger.info(f'обработано {cc} записей')
     return processed
 
 
@@ -116,7 +120,7 @@ class MinHashCreateIndex(MinHashRootService):
                         for key, minhash in hashed_chunk:
                             # Удаляем старый ключ если есть (через session_lsh)
                             try:
-                                await session_lsh.remove(key)
+                                await lsh_driver.remove(key)
                             except ValueError:
                                 pass
                             # Вставляем новый
