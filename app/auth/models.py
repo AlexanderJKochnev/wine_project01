@@ -5,12 +5,19 @@ from sqlalchemy import DateTime, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.models.base_model import Base
 from typing import Optional
-# from fastapi_user_auth.auth.models import Role, CasbinRule, LoginHistory
+from fastapi_user_auth.auth.models import Role as ARole, CasbinRule as ACasbinRule, LoginHistory as ALoginHistory
 
 
-# for model in [Role, CasbinRule, LoginHistory]:
-#     model.__table__.metadata = Base.metadata
+class Role(Base, ARole):
+    pass
 
+
+class CasbinRule(Base, ACasbinRule):
+    pass
+
+
+class LoginHistory(Base, ALoginHistory):
+    pass
 
 class User(Base):
     __tablename__ = "users"

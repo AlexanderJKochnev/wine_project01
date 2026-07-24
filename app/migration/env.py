@@ -27,7 +27,7 @@ from app.support.superfood.model import Superfood
 from app.support.item.model import Item
 from app.support.region.model import Region
 from app.support.sweetness.model import Sweetness
-from app.auth.models import User  # , Role, CasbinRule, LoginHistory
+from app.auth.models import User, Role, CasbinRule, LoginHistory
 from app.core.config.database.db_config import settings_db
 from app.support.drink.model import DrinkFood
 from app.support.subregion.model import Subregion
