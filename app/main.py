@@ -50,7 +50,6 @@ from app.support.country.router import CountryRouter
 # from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
-# from app.support.clickhouse.service import EmbeddingService
 # -------ИМПОРТ РОУТЕРОВ----------
 from app.support.gemma.router import GemmaRouter
 from app.support.item.router import ItemRouter
