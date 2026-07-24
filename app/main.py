@@ -30,7 +30,6 @@ from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.admin.config import create_and_mount_admin
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
@@ -98,22 +97,22 @@ async def lifespan(app: FastAPI):
     )
     log_id = logger.add("logs/app.log", rotation="100 MB", retention="10 days", compression="zip", enqueue=True)
     logger.success('logger инициализирован')
-    DatabaseManager.__init__()
+    db_manager = DatabaseManager()
     logger.info("Lifespan: Инициализация ресурсов...")
 
     try:
-        await DatabaseManager.check_connection()
-        logger.success(f"Lifespan: PostgreSQL соединение установлено (OK) {DatabaseManager.connection_string}")
+        await db_manager.check_connection()
+        logger.success(f"Lifespan: PostgreSQL соединение установлено (OK) {db_manager.connection_string}")
     except Exception as e:
         logger.critical(
-            f"Lifespan: ОШИБКА ПОДКЛЮЧЕНИЯ К БД: {e}, {DatabaseManager.connection_string=}"
+            f"Lifespan: ОШИБКА ПОДКЛЮЧЕНИЯ К БД: {e}, {db_manager.connection_string=}"
         )  # Если БД не отвечает, часто нет смысла запускать приложение  # raise e
     await init_db_extensions()
     logger.success("расширения Postgresql установлены")
-    app.state.pg_engine = DatabaseManager.engine
+    app.state.pg_engine = db_manager.engine
 
-    create_and_mount_admin(app, DatabaseManager.engine)
-    logger.info("✅ асинхронный двигатель присоединен к админпанели")
+    # create_and_mount_admin(app, DatabaseManager.engine)
+    # logger.info("✅ асинхронный двигатель присоединен к админпанели")
 
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
@@ -227,7 +226,6 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SECRET_KEY
 )
-
 
 
 app.include_router(ApiRouter().router)
