@@ -22,7 +22,7 @@ import sys
 from contextlib import asynccontextmanager
 from time import perf_counter
 from typing import List, Optional
-
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -222,7 +222,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # минимальный размер для сжатия
 
 app.add_middleware(
