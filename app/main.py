@@ -122,6 +122,17 @@ async def lifespan(app: FastAPI):
     logger.success("расширения Postgresql установлены")
     app.state.pg_engine = DatabaseManager.engine
 
+    # ✅ ИНИЦИАЛИЗАЦИЯ АДМИНКИ (внутри lifespan)
+    # from app.admin.auth import init_admin
+    admin_site = init_admin(app)
+ 
+    # ✅ СОЗДАНИЕ ТАБЛИЦ И ПОЛЬЗОВАТЕЛЕЙ (здесь, а не в startup)
+    from sqlmodel import SQLModel
+    await admin_site.db.async_run_sync(SQLModel.metadata.create_all, is_session = False)
+    await admin_site.auth.create_role_user('admin')
+    await admin_site.auth.create_role_user('vip')
+    logger.success("✅ Админка настроена. Логин: admin, пароль: admin")
+
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
@@ -185,9 +196,9 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               }
               )
 
-admin_site = init_admin(app)
+# admin_site = init_admin(app)
 
-register_all_models(admin_site)
+# register_all_models(admin_site)
 
 
 @app.middleware("http")
