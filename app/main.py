@@ -134,15 +134,15 @@ async def lifespan(app: FastAPI):
         result = await session.execute(select(User).where(User.username == "admin"))
         admin_user = result.scalar_one_or_none()
 
-        if admin_user:
-            admin_user.is_superuser = True
-            admin_user.is_active = True
+        # if admin_user:
+        #     admin_user.is_superuser = True
+        #     admin_user.is_active = True
             # Если библиотека не захэшировала пароль, можно переназначить:
             # admin_user.password = admin_site.auth.pwd_context.hash("admin")
 
-            session.add(admin_user)
-            await session.commit()
-            logger.success("✅ Суперпользователь настроен. Логин: admin, пароль: admin")
+        #     session.add(admin_user)
+        #     await session.commit()
+        #     logger.success("✅ Суперпользователь настроен. Логин: admin, пароль: admin")
 
     # await admin_site.auth.create_role_user('admin')
     # await admin_site.auth.create_role_user('vip')
