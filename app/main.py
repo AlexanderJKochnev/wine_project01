@@ -82,6 +82,8 @@ logger.info('start initialisation')
 
 _seaweeds_fids_dump: Optional[List[str]] = None
 
+db_manager = DatabaseManager()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -97,7 +99,7 @@ async def lifespan(app: FastAPI):
     )
     log_id = logger.add("logs/app.log", rotation="100 MB", retention="10 days", compression="zip", enqueue=True)
     logger.success('logger инициализирован')
-    db_manager = DatabaseManager()
+    # db_manager = DatabaseManager()
     logger.info("Lifespan: Инициализация ресурсов...")
 
     try:
