@@ -28,7 +28,7 @@ def init_admin(app: FastAPI):
 
     # ИСХОДНЫЙ КОД ИЗ ДОКУМЕНТАЦИИ, НИЧЕГО НЕ МЕНЯЕМ
     site = AuthAdminSite(
-        settings=Settings(database_url_async=settings_db.database_url), secret_key=settings_db.SECRET_KEY
+        settings=Settings(database_url_async=settings_db.database_url)
     )
     site.mount_app(app)
 
