@@ -14,7 +14,10 @@ from app.auth.models import User
 
 # 🛠 СОЗДАЕМ ЗАГЛУШКУ ДВИЖКА (чтобы избежать ошибки при старте)
 # Он не делает сетевых запросов и нужен только для инициализации класса Admin
-mock_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+mock_engine = create_async_engine(
+    "postgresql+asyncpg://localhost/mock_db",
+    strategy="mock"
+)
 
 admin = Admin(
     engine=mock_engine,
