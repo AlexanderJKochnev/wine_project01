@@ -24,11 +24,11 @@ def setup_auth_middleware(app: FastAPI):
 
 
 def init_admin(app: FastAPI):
-    setup_auth_middleware(app)
+    # setup_auth_middleware(app)
 
     # ИСХОДНЫЙ КОД ИЗ ДОКУМЕНТАЦИИ, НИЧЕГО НЕ МЕНЯЕМ
     site = AuthAdminSite(
-        settings=Settings(database_url_async=settings_db.database_url)
+        settings=Settings(database_url_async=settings_db.database_url), secret_key=settings_db.SECRET_KEY
     )
     site.mount_app(app)
 
