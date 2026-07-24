@@ -3,7 +3,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
-from starlette_admin.auth import BaseAuthProvider
+from starlette_admin.auth import AuthProvider
 from starlette_admin.exceptions import LoginFailed
 
 from app.auth.models import User
@@ -11,7 +11,7 @@ from app.auth.repository import UserRepository
 from app.core.config.database.db_async import get_db
 
 
-class AdminAuthProvider(BaseAuthProvider):
+class AdminAuthProvider(AuthProvider):
     def setup_admin(self, admin) -> None:
         """Обязательный абстрактный метод для конфигурации ролей/прав внутри админки.
         Если кастомная логика не требуется, оставляем его пустым."""
