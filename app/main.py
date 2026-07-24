@@ -30,7 +30,6 @@ from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
 # from app.admin.site import site
 from app.admin.auth import init_admin
-from app.admin.models import register_all_models
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions

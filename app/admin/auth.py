@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi_amis_admin.admin import Settings
 from fastapi_user_auth.admin import AuthAdminSite
+from fastapi_amis_admin.admin.site import AdminSite
 from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import SQLModel
 from loguru import logger
@@ -30,7 +31,19 @@ def init_admin(app: FastAPI):
         settings=Settings(database_url_async=settings_db.database_url)
     )
     site.mount_app(app)
+
+    # 2. Основная админка (AdminSite) с моделями
+    admin_site = AdminSite(
+        settings=Settings(database_url_async=settings_db.database_url)  # , site_path="/admin"
+        # Явно указываем путь
+    )
+
+    # Регистрируем модели
+    # register_all_models(admin_site)
+
+    admin_site.mount_app(app)
+
     from app.admin.models import UserAdmin
-    site.register_admin(UserAdmin)
+    admin_site.register_admin(UserAdmin)
 
     return site
