@@ -84,16 +84,6 @@ logger.info('start initialisation')
 _seaweeds_fids_dump: Optional[List[str]] = None
 
 
-# settings = Settings(database_url_async=settings_db.database_url)
-# site = AdminSite(settings=settings)
-
-
-# @site.register_admin
-# class HelloWorldPageAdmin(admin.PageAdmin):
-#     page_schema = 'Моя первая страница'  # Название в меню
-#     page = Page(title='Заголовок', body='Привет, мир!')  # Содержание страницы
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -122,13 +112,9 @@ async def lifespan(app: FastAPI):
     logger.success("расширения Postgresql установлены")
     app.state.pg_engine = DatabaseManager.engine
 
-    # ✅ ИНИЦИАЛИЗАЦИЯ АДМИНКИ (внутри lifespan)
-    # from app.admin.auth import init_admin
-    # admin_site = init_admin(app)
- 
-    # ✅ СОЗДАНИЕ ТАБЛИЦ И ПОЛЬЗОВАТЕЛЕЙ (здесь, а не в startup)
+    # ✅ СОЗДАНИЕ ТАБЛИЦ И ПОЛЬЗОВАТЕЛЕЙ admin panel
     from sqlmodel import SQLModel
-    await admin_site.db.async_run_sync(SQLModel.metadata.create_all, is_session = False)
+    await admin_site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
     await admin_site.auth.create_role_user('admin')
     await admin_site.auth.create_role_user('vip')
     logger.success("✅ Админка настроена. Логин: admin, пароль: admin")
@@ -198,7 +184,7 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
 
 admin_site = init_admin(app)
 
-register_all_models(admin_site)
+# register_all_models(admin_site)
 
 
 @app.middleware("http")

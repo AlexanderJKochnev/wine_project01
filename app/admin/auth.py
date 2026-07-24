@@ -23,34 +23,14 @@ def setup_auth_middleware(app: FastAPI):
 
 
 def init_admin(app: FastAPI):
-    # setup_auth_middleware(app)
+    setup_auth_middleware(app)
 
     # ИСХОДНЫЙ КОД ИЗ ДОКУМЕНТАЦИИ, НИЧЕГО НЕ МЕНЯЕМ
     site = AuthAdminSite(
         settings=Settings(database_url_async=settings_db.database_url)
     )
     site.mount_app(app)
-
-    @app.on_event("startup")
-    async def startup():
-        logger.info("startup============================================================")
-        # СОЗДАЁМ ТАБЛИЦЫ КАК В ДОКУМЕНТАЦИИ
-        # await site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
-        # СОЗДАЁМ ПОЛЬЗОВАТЕЛЕЙ КАК В ДОКУМЕНТАЦИИ
-        from fastapi_user_auth.auth.models import Role, CasbinRule, LoginHistory
-        from sqlalchemy import MetaData
-
-        # Собираем все таблицы auth в один metadata
-        auth_metadata = MetaData()
-        for model in [Role, CasbinRule, LoginHistory]:
-            model.__table__.metadata = auth_metadata
-        
-        print('----------------------------------------------------')
-        # Создаём их в базе данных
-        await site.db.async_run_sync(auth_metadata.create_all, is_session=False)
-
-        await site.auth.create_role_user('admin')
-        await site.auth.create_role_user('vip')
-        print("✅ Админка настроена. Логин: admin, пароль: admin")
+    from app.admin.models import UserAdmin
+    site.register_admin(UserAdmin)
 
     return site
