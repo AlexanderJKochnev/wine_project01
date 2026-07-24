@@ -30,6 +30,7 @@ from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.admin.config import setup_starlette_admin
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
@@ -229,6 +230,7 @@ app.add_middleware(
     secret_key=settings.SECRET_KEY
 )
 
+setup_starlette_admin(app, db_manager.engine)
 
 app.include_router(ApiRouter().router)
 app.include_router(GemmaRouter().router)
