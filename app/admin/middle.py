@@ -1,6 +1,8 @@
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-
+""" middleware убирает префикс bearer из ответа если он попал туба по ощибке
+    просто как примре
+"""
 
 class FixAmisCookieMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

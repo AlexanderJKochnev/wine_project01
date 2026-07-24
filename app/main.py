@@ -28,9 +28,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
-# from app.admin.site import site
-from app.admin.auth import init_admin
-from app.admin.middle import FixAmisCookieMiddleware
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
@@ -112,42 +109,6 @@ async def lifespan(app: FastAPI):
     logger.success("расширения Postgresql установлены")
     app.state.pg_engine = DatabaseManager.engine
 
-    # ✅ СОЗДАНИЕ ТАБЛИЦ И ПОЛЬЗОВАТЕЛЕЙ admin panel
-    from sqlmodel import SQLModel
-    await admin_site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
-    # Запускаем проверку и создание в контексте сессии БД админка
-    async with admin_site.db.session_maker() as session:
-        from fastapi_user_auth.auth.models import User
-        from sqlmodel import select
-
-        # Проверяем, существует ли уже админ
-        result = await session.execute(select(User).where(User.username == "admin"))
-        admin_user = result.scalar_one_or_none()
-
-        if not admin_user:
-            await admin_site.auth.create_role_user('admin')
-            await admin_site.auth.create_role_user('vip')
-            logger.success("✅ Админка настроена. Логин: admin, пароль: admin")
-        else:
-            logger.info("ℹ️ Пользователь admin уже существует.")
-        # Находим созданного пользователя 'admin' и даем ему полные права
-        result = await session.execute(select(User).where(User.username == "admin"))
-        admin_user = result.scalar_one_or_none()
-
-        # if admin_user:
-        #     admin_user.is_superuser = True
-        #     admin_user.is_active = True
-            # Если библиотека не захэшировала пароль, можно переназначить:
-            # admin_user.password = admin_site.auth.pwd_context.hash("admin")
-
-        #     session.add(admin_user)
-        #     await session.commit()
-        #     logger.success("✅ Суперпользователь настроен. Логин: admin, пароль: admin")
-
-    # await admin_site.auth.create_role_user('admin')
-    # await admin_site.auth.create_role_user('vip')
-    logger.success("✅ Админка настроена. Логин: admin, пароль: admin")
-
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
@@ -210,9 +171,8 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
                   "filter": True  # Полезный бонус: добавляет строку поиска в Swagger
               }
               )
-
-app.add_middleware(FixAmisCookieMiddleware)
-admin_site = init_admin(app)
+# middleware убирает префикс bearer из ответа если он попал туба по ощибке
+# app.add_middleware(FixAmisCookieMiddleware)
 
 # register_all_models(admin_site)
 

@@ -12,9 +12,6 @@ from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
 
 from app.core.models.mixins import DynamicCompositeUniqueMixin, UniqueNormalizedNameMixin
 
-from fastapi_user_auth.auth.models import Role, CasbinRule, LoginHistory
-
-
 # from app.core.config.project_config import settings
 
 langs = ['en', 'ru', 'fr']
@@ -244,12 +241,6 @@ class Base(AsyncAttrs, DeclarativeBase):
                     result[key] = value
 
         return result
-
-
-for model in [Role, CasbinRule, LoginHistory]:
-    # model.__table__.metadata = Base.metadata
-    model.metadata = Base.metadata
-    Base.registry._class_registry[model.__name__] = model
 
 
 class BaseAt:
