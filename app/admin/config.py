@@ -19,7 +19,8 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
         title="Управление системой", base_url="/admin",
         # templates_dir="templates",  # Указывает на вашу папку с измененным layout.html
         # statics_dir="static",  # Указывает на папку со скачанными CSS/JS файлами
-        auth_provider=AdminAuthProvider()
+        auth_provider=AdminAuthProvider(),
+        name="admin"
     )
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
