@@ -10,18 +10,23 @@ from app.admin.auth import AdminAuthProvider
 from app.admin.views import UserAdminView
 from app.auth.models import User
 
+admin = Admin(
+    title="Управление системой",
+    base_url="/admin",
+    auth_provider=AdminAuthProvider()
+)
 
-def setup_starlette_admin(app: FastAPI, engine) -> Admin:
-    """Инициализирует и монтирует админку к FastAPI приложению."""
+# Сразу регистрируем представления (им движок на этом этапе не нужен)
+admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
 
-    admin = Admin(
-        engine=engine, title="Управление системой", base_url="/admin", auth_provider=AdminAuthProvider()
-    )
 
-    # Регистрируем кастомное представление для модели User
-    admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
-
-    # Монтируем к основному приложению FastAPI
+def init_admin_scopes(app: FastAPI):
+    """Монтирует роуты админки к приложению.
+    Вызывается глобально в main.py до старта lifespan."""
     admin.mount_to(app)
 
-    return admin
+
+def connect_admin_db(async_engine):
+    """Динамически подключает запущенный асинхронный движок к админке.
+    Вызывается строго ВНУТРИ lifespan после инициализации DatabaseManager."""
+    admin.configure(engine=async_engine)
