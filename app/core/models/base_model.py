@@ -247,7 +247,9 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 for model in [Role, CasbinRule, LoginHistory]:
-    model.__table__.metadata = Base.metadata
+    # model.__table__.metadata = Base.metadata
+    model.metadata = Base.metadata
+    Base.registry._class_registry[model.__name__] = model
 
 
 class BaseAt:
