@@ -12,7 +12,7 @@ from app.core.config.database.db_config import settings_db
 
 
 def setup_auth_middleware(app: FastAPI):
-    secret_key = settings_db.SECRET_KEY or os.urandom(32).hex()
+    secret_key = settings_db.SECRET_KEY
     app.add_middleware(
         SessionMiddleware,
         secret_key=secret_key,

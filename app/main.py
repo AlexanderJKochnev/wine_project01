@@ -114,8 +114,24 @@ async def lifespan(app: FastAPI):
     # ✅ СОЗДАНИЕ ТАБЛИЦ И ПОЛЬЗОВАТЕЛЕЙ admin panel
     from sqlmodel import SQLModel
     await admin_site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
-    await admin_site.auth.create_role_user('admin')
-    await admin_site.auth.create_role_user('vip')
+    # Запускаем проверку и создание в контексте сессии БД админка
+    async with admin_site.db.session_maker() as session:
+        from fastapi_user_auth.auth.models import User
+        from sqlmodel import select
+
+        # Проверяем, существует ли уже админ
+        result = await session.execute(select(User).where(User.username == "admin"))
+        admin_user = result.scalar_one_or_none()
+
+        if not admin_user:
+            await admin_site.auth.create_role_user('admin')
+            await admin_site.auth.create_role_user('vip')
+            logger.success("✅ Админка настроена. Логин: admin, пароль: admin")
+        else:
+            logger.info("ℹ️ Пользователь admin уже существует.")
+
+    # await admin_site.auth.create_role_user('admin')
+    # await admin_site.auth.create_role_user('vip')
     logger.success("✅ Админка настроена. Логин: admin, пароль: admin")
 
     # await MongoDBManager.connect()  # Подключаем Mongo
