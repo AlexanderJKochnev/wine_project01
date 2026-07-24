@@ -17,74 +17,67 @@
 # print("🔍 Начинаем импорты...")
 # print("=" * 60)
 
-import asyncio
-from contextlib import asynccontextmanager
-from typing import List, Optional
-from app.admin.models import register_all_models
-from fastapi_amis_admin.admin.settings import Settings
-from fastapi_amis_admin.admin.site import AdminSite
-from fastapi_amis_admin.admin import admin
-from fastapi_amis_admin.amis.components import Page
-
-from fastapi.responses import JSONResponse
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.gzip import GZipMiddleware
-from loguru import logger
 # from fastapi import BackgroundTasks
 import sys
+from contextlib import asynccontextmanager
 from time import perf_counter
+from typing import List, Optional
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from loguru import logger
+from starlette.middleware.gzip import GZipMiddleware
+from app.admin.site import site
 from app.admin.auth import init_admin
+from app.admin.models import register_all_models
 from app.auth.routers import auth_router, user_router
-from app.core.config.database.db_config import settings_db
-from app.core.exceptions import AppBaseException
+from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
+from app.core.config.database.seaweed_async import close_seaweed, init_seaweed
+from app.core.exceptions import AppBaseException
+from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
 from app.core.services.translate_service import TranslationService
 from app.core.services.vllm_service_manager import ServiceManager
-from app.core.models.base_model import Base
 from app.preact.create.router import CreateRouter
-from app.preact.get.router import GetRouter
-from app.preact.read.router import ReadRouter
 from app.preact.delete.router import DeleteRouter
+from app.preact.get.router import GetRouter
 from app.preact.handbook.router import HandbookRouter
 from app.preact.handbook_page.router import HandbookRouterPage
 from app.preact.patch.router import PatchRouter
+from app.preact.read.router import ReadRouter
 from app.support.api.router import ApiRouter
-# from app.support.clickhouse.service import EmbeddingService
-# -------ИМПОРТ РОУТЕРОВ----------
-from app.support.gemma.router import GemmaRouter
 from app.support.category.router import CategoryRouter
+from app.support.clickhouse.router import ClickImportRouter
 from app.support.country.router import CountryRouter
 # from app.support.customer.router import CustomerRouter
 from app.support.drink.router import DrinkRouter
 from app.support.food.router import FoodRouter
+# from app.support.clickhouse.service import EmbeddingService
+# -------ИМПОРТ РОУТЕРОВ----------
+from app.support.gemma.router import GemmaRouter
 from app.support.item.router import ItemRouter
+from app.support.item.router_item_image import ItemImageRouter
 from app.support.item.router_item_view import ItemViewRouter
+from app.support.lwin.router import LwinRouter
+from app.support.merging.router import MergingRouter
+from app.support.ollama.router import ISOLanguageRouter, PromptRouter, ProptionRouter, WriterRuleRouter
+from app.support.parcel.router import ParcelRouter, SiteRouter
+from app.support.parser.router import (CodeRouter, ImageRouter, NameRouter, OrchestratorRouter, RawdataRouter,
+                                       RegistryRouter, StatusRouter)
+from app.support.producer.router import ProducerRouter, ProducerTitleRouter
 from app.support.region.router import RegionRouter
+from app.support.seaweeds.router import SeaweedsRouter
+from app.support.source.router import SourceRouter
 from app.support.subcategory.router import SubcategoryRouter
 from app.support.subregion.router import SubregionRouter
 from app.support.superfood.router import SuperfoodRouter
 # from app.support.color.router import ColorRouter
 from app.support.sweetness.router import SweetnessRouter
-from app.support.varietal.router import VarietalRouter
-from app.support.parser.router import (StatusRouter, CodeRouter, NameRouter, OrchestratorRouter,
-                                       ImageRouter, RawdataRouter, RegistryRouter)
-from app.support.ollama.router import PromptRouter, ISOLanguageRouter, ProptionRouter, WriterRuleRouter
-from app.support.lwin.router import LwinRouter
-from app.support.producer.router import ProducerRouter, ProducerTitleRouter
-from app.support.vintage.router import VintageConfigRouter, DesignationRouter, ClassificationRouter
-from app.support.parcel.router import ParcelRouter, SiteRouter
-from app.support.source.router import SourceRouter
-from app.support.vllm.router import VllmRouter, TranslateRawDataRouter, TranslateHelperRouter
-from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
-from app.core.config.database.seaweed_async import init_seaweed, close_seaweed
-from app.support.seaweeds.router import SeaweedsRouter
-from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
-from app.support.merging.router import MergingRouter
-from app.support.item.router_item_image import ItemImageRouter
-from app.support.clickhouse.router import ClickImportRouter
 from app.support.tasting.router import BaseIngredientRouter, BodyRouter, GlasswareRouter, ScaleRouter, TastingNoteRouter
-
+from app.support.varietal.router import VarietalRouter
+from app.support.vintage.router import ClassificationRouter, DesignationRouter, VintageConfigRouter
+from app.support.vllm.router import TranslateHelperRouter, TranslateRawDataRouter, VllmRouter
 
 logger.info('start initialisation')
 
@@ -192,9 +185,9 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               }
               )
 
-admin_site = init_admin(app)
+# admin_site = init_admin(app)
 
-register_all_models(admin_site)
+# register_all_models(admin_site)
 
 
 @app.middleware("http")
@@ -307,7 +300,7 @@ app.include_router(user_router)
 async def read_root():
     return {"message": "Hybrid PostgreSQL (auth) + MongoDB (files) API"}
 
-# site.mount_app(app)
+site.mount_app(app)
 
 """
 @app.get("/health")
