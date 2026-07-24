@@ -33,8 +33,20 @@ def init_admin(app: FastAPI):
     @app.on_event("startup")
     async def startup():
         # СОЗДАЁМ ТАБЛИЦЫ КАК В ДОКУМЕНТАЦИИ
-        await site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
+        # await site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
         # СОЗДАЁМ ПОЛЬЗОВАТЕЛЕЙ КАК В ДОКУМЕНТАЦИИ
+        from fastapi_user_auth.auth.models import Role, CasbinRule, LoginHistory
+        from sqlalchemy import MetaData
+
+        # Собираем все таблицы auth в один metadata
+        auth_metadata = MetaData()
+        for model in [Role, CasbinRule, LoginHistory]:
+            model.__table__.metadata = auth_metadata
+        logger.info(auth_metadata)
+        print('----------------------------------------------------')
+        # Создаём их в базе данных
+        await site.db.async_run_sync(auth_metadata.create_all, is_session=False)
+
         await site.auth.create_role_user('admin')
         await site.auth.create_role_user('vip')
         print("✅ Админка настроена. Логин: admin, пароль: admin")
