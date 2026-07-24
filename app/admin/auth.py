@@ -22,8 +22,9 @@ class AdminAuthProvider(AuthProvider):
         username = form.get("username")
         password = form.get("password")
         repo = UserRepository
-        session = get_db()
-        user = await repo.authenticate(username, password, session)
+        async for session in get_db():
+            user = await repo.authenticate(username, password, session)
+            break
         if user and user.is_superuser:
             user_data = {"username": username, "role": "superuser"}
             # Записываем данные в сессию FastAPI
