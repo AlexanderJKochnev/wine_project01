@@ -12,6 +12,9 @@ from app.core.config.database.db_async import get_db
 
 
 class AdminAuthProvider(BaseAuthProvider):
+    def setup_admin(self, admin) -> None:
+        """Обязательный абстрактный метод для конфигурации ролей/прав внутри админки.
+        Если кастомная логика не требуется, оставляем его пустым."""
     async def login(self, username: str, password: str, remember_me: bool, request: Request) -> dict:
         repo = UserRepository
         session: AsyncSession = get_db()
