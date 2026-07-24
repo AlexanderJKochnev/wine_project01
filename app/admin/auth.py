@@ -1,10 +1,12 @@
 # app.admin.auth.py
+from typing import Optional, Union
 
 from fastapi import FastAPI
 from fastapi_amis_admin.admin import Settings
 from fastapi_user_auth.admin import AuthAdminSite
 import os
 
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config.database.db_config import settings_db
@@ -46,11 +48,22 @@ def init_admin(app: FastAPI):
 
     site.auth.user_model = User
 
-    async def get_user_by_username(username: str, session: AsyncSession = None):
-        async for db_session in get_async_session():
-            return await UserRepository.get_superuser_by_username(username, db_session)
+    # ========== ПЕРЕОПРЕДЕЛЯЕМ authenticate_user ==========
+    async def authenticate_user(
+            username: str, password: Union[str, SecretStr], session=None
+    ) -> Optional[User]:
+        """Использует ваш UserRepository для проверки логина/пароля"""
+        pwd = password.get_secret_value() if isinstance(password, SecretStr) else password
 
-    site.auth.get_user = get_user_by_username
+        async for db_session in get_async_session():
+            # Ваш метод authenticate из UserRepository
+            user = await UserRepository.authenticate(username, pwd, db_session)
+            if user:
+                return user
+        return None
+
+    # Подменяем метод в экземпляре auth
+    site.auth.authenticate_user = authenticate_user
 
     # Создаем таблицы и тестового пользователя при старте
     @app.on_event("startup")
