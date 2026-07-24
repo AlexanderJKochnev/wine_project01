@@ -42,11 +42,11 @@ def init_admin(app: FastAPI):
             database_url_async=settings_db.database_url
         )
     )
-
+    auth = site.auth
     # Монтируем к приложению (без аргументов)
     site.mount_app(app)
 
-    site.auth.user_model = User
+    # site.auth.user_model = User
 
     # ========== ПЕРЕОПРЕДЕЛЯЕМ authenticate_user ==========
     async def authenticate_user(
@@ -63,7 +63,7 @@ def init_admin(app: FastAPI):
         return None
 
     # Подменяем метод в экземпляре auth
-    site.auth.authenticate_user = authenticate_user
+    # site.auth.authenticate_user = authenticate_user
 
     # Создаем таблицы и тестового пользователя при старте
     @app.on_event("startup")
@@ -71,9 +71,9 @@ def init_admin(app: FastAPI):
         # Создаем таблицы для auth
         from sqlmodel import SQLModel
         await site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
-
-        # Создаем тестового администратора
-        await site.auth.create_role_user('adminX')  # Пароль по умолчанию: 'admin'
+        # Create a default test user, please change the password in time!!!
+        await auth.create_role_user('admin')
+        await auth.create_role_user('vip')
         # await site.auth.create_role_user('vip')  # Раскомментируйте, если нужен vip
         print("✅ Админка с авторизацией настроена. Логин: admin, пароль: admin")
 
