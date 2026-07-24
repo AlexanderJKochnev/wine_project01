@@ -29,7 +29,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
 from app.admin.site import site
-from app.admin.auth import site as auth_site
+from app.admin.auth import init_admin, site as auth_site
 from app.admin.models import register_all_models
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
@@ -185,9 +185,9 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               }
               )
 
-# admin_site = init_admin(app)
+admin_site = init_admin(app)
 
-# register_all_models(admin_site)
+register_all_models(admin_site)
 
 
 @app.middleware("http")
@@ -300,7 +300,7 @@ app.include_router(user_router)
 async def read_root():
     return {"message": "Hybrid PostgreSQL (auth) + MongoDB (files) API"}
 
-auth_site.mount_app(app)
+# auth_site.mount_app(app)
 
 """
 @app.get("/health")
