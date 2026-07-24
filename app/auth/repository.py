@@ -25,7 +25,7 @@ class UserRepository(Repository):
         return pwd_context.hash(password)
 
     @classmethod
-    async def authenticate(cls, username: str, password: str, session: AsyncSession):
+    async def authenticate(cls, username: str, password: str, session: AsyncSession) -> User | None:
         stmt = select(User).where(User.username == username)
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()

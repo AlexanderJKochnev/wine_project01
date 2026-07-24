@@ -28,10 +28,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+
+from app.admin.config import setup_starlette_admin
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
 from app.core.config.database.seaweed_async import close_seaweed, init_seaweed
+from app.core.config.project_config import settings
 from app.core.exceptions import AppBaseException
 from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
 from app.core.services.translate_service import TranslationService
@@ -173,8 +177,6 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
 # middleware убирает префикс bearer из ответа если он попал туба по ощибке
 # app.add_middleware(FixAmisCookieMiddleware)
 
-# register_all_models(admin_site)
-
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -217,6 +219,14 @@ app.add_middleware(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # минимальный размер для сжатия
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY
+)
+
+# Запуск админки
+setup_starlette_admin(app, app.state.pg_engine)
 
 app.include_router(ApiRouter().router)
 app.include_router(GemmaRouter().router)
