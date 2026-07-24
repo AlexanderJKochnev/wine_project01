@@ -1,4 +1,9 @@
+# usefull tips relating postgresql
+## entry to container:
 docker exec -it test-wine_host-1 psql -U wine -d wine_db
+## команды psql
+1. \dt список таблиц
+
 Выбор библиотеки: asyncpg vs psycopg (v3)
 Характеристика
 1. asyncpg	

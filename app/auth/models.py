@@ -5,7 +5,11 @@ from sqlalchemy import DateTime, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.models.base_model import Base
 from typing import Optional
-from fastapi_user_auth.auth.models import Role, CasbinRule, LoginHistory  # NOQA: F401
+from fastapi_user_auth.auth.models import Role, CasbinRule, LoginHistory
+
+
+for model in [Role, CasbinRule, LoginHistory]:
+    model.__table__.metadata = Base.metadata
 
 
 class User(Base):
