@@ -4,6 +4,7 @@ from fastapi_amis_admin.admin import Settings
 from fastapi_user_auth.admin import AuthAdminSite
 from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import SQLModel
+from loguru import logger
 import os
 
 from app.core.config.database.db_config import settings_db
@@ -32,6 +33,7 @@ def init_admin(app: FastAPI):
 
     @app.on_event("startup")
     async def startup():
+        logger.info("startup============================================================")
         # СОЗДАЁМ ТАБЛИЦЫ КАК В ДОКУМЕНТАЦИИ
         # await site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
         # СОЗДАЁМ ПОЛЬЗОВАТЕЛЕЙ КАК В ДОКУМЕНТАЦИИ
@@ -42,7 +44,7 @@ def init_admin(app: FastAPI):
         auth_metadata = MetaData()
         for model in [Role, CasbinRule, LoginHistory]:
             model.__table__.metadata = auth_metadata
-        logger.info(auth_metadata)
+        
         print('----------------------------------------------------')
         # Создаём их в базе данных
         await site.db.async_run_sync(auth_metadata.create_all, is_session=False)
