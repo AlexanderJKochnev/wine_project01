@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI):
 
     # ✅ ИНИЦИАЛИЗАЦИЯ АДМИНКИ (внутри lifespan)
     # from app.admin.auth import init_admin
-    admin_site = init_admin(app)
+    # admin_site = init_admin(app)
  
     # ✅ СОЗДАНИЕ ТАБЛИЦ И ПОЛЬЗОВАТЕЛЕЙ (здесь, а не в startup)
     from sqlmodel import SQLModel
@@ -196,9 +196,9 @@ app = FastAPI(title="Hybrid PostgreSQL-Seaweed API",
               }
               )
 
-# admin_site = init_admin(app)
+admin_site = init_admin(app)
 
-# register_all_models(admin_site)
+register_all_models(admin_site)
 
 
 @app.middleware("http")
