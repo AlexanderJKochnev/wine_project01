@@ -12,31 +12,19 @@ from app.admin.views import UserAdminView
 from app.auth.models import User
 
 
-# 🛠 СОЗДАЕМ ЗАГЛУШКУ ДВИЖКА (чтобы избежать ошибки при старте)
-# Он не делает сетевых запросов и нужен только для инициализации класса Admin
-mock_engine = create_async_engine(
-    "postgresql+asyncpg://localhost/mock_db",
-    strategy="mock"
-)
-
-admin = Admin(
-    engine=mock_engine,
-    title="Управление системой",
-    base_url="/admin",
-    auth_provider=AdminAuthProvider()
-)
-
-# Сразу регистрируем представления (им движок на этом этапе не нужен)
-admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
-
-
-def init_admin_scopes(app: FastAPI):
-    """Монтирует роуты админки к приложению.
-    Вызывается глобально в main.py до старта lifespan."""
+def create_and_mount_admin(app: FastAPI, async_engine) -> Admin:
+    """Полностью инициализирует и монтирует админку.
+    Вызывается строго внутри lifespan, когда AsyncEngine гарантированно запущен."""
+    
+    admin = Admin(
+            engine = async_engine,  # Передаем уже рабочий, запущенный движок
+            title = "Управление системой", base_url = "/admin", auth_provider = MyAdminAuthProvider()
+            )
+    
+    # Ваша договоренность: ниже только регистрация вьюх из views.py
+    admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
+    
+    # Динамически монтируем админку в runtime
     admin.mount_to(app)
-
-
-def connect_admin_db(async_engine):
-    """Динамически подключает запущенный асинхронный движок к админке.
-    Вызывается строго ВНУТРИ lifespan после инициализации DatabaseManager."""
-    admin.configure(engine=async_engine)
+    
+    return admin

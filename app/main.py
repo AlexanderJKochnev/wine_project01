@@ -30,7 +30,7 @@ from loguru import logger
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.admin.config import connect_admin_db, init_admin_scopes
+from app.admin.config import connect_admin_db, create_and_mount_admin, init_admin_scopes
 from app.auth.routers import auth_router, user_router
 from app.core.config.database.click_async import ClickHouseManager, get_dump  # , get_ch_client
 from app.core.config.database.db_async import DatabaseManager, init_db_extensions
@@ -112,8 +112,9 @@ async def lifespan(app: FastAPI):
     logger.success("расширения Postgresql установлены")
     app.state.pg_engine = DatabaseManager.engine
 
-    connect_admin_db(DatabaseManager.engine)
+    create_and_mount_admin(app, DatabaseManager.engine)
     logger.info("✅ асинхронный двигатель присоединен к админпанели")
+
     # await MongoDBManager.connect()  # Подключаем Mongo
     # logger.success("Lifespan: соединение с MongoDB установлены")
 
@@ -227,9 +228,7 @@ app.add_middleware(
     secret_key=settings.SECRET_KEY
 )
 
-# Запуск админки
-init_admin_scopes(app)
-logger.success('✅ scarlette_admin attached')
+
 
 app.include_router(ApiRouter().router)
 app.include_router(GemmaRouter().router)
