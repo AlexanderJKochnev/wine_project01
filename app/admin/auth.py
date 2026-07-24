@@ -30,7 +30,7 @@ def init_admin(app: FastAPI):
     site = AuthAdminSite(
         settings=Settings(database_url_async=settings_db.database_url)
     )
-    site.mount_app(app)
+    # site.mount_app(app)
 
     # 2. Основная админка (AdminSite) с моделями
     admin_site = AdminSite(
