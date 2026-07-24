@@ -4,8 +4,11 @@ from fastapi import FastAPI
 from fastapi_amis_admin.admin import Settings
 from fastapi_user_auth.admin import AuthAdminSite
 import os
+
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.sessions import SessionMiddleware
 from app.core.config.database.db_config import settings_db
+from app.core.config.database.db_async import get_db as get_async_session
 from app.auth.repository import UserRepository
 from app.auth.models import User
 
@@ -41,6 +44,14 @@ def init_admin(app: FastAPI):
     # Монтируем к приложению (без аргументов)
     site.mount_app(app)
 
+    site.auth.user_model = User
+
+    async def get_user_by_username(username: str, session: AsyncSession = None):
+        async for db_session in get_async_session():
+            return await UserRepository.get_superuser_by_username(username, db_session)
+
+    site.auth.get_user = get_user_by_username
+
     # Создаем таблицы и тестового пользователя при старте
     @app.on_event("startup")
     async def startup():
@@ -49,7 +60,7 @@ def init_admin(app: FastAPI):
         await site.db.async_run_sync(SQLModel.metadata.create_all, is_session=False)
 
         # Создаем тестового администратора
-        await site.auth.create_role_user('admin')  # Пароль по умолчанию: 'admin'
+        await site.auth.create_role_user('adminX')  # Пароль по умолчанию: 'admin'
         # await site.auth.create_role_user('vip')  # Раскомментируйте, если нужен vip
         print("✅ Админка с авторизацией настроена. Логин: admin, пароль: admin")
 
