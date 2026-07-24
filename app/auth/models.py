@@ -9,15 +9,19 @@ from fastapi_user_auth.auth.models import Role as ARole, CasbinRule as ACasbinRu
 
 
 class Role(Base, ARole):
+    __tablename__ = "auth_role"
     pass
 
 
 class CasbinRule(Base, ACasbinRule):
+    __tablename__ = "auth_casbin_rule"
     pass
 
 
 class LoginHistory(Base, ALoginHistory):
+    __tablename__ = "auth_login_history"
     pass
+
 
 class User(Base):
     __tablename__ = "users"
