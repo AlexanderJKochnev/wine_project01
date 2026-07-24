@@ -16,9 +16,10 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
 
     admin = Admin(
         engine=async_engine,  # Передаем ваш асинхронный engine
-        title="Управление системой", base_url="/admin", 
+        title="Управление системой", base_url="/admin",
+        serve_plugins_locally=True,
         auth_provider=None  # AdminAuthProvider()
-            )
+    )
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     admin.mount_to(app)
