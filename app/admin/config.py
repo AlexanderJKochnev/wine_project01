@@ -23,7 +23,6 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
 
     admin = Admin(
         engine=async_engine,  # Передаем ваш асинхронный engine
-        session_maker=async_session_maker,
         title="Админ панель", base_url="/panel",
         templates_dir="templates",  # Указывает на вашу папку с измененным layout.html
         statics_dir="statics",  # Указывает на папку со скачанными CSS/JS файлами
