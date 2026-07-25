@@ -119,7 +119,7 @@ async def update_user(
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     result: dict = await service.patch(id, user_update, repository, model, background_task, db)
-    user: User = result.get('data')
+    user: User = await result.get('data')
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     # user_dict = user.to_dict()

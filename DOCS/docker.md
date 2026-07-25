@@ -35,6 +35,7 @@ sudo systemctl status docker.socket
 ##  запуск python макроса из docker (app.reindex.py)
 docker compose exec -it app python -m app.reindex
 
-
+## монтирование в docker compose (:consistent - следит за изменениями на внешнем ресурсе)
+- ./templates:/app/templates:consistent
 
 
