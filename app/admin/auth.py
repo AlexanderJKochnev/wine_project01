@@ -7,7 +7,6 @@ from starlette.responses import Response
 from starlette_admin.auth import AuthProvider
 from starlette_admin.exceptions import LoginFailed
 
-from app.auth.models import User
 from app.auth.repository import UserRepository
 from app.core.config.database.db_async import get_db
 
@@ -33,10 +32,10 @@ class AdminAuthProvider(AuthProvider):
             return response
 
         raise LoginFailed("Неверное имя пользователя или пароль или прав недостаточно")
-    
-    async def logout(self, request: Request) -> bool:
+
+    async def logout(self, request: Request, response: Response) -> bool:
         request.session.clear()
-        return True
-    
+        return response
+
     async def is_authenticated(self, request: Request) -> bool:
         return "admin_user" in request.session
