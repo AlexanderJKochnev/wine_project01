@@ -40,13 +40,13 @@ class UserService(Service):
                     session: AsyncSession) -> Dict:
         data_dict = data.model_dump(exclude_unset=True)
         verified_data = UserInDB(**data_dict)
-        result = super().patch(id, verified_data, repository, model, background_tasks, session)
+        result = await super().patch(id, verified_data, repository, model, background_tasks, session)
         return result
 
     @classmethod
     async def change_password(cls, user: str, current_password: str, new_password: str,
                               repeat_password: str, model: User, repository: UserRepository,
-                              session: AsyncSession ):
+                              session: AsyncSession):
         """
         смена пароля
         нужно угадать
@@ -54,4 +54,4 @@ class UserService(Service):
         user_dict = repository.get_by_field_v2({'username': user}, model, session)
         if not user_dict:
             raise Exception
-        
+ 
