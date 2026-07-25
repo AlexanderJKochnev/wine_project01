@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "base.html" %}
 {% import "macros/views.html" as macros with context %}
 {% if (not _is_login_path ) and is_auth_enabled %}
     {% set current_user = (request | get_admin_user) %}
