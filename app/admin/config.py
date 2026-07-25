@@ -4,7 +4,6 @@ starlette-admin
 """
 
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import async_sessionmaker
 from starlette_admin.contrib.sqla import Admin
 
 from app.admin.auth import AdminAuthProvider
@@ -16,11 +15,6 @@ from app.support import Category
 def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     """Инициализирует админку, принимая асинхронный AsyncEngine."""
 
-    async_session_maker = async_sessionmaker(
-        bind=async_engine,
-        expire_on_commit=False
-    )
-
     admin = Admin(
         engine=async_engine,  # Передаем ваш асинхронный engine
         title="Админ панель", base_url="/panel",
@@ -31,7 +25,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     )
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
-    admin.add_view(SomeView(Category, identity="category", label="Категории"))
+    admin.add_view(SomeView(User, identity="another", label="Категории"))
     admin.mount_to(app)
 
     return admin
