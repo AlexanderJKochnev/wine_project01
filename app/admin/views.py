@@ -22,5 +22,6 @@ class UserAdminView(ModelView):
     # Разрешаем фильтрацию по статусам
     filterable_fields = ["is_active", "is_superuser"]
 
+
 class SomeView(ModelView):
-    pass
+    pk_attr = "id"

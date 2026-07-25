@@ -1,7 +1,5 @@
 # app.admin.auth.py
-from typing import Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette_admin.auth import AuthProvider
