@@ -9,7 +9,8 @@ class UserAdminView(ModelView):
     fields = [IntegerField("id", label="ID"), StringField("username", label="Имя пользователя", required=True),
               StringField("email", label="Email"),
               PasswordField("hashed_password", label="Пароль", exclude_from_list=True),
-              BooleanField("is_active", label="Активен"), BooleanField("is_superuser", label="Суперпользователь"),
+              BooleanField("is_active", label="Активен"),
+              BooleanField("is_superuser", label="Суперпользователь"),
               DateTimeField("delete_time", label="Дата удаления")]
 
     # Исключаем автоинкрементный ID из формы создания/редактирования
@@ -20,3 +21,6 @@ class UserAdminView(ModelView):
 
     # Разрешаем фильтрацию по статусам
     filterable_fields = ["is_active", "is_superuser"]
+
+class SomeView(ModelView):
+    pass
