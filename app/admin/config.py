@@ -25,7 +25,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     )
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
-    admin.add_view(SomeView(User, identity="another", label="Категории"))
+    admin.add_view(SomeView(Category, identity="category", label="Категории"))
     admin.mount_to(app)
 
     return admin

@@ -8,7 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, R
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_api_user
+from app.auth.dependencies import get_active_user_or_internal, get_current_api_user
 from app.core.config.database.db_async import get_db
 from app.core.config.project_config import get_paging, settings
 from app.core.exceptions import exception_to_http
@@ -49,8 +49,8 @@ class BaseRouter:
         self,
         model: Type[Any],
         prefix: str,
-        # auth_dependency: Callable = get_active_user_or_internal,
-        auth_dependency: Callable = get_current_api_user,
+        auth_dependency: Callable = get_active_user_or_internal,
+        # auth_dependency: Callable = get_current_api_user,
         **kwargs
     ):
         self.model = model
