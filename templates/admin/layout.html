@@ -261,15 +261,3 @@
         </div>
     </div>
 {% endblock %}
-{% block custom_css %}
-    {{ super() }}
-    {# 1. Принудительно подключаем локальный файл шрифта на страницу редактирования #}
-    <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/inter.css') }}">
-
-    {# 2. Жестко заставляем браузер использовать локальный шрифт для всех элементов #}
-    <style>
-        *, *::before, *::after, body, html, input, button, select, textarea, .select2-container, .flatpickr-calendar {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-    </style>
-{% endblock %}
