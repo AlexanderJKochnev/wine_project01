@@ -13,7 +13,6 @@ from app.auth.models import User
 from app.support import Category
 
 
-
 def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     """Инициализирует админку, принимая асинхронный AsyncEngine."""
 
@@ -25,7 +24,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin = Admin(
         engine=async_engine,  # Передаем ваш асинхронный engine
         session_maker=async_session_maker,
-        title="Управление системой", base_url="/admin",
+        title="Админ панель", base_url="/panel",
         templates_dir="templates",  # Указывает на вашу папку с измененным layout.html
         statics_dir="statics",  # Указывает на папку со скачанными CSS/JS файлами
         auth_provider=AdminAuthProvider(),
