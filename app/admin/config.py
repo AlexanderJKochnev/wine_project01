@@ -10,6 +10,7 @@ from app.admin.auth import AdminAuthProvider
 from app.admin.views import SomeView, UserAdminView
 from app.auth.models import User
 from app.support import Category
+from app.support.vllm.model import TranslateHelper
 
 
 def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
@@ -25,7 +26,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     )
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
-    admin.add_view(SomeView(Category, identity="category", label="Категории"))
+    admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.mount_to(app)
 
     return admin
