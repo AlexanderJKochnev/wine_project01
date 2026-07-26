@@ -97,11 +97,11 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
 
     # 2. ЖЕСТКОЕ РЕШЕНИЕ: Принудительно объединяем кастомный и оригинальный загрузчики
     # Это заставит Jinja2 ВСЕГДА проверять вашу папку первой, даже при 404 и logout
-    original_loader = admin.templates.env.loader
-    custom_loader = FileSystemLoader("templates")
+    # original_loader = admin.templates.env.loader
+    # custom_loader = FileSystemLoader("templates")
 
     # ChoiceLoader сначала ищет файл у вас, а если не находит — берет дефолтный из пакета
-    admin.templates.env.loader = ChoiceLoader([custom_loader, original_loader])
+    # admin.templates.env.loader = ChoiceLoader([custom_loader, original_loader])
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
