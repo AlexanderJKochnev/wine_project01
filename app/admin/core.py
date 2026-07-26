@@ -19,10 +19,11 @@ class FieldsCore():
     def __init__(self):
         # локализованные поля ('name', 'description', ...)
         self.fields_localized: tuple = settings.FIELDS_LOCALIZED
+        print(f'1===== {self.fields_localized}')
         # языковые суффиксы ('', '_ru', ...)
         self.langs: tuple = settings.lang_suffixes
         # поля типа  TextAreaField
-        self.textareafields: tuple = ('description',)
+        self.textareafields: tuple = ('description', 'recomendation')
         self.id = IntegerField("id", label="ID", exclude_from_create=True)
         self.created_at = DateTimeField("created_at", label="Дата создания", exclude_from_list=True,
                                         exclude_from_create=True, exclude_from_edit=True,
