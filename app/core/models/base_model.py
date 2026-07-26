@@ -257,12 +257,24 @@ class BaseInt(UniqueNormalizedNameMixin):
     # name: Mapped[str_uniq]
     description: Mapped[descr]
 
+    async def __admin_repr__(self, request):
+        """
+        используется в starlette-admin
+        """
+        return self.name
+
 
 class BaseIntFree(DynamicCompositeUniqueMixin):
     """ общие поля для всех таблиц на англ. языке """
     __abstract__ = True
     # name: Mapped[str_null_index]
     description: Mapped[descr]
+
+    async def __admin_repr__(self, request):
+        """
+        используется в starlette-admin
+        """
+        return self.name
 
 
 class BaseDescription:

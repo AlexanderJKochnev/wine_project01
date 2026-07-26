@@ -27,12 +27,22 @@ class UserAdminView(ModelView):
 core_fields = HandBooksFieldsCore()
 
 
+class BaseModelView(ModelView):
+    async def render(self, request, obj, field):
+        # Если поле - это отношение, пробуем получить строковое представление
+        if isinstance(field, HasOne) and obj is not None:
+            value = getattr(obj, field.identity, None)
+            if value is not None and hasattr(value, '__str__'):
+                return str(value)
+        return await super().render(request, obj, field)
+
+
 class HandbookView(ModelView):
     pk_attr = "id"
     fields = core_fields()
 
 
-class SubcategoryView(ModelView):
+class SubcategoryView(BaseModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('category', identity='category'))
