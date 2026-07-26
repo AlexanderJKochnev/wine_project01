@@ -8,7 +8,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from starlette_admin.contrib.sqla import Admin
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, HandbookView, SomeView, UserAdminView
+from app.admin.views import HandbookView, UserAdminView
 from app.auth.models import User
 from app.support import Category
 from app.support.vllm.model import TranslateHelper
