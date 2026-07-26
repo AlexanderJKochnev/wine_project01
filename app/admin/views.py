@@ -34,7 +34,7 @@ class HandbookView(ModelView):
 
 class SubcategoryView(ModelView):
     pk_attr = "id"
-    fields = core_fields(['category'])
+    fields = core_fields({'hasone': ['category']})
 
 
 class TestView(ModelView):

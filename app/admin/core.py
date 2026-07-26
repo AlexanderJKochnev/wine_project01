@@ -18,7 +18,7 @@ class HandBooksFieldsCore():
             label="Пользователь",
         ),
     """
-    def __init__(self, hasone: list = None):
+    def __init__(self, **kwargs):
         """
             field
             hasone: список one-to-many fields
@@ -39,7 +39,8 @@ class HandBooksFieldsCore():
             exclude_from_edit=True, orderable=True
         )
         self.localized_fields = self.localized_field_generator()
-        if hasone:
+        if hasone := kwargs.get('hasone'):
+            print(f'{hasone=} =====')
             self.hasone = [HasOne(item, identity=item) for item in hasone]
 
     def localized_field_generator(self) -> list:
