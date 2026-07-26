@@ -8,7 +8,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from starlette_admin.contrib.sqla import Admin
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import SomeView, UserAdminView
+from app.admin.views import CategoryView, SomeView, UserAdminView
 from app.auth.models import User
 from app.support import Category
 from app.support.vllm.model import TranslateHelper
@@ -36,7 +36,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
-    admin.add_view(SomeView(Category, identity="category", label="Категории"))
+    admin.add_view(CategoryView(Category, identity="category", label="Категории"))
     admin.mount_to(app)
 
     return admin
