@@ -7,9 +7,9 @@ from starlette_admin import DateTimeField, IntegerField, StringField, TextAreaFi
 from app.core.config.project_config import settings
 
 
-class FieldsCore():
+class HandBooksFieldsCore():
     """
-    заготовки для поле AdminViews
+    заготовки для полей HandBooks AdminViews
     HasOne(
             "user",                    # Точное имя атрибута relationship с back_populates
             identity="user",           # Идентификатор связанной модели в админке
@@ -18,8 +18,7 @@ class FieldsCore():
     """
     def __init__(self):
         # локализованные поля ('name', 'description', ...)
-        self.fields_localized: tuple = settings.FIELDS_LOCALIZED
-        print(f'1===== {self.fields_localized}')
+        self.fields_localized: tuple = settings.handbooks_fields  # settings.FIELDS_LOCALIZED
         # языковые суффиксы ('', '_ru', ...)
         self.langs: tuple = settings.lang_suffixes
         # поля типа  TextAreaField
@@ -44,10 +43,10 @@ class FieldsCore():
             required = True if lang == '' else False
             for field in self.fields_localized:
                 if field in self.textareafields:
-                    textfields.append(TextAreaField(field, label=field.capitalize(),
+                    textfields.append(TextAreaField(f'{field}{lang}', label=f'{field}{lang}'.capitalize(),
                                                     required=False, exclude_from_list=True))
                 else:
-                    strfields.append(StringField(field, label=field.capitalize(),
+                    strfields.append(StringField(f'{field}{lang}', label=f'{field}{lang}'.capitalize(),
                                                  required=required, searchable=True, orderable=True,
                                                  ))
         result: list = strfields + textfields

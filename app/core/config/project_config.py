@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     MACHINE_TRANSLATION_MARK: str = 'ai'
     #  справочники
     HANDBOOKS_PREFIX: str = "handbooks"
+    HANDBOOKS_FIELDS: str = "name,description"
 
     # === POSTGRES ===
     POSTGRES_DB: str = "wine_db"
@@ -322,6 +323,10 @@ class Settings(BaseSettings):
     @property
     def ignored_fields(self) -> list:
         return strtolist(self.IGNORED_FLDS)
+
+    @property
+    def handbooks_fields(self):
+        return strtolist(self.HANDBOOKS_FIELDS)
 
     @property
     def type2_fields(self) -> list:
