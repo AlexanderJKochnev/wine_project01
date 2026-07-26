@@ -1,10 +1,8 @@
 # app.admin.views.py
-from sqlalchemy.orm import joinedload, selectinload
-from starlette.requests import Request
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, DateTimeField, IntegerField, PasswordField, StringField
 
-from app.admin.core import FieldsCore
+from app.admin.core import HandBooksFieldsCore
 
 
 class UserAdminView(ModelView):
@@ -26,7 +24,7 @@ class UserAdminView(ModelView):
     filterable_fields = ["is_active", "is_superuser"]
 
 
-core_fields = FieldsCore()
+core_fields = HandBooksFieldsCore()
 
 
 class HandbookView(ModelView):
