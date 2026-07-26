@@ -49,7 +49,9 @@ class FieldsCore():
                     strfields.append(StringField(field, label=field.capitalize(),
                                                  required=required, searchable=True, orderable=True,
                                                  ))
-        return strfields + textfields
+        result: list = strfields + textfields
+        print(f'{result=}')
+        return result
 
     def __simple__(self):
         self.id = IntegerField("id", label="ID", exclude_from_create=True)
