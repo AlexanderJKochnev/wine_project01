@@ -32,7 +32,7 @@ core_fields = FieldsCore()
 class HandbookView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    print(f'{fields=}')
+    print(f'2. ===== {fields=}')
 
 
 class TestView(ModelView):

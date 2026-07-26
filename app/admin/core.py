@@ -60,3 +60,4 @@ class FieldsCore():
         result.extend(self.localized_fields)
         result.append(self.created_at)
         result.append(self.update_at)
+        return result
