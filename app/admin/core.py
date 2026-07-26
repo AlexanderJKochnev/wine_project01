@@ -2,7 +2,9 @@
 """
 core component of views
 """
-from starlette_admin import DateTimeField, IntegerField, StringField, TextAreaField
+from typing import List, Optional
+
+from starlette_admin import DateTimeField, HasOne, IntegerField, StringField, TextAreaField
 
 from app.core.config.project_config import settings
 
@@ -16,7 +18,12 @@ class HandBooksFieldsCore():
             label="Пользователь",
         ),
     """
-    def __init__(self):
+    def __init__(self, hasone: list = None):
+        """
+            field
+            hasone: список one-to-many fields
+        """
+        self.hasone: Optional[List[HasOne]] = None
         # локализованные поля ('name', 'description', ...)
         self.fields_localized: tuple = settings.handbooks_fields  # settings.FIELDS_LOCALIZED
         # языковые суффиксы ('', '_ru', ...)
@@ -32,6 +39,8 @@ class HandBooksFieldsCore():
             exclude_from_edit=True, orderable=True
         )
         self.localized_fields = self.localized_field_generator()
+        if hasone:
+            self.hasone = [HasOne(item, identity=item) for item in hasone]
 
     def localized_field_generator(self) -> list:
         """
@@ -57,6 +66,8 @@ class HandBooksFieldsCore():
 
     def __call__(self, *args, **kwargs):
         result: list = [self.id]
+        if self.hasone:
+            result.extend(self.hasone)
         result.extend(self.localized_fields)
         result.append(self.created_at)
         result.append(self.update_at)

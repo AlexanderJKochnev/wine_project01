@@ -32,6 +32,11 @@ class HandbookView(ModelView):
     fields = core_fields()
 
 
+class SubcategoryView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()(hasone=('category'))
+
+
 class TestView(ModelView):
     fields = [IntegerField("id", label="ID"),
               StringField("name", label="Name", required=True),
