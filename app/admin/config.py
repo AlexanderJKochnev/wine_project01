@@ -5,20 +5,19 @@ starlette-admin
 import json
 
 from fastapi import FastAPI
-from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader, PrefixLoader
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader
 from starlette.templating import Jinja2Templates
 from starlette_admin import CustomView, RequestAction
 from starlette_admin.contrib.sqla import Admin
 from starlette_admin.helpers import get_file_icon
-from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timezone,
-                                  get_timezone_display_name, I18nConfig,
-                                  gettext, ngettext)
+from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timezone, get_timezone_display_name, gettext,
+                                  I18nConfig, ngettext)
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
 from app.admin.views import HandbookView, TestView, UserAdminView
 from app.auth.models import User
-from app.support import Category
+from app.support import Category, Subcategory
 from app.support.vllm.model import TranslateHelper
 
 
@@ -107,7 +106,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.add_view(HandbookView(Category, identity="category", label="Категории"))
-    admin.add_view(TestView(Category, identity="category2", label="Категории2"))
+    admin.add_view(HandbookView(Subcategory, identity="подкатегории", label="Подкатегории"))
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
 
