@@ -1,6 +1,6 @@
 # app.admin.views.py
 from starlette_admin.contrib.sqla import ModelView
-from starlette_admin.fields import BooleanField, DateTimeField, IntegerField, PasswordField, StringField
+from starlette_admin.fields import BooleanField, DateTimeField, HasOne, IntegerField, PasswordField, StringField
 
 from app.admin.core import HandBooksFieldsCore
 
@@ -34,7 +34,8 @@ class HandbookView(ModelView):
 
 class SubcategoryView(ModelView):
     pk_attr = "id"
-    fields = core_fields({'hasone': ['category']})
+    fields = core_fields()
+    fields.insert(2, HasOne('category', identity='category'))
 
 
 class TestView(ModelView):
