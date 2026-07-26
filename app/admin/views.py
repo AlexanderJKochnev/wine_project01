@@ -32,3 +32,9 @@ core_fields = FieldsCore()
 class HandbookView(ModelView):
     pk_attr = "id"
     fields = core_fields()
+
+
+class TestView(ModelView):
+    fields = [IntegerField("id", label="ID"),
+              StringField("name", label="Name", required=True),
+              ]
