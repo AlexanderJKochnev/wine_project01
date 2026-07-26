@@ -90,7 +90,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin = CustomAdmin(
         engine=async_engine,  # Передаем ваш асинхронный engine
         title="Админ панель", base_url="/panel",
-        templates_dir="app/templates",  # Указывает на вашу папку с измененным layout.html
+        templates_dir="templates",  # Указывает на вашу папку с измененным layout.html
         statics_dir="statics",  # Указывает на папку со скачанными CSS/JS файлами
         auth_provider=AdminAuthProvider(),
         route_name="admin"
