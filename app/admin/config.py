@@ -107,7 +107,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.add_view(HandbookView(Category, identity="category", label="Категории"))
-    admin.add_view(TestView(Category, identity="category", label="Категории"))
+    admin.add_view(TestView(Category, identity="category2", label="Категории2"))
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
 
