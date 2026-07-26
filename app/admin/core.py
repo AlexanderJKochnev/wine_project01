@@ -50,7 +50,6 @@ class FieldsCore():
                                                  required=required, searchable=True, orderable=True,
                                                  ))
         result: list = strfields + textfields
-        print(f'{result=}')
         return result
 
     def __simple__(self):
