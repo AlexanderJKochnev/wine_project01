@@ -328,7 +328,7 @@ class Settings(BaseSettings):
     @property
     def handbooks_fields(self):
         return strtolist(self.HANDBOOKS_FIELDS)
-    
+
     @property
     def drink_fields(self):
         return strtolist(self.DRINK_FIELDS)

@@ -26,6 +26,7 @@ class UserAdminView(ModelView):
 
 
 core_fields = HandBooksFieldsCore(0)
+drink_fields = HandBooksFieldsCore(1)
 
 
 class BaseModelView(ModelView):
@@ -58,14 +59,6 @@ class CategoryView(ModelView):
                                 help_text='Цвет фона на изображении'
                                 ))
     fields.insert(3, HasMany('subcategories', identity='subcategory', exclude_from_list=True))
-
-
-class TestView(ModelView):
-    fields = [IntegerField("id", label="ID"),
-              StringField("name", label="Name", required=True),
-              ]
-
-# ------- GEOGRAPHY ----
 
 
 class CountryView(ModelView):
@@ -151,4 +144,11 @@ class HandbookView(ModelView):
 
 
 class DrinkView(ModelView):
-    pass
+    pk_attr = "id"
+    fields = drink_fields()
+
+
+class TestView(ModelView):
+    fields = [IntegerField("id", label="ID"),
+              StringField("name", label="Name", required=True),
+              ]
