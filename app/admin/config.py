@@ -15,9 +15,9 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, HandbookView, SubcategoryView, TestView, UserAdminView
+from app.admin.views import CategoryView, CountryView, HandbookView, SubcategoryView, TestView, UserAdminView
 from app.auth.models import User
-from app.support import Category, Subcategory
+from app.support import Category, Country, Region, Subcategory, Subregion
 from app.support.vllm.model import TranslateHelper
 
 
@@ -25,6 +25,7 @@ class CustomAdmin(Admin):
     """
         переписываем def _setup_templates_ что бы не лез за дефолтными шаблонами
     """
+
     def _setup_templates(self) -> None:
         env = Environment(
             loader=ChoiceLoader(
@@ -99,6 +100,9 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.add_view(CategoryView(Category, identity="category", label="Категории"))
     admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
+    admin.add_view(CountryView(Country, identity='country', label='Страны'))
+    admin.add_view(CountryView(Region, identity='region', label='Регионы'))
+    admin.add_view(CountryView(Subregion, identity='subregion', label='Cубрегионы'))
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
 

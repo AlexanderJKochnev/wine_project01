@@ -69,3 +69,22 @@ class TestView(ModelView):
     fields = [IntegerField("id", label="ID"),
               StringField("name", label="Name", required=True),
               ]
+
+
+class CountryView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    fields.insert(3, HasMany('regions', identity='region', exclude_from_list=True))
+
+
+class RegionView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    fields.insert(2, HasOne('country', identity='country'))
+    fields.insert(3, HasMany('subregions', identity='subregion', exclude_from_list=True))
+
+
+class SubregionView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    fields.insert(2, HasOne('region', identity='region'))
