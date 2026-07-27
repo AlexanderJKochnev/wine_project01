@@ -16,12 +16,12 @@ from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
 from app.admin.views import CategoryView, CountryView, DrinkView, FoodView, HandbookView, ParcelView, ProducerTitleView, \
-    ProducerView, RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView, \
-    VarietalView
+    ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, \
+    UserAdminView, VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Drink, Food, Glassware, \
-    Producer, ProducerTitle, Region, Scale, Source, Subcategory, Subregion, Superfood, TastingNote, Varietal, \
-    VintageConfig
+    Parcel, Producer, ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, TastingNote, \
+    Varietal, VintageConfig
 from app.support.vllm.model import TranslateHelper
 
 
@@ -96,8 +96,8 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     geography = [CountryView(Country, identity='country', label='Страны'),
                  RegionView(Region, identity='region', label='Регионы'),
                  SubregionView(Subregion, identity='subregion', label='Cубрегионы'),
-                 SubregionView(Subregion, identity='site', label='Терруары'),
-                 ParcelView(Subregion, identity='parcel', label='Миктротерруары'),
+                 SiteView(Site, identity='site', label='Терруары'),
+                 ParcelView(Parcel, identity='parcel', label='Миктротерруары'),
                  ]
     pairing = [VarietalView(Varietal, identity='varietal', label='Сорта винограда'),
                SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'),
