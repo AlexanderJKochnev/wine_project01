@@ -325,6 +325,7 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage
         """
         return self.title
 
+
 @registers_search_update("drink.item")
 class DrinkFood(Base):
     __tablename__ = "drink_food_associations"

@@ -146,11 +146,12 @@ class HandbookView(ModelView):
 
 class DrinkView(ModelView):
     pk_attr = "id"
-    fields = drink_fields()
-    extra_fields = [HasOne('subcategory', identity='subcategory'),
-                    HasOne('producer', identity='producer')
-                    ]
-    fields[3:3] = extra_fields
+    # fields = drink_fields()
+    # extra_fields = [HasOne('subcategory', identity='subcategory'),
+    #                 HasOne('producer', identity='producer')
+    #                 ]
+    # fields[3:3] = extra_fields
+    fields = ['id', 'title', 'subtitle', 'producer', 'subcategory']
 
 
 class TestView(ModelView):
