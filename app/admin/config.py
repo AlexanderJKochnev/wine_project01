@@ -107,6 +107,8 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     # admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
     admin.add_view(DropDown(
         "Categories",
+        icon="fa fa-list",
+        always_open=False,
         views=[CategoryView(Category, identity="category", label="Категории"),
                    SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории")
                    ]
