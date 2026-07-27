@@ -55,7 +55,6 @@ class CategoryView(ModelView):
     fields.insert(1, ColorField('color', label='Color', exclude_from_list=True))
 
 
-
 class TestView(ModelView):
     fields = [IntegerField("id", label="ID"),
               StringField("name", label="Name", required=True),
