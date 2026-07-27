@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from starlette.requests import Request
 
 from app.core.config.project_config import settings
 from app.core.models.base_model import BaseFullFree, plural, ColorMixin
@@ -29,3 +30,7 @@ class Subcategory(ColorMixin, BaseFullFree):
     # name: Mapped[str_null_true]
     # __table_args__ = (UniqueConstraint('name', 'category_id', name='uq_subcategory_name_category'),)
     __composite_fk_field__ = "category_id"
+
+    def __admin_select2_repr__(self, request: Request):
+        """Возвращает строку для отображения в Select2"""
+        return f'{self.category} {self.name}'
