@@ -15,7 +15,7 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, FoodView, OtherView, ParcelView, ProducerTitleView, \
+from app.admin.views import CategoryView, CountryView, FoodView, HandbookView, ParcelView, ProducerTitleView, \
     ProducerView, RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView, \
     VarietalView
 from app.auth.models import User
@@ -104,14 +104,14 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
                ]
     producer = [ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'),
                 ProducerView(Producer, identity='producer', label='Производитель')]
-    other = [OtherView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'),
-             OtherView(Body, identity='body', label='Тело вина'),
-             OtherView(Glassware, identity='glassware', label='Бокалы'),
-             OtherView(Scale, identity='scale', label='Scale'),
-             OtherView(TastingNote, identity='tastingnote', label='Вкусовые оттенки'),
-             OtherView(Classification, identity='classification', label='Classification'),
-             OtherView(Designation, identity='designation', label='Designation'),
-             OtherView(VintageConfig, identity='vintageconfig', label='VintageConfig'),
+    other = [HandbookView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'),
+             HandbookView(Body, identity='body', label='Тело вина'),
+             HandbookView(Glassware, identity='glassware', label='Бокалы'),
+             HandbookView(Scale, identity='scale', label='Scale'),
+             HandbookView(TastingNote, identity='tastingnote', label='Вкусовые оттенки'),
+             HandbookView(Classification, identity='classification', label='Classification'),
+             HandbookView(Designation, identity='designation', label='Designation'),
+             HandbookView(VintageConfig, identity='vintageconfig', label='VintageConfig'),
              ]
 
     admin = CustomAdmin(

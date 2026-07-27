@@ -38,11 +38,6 @@ class BaseModelView(ModelView):
         return await super().render(request, obj, field)
 
 
-class HandbookView(ModelView):
-    pk_attr = "id"
-    fields = core_fields()
-
-
 class SubcategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
@@ -149,10 +144,7 @@ class VarietalView(ModelView):
     fields = core_fields()
     # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
 
-# OTHER
 
-
-class OtherView(ModelView):
+class HandbookView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
