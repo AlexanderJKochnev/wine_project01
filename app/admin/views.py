@@ -52,7 +52,11 @@ class SubcategoryView(ModelView):
 class CategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(1, ColorField('color', label='Color', exclude_from_list=True))
+    fields.insert(1, ColorField('color', label='Color',
+                                exclude_from_list=True,
+                                # render_function_key="renderColor",
+                                display_template="displays/color.html",
+                                ))
 
 
 class TestView(ModelView):
