@@ -15,7 +15,7 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, FoodView, MenuDivider, OtherView, ParcelView, ProducerTitleView, \
+from app.admin.views import CategoryView, CountryView, FoodView, OtherView, ParcelView, ProducerTitleView, \
     ProducerView, RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView, \
     VarietalView
 from app.auth.models import User
