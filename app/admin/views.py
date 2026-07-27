@@ -106,7 +106,7 @@ class ProducerView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('producertitle', identity='producertitle'))
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
 
 # source
 
@@ -149,6 +149,7 @@ class DrinkView(ModelView):
     extra_fields = [HasOne('producer', identity='producer')
                     ]
     fields[3:3] = extra_fields
+
 
 class TestView(ModelView):
     fields = [IntegerField("id", label="ID"),
