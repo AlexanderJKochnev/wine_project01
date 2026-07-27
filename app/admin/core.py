@@ -28,11 +28,10 @@ class HandBooksFieldsCore():
             self.fields_localized: tuple = settings.handbooks_fields  # settings.FIELDS_LOCALIZED
         elif type == 1:
             self.fields_localized: tuple = settings.drink_fields
-        print(f'{self.fields_localized=}')
         # языковые суффиксы ('', '_ru', ...)
         self.langs: tuple = settings.lang_suffixes
         # поля типа  TextAreaField
-        self.textareafields: tuple = ('description', 'recomendation, madeof')
+        self.textareafields: tuple = ('description', 'recomendation', 'madeof')
         self.id = IntegerField("id", label="ID", exclude_from_create=True)
         self.created_at = DateTimeField("created_at", label="Дата создания", exclude_from_list=True,
                                         exclude_from_create=True, exclude_from_edit=True,
