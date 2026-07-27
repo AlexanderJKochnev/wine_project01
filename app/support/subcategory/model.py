@@ -33,4 +33,4 @@ class Subcategory(ColorMixin, BaseFullFree):
 
     def __admin_select2_repr__(self, request: Request):
         """Возвращает строку для отображения в Select2"""
-        return f'{self.category.name} {self.name}'
+        return f'{self.name}'
