@@ -48,7 +48,7 @@ class SubcategoryView(ModelView):
             'color', label='Color', display_template="displays/color.html", help_text='Цвет фона на изображении'
         )
     )
-    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
 
 
 class CategoryView(ModelView):
@@ -107,7 +107,7 @@ class ProducerView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('producertitle', identity='producertitle'))
-    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 # source
 
@@ -147,9 +147,11 @@ class HandbookView(ModelView):
 class DrinkView(ModelView):
     pk_attr = "id"
     fields = drink_fields()
-    extra_fields = [HasOne('subcategory', identity='subcategory'),
+    extra_fields = [StringField('display_name', label='Полное наименование', exclude_from_list=True),
+                    HasOne('subcategory', identity='subcategory'),
                     HasOne('producer', identity='producer'),
-                    'display_name'
+                    
+                    
                     ]
     fields[3:3] = extra_fields
     # fields = ['id', 'title', 'subtitle', 'producer', 'subcategory']
