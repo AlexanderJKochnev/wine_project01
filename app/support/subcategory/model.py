@@ -31,6 +31,3 @@ class Subcategory(ColorMixin, BaseFullFree):
     # __table_args__ = (UniqueConstraint('name', 'category_id', name='uq_subcategory_name_category'),)
     __composite_fk_field__ = "category_id"
 
-    def __admin_select2_repr__(self, request: Request):
-        """Возвращает строку для отображения в Select2"""
-        return f'{self.name}'
