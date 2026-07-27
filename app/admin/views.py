@@ -111,7 +111,6 @@ class ParcelView(ModelView):
 class ProducerTitleView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    # fields.insert(2, HasOne('subregion', identity='subregion'))
     fields.insert(3, HasMany('producers', identity='producer', exclude_from_list=True))
 
 
@@ -119,4 +118,12 @@ class ProducerView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('producertitle', identity='producertitle'))
+    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+
+# source
+
+
+class SourceView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
     # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))

@@ -16,7 +16,7 @@ from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
 from app.admin.views import CategoryView, CountryView, ParcelView, ProducerTitleView, ProducerView, RegionView, \
-    SubcategoryView, SubregionView, TestView, UserAdminView
+    SourceView, SubcategoryView, SubregionView, TestView, UserAdminView
 from app.auth.models import User
 from app.support import Category, Country, Producer, ProducerTitle, Region, Subcategory, Subregion
 from app.support.vllm.model import TranslateHelper
@@ -99,6 +99,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
+    admin.add_view(SourceView(User, identity="source", label="Источники данных"))
     admin.add_view(CategoryView(Category, identity="category", label="Категории"))
     admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
     # Geography
