@@ -25,7 +25,7 @@ class UserAdminView(ModelView):
     filterable_fields = ["is_active", "is_superuser"]
 
 
-core_fields = HandBooksFieldsCore()
+core_fields = HandBooksFieldsCore(1)
 
 
 class BaseModelView(ModelView):
@@ -148,3 +148,7 @@ class VarietalView(ModelView):
 class HandbookView(ModelView):
     pk_attr = "id"
     fields = core_fields()
+
+
+class DrinkView(ModelView):
+    pass

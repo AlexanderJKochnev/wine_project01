@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     #  справочники
     HANDBOOKS_PREFIX: str = "handbooks"
     HANDBOOKS_FIELDS: str = "name,description"
+    DRINK_FIELDS: str = "title,subtitle,description,recommendation,madeof"
 
     # === POSTGRES ===
     POSTGRES_DB: str = "wine_db"
@@ -327,6 +328,10 @@ class Settings(BaseSettings):
     @property
     def handbooks_fields(self):
         return strtolist(self.HANDBOOKS_FIELDS)
+
+    def drink_fields(self):
+        return strtolist(self.DRINK_FIELDS)
+
 
     @property
     def type2_fields(self) -> list:

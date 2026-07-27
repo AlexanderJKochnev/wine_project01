@@ -2,10 +2,8 @@
 """
 core component of views
 """
-from typing import List, Optional
 
-from starlette.requests import Request
-from starlette_admin import ColorField, DateTimeField, HasOne, IntegerField, RequestAction, StringField, TextAreaField
+from starlette_admin import ColorField, DateTimeField, IntegerField, StringField, TextAreaField
 
 from app.core.config.project_config import settings
 
@@ -20,14 +18,16 @@ class HandBooksFieldsCore():
         ),
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, type: int = 0):
         """
             field
             hasone: список one-to-many fields
         """
-        self.hasone: Optional[List[HasOne]] = None
         # локализованные поля ('name', 'description', ...)
-        self.fields_localized: tuple = settings.handbooks_fields  # settings.FIELDS_LOCALIZED
+        if type == 0:
+            self.fields_localized: tuple = settings.handbooks_fields  # settings.FIELDS_LOCALIZED
+        elif type == 1:
+            self.fields_localized: tuple = settings.drink_fields
         # языковые суффиксы ('', '_ru', ...)
         self.langs: tuple = settings.lang_suffixes
         # поля типа  TextAreaField
@@ -41,9 +41,6 @@ class HandBooksFieldsCore():
             exclude_from_edit=True, orderable=True
         )
         self.localized_fields = self.localized_field_generator()
-        if hasone := kwargs.get('hasone'):
-            print(f'{hasone=} =====')
-            self.hasone = [HasOne(item, identity=item) for item in hasone]
 
     def localized_field_generator(self) -> list:
         """
@@ -69,8 +66,6 @@ class HandBooksFieldsCore():
 
     def __call__(self, *args, **kwargs):
         result: list = [self.id]
-        if self.hasone:
-            result.extend(self.hasone)
         result.extend(self.localized_fields)
         result.append(self.created_at)
         result.append(self.update_at)
