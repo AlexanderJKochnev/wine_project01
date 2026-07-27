@@ -89,6 +89,15 @@ class CustomAdmin(Admin):
 
 def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     """Инициализирует админку, принимая асинхронный AsyncEngine."""
+    categories = [CategoryView(Category, identity="category", label="Категории"),
+                  SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории")
+                  ]
+    geography = [CountryView(Country, identity='country', label='Страны'),
+                 RegionView(Region, identity='region', label='Регионы'),
+                 SubregionView(Subregion, identity='subregion', label='Cубрегионы'),
+                 SubregionView(Subregion, identity='site', label='Терруары'),
+                 ParcelView(Subregion, identity='parcel', label='Миктротерруары'),
+                 ]
 
     admin = CustomAdmin(
         engine=async_engine,  # Передаем ваш асинхронный engine
@@ -102,24 +111,17 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.add_view(SourceView(Source, identity="source", label="Источники данных"))
-    admin.add_view(MenuDivider())
-    # admin.add_view(CategoryView(Category, identity="category", label="Категории"))
-    # admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
     admin.add_view(DropDown(
         "Categories",
         icon="fa fa-list",
         always_open=False,
-        views=[CategoryView(Category, identity="category", label="Категории"),
-                   SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории")
-                   ]
+        views=categories
     ))
-
-    # Geography
-    admin.add_view(CountryView(Country, identity='country', label='Страны'))
-    admin.add_view(RegionView(Region, identity='region', label='Регионы'))
-    admin.add_view(SubregionView(Subregion, identity='subregion', label='Cубрегионы'))
-    admin.add_view(SubregionView(Subregion, identity='site', label='Терруары'))
-    admin.add_view(ParcelView(Subregion, identity='parcel', label='Миктротерруары'))
+    admin.add_view(
+        DropDown(
+            "Geography", icon="fa fa-list", always_open=False, views=geography
+        )
+    )
     # Producres
     admin.add_view(ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'))
     admin.add_view(ProducerView(Producer, identity='producer', label='Производитель'))

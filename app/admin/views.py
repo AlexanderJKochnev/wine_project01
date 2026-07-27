@@ -1,26 +1,9 @@
 # app.admin.views.py
-from starlette.requests import Request
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
     PasswordField, StringField
-from starlette_admin.views import BaseView
 
 from app.admin.core import HandBooksFieldsCore
-
-
-class MenuDivider(BaseView):
-    """Кастомный разделитель для бокового меню"""
-    def __init__(self, label: str = ""):
-        super().__init__()
-        self.label = label
-
-    # Переопределяем метод рендера ссылки в меню
-    def render_menu_item(self, request: Request) -> str:
-        if self.label:
-            # Если передан текст, выводим красивый заголовок группы
-            return f'<li class="menu-heading mt-3 px-3 text-muted text-uppercase fs-6" style="list-style: none;">{self.label}</li>'
-        # Если текста нет, выводим обычную горизонтальную линию
-        return '<li class="my-2" style="list-style: none;"><hr class="m-0"></li>'
 
 
 class UserAdminView(ModelView):
