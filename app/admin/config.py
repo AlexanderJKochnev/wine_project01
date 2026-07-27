@@ -98,6 +98,12 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
                  SubregionView(Subregion, identity='site', label='Терруары'),
                  ParcelView(Subregion, identity='parcel', label='Миктротерруары'),
                  ]
+    pairing = [VarietalView(Varietal, identity='varietal', label='Сорта винограда'),
+               SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'),
+               FoodView(Food, identity='food', label='Продукты'),
+               ]
+    producer =[ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'),
+               ProducerView(Producer, identity='producer', label='Производитель')]
 
     admin = CustomAdmin(
         engine=async_engine,  # Передаем ваш асинхронный engine
@@ -122,13 +128,16 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
             "Geography", icon="fa fa-list", always_open=False, views=geography
         )
     )
-    # Producres
-    admin.add_view(ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'))
-    admin.add_view(ProducerView(Producer, identity='producer', label='Производитель'))
-    # Food
-    admin.add_view(SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'))
-    admin.add_view(FoodView(Food, identity='food', label='Продукты'))
-    admin.add_view(VarietalView(Varietal, identity='varietal', label='Сорта винограда'))
+    admin.add_view(
+        DropDown(
+            "Varietals & pairing", icon="fa fa-list", always_open=False, views=pairing
+        )
+    )
+    admin.add_view(
+        DropDown(
+            "Wineries & Distilleries", icon="fa fa-list", always_open=False, views=pairing
+        )
+    )
     # Other
     admin.add_view(OtherView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'))
     admin.add_view(OtherView(Body, identity='body', label='Тело вина'))
