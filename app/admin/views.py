@@ -70,6 +70,8 @@ class TestView(ModelView):
               StringField("name", label="Name", required=True),
               ]
 
+# ------- GEOGRAPHY ----
+
 
 class CountryView(ModelView):
     pk_attr = "id"
@@ -88,3 +90,33 @@ class SubregionView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('region', identity='region'))
+    fields.insert(3, HasMany('sites', identity='site', exclude_from_list=True))
+
+
+class SiteView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    fields.insert(2, HasOne('subregion', identity='subregion'))
+    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+
+
+class ParcelView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+
+# producers
+
+
+class ProducerTitleView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    # fields.insert(2, HasOne('subregion', identity='subregion'))
+    fields.insert(3, HasMany('producers', identity='producer', exclude_from_list=True))
+
+
+class ProducerView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    fields.insert(2, HasOne('producertitle', identity='producertitle'))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
