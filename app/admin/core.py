@@ -24,10 +24,12 @@ class HandBooksFieldsCore():
             hasone: список one-to-many fields
         """
         # локализованные поля ('name', 'description', ...)
+        print(f'===================={type=}')
         if type == 0:
             self.fields_localized: tuple = settings.handbooks_fields  # settings.FIELDS_LOCALIZED
         elif type == 1:
             self.fields_localized: tuple = settings.drink_fields
+        print(f'{self.fields_localized=}')
         # языковые суффиксы ('', '_ru', ...)
         self.langs: tuple = settings.lang_suffixes
         # поля типа  TextAreaField
