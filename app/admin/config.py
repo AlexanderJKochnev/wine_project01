@@ -15,10 +15,11 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, ParcelView, ProducerTitleView, ProducerView, RegionView, \
-    SourceView, SubcategoryView, SubregionView, TestView, UserAdminView
+from app.admin.views import CategoryView, CountryView, FoodView, ParcelView, ProducerTitleView, ProducerView, \
+    RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView
 from app.auth.models import User
-from app.support import Category, Country, Food, Producer, ProducerTitle, Region, Subcategory, Subregion, Superfood
+from app.support import Category, Country, Food, Producer, ProducerTitle, Region, Source, Subcategory, Subregion, \
+    Superfood
 from app.support.vllm.model import TranslateHelper
 
 
@@ -99,7 +100,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
 
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
-    admin.add_view(SourceView(User, identity="source", label="Источники данных"))
+    admin.add_view(SourceView(Source, identity="source", label="Источники данных"))
     admin.add_view(CategoryView(Category, identity="category", label="Категории"))
     admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
     # Geography
@@ -112,8 +113,8 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin.add_view(ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'))
     admin.add_view(ProducerView(Producer, identity='producer', label='Производитель'))
     # Food
-    admin.add_view(ProducerTitleView(Superfood, identity='superfood', label='Тип продуктов'))
-    admin.add_view(ProducerView(Food, identity='food', label='Продукты'))
+    admin.add_view(SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'))
+    admin.add_view(FoodView(Food, identity='food', label='Продукты'))
 
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
