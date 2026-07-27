@@ -48,6 +48,7 @@ class SubcategoryView(ModelView):
             'color', label='Color', display_template="displays/color.html", help_text='Цвет фона на изображении'
         )
     )
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
 
 
 class CategoryView(ModelView):
@@ -146,7 +147,8 @@ class HandbookView(ModelView):
 class DrinkView(ModelView):
     pk_attr = "id"
     fields = drink_fields()
-    extra_fields = [HasOne('producer', identity='producer')
+    extra_fields = [HasOne('subcategory', identity='subcategory'),
+                    HasOne('producer', identity='producer')
                     ]
     fields[3:3] = extra_fields
 
