@@ -48,7 +48,7 @@ class SubcategoryView(ModelView):
             'color', label='Color', display_template="displays/color.html", help_text='Цвет фона на изображении'
         )
     )
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 
 class CategoryView(ModelView):
@@ -86,13 +86,13 @@ class SiteView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('subregion', identity='subregion'))
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 
 class ParcelView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 # producers
 
@@ -115,9 +115,7 @@ class ProducerView(ModelView):
 class SourceView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
-
-# foods
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 
 class SuperFoodView(ModelView):
@@ -130,13 +128,13 @@ class FoodView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('superfood', identity='superfood'))
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 
 class VarietalView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+    fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
 
 class HandbookView(ModelView):
@@ -149,9 +147,16 @@ class DrinkView(ModelView):
     fields = drink_fields()
     extra_fields = [StringField('display_name', label='Полное наименование', exclude_from_list=True),
                     HasOne('subcategory', identity='subcategory'),
+                    HasOne('site', identity='site', exclude_from_list=True),
+                    HasOne('parcel', identity='parcel', exclude_from_list=True),
                     HasOne('producer', identity='producer'),
-                    
-                    
+                    HasOne('source', identity='source', exclude_from_list=True),
+                    HasOne('vintageconfig', identity='vintageconfig', exclude_from_list=True),
+                    HasOne('classification', identity='classification', exclude_from_list=True),
+                    HasOne('designation', identity='designation', exclude_from_list=True),
+                    HasOne('glassware', identity='glassware', exclude_from_list=True),
+                    HasOne('scale', identity='scale', exclude_from_list=True),
+                    HasOne('body', identity='body', exclude_from_list=True),
                     ]
     fields[3:3] = extra_fields
     # fields = ['id', 'title', 'subtitle', 'producer', 'subcategory']
