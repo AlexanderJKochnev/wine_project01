@@ -43,16 +43,16 @@ class HandbookView(ModelView):
     fields = core_fields()
 
 
-class SubcategoryView(BaseModelView):
+class SubcategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(2, HasOne('category', identity='category'))
 
 
-class CategoryView(BaseModelView):
+class CategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(1, ColorField('color', label='Color'))
+    fields.insert(1, ColorField('color', label='Color', exclude_from_list=True))
 
 
 
