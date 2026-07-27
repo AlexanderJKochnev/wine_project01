@@ -102,8 +102,17 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
                SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'),
                FoodView(Food, identity='food', label='Продукты'),
                ]
-    producer =[ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'),
-               ProducerView(Producer, identity='producer', label='Производитель')]
+    producer = [ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'),
+                ProducerView(Producer, identity='producer', label='Производитель')]
+    other = [OtherView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'),
+             OtherView(Body, identity='body', label='Тело вина'),
+             OtherView(Glassware, identity='glassware', label='Бокалы'),
+             OtherView(Scale, identity='scale', label='Scale'),
+             OtherView(TastingNote, identity='tastingnote', label='Вкусовые оттенки'),
+             OtherView(Classification, identity='classification', label='Classification'),
+             OtherView(Designation, identity='designation', label='Designation'),
+             OtherView(VintageConfig, identity='vintageconfig', label='VintageConfig'),
+             ]
 
     admin = CustomAdmin(
         engine=async_engine,  # Передаем ваш асинхронный engine
@@ -135,20 +144,16 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     )
     admin.add_view(
         DropDown(
-            "Wineries & Distilleries", icon="fa fa-list", always_open=False, views=pairing
+            "Wineries & Distilleries", icon="fa fa-list", always_open=False, views=producer
+        )
+    )
+    admin.add_view(
+        DropDown(
+            "Other", icon="fa fa-list", always_open=False, views=other
         )
     )
     # Other
-    admin.add_view(OtherView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'))
-    admin.add_view(OtherView(Body, identity='body', label='Тело вина'))
-    admin.add_view(OtherView(Glassware, identity='glassware', label='Бокалы'))
-    admin.add_view(OtherView(Scale, identity='scale', label='Scale'))
-    admin.add_view(OtherView(TastingNote, identity='tastingnote', label='Вкусовые оттенки'))
-    admin.add_view(OtherView(Classification, identity='classification', label='Classification'))
-    admin.add_view(OtherView(Designation, identity='designation', label='Designation'))
-    admin.add_view(OtherView(VintageConfig, identity='vintageconfig', label='VintageConfig'))
 
-    # utility
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
 
