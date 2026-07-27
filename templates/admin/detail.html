@@ -67,9 +67,6 @@
                                     </thead>
                                     <tbody id="tableContent">
                                     {% for field in model.get_fields_list(request, 'DETAIL' | ra) %}
-                                    {% with value=obj[field.name] %}
-                                    {# Пропускаем поля с пустыми значениями #}
-                                    {% if value is not none and value != "" and not (value is iterable and value|length == 0) %}
                                         <tr>
                                             <td data-label="Attribute">
                                                 <div>
@@ -88,8 +85,6 @@
                                                 {% endwith %}
                                             </td>
                                         </tr>
-                                    {% endif %}
-                                    {% endwith %}
                                     {% endfor %}
                                     </tbody>
                                 </table>
