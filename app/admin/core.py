@@ -32,7 +32,7 @@ class HandBooksFieldsCore():
         self.langs: tuple = settings.lang_suffixes
         # поля типа  TextAreaField
         self.textareafields: tuple = ('description', 'recommendation', 'madeof')
-        self.id = IntegerField("id", label="ID", exclude_from_create=True)
+        self.id = IntegerField("id", label="ID", exclude_from_create=True, exclude_from_list=True)
         self.created_at = DateTimeField("created_at", label="Дата создания", exclude_from_list=True,
                                         exclude_from_create=True, exclude_from_edit=True,
                                         orderable=True)
