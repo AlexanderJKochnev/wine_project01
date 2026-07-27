@@ -18,7 +18,7 @@ from app.admin.auth import AdminAuthProvider
 from app.admin.views import CategoryView, CountryView, ParcelView, ProducerTitleView, ProducerView, RegionView, \
     SourceView, SubcategoryView, SubregionView, TestView, UserAdminView
 from app.auth.models import User
-from app.support import Category, Country, Producer, ProducerTitle, Region, Subcategory, Subregion
+from app.support import Category, Country, Food, Producer, ProducerTitle, Region, Subcategory, Subregion, Superfood
 from app.support.vllm.model import TranslateHelper
 
 
@@ -111,7 +111,10 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     # Producres
     admin.add_view(ProducerTitleView(ProducerTitle, identity='producertitle', label='Тип производителя'))
     admin.add_view(ProducerView(Producer, identity='producer', label='Производитель'))
-    #
+    # Food
+    admin.add_view(ProducerTitleView(Superfood, identity='superfood', label='Тип продуктов'))
+    admin.add_view(ProducerView(Food, identity='food', label='Продукты'))
+
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
 
