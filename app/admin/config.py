@@ -15,8 +15,9 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, FoodView, OtherView, ParcelView, ProducerTitleView, ProducerView, \
-    RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView, VarietalView
+from app.admin.views import CategoryView, CountryView, FoodView, MenuDivider, OtherView, ParcelView, ProducerTitleView, \
+    ProducerView, RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView, \
+    VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Food, Glassware, Producer, \
     ProducerTitle, Region, Scale, Source, Subcategory, Subregion, Superfood, TastingNote, Varietal, VintageConfig
@@ -101,6 +102,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin.add_view(UserAdminView(User, identity="user", label="Пользователи"))
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.add_view(SourceView(Source, identity="source", label="Источники данных"))
+    admin.add_view(MenuDivider())
     admin.add_view(CategoryView(Category, identity="category", label="Категории"))
     admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
     # Geography
