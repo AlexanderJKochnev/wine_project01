@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from starlette.requests import Request
 
 from app.core.config.project_config import settings
 from app.core.models.base_model import BaseFullFree, plural, ColorMixin

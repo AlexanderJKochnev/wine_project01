@@ -42,7 +42,7 @@ class BaseModelView(ModelView):
 class SubcategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(2, HasOne('category', identity='category'))
+    fields.insert(2, HasOne('category', identity='category', searchable=True))
     fields.insert(
         1, ColorField(
             'color', label='Color', display_template="displays/color.html", help_text='Цвет фона на изображении'
