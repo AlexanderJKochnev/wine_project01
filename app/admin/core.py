@@ -4,7 +4,8 @@ core component of views
 """
 from typing import List, Optional
 
-from starlette_admin import DateTimeField, HasOne, IntegerField, StringField, TextAreaField
+from starlette.requests import Request
+from starlette_admin import ColorField, DateTimeField, HasOne, IntegerField, RequestAction, StringField, TextAreaField
 
 from app.core.config.project_config import settings
 
@@ -18,6 +19,7 @@ class HandBooksFieldsCore():
             label="Пользователь",
         ),
     """
+
     def __init__(self, **kwargs):
         """
             field
@@ -73,3 +75,30 @@ class HandBooksFieldsCore():
         result.append(self.created_at)
         result.append(self.update_at)
         return result
+
+
+class CleanColorField(ColorField):
+    # 1. Привязываем шаблон для Detail страницы
+    display_template = "displays/color.html"
+
+    # 2. Указываем ключ JS-функции для List страницы
+    render_function_key = "renderColor"
+
+    # 3. Передаем JS-код напрямую через поле, без изменения класса Admin!
+    def additional_js_links(self, request: Request, action: RequestAction):
+        if action == RequestAction.LIST:
+            # Возвращаем инлайн-скрипт в виде data-url, чтобы не создавать файл на диске
+            js_code = """
+            function renderColor(data, type, row, meta) {
+                if (!data) return '';
+                return `<div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="background-color: ${data}; width: 20px; height: 20px; display: inline-block; border-radius: 4px; border: 1px solid #dee2e6;"></span>
+                            <code>${data}</code>
+                        </div>`;
+            }
+            """
+            # Кодируем скрипт, чтобы браузер выполнил его на лету
+            import base64
+            encoded_js = base64.b64encode(js_code.encode('utf-8')).decode('utf-8')
+            return [f"data:text/javascript;base64,{encoded_js}"]
+        return []
