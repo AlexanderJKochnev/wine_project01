@@ -319,6 +319,11 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage
     def __str__(self):
         return f"{self.title}"
 
+    async def __admin_repr__(self, request):
+        """
+        используется в starlette-admin
+        """
+        return self.title
 
 @registers_search_update("drink.item")
 class DrinkFood(Base):
