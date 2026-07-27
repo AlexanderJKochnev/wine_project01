@@ -62,7 +62,7 @@ class CategoryView(ModelView):
                                 display_template="displays/color.html",
                                 help_text='Цвет фона на изображении'
                                 ))
-    fields.insert(3, HasMany('subcategories', identity='Subcategory', exclude_from_list=True))
+    fields.insert(3, HasMany('subcategories', identity='subcategory', exclude_from_list=True))
 
 
 class TestView(ModelView):
