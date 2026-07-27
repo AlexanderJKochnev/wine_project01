@@ -1,7 +1,7 @@
 # app.admin.views.py
 from starlette_admin.contrib.sqla import ModelView
-from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasOne, IntegerField, PasswordField, \
-    StringField
+from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
+    PasswordField, StringField
 
 from app.admin.core import CleanColorField, HandBooksFieldsCore
 
@@ -62,6 +62,7 @@ class CategoryView(ModelView):
                                 display_template="displays/color.html",
                                 help_text='Цвет фона на изображении'
                                 ))
+    fields.insert(3, HasMany('subcategories', identity='subcategory'))
 
 
 class TestView(ModelView):
