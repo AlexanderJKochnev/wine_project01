@@ -103,8 +103,15 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     # admin.add_view(SomeView(TranslateHelper, identity="translatehelper", label="Словарь"))
     admin.add_view(SourceView(Source, identity="source", label="Источники данных"))
     admin.add_view(MenuDivider())
-    admin.add_view(CategoryView(Category, identity="category", label="Категории"))
-    admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
+    # admin.add_view(CategoryView(Category, identity="category", label="Категории"))
+    # admin.add_view(SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории"))
+    admin.add_view(DropDown(
+        "Categories",
+        views=[CategoryView(Category, identity="category", label="Категории"),
+                   SubcategoryView(Subcategory, identity="subcategory", label="Подкатегории")
+                   ]
+    ))
+
     # Geography
     admin.add_view(CountryView(Country, identity='country', label='Страны'))
     admin.add_view(RegionView(Region, identity='region', label='Регионы'))
