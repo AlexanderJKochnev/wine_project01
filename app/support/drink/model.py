@@ -128,7 +128,7 @@ class ForeignOneToMany:
     glassware_id: Mapped[int | None] = mapped_column(ForeignKey("glasswares.id"), nullable=True, index=True)
     scale_id: Mapped[int | None] = mapped_column(ForeignKey("scales.id"), nullable=True, index=True)
     body_id: Mapped[int | None] = mapped_column(ForeignKey("bodies.id"), nullable=True, index=True)
-    # subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
+    subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable=False, index=True)
     sweetness_id: Mapped[int | None] = mapped_column(ForeignKey("sweetness.id"), nullable=True, index=True)
 
     @declared_attr
@@ -171,9 +171,9 @@ class ForeignOneToMany:
     def body(cls) -> Mapped["Body"]:
         return relationship(back_populates="drinks")
 
-    # @declared_attr
-    # def subcategory(cls) -> Mapped["Subcategory"]:
-    #     return relationship(back_populates="drinks")
+    @declared_attr
+    def subcategory(cls) -> Mapped["Subcategory"]:
+        return relationship(back_populates="drinks")
 
     @declared_attr
     def sweetness(cls) -> Mapped["Sweetness"]:
@@ -301,8 +301,8 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage
         back_populates="drink", cascade="all, delete-orphan", lazy="selectin"
     )
     """
-    subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable = False, index = True)
-    subcategory: Mapped["Subcategory"] = relationship(back_populates = "drinks")
+    # subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable = False, index = True)
+    # subcategory: Mapped["Subcategory"] = relationship(back_populates = "drinks")
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
     __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
                       CheckConstraint("(first_vintage IS NULL) OR (first_vintage >= 1000 AND first_vintage <= 3000)",
