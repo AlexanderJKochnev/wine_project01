@@ -15,11 +15,12 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, FoodView, ParcelView, ProducerTitleView, ProducerView, \
-    RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView
+from app.admin.views import CategoryView, CountryView, FoodView, OtherView, ParcelView, \
+    ProducerTitleView, ProducerView, RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, \
+    UserAdminView
 from app.auth.models import User
-from app.support import Category, Country, Food, Producer, ProducerTitle, Region, Source, Subcategory, Subregion, \
-    Superfood
+from app.support import BaseIngredient, Body, Category, Country, Food, Glassware, Producer, ProducerTitle, Region, \
+    Scale, Source, Subcategory, Subregion, Superfood, TastingNote
 from app.support.vllm.model import TranslateHelper
 
 
@@ -115,7 +116,12 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     # Food
     admin.add_view(SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'))
     admin.add_view(FoodView(Food, identity='food', label='Продукты'))
-
+    # Other
+    admin.add_view(OtherView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'))
+    admin.add_view(OtherView(Body, identity='body', label='Тело вина'))
+    admin.add_view(OtherView(Glassware, identity='glassware', label='Бокалы'))
+    admin.add_view(OtherView(Scale, identity='scale', label='Scale'))
+    admin.add_view(OtherView(TastingNote, identity='tastingnote', label='Вкусовые оттенки'))
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
     admin.mount_to(app)
 

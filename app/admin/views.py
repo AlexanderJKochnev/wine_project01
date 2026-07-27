@@ -142,3 +142,11 @@ class FoodView(ModelView):
     fields = core_fields()
     fields.insert(2, HasOne('superfood', identity='superfood'))
     # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
+
+# OTHER
+
+
+class OtherView(ModelView):
+    pk_attr = "id"
+    fields = core_fields()
+    # fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True))
