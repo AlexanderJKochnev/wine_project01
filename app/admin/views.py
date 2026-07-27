@@ -25,7 +25,7 @@ class UserAdminView(ModelView):
     filterable_fields = ["is_active", "is_superuser"]
 
 
-core_fields = HandBooksFieldsCore(1)
+core_fields = HandBooksFieldsCore(0)
 
 
 class BaseModelView(ModelView):
