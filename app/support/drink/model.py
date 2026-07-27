@@ -302,7 +302,7 @@ class Drink(ClickId, Base, BaseAt, Lang, ForeignOneToMany, BackRelation, Vintage
     )
     """
     subcategory_id: Mapped[int] = mapped_column(ForeignKey("subcategories.id"), nullable = False, index = True)
-    subcategories: Mapped["Subcategory"] = relationship(back_populates = "drinks")
+    subcategory: Mapped["Subcategory"] = relationship(back_populates = "drinks")
     # Важно: viewonly=False — позволяет SQLAlchemy корректно обновлять связь через .foods
     __table_args__ = (CheckConstraint('alc >= 0 AND alc <= 100.00', name='alc_range_check'),
                       CheckConstraint("(first_vintage IS NULL) OR (first_vintage >= 1000 AND first_vintage <= 3000)",
