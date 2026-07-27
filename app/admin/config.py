@@ -15,12 +15,11 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, FoodView, OtherView, ParcelView, \
-    ProducerTitleView, ProducerView, RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, \
-    UserAdminView
+from app.admin.views import CategoryView, CountryView, FoodView, OtherView, ParcelView, ProducerTitleView, ProducerView, \
+    RegionView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, UserAdminView, VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Food, Glassware, Producer, \
-    ProducerTitle, Region, Scale, Source, Subcategory, Subregion, Superfood, TastingNote, VintageConfig
+    ProducerTitle, Region, Scale, Source, Subcategory, Subregion, Superfood, TastingNote, Varietal, VintageConfig
 from app.support.vllm.model import TranslateHelper
 
 
@@ -116,6 +115,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     # Food
     admin.add_view(SuperFoodView(Superfood, identity='superfood', label='Тип продуктов'))
     admin.add_view(FoodView(Food, identity='food', label='Продукты'))
+    admin.add_view(VarietalView(Varietal, identity='varietal', label='Сорта винограда'))
     # Other
     admin.add_view(OtherView(BaseIngredient, identity='baseingredient', label='Основные ингредиенты'))
     admin.add_view(OtherView(Body, identity='body', label='Тело вина'))
