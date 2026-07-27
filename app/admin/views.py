@@ -148,7 +148,8 @@ class DrinkView(ModelView):
     pk_attr = "id"
     fields = drink_fields()
     extra_fields = [HasOne('subcategory', identity='subcategory'),
-                    HasOne('producer', identity='producer')
+                    HasOne('producer', identity='producer'),
+                    'display_name'
                     ]
     fields[3:3] = extra_fields
     # fields = ['id', 'title', 'subtitle', 'producer', 'subcategory']
