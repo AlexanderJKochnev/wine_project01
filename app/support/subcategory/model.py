@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from starlette.requests import Request
 
 from app.core.config.project_config import settings
 from app.core.models.base_model import BaseFullFree, plural, ColorMixin
@@ -41,5 +42,5 @@ class Subcategory(ColorMixin, BaseFullFree):
         # return f"{self.name} ({self.category.name})"
         return self.full_name
 
-    def __admin_select2_repr__(self) -> str:
+    def __admin_select2_repr__(self, request: Request) -> str:
         return self.full_name
