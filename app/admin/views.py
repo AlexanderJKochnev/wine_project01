@@ -170,3 +170,4 @@ class TestView(ModelView):
 
 class ItemView(ModelView):
     fields = ["id", "drink", "vol", "price", "seaweed_fids"]
+    select_related = ["subcategory", "subcategory.category"]

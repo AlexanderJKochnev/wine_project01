@@ -40,3 +40,6 @@ class Subcategory(ColorMixin, BaseFullFree):
         # Вариант 1: Если категория точно загружена
         # return f"{self.name} ({self.category.name})"
         return self.full_name
+
+    def __admin_select2_repr__(self) -> str:
+        return self.full_name
