@@ -2,8 +2,10 @@
 
 from datetime import date, datetime
 from decimal import Decimal
+from html import escape
 from typing import Annotated, Optional, Type
 
+from httpx import Request
 # from sqlalchemy.dialects.postgresql import MONEY
 from sqlalchemy import Boolean, DateTime, DECIMAL, func, inspect, String, text, Text
 # from sqlalchemy_serializer import SerializerMixin
@@ -263,6 +265,10 @@ class BaseInt(UniqueNormalizedNameMixin):
         """
         return self.name
 
+    def __admin_select2_repr__(self, request: Request) -> str:
+        name = f'{self.name} {self.name_ru if self.name_ru and len(self.name_ru) else ""}'
+        return f'<div>{escape(name)}</div>'
+
 
 class BaseIntFree(DynamicCompositeUniqueMixin):
     """ общие поля для всех таблиц на англ. языке """
@@ -275,6 +281,10 @@ class BaseIntFree(DynamicCompositeUniqueMixin):
         используется в starlette-admin
         """
         return self.name
+
+    def __admin_select2_repr__(self, request: Request) -> str:
+        name = f'{self.name} {self.name_ru if self.name_ru and len(self.name_ru) else ""}'
+        return f'<div>{escape(name)}</div>'
 
 
 class BaseDescription:
