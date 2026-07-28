@@ -1,11 +1,15 @@
 # app.admin.views.py
-from typing import Any, List
+from typing import Any, Dict, List, Optional, Sequence, Union
 
-from sqlalchemy.orm import joinedload, noload
+import anyio
+from sqlalchemy import or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, noload, Session
 from starlette.requests import Request
+from starlette_admin import RequestAction
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
-    PasswordField, StringField
+    PasswordField, RelationField, StringField
 
 from app.admin.core import HandBooksFieldsCore
 
@@ -54,19 +58,6 @@ class SubcategoryView(ModelView):
     )
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
-    """
-    async def get_list_query(self, request):
-        # Переопределяем запрос для списка с жадной загрузкой связанных данных
-        query = select(self.model).options(noload(self.model.drinks))
-        # query = await super().get_list_query(request)
-        # Загружаем все необходимые связи для Select2
-        return query.options(
-            joinedload(Subcategory.category)  # Загружаем категорию
-            # Если есть более глубокие связи, например category.region:
-            # selectinload(Subcategory.category).selectinload(Category.region)
-        )
-    """
-
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
         session = request.state.session
 
@@ -89,6 +80,65 @@ class SubcategoryView(ModelView):
         """
         query = super().get_list_query(request) if request else super().get_list_query()
         return query.options(noload(self.model.drinks))
+
+    async def find_all(
+            self, request: Request, skip: int = 0, limit: int = 100, where: Union[Dict[str, Any], str, None] = None,
+            order_by: Optional[List[str]] = None, ) -> Sequence[Any]:
+        session: Union[Session, AsyncSession] = request.state.session
+
+        # 1. Берем базовый запрос из get_list_query (там уже должен быть noload на drinks)
+        stmt = self.get_list_query(request).offset(skip)
+        if limit > 0:
+            stmt = stmt.limit(limit)
+
+        # Получаем класс модели Категории динамически
+        CategoryModel = self.model.category.property.mapper.class_
+
+        # 2. Модифицируем логику фильтрации WHERE
+        if where is not None:
+            if isinstance(where, dict):
+                # Если это стандартный поиск по полям, проверяем, не ищет ли админка по тексту
+                # Обычно для Select2 приходит что-то вроде {"name": {"ilike": "%текст%"}}
+                search_term = None
+                if "name" in where and isinstance(where["name"], dict):
+                    search_term = where["name"].get("ilike") or where["name"].get("like")
+
+                if search_term:
+                    # Если обнаружен текстовый поиск, делаем JOIN и перезаписываем условие на OR
+                    stmt = stmt.join(self.model.category)
+                    where_clause = or_(
+                        self.model.name.ilike(search_term), CategoryModel.name.ilike(search_term)
+                    )
+                else:
+                    # Во всех остальных случаях используем оригинальный построитель
+                    from starlette_admin.contrib.sqla.helpers import build_query
+                    where_clause = build_query(where, self.model)
+            else:
+                # Если пришла чистая строка (Глобальный полнотекстовый поиск админки)
+                stmt = stmt.join(self.model.category)
+                search_pattern = f"%{where}%"
+                where_clause = or_(
+                    self.model.name.ilike(search_pattern), CategoryModel.name.ilike(search_pattern)
+                )
+
+            stmt = stmt.where(where_clause)
+
+        # 3. Оригинальная сортировка
+        stmt = self.build_order_clauses(request, order_by or [], stmt)
+
+        # 4. Оригинальная загрузка связей БЕЗ тяжелого drinks
+        # Мы явно пропускаем поле 'drinks', чтобы админка не сделала ему joinedload
+        for field in self.get_fields_list(request, RequestAction.LIST):
+            if isinstance(field, RelationField):
+                if field.name == "drinks":
+                    stmt = stmt.options(noload(self.model.drinks))
+                else:
+                    stmt = stmt.options(joinedload(getattr(self.model, field.name)))
+
+        # 5. Оригинальное выполнение запроса
+        if isinstance(session, AsyncSession):
+            return (await session.execute(stmt)).scalars().unique().all()
+        return ((await anyio.to_thread.run_sync(session.execute, stmt)).scalars().unique().all())
 
 
 class CategoryView(ModelView):
@@ -154,11 +204,6 @@ class SourceView(ModelView):
     pk_attr = "id"
     fields = core_fields()
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
-
-    async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
-        from loguru import logger
-        logger.warning(f'source ========== {self._pk_column=}, {type(self._pk_column)=}')
-        return await super().find_by_pks(request, pks)
 
 
 class SuperFoodView(ModelView):
