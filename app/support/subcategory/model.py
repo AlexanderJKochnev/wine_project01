@@ -35,7 +35,7 @@ class Subcategory(ColorMixin, BaseFullFree):
     @property
     def full_name(self) -> str:
         """Полное имя с категорией"""
-        return f"{self.name} ({self.category.name if self.category else 'Без категории'})"
+        return f"{self.name} ({self.category.name if self.name else self.category.name})"
 
     def __str__(self) -> str:
         """Строковое представление с включением данных из связанной модели"""
