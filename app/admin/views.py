@@ -1,12 +1,12 @@
 # app.admin.views.py
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload, noload, selectinload
+from typing import Any, List
+
+from starlette.requests import Request
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
     PasswordField, StringField
 
 from app.admin.core import HandBooksFieldsCore
-from app.support import Subcategory
 
 
 class UserAdminView(ModelView):
@@ -53,8 +53,9 @@ class SubcategoryView(ModelView):
     )
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
+    """
     async def get_list_query(self, request):
-        """Переопределяем запрос для списка с жадной загрузкой связанных данных"""
+        # Переопределяем запрос для списка с жадной загрузкой связанных данных
         query = select(self.model).options(noload(self.model.drinks))
         # query = await super().get_list_query(request)
         # Загружаем все необходимые связи для Select2
@@ -63,6 +64,12 @@ class SubcategoryView(ModelView):
             # Если есть более глубокие связи, например category.region:
             # selectinload(Subcategory.category).selectinload(Category.region)
         )
+    """
+
+    async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
+        from loguru import logger
+        logger.warning(f'{pks=}, {type(pks)=}')
+        return super().find_by_pks(request, pks)
 
 
 class CategoryView(ModelView):
