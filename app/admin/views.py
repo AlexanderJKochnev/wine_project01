@@ -166,3 +166,7 @@ class TestView(ModelView):
     fields = [IntegerField("id", label="ID"),
               StringField("name", label="Name", required=True),
               ]
+
+
+class ItemView(ModelView):
+    pass

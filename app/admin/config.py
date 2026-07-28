@@ -15,12 +15,12 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, DrinkView, FoodView, HandbookView, ParcelView, ProducerTitleView, \
-    ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, SuperFoodView, TestView, \
-    UserAdminView, VarietalView
+from app.admin.views import CategoryView, CountryView, DrinkView, FoodView, HandbookView, ItemView, ParcelView, \
+    ProducerTitleView, ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, SuperFoodView, \
+    TestView, UserAdminView, VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Drink, Food, Glassware, \
-    Parcel, Producer, ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, TastingNote, \
+    Item, Parcel, Producer, ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, TastingNote, \
     Varietal, VintageConfig
 from app.support.vllm.model import TranslateHelper
 
@@ -158,6 +158,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
 
     admin.add_view(DrinkView(Drink, identity="drink", label="Drink"))
+    admin.add_view(ItemView(Item, identity="item", label="Item"))
     admin.mount_to(app)
 
     return admin
