@@ -1,7 +1,7 @@
 # app.admin.views.py
 from typing import Any, List
 
-from sqlalchemy.orm import noload
+from sqlalchemy.orm import joinedload, noload
 from starlette.requests import Request
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
@@ -66,26 +66,23 @@ class SubcategoryView(ModelView):
             # selectinload(Subcategory.category).selectinload(Category.region)
         )
     """
-    
+
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
-        """
-        Этот метод вызывается админкой для запросов типа ?select2=true&pks=1.
-        Мы перехватываем сессию и принудительно отключаем загрузку напитков.
-        """
         session = request.state.session
+
         try:
-            pks = [int(pk) for pk in pks]
+            int_pks = [int(pk) for pk in pks]
         except (ValueError, TypeError):
-            pass  # Оставляем как есть, если пришла не строка/число
-        # Строим базовый запрос для поиска по первичным ключам
-        stmt = (super().get_list_query(request).where(self.model.id.in_(pks))  # Фильтр по пришедшим ID
-                                               .options(noload(self.model.drinks))  # ИСКЛЮЧАЕМ ТЯЖЕЛЫЙ JOIN
-        )
-        
-        # Выполняем чистый и быстрый запрос
+            int_pks = pks
+
+        stmt = (super().get_list_query(request).where(self.model.id.in_(int_pks)).options(
+                joinedload(self.model.category),  # Принудительно асинхронно соединяем категорию
+                noload(self.model.drinks)  # По-прежнему намертво блокируем напитки
+                ))
+
         result = await session.execute(stmt)
         return result.scalars().unique().all()
-    
+
     def get_list_query(self, request: Request = None):
         """
         На всякий случай отключаем JOIN и для обычной таблицы со списком подкатегорий
