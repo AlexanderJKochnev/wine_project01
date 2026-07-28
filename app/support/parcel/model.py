@@ -1,8 +1,12 @@
 # app.support.parcel.model.py
 from __future__ import annotations
+
+from html import escape
 from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from starlette.requests import Request
+
 from app.core.config.project_config import settings
 from app.core.models.base_model import plural, BaseFullFree, BaseFull
 from app.service_registry import registers_search_update
@@ -52,3 +56,15 @@ class Site(BaseFullFree):
         # Ключевой параметр
     ),)
     """
+
+    @property
+    def full_name(self) -> str:
+        """Полное имя"""
+        subregion = self.subregion.name
+        region = self.subregion.region.name
+        country = self.subregion.region.country.name
+        return f'{country}, {region}, {subregion}, {self.name}'
+        # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
+
+    def __admin_select2_repr__(self, request: Request) -> str:
+        return f'<div>{escape(self.full_name)}</div>'
