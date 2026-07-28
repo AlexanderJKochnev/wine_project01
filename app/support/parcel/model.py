@@ -59,11 +59,25 @@ class Site(BaseFullFree):
 
     @property
     def full_name(self) -> str:
-        """Полное имя"""
-        # region = self.subregion.region.name
-        # country = self.subregion.region.country.name
-        return f"{self.name} ({self.subregion.name})" if self.name and len(self.name) > 0 else f"{self.subregion.name}"
-        # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
+        """
+        Формирует полное имя: 'Имя_Сайта (Subregion, Region, Country)'
+        """
+        parts = []
+
+        # Безопасно собираем географическую цепочку снизу вверх
+        if self.subregion:
+            parts.append(self.subregion.name)
+            if self.subregion.region:
+                parts.append(self.subregion.region.name)
+                if self.subregion.region.country:
+                    parts.append(self.subregion.region.country.name)
+
+        geo_string = ", ".join([p for p in parts if p])
+
+        if self.name and len(self.name.strip()) > 0:
+            return f"{self.name} ({geo_string})" if geo_string else self.name
+
+        return geo_string or "Без названия"
 
     def __admin_select2_repr__(self, request: Request) -> str:
         return f'<div>{escape(self.full_name)}</div>'

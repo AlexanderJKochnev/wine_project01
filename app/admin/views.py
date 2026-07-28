@@ -178,6 +178,110 @@ class SiteView(ModelView):
     fields.insert(2, HasOne('subregion', identity='subregion'))
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
+    def _get_geo_options(self):
+        """
+        Вспомогательный метод для построения правильной и быстрой загрузки.
+        Загружает всю цепочку за 1 запрос и блокирует тяжелые напитки.
+        """
+        return [  # Цепочка жадной загрузки: Site -> Subregion -> Region -> Country
+            joinedload(self.model.subregion).joinedload(
+                self.model.subregion.property.mapper.class_.region
+            ).joinedload(self.model.subregion.property.mapper.class_.region.property.mapper.class_.country),
+
+            # Намертво отключаем загрузку напитков, чтобы избежать декартова произведения
+            noload(self.model.drinks)]
+
+    async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
+        """
+        Метод для точечных запросов (например, ?select2=true&pks=3)
+        """
+        session = request.state.session
+
+        try:
+            int_pks = [int(pk) for pk in pks]
+        except (ValueError, TypeError):
+            int_pks = pks
+
+        stmt = (super().get_list_query(request).where(self.model.id.in_(int_pks)).options(*self._get_geo_options())
+                # Применяем оптимизацию связей
+                )
+
+        result = await session.execute(stmt)
+        return result.scalars().unique().all()
+
+    async def find_all(
+            self, request: Request, skip: int = 0, limit: int = 100, where: Union[Dict[str, Any], str, None] = None,
+            order_by: Optional[List[str]] = None, ) -> Sequence[Any]:
+        session: Union[Session, AsyncSession] = request.state.session
+
+        stmt = self.get_list_query(request).offset(skip)
+        if limit > 0:
+            stmt = stmt.limit(limit)
+
+        # Динамически получаем классы связанных моделей для построения JOIN и условий поиска
+        SubregionModel = self.model.subregion.property.mapper.class_
+        RegionModel = SubregionModel.region.property.mapper.class_
+        CountryModel = RegionModel.country.property.mapper.class_
+
+        # Перехватываем текстовый поиск
+        if where is not None:
+            if isinstance(where, dict):
+                search_term = None
+                if "name" in where and isinstance(where["name"], dict):
+                    search_term = where["name"].get("ilike") or where["name"].get("like")
+
+                if search_term:
+                    # Для сквозного поиска делаем последовательные JOIN всех таблиц
+                    stmt = stmt.join(self.model.subregion).join(SubregionModel.region).join(RegionModel.country)
+
+                    where_clause = or_(
+                        self.model.name.ilike(search_term),       # Поиск по имени сайта
+                        SubregionModel.name.ilike(search_term),   # Поиск по субрегиону
+                        RegionModel.name.ilike(search_term),      # Поиск по региону
+                        CountryModel.name.ilike(search_term)      # Поиск по стране
+                    )
+                else:
+                    from starlette_admin.contrib.sqla.helpers import build_query
+                    where_clause = build_query(where, self.model)
+            else:
+                # Глобальный полнотекстовый поиск (пришла чистая строка)
+                stmt = stmt.join(self.model.subregion) \
+                    .join(SubregionModel.region) \
+                    .join(RegionModel.country)
+                search_pattern = f"%{where}%"
+                where_clause = or_(
+                    self.model.name.ilike(search_pattern),
+                    SubregionModel.name.ilike(search_pattern),
+                    RegionModel.name.ilike(search_pattern),
+                    CountryModel.name.ilike(search_pattern)
+                )
+
+            stmt = stmt.where(where_clause)
+
+        stmt = self.build_order_clauses(request, order_by or [], stmt)
+
+        # Перезаписываем автоматические joinedload админки, защищая поле 'drinks'
+        for field in self.get_fields_list(request, RequestAction.LIST):
+            if isinstance(field, RelationField):
+                if field.name == "drinks":
+                    stmt = stmt.options(noload(self.model.drinks))
+                else:
+                    # Для всех остальных полей оставляем дефолтное поведение,
+                    # но подмешиваем наши оптимизированные гео-опции
+                    stmt = stmt.options(joinedload(getattr(self.model, field.name)))
+
+        # Принудительно накатываем наши гео-опции поверх структуры запроса
+        stmt = stmt.options(*self._get_geo_options())
+
+        if isinstance(session, AsyncSession):
+            return (await session.execute(stmt)).scalars().unique().all()
+        return (
+            (await anyio.to_thread.run_sync(session.execute, stmt))
+            .scalars()
+            .unique()
+            .all()
+        )
+
 
 class ParcelView(ModelView):
     pk_attr = "id"
