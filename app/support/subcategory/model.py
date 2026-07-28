@@ -27,7 +27,7 @@ class Subcategory(ColorMixin, BaseFullFree):
     category: Mapped["Category"] = relationship(back_populates=plural_name, lazy=lazy)
     drinks = relationship("Drink", back_populates=single_name,
                           cascade=cascade,
-                          lazy='selectin')
+                          lazy=lazy)
     # name: Mapped[str_null_true]
     # __table_args__ = (UniqueConstraint('name', 'category_id', name='uq_subcategory_name_category'),)
     __composite_fk_field__ = "category_id"
