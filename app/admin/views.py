@@ -1,6 +1,6 @@
 # app.admin.views.py
 from sqlalchemy import select
-from sqlalchemy.orm import noload, selectinload
+from sqlalchemy.orm import joinedload, noload, selectinload
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
     PasswordField, StringField
@@ -59,7 +59,7 @@ class SubcategoryView(ModelView):
         # query = await super().get_list_query(request)
         # Загружаем все необходимые связи для Select2
         return query.options(
-            selectinload(Subcategory.category)  # Загружаем категорию
+            joinedload(Subcategory.category)  # Загружаем категорию
             # Если есть более глубокие связи, например category.region:
             # selectinload(Subcategory.category).selectinload(Category.region)
         )
