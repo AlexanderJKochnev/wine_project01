@@ -60,9 +60,13 @@ class Site(BaseFullFree):
     @property
     def full_name(self) -> str:
         """Полное имя"""
-        subregion = self.subregion.name
-        region = self.subregion.region.name
-        country = self.subregion.region.country.name
+        country = getattr(getattr(getattr(self, 'subregion', None), 'region', None), 'country', None)
+        region = getattr(getattr(self, 'subregion', None), 'region', None)
+        subregion = self.subregion
+        
+        country_name = country.name if country else "Без страны"
+        region_name = region.name if region else "Без региона"
+        subregion_name = subregion.name if subregion else "Без подрегиона"
         return f'{country}, {region}, {subregion}, {self.name}'
         # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
 
