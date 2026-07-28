@@ -63,11 +63,11 @@ class Site(BaseFullFree):
         country = getattr(getattr(getattr(self, 'subregion', None), 'region', None), 'country', None)
         region = getattr(getattr(self, 'subregion', None), 'region', None)
         subregion = self.subregion
-        
+
         country_name = country.name if country else "Без страны"
         region_name = region.name if region else "Без региона"
         subregion_name = subregion.name if subregion else "Без подрегиона"
-        return f'{country}, {region}, {subregion}, {self.name}'
+        return f'{country_name}, {region_name}, {subregion_name}, {self.name_name}'
         # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
 
     def __admin_select2_repr__(self, request: Request) -> str:
