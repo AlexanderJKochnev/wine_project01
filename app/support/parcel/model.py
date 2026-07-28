@@ -60,6 +60,8 @@ class Site(BaseFullFree):
     @property
     def full_name(self) -> str:
         """Полное имя"""
+        region = self.subregion.region.name
+        country = self.subregion.region.country.name
         return f"{self.name} ({self.subregion.name})" if self.name and len(self.name) > 0 else f"{self.subregion.name}"
         # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
 
