@@ -1,5 +1,6 @@
 # app.admin.views.py
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
+from sqlalchemy.orm import noload, selectinload
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
     PasswordField, StringField
@@ -54,7 +55,8 @@ class SubcategoryView(ModelView):
 
     async def get_list_query(self, request):
         """Переопределяем запрос для списка с жадной загрузкой связанных данных"""
-        query = await super().get_list_query(request)
+        query = select(self.model).options(noload(self.model.drinks))
+        # query = await super().get_list_query(request)
         # Загружаем все необходимые связи для Select2
         return query.options(
             selectinload(Subcategory.category)  # Загружаем категорию
