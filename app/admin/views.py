@@ -73,7 +73,10 @@ class SubcategoryView(ModelView):
         Мы перехватываем сессию и принудительно отключаем загрузку напитков.
         """
         session = request.state.session
-        
+        try:
+            pks = [int(pk) for pk in pks]
+        except (ValueError, TypeError):
+            pass  # Оставляем как есть, если пришла не строка/число
         # Строим базовый запрос для поиска по первичным ключам
         stmt = (super().get_list_query(request).where(self.model.id.in_(pks))  # Фильтр по пришедшим ID
                                                .options(noload(self.model.drinks))  # ИСКЛЮЧАЕМ ТЯЖЕЛЫЙ JOIN
