@@ -30,7 +30,13 @@ class Subcategory(ColorMixin, BaseFullFree):
     # __table_args__ = (UniqueConstraint('name', 'category_id', name='uq_subcategory_name_category'),)
     __composite_fk_field__ = "category_id"
 
+    @property
+    def full_name(self) -> str:
+        """Полное имя с категорией"""
+        return f"{self.name} ({self.category.name if self.category else 'Без категории'})"
+
     def __str__(self) -> str:
         """Строковое представление с включением данных из связанной модели"""
         # Вариант 1: Если категория точно загружена
-        return f"{self.name} ({self.category.name})"
+        # return f"{self.name} ({self.category.name})"
+        return self.full_name
