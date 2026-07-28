@@ -51,6 +51,7 @@ class SubcategoryView(ModelView):
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
     fields.append(StringField('full_name', label='full_name'))
 
+
 class CategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
