@@ -159,7 +159,7 @@ class DrinkView(ModelView):
                     HasOne('body', identity='body', exclude_from_list=True),
                     ]
     fields[3:3] = extra_fields
-    # fields = ['id', 'title', 'subtitle', 'producer', 'subcategory']
+    select_related = ["subcategory", "subcategory.category"]
 
 
 class TestView(ModelView):
