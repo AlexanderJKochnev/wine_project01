@@ -169,4 +169,4 @@ class TestView(ModelView):
 
 
 class ItemView(ModelView):
-    pass
+    fields = ["id", "drink", "vol", "price", "seaweed_fids"]
