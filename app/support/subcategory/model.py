@@ -1,6 +1,7 @@
 # app/support/subcategory/model.py
 from __future__ import annotations
 
+from html import escape
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
@@ -43,4 +44,4 @@ class Subcategory(ColorMixin, BaseFullFree):
         return self.full_name
 
     def __admin_select2_repr__(self, request: Request) -> str:
-        return self.full_name
+        return f'<div>{escape(self.full_name)}</div>'
