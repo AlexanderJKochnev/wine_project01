@@ -68,7 +68,7 @@ class SubcategoryView(ModelView):
 
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
         from loguru import logger
-        logger.warning(f'subcategory ============== {pks=}, {type(pks)=}, {self._pk_coerce=}')
+        logger.warning(f'subcategory ============== {self._pk_column=}, {type(self._pk_column)=}, {self._pk_coerce=}')
         return await super().find_by_pks(request, pks)
 
 
@@ -138,7 +138,7 @@ class SourceView(ModelView):
 
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
         from loguru import logger
-        logger.warning(f'source ========== {pks=}, {type(pks)=}')
+        logger.warning(f'source ========== {self._pk_column=}, {type(self._pk_column)=}')
         return await super().find_by_pks(request, pks)
 
 
