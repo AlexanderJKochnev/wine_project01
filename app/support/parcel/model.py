@@ -60,8 +60,8 @@ class Site(BaseFullFree):
     @property
     def full_name(self) -> str:
         """Полное имя"""
-        return f"{self.name} ({self.subregion.name if self.name and len(self.name) > 0 else self.subregion.name})"
+        return f"{self.name} ({self.subregion.name})" if self.name and len(self.name) > 0 else f"{self.subregion.name}"
         # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
 
     def __admin_select2_repr__(self, request: Request) -> str:
-        return f'<div>{escape(self.name if self.name else 'dump')}</div>'
+        return f'<div>{escape(self.full_name)}</div>'
