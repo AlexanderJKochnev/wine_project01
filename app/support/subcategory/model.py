@@ -45,3 +45,9 @@ class Subcategory(ColorMixin, BaseFullFree):
 
     def __admin_select2_repr__(self, request: Request) -> str:
         return f'<div>{escape(self.full_name)}</div>'
+
+    async def __admin_repr__(self, request):
+        """
+        используется в starlette-admin
+        """
+        return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
