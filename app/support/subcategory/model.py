@@ -50,4 +50,4 @@ class Subcategory(ColorMixin, BaseFullFree):
         """
         используется в starlette-admin
         """
-        return self.full_name
+        return self.name
