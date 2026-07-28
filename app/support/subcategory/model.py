@@ -50,4 +50,4 @@ class Subcategory(ColorMixin, BaseFullFree):
         """
         используется в starlette-admin
         """
-        return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
+        return self.full_name
