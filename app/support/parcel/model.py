@@ -64,4 +64,4 @@ class Site(BaseFullFree):
         # return f"{self.name} ({self.category.name if self.name and len(self.name) > 0 else self.category.name})"
 
     def __admin_select2_repr__(self, request: Request) -> str:
-        return f'<div>{escape(self.full_name)}</div>'
+        return f'<div>{escape(self.name)}</div>'
