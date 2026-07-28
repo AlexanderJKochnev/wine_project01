@@ -49,7 +49,7 @@ class SubcategoryView(ModelView):
         )
     )
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
-
+    fields.append(StringField('full_name', label='full_name'))
 
 class CategoryView(ModelView):
     pk_attr = "id"
@@ -159,7 +159,6 @@ class DrinkView(ModelView):
                     HasOne('body', identity='body', exclude_from_list=True),
                     ]
     fields[3:3] = extra_fields
-    select_related = ["subcategory", "subcategory.category"]
 
 
 class TestView(ModelView):
