@@ -428,7 +428,8 @@ class TranslateHelperView(ModelView):
         "created_at", label="Дата обновления", exclude_from_list=True, exclude_from_create=True,
         exclude_from_edit=True, orderable=True
     )
-    shit = BooleanField("shit", label='Helper')
+    shit = BooleanField("shit", label='Cleaner', help_text="Да - строка является мусором и будет удалена, "
+                                                           "Нет - текст должен быть переведен")
     word = StringField("word", label="Исходный текст", searchable=True, orderable=True)
     drow = StringField("drow", label="Перевод", searchable=True, orderable=True)
     origin = EnumField("origin", label="Исх язык", enum=Lang2)
