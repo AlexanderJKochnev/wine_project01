@@ -77,12 +77,9 @@ class SubcategoryView(ModelView):
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True,
                              orderable=True
                              ))
-    for field in fields:
-        print(field.orderable, field.name)
-
-    # sortable_fields = ["id", "name", "category"]
-    # sortable_field_mapping = {"category": Category.name,
-    #                           }
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"category": Category.name,
+                              }
 
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
         session = request.state.session
