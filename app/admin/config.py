@@ -16,8 +16,8 @@ from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
 from app.admin.views import AutoView, CategoryView, CountryView, DrinkView, FoodView, HandbookView, ItemView, \
-    ParcelView, ProducerTitleView, ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, \
-    SuperFoodView, TranslateHelperView, UserAdminView, VarietalView
+    ParcelView, ProducerTitleView, ProducerView, PromptView, RegionView, SiteView, SourceView, SubcategoryView, \
+    SubregionView, SuperFoodView, TranslateHelperView, UserAdminView, VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Drink, Food, Glassware, \
     Item, Parcel, Producer, ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, TastingNote, \
@@ -117,7 +117,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
              ]
     translate = [TranslateHelperView(TranslateHelper, identity="translatehelper", label='Словарь сложных терминов'),
                  AutoView(ISOLanguage, identity="isolanguage", label="Языки"),
-                 AutoView(Prompt, identity="prompt", label="Роли (system prompt)"),
+                 PromptView(Prompt, identity="prompt", label="Роли (system prompt)"),
                  AutoView(WriterRule, identity="writerrule", label="Правила перевода (User prompt)"),
                  AutoView(Proption, identity="proption", label="Настройки LLM")
                  ]

@@ -10,7 +10,7 @@ from starlette_admin import RequestAction
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.contrib.sqla.converters import BaseSQLAModelConverter
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, EnumField, HasMany, HasOne, IntegerField, \
-    PasswordField, RelationField, StringField
+    PasswordField, RelationField, StringField, TextAreaField
 
 from app.admin.core import HandBooksFieldsCore
 from app.core.enum import Lang2
@@ -435,3 +435,21 @@ class TranslateHelperView(ModelView):
     fields = ["id", word, drow, origin, destin, shit, created_at, update_at]
     # sortable_fields: list = [field.name for field in fields if field.orderable]
     # sortable_field_mapping = {"superfood": Superfood.name, }
+
+
+class PromptView(ModelView):
+    created_at = DateTimeField(
+        "created_at", label="Дата создания", exclude_from_list=True, exclude_from_create=True,
+        exclude_from_edit=True, orderable=True
+    )
+    update_at = DateTimeField(
+        "created_at", label="Дата обновления", exclude_from_list=True, exclude_from_create=True,
+        exclude_from_edit=True, orderable=True
+    )
+    system_prompt = TextAreaField("system_prompt",
+                                  label="Роль",
+                                  required=True,
+                                  exclude_from_list=True,
+                                  orderable=False)
+    # subcategory_ids
+    fields = ["id", "role", system_prompt]
