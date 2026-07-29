@@ -1,9 +1,8 @@
 # app.admin.views.py
-import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 import anyio
-from sqlalchemy import or_, select
+from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, noload, Session
 from starlette.requests import Request
@@ -11,7 +10,7 @@ from starlette_admin import RequestAction
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.contrib.sqla.converters import BaseSQLAModelConverter
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, EnumField, HasMany, HasOne, IntegerField, \
-    ListField, PasswordField, RelationField, StringField, TextAreaField
+    PasswordField, RelationField, StringField, TextAreaField
 
 from app.admin.core import HandBooksFieldsCore
 from app.core.enum import Lang2
