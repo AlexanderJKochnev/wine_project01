@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 import anyio
-from sqlalchemy import or_
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, noload, Session
 from starlette.requests import Request
@@ -10,7 +10,7 @@ from starlette_admin import RequestAction
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.contrib.sqla.converters import BaseSQLAModelConverter
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, EnumField, HasMany, HasOne, IntegerField, \
-    PasswordField, RelationField, StringField, TextAreaField
+    ListField, PasswordField, RelationField, StringField, TextAreaField
 
 from app.admin.core import HandBooksFieldsCore
 from app.core.enum import Lang2
@@ -437,6 +437,13 @@ class TranslateHelperView(ModelView):
     # sortable_field_mapping = {"superfood": Superfood.name, }
 
 
+async def subcategory_choices_loader(request: Request):
+    session = request.state.session
+    result = await session.execute(select(Subcategory))
+    subcategories = result.scalars().unique().all()
+    return [(sub.id, sub.full_name) for sub in subcategories]
+
+
 class PromptView(ModelView):
     created_at = DateTimeField(
         "created_at", label="Дата создания", exclude_from_list=True, exclude_from_create=True,
@@ -451,5 +458,14 @@ class PromptView(ModelView):
                                   required=True,
                                   exclude_from_list=True,
                                   orderable=False)
-    # subcategory_ids
-    fields = ["id", "role", system_prompt]
+    subcategory_ids = ListField(
+        name="subcategory_ids",  # Имя колонки ARRAY(Integer) в вашей модели
+        label="Выбранные подкатегории",
+        field=EnumField(
+            name="subcategory_id",
+            # Передаем загрузчик, который превратит IntegerField в Select2-выпадашку
+            choices_loader=subcategory_choices_loader,
+            coerce=int  # Гарантируем, что значение приведется к числу перед сохранением
+        )
+    )
+    fields = ["id", "role", system_prompt, subcategory_ids]
