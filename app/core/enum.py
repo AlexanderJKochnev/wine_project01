@@ -24,8 +24,9 @@ def fetch_all_startup_data() -> dict:
         data['presets'] = [c for c in presets] or ["balanced"]
 
         # Запрос 4: Languages
-        language = session.scalars(select(ISOLanguage.name_en).order_by(ISOLanguage.name_en.asc())).all()
-        data['language'] = [c for c in language] or ["Russian"]
+        language = session.scalars(select(ISOLanguage.name_en, ISOLanguage.iso_639_1).order_by(ISOLanguage.name_en.asc())).all()
+        data['language'] = [c for c, a in language] or ["Russian"]
+        data['lang2'] = [a for c, a in language]
 
         # Запрос 5: WriterRules
         writer = session.scalars(select(WriterRule.name).order_by(WriterRule.name.asc())).all()
@@ -45,6 +46,7 @@ Preset = Enum("Preset", {v: v for v in data['presets']}, type=str)
 # LLmodel = Enum("Llmodel", {v: v for v in data['models']}, type=str)
 Prompts = Enum("Prompts", {v: v for v in data['prompts']}, type=str)
 Languages = Enum("Languages", {v: v for v in data['language']}, type=str)
+Lang2 = Enum("Lang2", {v: v for v in data['lang2']}, type=str)
 Writers = Enum("writer", {v: v for v in data['writer']}, type=str)
 CliSearchMode = Enum("mode", {v: v for v in ['auto', 'ranked', 'word',
                      'and', 'or', 'phrase', 'fuzzy', 'fuzzy2', 'like']}, type=str)

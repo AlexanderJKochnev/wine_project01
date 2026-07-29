@@ -78,3 +78,10 @@ class CleanColorField(ColorField):
     name = 'color'
     label = 'Цвет'
     help_text = 'Цвет фона на изображении'
+
+
+"""
+    EnumField(
+                    "language",
+                    choices=[("cpp", "C++"), ("py", "Python"), ("text", "Plain Text")],
+"""

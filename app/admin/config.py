@@ -17,7 +17,7 @@ from starlette_admin.views import BaseModelView, DropDown, Link
 from app.admin.auth import AdminAuthProvider
 from app.admin.views import CategoryView, CountryView, DrinkView, FoodView, HandbookView, ItemView, ParcelView, \
     ProducerTitleView, ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, SuperFoodView, \
-    TestView, UserAdminView, VarietalView
+    TestView, TranslateHelperView, UserAdminView, VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Drink, Food, Glassware, \
     Item, Parcel, Producer, ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, TastingNote, \
@@ -114,7 +114,8 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
              HandbookView(Designation, identity='designation', label='Designation'),
              HandbookView(VintageConfig, identity='vintageconfig', label='VintageConfig'),
              ]
-
+    translate = [TranslateHelperView(TranslateHelper, identity="translatehelper", label='Словарь сложных терминов')
+                 ]
     admin = CustomAdmin(
         engine=async_engine,  # Передаем ваш асинхронный engine
         title="Админ панель", base_url="/panel",

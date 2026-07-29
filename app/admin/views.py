@@ -9,10 +9,11 @@ from starlette.requests import Request
 from starlette_admin import RequestAction
 from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.contrib.sqla.converters import BaseSQLAModelConverter
-from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
+from starlette_admin.fields import BooleanField, ColorField, DateTimeField, EnumField, HasMany, HasOne, IntegerField, \
     PasswordField, RelationField, StringField
 
 from app.admin.core import HandBooksFieldsCore
+from app.core.enum import Lang2
 from app.support import Body, Category, Classification, Country, Designation, Glassware, Parcel, Producer, \
     ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, VintageConfig
 
@@ -21,6 +22,7 @@ class CustomModelView(ModelView):
     """
     нигде не используется - просто если нужно будет перегрузить
     """
+
     def __init__(self,
                  model: Type[Any],
                  icon: Optional[str] = None,
@@ -415,3 +417,22 @@ class TestView(ModelView):
 class ItemView(ModelView):
     fields = ["id", "drink", "vol", "price", "seaweed_fids"]
     select_related = ["subcategory", "subcategory.category"]
+
+
+class TranslateHelperView(ModelView):
+    created_at = DateTimeField(
+        "created_at", label="Дата создания", exclude_from_list=True, exclude_from_create=True,
+        exclude_from_edit=True, orderable=True
+    )
+    update_at = DateTimeField(
+        "created_at", label="Дата обновления", exclude_from_list=True, exclude_from_create=True,
+        exclude_from_edit=True, orderable=True
+    )
+    shit = BooleanField("shit", label='Helper')
+    word = StringField("word", label="Исходный текст", searchable=True, orderable=True)
+    drow = StringField("drow", label="Перевод", searchable=True, orderable=True)
+    origin = EnumField("origin", label="Исх язык", choices=Lang2)
+    destin = EnumField("destin", label="Язык перевода", choices=Lang2)
+    fields = ["id", word, drow, origin, destin, shit, created_at, update_at]
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    # sortable_field_mapping = {"superfood": Superfood.name, }
