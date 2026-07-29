@@ -439,26 +439,39 @@ class TranslateHelperView(ModelView):
 
 
 def subcategory_choices_loader(request: Request):
+    """
+    Синхронный загрузчик, который безопасно прокидывает запрос
+    в главный асинхронный цикл Starlette из потока WTForms.
+    """
     session = request.state.session
 
-    # Внутренняя асинхронная функция для выполнения запроса в базу
+    # 1. Наш быстрый асинхронный запрос
     async def fetch_data():
-        result = await session.execute(select(Subcategory))
+        result = await session.execute(
+            select(Subcategory).options(
+                joinedload(Subcategory.category),  # Для работы full_name
+                noload(Subcategory.drinks)  # Блокируем лишние JOIN-ы
+            )
+        )
         subcategories = result.scalars().unique().all()
-        # Предполагается, что full_name — это свойство, которое мы настроили ранее
         return [(sub.id, sub.full_name) for sub in subcategories]
 
-    # Синхронно дожидаемся выполнения асинхронного запроса
+    # 2. Магия проброса между потоками:
+    # Ищем главный запущенный цикл событий FastAPI/Starlette
     try:
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
     except RuntimeError:
-        loop = None
+        # Если в текущем потоке цикла нет, берем цикл из состояния приложения
+        # (в starlette/fastapi он всегда доступен в основном потоке)
+        loop = request.app.state.loop if hasattr(request.app.state, "loop") else None
 
     if loop and loop.is_running():
-        # Если мы уже внутри асинхронного цикла (что обычно и происходит в Starlette)
-        import anyio
-        return anyio.from_thread.run(fetch_data)
+        # Отправляем задачу в главный асинхронный поток и жестко блокируем
+        # текущий синхронный поток до получения результата (.result())
+        future = asyncio.run_coroutine_threadsafe(fetch_data(), loop)
+        return future.result()
     else:
+        # Запасной вариант на случай, если цикл еще не запущен (при старте приложения)
         return asyncio.run(fetch_data())
 
 
@@ -483,6 +496,6 @@ class PromptView(ModelView):
             # Передаем загрузчик, который превратит IntegerField в Select2-выпадашку
             choices_loader=subcategory_choices_loader,
             coerce=int  # Гарантируем, что значение приведется к числу перед сохранением
-        )
+        ),
     )
     fields = ["id", "role", system_prompt, subcategory_ids]
