@@ -26,7 +26,9 @@ class ModelView(OriginModelView):
                  converter: Optional[BaseSQLAModelConverter] = None,
                  ):
         super().__init__(model, icon, name, label, identity, converter)
-        print(f'==={name=}======{self.sortable_fields=}')
+        if self.sortable_field_mapping:
+            print(f'{self.sortable_field_mapping=}')
+            print(f'==={name=}======{self.sortable_fields=}')
 
 
 class UserAdminView(ModelView):
