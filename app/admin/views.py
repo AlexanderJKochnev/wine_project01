@@ -438,43 +438,6 @@ class TranslateHelperView(ModelView):
     # sortable_field_mapping = {"superfood": Superfood.name, }
 
 
-def subcategory_choices_loader(request: Request):
-    """
-    Синхронный загрузчик, который безопасно прокидывает запрос
-    в главный асинхронный цикл Starlette из потока WTForms.
-    """
-    session = request.state.session
-
-    # 1. Наш быстрый асинхронный запрос
-    async def fetch_data():
-        result = await session.execute(
-            select(Subcategory).options(
-                joinedload(Subcategory.category),  # Для работы full_name
-                noload(Subcategory.drinks)  # Блокируем лишние JOIN-ы
-            )
-        )
-        subcategories = result.scalars().unique().all()
-        return [(sub.id, sub.full_name) for sub in subcategories]
-
-    # 2. Магия проброса между потоками:
-    # Ищем главный запущенный цикл событий FastAPI/Starlette
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        # Если в текущем потоке цикла нет, берем цикл из состояния приложения
-        # (в starlette/fastapi он всегда доступен в основном потоке)
-        loop = request.app.state.loop if hasattr(request.app.state, "loop") else None
-
-    if loop and loop.is_running():
-        # Отправляем задачу в главный асинхронный поток и жестко блокируем
-        # текущий синхронный поток до получения результата (.result())
-        future = asyncio.run_coroutine_threadsafe(fetch_data(), loop)
-        return future.result()
-    else:
-        # Запасной вариант на случай, если цикл еще не запущен (при старте приложения)
-        return asyncio.run(fetch_data())
-
-
 class PromptView(ModelView):
     created_at = DateTimeField(
         "created_at", label="Дата создания", exclude_from_list=True, exclude_from_create=True,
@@ -489,13 +452,5 @@ class PromptView(ModelView):
                                   required=True,
                                   exclude_from_list=True,
                                   orderable=False)
-    subcategory_ids = ListField(
-        EnumField(
-            "subcategory_id",
-            label="подкатегории",
-            # Передаем загрузчик, который превратит IntegerField в Select2-выпадашку
-            choices_loader=subcategory_choices_loader,
-            coerce=int  # Гарантируем, что значение приведется к числу перед сохранением
-        ),
-    )
-    fields = ["id", "role", system_prompt, subcategory_ids]
+
+    fields = ["id", "role", system_prompt, "subcategory_ids", created_at, update_at]
