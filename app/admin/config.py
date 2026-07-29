@@ -154,6 +154,7 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
             "Other", icon="fa fa-list", always_open=False, views=other
         )
     )
+    admin.add_view("Translate services", icon="fa fa-list", always_open=False, views=translate)
     # Other
 
     admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
