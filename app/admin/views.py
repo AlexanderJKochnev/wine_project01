@@ -1,4 +1,5 @@
 # app.admin.views.py
+import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 import anyio
@@ -437,11 +438,28 @@ class TranslateHelperView(ModelView):
     # sortable_field_mapping = {"superfood": Superfood.name, }
 
 
-async def subcategory_choices_loader(request: Request):
+def subcategory_choices_loader(request: Request):
     session = request.state.session
-    result = await session.execute(select(Subcategory))
-    subcategories = result.scalars().unique().all()
-    return [(sub.id, sub.full_name) for sub in subcategories]
+
+    # Внутренняя асинхронная функция для выполнения запроса в базу
+    async def fetch_data():
+        result = await session.execute(select(Subcategory))
+        subcategories = result.scalars().unique().all()
+        # Предполагается, что full_name — это свойство, которое мы настроили ранее
+        return [(sub.id, sub.full_name) for sub in subcategories]
+
+    # Синхронно дожидаемся выполнения асинхронного запроса
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        # Если мы уже внутри асинхронного цикла (что обычно и происходит в Starlette)
+        import anyio
+        return anyio.from_thread.run(fetch_data)
+    else:
+        return asyncio.run(fetch_data())
 
 
 class PromptView(ModelView):
