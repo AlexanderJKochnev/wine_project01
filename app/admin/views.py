@@ -459,7 +459,7 @@ class PromptView(ModelView):
                                   exclude_from_list=True,
                                   orderable=False)
     subcategory_ids = ListField(
-        name="subcategory_ids",  # Имя колонки ARRAY(Integer) в вашей модели
+        "subcategory_ids",  # Имя колонки ARRAY(Integer) в вашей модели
         label="Выбранные подкатегории",
         field=EnumField(
             name="subcategory_id",
