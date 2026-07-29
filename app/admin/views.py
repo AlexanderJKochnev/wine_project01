@@ -27,6 +27,7 @@ class ModelView(OriginModelView):
                  ):
         super().__init__(model, icon, name, label, identity, converter)
         if self.sortable_field_mapping:
+            self.sortable_fields.extend(self.sortable_field_mapping.keys())
             print(f'{self.sortable_field_mapping=}')
             print(f'==={name=}======{self.sortable_fields=}')
 
