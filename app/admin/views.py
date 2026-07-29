@@ -82,7 +82,7 @@ class SubcategoryView(ModelView):
 
     # sortable_fields = ["id", "name", "category"]
     # sortable_field_mapping = {"category": Category.name,
-                              }
+    #                           }
 
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
         session = request.state.session
