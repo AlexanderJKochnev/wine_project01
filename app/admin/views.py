@@ -7,16 +7,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, noload, Session
 from starlette.requests import Request
 from starlette_admin import RequestAction
-from starlette_admin.contrib.sqla import ModelView as OriginModelView
+from starlette_admin.contrib.sqla import ModelView
 from starlette_admin.contrib.sqla.converters import BaseSQLAModelConverter
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
     PasswordField, RelationField, StringField
 
 from app.admin.core import HandBooksFieldsCore
-from app.support import Category
+from app.support import Body, Category, Classification, Country, Designation, Glassware, Parcel, Producer, \
+    ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, VintageConfig
 
 
-class ModelView(OriginModelView):
+class CustomModelView(ModelView):
+    """
+    нигде не используется - просто если нужно будет перегрузить
+    """
     def __init__(self,
                  model: Type[Any],
                  icon: Optional[str] = None,
@@ -77,6 +81,7 @@ class SubcategoryView(ModelView):
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True,
                              orderable=True
                              ))
+    # добавление в сортировку HasOne Fields
     sortable_fields: list = [field.name for field in fields if field.orderable]
     sortable_field_mapping = {"category": Category.name,
                               }
@@ -186,6 +191,9 @@ class RegionView(ModelView):
     fields = core_fields()
     fields.insert(2, HasOne('country', identity='country', orderable=True))
     fields.insert(3, HasMany('subregions', identity='subregion', exclude_from_list=True))
+    # добавление в сортировку HasOne Fields
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"country": Country.name, }
 
 
 class SubregionView(ModelView):
@@ -193,6 +201,9 @@ class SubregionView(ModelView):
     fields = core_fields()
     fields.insert(2, HasOne('region', identity='region', orderable=True))
     fields.insert(3, HasMany('sites', identity='site', exclude_from_list=True))
+    # добавление в сортировку HasOne Fields
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"region": Region.name, }
 
 
 class SiteView(ModelView):
@@ -200,6 +211,9 @@ class SiteView(ModelView):
     fields = core_fields()
     fields.insert(2, HasOne('subregion', identity='subregion', orderable=True))
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
+    # добавление в сортировку HasOne Fields
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"subregion": Subregion.name}
 
     def _get_geo_options(self):
         """
@@ -323,7 +337,9 @@ class ProducerView(ModelView):
     fields = core_fields()
     fields.insert(2, HasOne('producertitle', identity='producertitle'))
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
-
+    # добавление в сортировку HasOne Fields
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"producertitle": ProducerTitle.name, }
 # source
 
 
@@ -344,6 +360,8 @@ class FoodView(ModelView):
     fields = core_fields()
     fields.insert(2, HasOne('superfood', identity='superfood'))
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"superfood": Superfood.name, }
 
 
 class VarietalView(ModelView):
@@ -374,6 +392,18 @@ class DrinkView(ModelView):
                     HasOne('body', identity='body', exclude_from_list=True),
                     ]
     fields[3:3] = extra_fields
+    sortable_fields: list = [field.name for field in fields if field.orderable]
+    sortable_field_mapping = {"subcategory": Subcategory.name,
+                              "site": Site.name,
+                              "parcel": Parcel.name,
+                              "producer": Producer.name,
+                              "source": Source.name,
+                              "vintageconfig": VintageConfig.name,
+                              "classification": Classification.name,
+                              "designation": Designation.name,
+                              "glassware": Glassware.name,
+                              "scale": Scale.name,
+                              "body": Body.name}
 
 
 class TestView(ModelView):
