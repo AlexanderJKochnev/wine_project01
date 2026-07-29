@@ -459,10 +459,9 @@ class PromptView(ModelView):
                                   exclude_from_list=True,
                                   orderable=False)
     subcategory_ids = ListField(
-        "subcategory_ids",  # Имя колонки ARRAY(Integer) в вашей модели
-        label="Выбранные подкатегории",
-        field=EnumField(
-            name="subcategory_id",
+        EnumField(
+            "subcategory_id",
+            label="подкатегории",
             # Передаем загрузчик, который превратит IntegerField в Select2-выпадашку
             choices_loader=subcategory_choices_loader,
             coerce=int  # Гарантируем, что значение приведется к числу перед сохранением
