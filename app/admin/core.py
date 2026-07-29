@@ -53,7 +53,7 @@ class HandBooksFieldsCore():
             for field in self.fields_localized:
                 if field in self.textareafields:
                     textfields.append(TextAreaField(f'{field}{lang}', label=f'{field}{lang}'.capitalize(),
-                                                    required=False, exclude_from_list=True))
+                                                    required=False, exclude_from_list=True, orderable=False))
                 else:
                     strfields.append(StringField(f'{field}{lang}', label=f'{field}{lang}'.capitalize(),
                                                  required=required, searchable=True, orderable=True,
