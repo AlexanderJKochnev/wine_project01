@@ -78,10 +78,10 @@ class SubcategoryView(ModelView):
                              orderable=True
                              ))
     for field in fields:
-        print(field)
+        print(field.orderable, field.name)
 
-    sortable_fields = ["id", "name", "category"]
-    sortable_field_mapping = {"category": Category.name,
+    # sortable_fields = ["id", "name", "category"]
+    # sortable_field_mapping = {"category": Category.name,
                               }
 
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
