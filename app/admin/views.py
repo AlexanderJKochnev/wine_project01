@@ -431,9 +431,9 @@ class TranslateHelperView(ModelView):
     shit = BooleanField("shit", label='Cleaner', help_text="Да - строка является мусором и будет удалена, "
                                                            "Нет - текст должен быть переведен")
     word = StringField("word", label="Исходный текст", searchable=True, orderable=True)
-    drow = StringField("drow", label="Перевод", searchable=True, orderable=True)
+    drow = "drow"  # StringField("drow", label="Перевод", searchable=True, orderable=True)
     origin = EnumField("origin", label="Исх язык", enum=Lang2)
-    destin = "destin"  # EnumField("destin", label="Язык перевода", enum=Lang2)
+    destin = EnumField("destin", label="Язык перевода", enum=Lang2)
     fields = ["id", word, drow, origin, destin, shit, created_at, update_at]
     # sortable_fields: list = [field.name for field in fields if field.orderable]
     # sortable_field_mapping = {"superfood": Superfood.name, }
