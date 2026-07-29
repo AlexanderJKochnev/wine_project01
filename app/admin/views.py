@@ -1,5 +1,5 @@
 # app.admin.views.py
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 import anyio
 from sqlalchemy import or_
@@ -7,12 +7,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, noload, Session
 from starlette.requests import Request
 from starlette_admin import RequestAction
-from starlette_admin.contrib.sqla import ModelView
+from starlette_admin.contrib.sqla import ModelView as OriginModelView
+from starlette_admin.contrib.sqla.converters import BaseSQLAModelConverter
 from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasMany, HasOne, IntegerField, \
     PasswordField, RelationField, StringField
 
 from app.admin.core import HandBooksFieldsCore
 from app.support import Category
+
+
+class ModelView(OriginModelView):
+    def __init__(self,
+                 model: Type[Any],
+                 icon: Optional[str] = None,
+                 name: Optional[str] = None,
+                 label: Optional[str] = None,
+                 identity: Optional[str] = None,
+                 converter: Optional[BaseSQLAModelConverter] = None,
+                 ):
+        super().__init__(model, icon, name, label, identity, converter)
 
 
 class UserAdminView(ModelView):
