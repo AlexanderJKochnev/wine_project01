@@ -12,6 +12,7 @@ from starlette_admin.fields import BooleanField, ColorField, DateTimeField, HasM
     PasswordField, RelationField, StringField
 
 from app.admin.core import HandBooksFieldsCore
+from app.support import Category
 
 
 class UserAdminView(ModelView):
@@ -50,13 +51,16 @@ class BaseModelView(ModelView):
 class SubcategoryView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(2, HasOne('category', identity='category', searchable=True, orderable=True))
+    fields.insert(2, HasOne('category', identity='category', searchable=True))
     fields.insert(
         1, ColorField(
             'color', label='Color', display_template="displays/color.html", help_text='Цвет фона на изображении'
         )
     )
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
+    sortable_field = ["name", "category"]
+    sortable_field_mapping = {"category": Category.name,  # Sort by the age of the related user
+                              }
 
     async def find_by_pks(self, request: Request, pks: List[Any]) -> List[Any]:
         session = request.state.session
@@ -161,21 +165,21 @@ class CountryView(ModelView):
 class RegionView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(2, HasOne('country', identity='country'))
+    fields.insert(2, HasOne('country', identity='country', orderable=True))
     fields.insert(3, HasMany('subregions', identity='subregion', exclude_from_list=True))
 
 
 class SubregionView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(2, HasOne('region', identity='region'))
+    fields.insert(2, HasOne('region', identity='region', orderable=True))
     fields.insert(3, HasMany('sites', identity='site', exclude_from_list=True))
 
 
 class SiteView(ModelView):
     pk_attr = "id"
     fields = core_fields()
-    fields.insert(2, HasOne('subregion', identity='subregion'))
+    fields.insert(2, HasOne('subregion', identity='subregion', orderable=True))
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True))
 
     def _get_geo_options(self):
