@@ -26,10 +26,10 @@ class ModelView(OriginModelView):
                  converter: Optional[BaseSQLAModelConverter] = None,
                  ):
         super().__init__(model, icon, name, label, identity, converter)
-        if self.sortable_field_mapping:
-            self.sortable_fields.extend(self.sortable_field_mapping.keys())
-            print(f'{self.sortable_field_mapping=}')
-            print(f'==={name=}======{self.sortable_fields=}')
+        # if self.sortable_field_mapping:
+        #     self.sortable_fields.extend(self.sortable_field_mapping.keys())
+        #     print(f'{self.sortable_field_mapping=}')
+        #     print(f'==={name=}======{self.sortable_fields=}')
 
 
 class UserAdminView(ModelView):
@@ -77,6 +77,9 @@ class SubcategoryView(ModelView):
     fields.insert(3, HasMany('drinks', identity='drink', exclude_from_list=True, exclude_from_detail=True,
                              orderable=True
                              ))
+    for field in fields:
+        print(field)
+
     sortable_fields = ["id", "name", "category"]
     sortable_field_mapping = {"category": Category.name,
                               }
