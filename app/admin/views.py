@@ -408,10 +408,8 @@ class DrinkView(ModelView):
                               "body": Body.name}
 
 
-class TestView(ModelView):
-    fields = [IntegerField("id", label="ID"),
-              StringField("name", label="Name", required=True),
-              ]
+class AutoView(ModelView):
+    pass
 
 
 class ItemView(ModelView):

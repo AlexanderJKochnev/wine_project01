@@ -15,13 +15,14 @@ from starlette_admin.i18n import (get_locale, get_locale_display_name, get_timez
 from starlette_admin.views import BaseModelView, DropDown, Link
 
 from app.admin.auth import AdminAuthProvider
-from app.admin.views import CategoryView, CountryView, DrinkView, FoodView, HandbookView, ItemView, ParcelView, \
-    ProducerTitleView, ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, SuperFoodView, \
-    TestView, TranslateHelperView, UserAdminView, VarietalView
+from app.admin.views import AutoView, CategoryView, CountryView, DrinkView, FoodView, HandbookView, ItemView, \
+    ParcelView, ProducerTitleView, ProducerView, RegionView, SiteView, SourceView, SubcategoryView, SubregionView, \
+    SuperFoodView, TranslateHelperView, UserAdminView, VarietalView
 from app.auth.models import User
 from app.support import BaseIngredient, Body, Category, Classification, Country, Designation, Drink, Food, Glassware, \
     Item, Parcel, Producer, ProducerTitle, Region, Scale, Site, Source, Subcategory, Subregion, Superfood, TastingNote, \
     Varietal, VintageConfig
+from app.support.ollama.model import ISOLanguage, Prompt, Proption, WriterRule
 from app.support.vllm.model import TranslateHelper
 
 
@@ -114,7 +115,11 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
              HandbookView(Designation, identity='designation', label='Designation'),
              HandbookView(VintageConfig, identity='vintageconfig', label='VintageConfig'),
              ]
-    translate = [TranslateHelperView(TranslateHelper, identity="translatehelper", label='Словарь сложных терминов')
+    translate = [TranslateHelperView(TranslateHelper, identity="translatehelper", label='Словарь сложных терминов'),
+                 AutoView(ISOLanguage, identity="isolanguage", label="Языки"),
+                 AutoView(Prompt, identity="prompt", label="Роли (system prompt)"),
+                 AutoView(WriterRule, identity="writerrule", label="Правила перевода (User prompt)"),
+                 AutoView(Proption, identity="proption", label="Настройки LLM")
                  ]
     admin = CustomAdmin(
         engine=async_engine,  # Передаем ваш асинхронный engine
@@ -160,8 +165,6 @@ def setup_starlette_admin(app: FastAPI, async_engine) -> Admin:
         )
     )
     # Other
-
-    admin.add_view(TestView(TranslateHelper, identity="translatehelper", label="TranslateHelper"))
 
     admin.add_view(DrinkView(Drink, identity="drink", label="Drink"))
     admin.add_view(ItemView(Item, identity="item", label="Item"))
