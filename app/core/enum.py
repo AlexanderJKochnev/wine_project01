@@ -25,6 +25,7 @@ def fetch_all_startup_data() -> dict:
 
         # Запрос 4: Languages
         language = session.scalars(select(ISOLanguage.name_en, ISOLanguage.iso_639_1).order_by(ISOLanguage.name_en.asc())).all()
+        print(f'{language=}')
         data['language'] = [c for c, a in language] or ["Russian"]
         data['lang2'] = [a for c, a in language]
 
