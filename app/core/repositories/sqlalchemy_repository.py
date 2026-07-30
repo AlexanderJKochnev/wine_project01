@@ -288,7 +288,7 @@ class Repository(Background, metaclass=RepositoryMeta):
         try:
             # 0. obj -> dict
             id = obj.id
-            obj_dict = obj.to_dict_fast()
+            obj_dict = obj.to_dict()
             logger.info(f'original_data {list(obj_dict.keys())}')
             logger.info(f'source {list(data.keys())}')
             # 1. отфильтровать только изменения
