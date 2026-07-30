@@ -29,7 +29,9 @@ class Food(BaseFull):
 
     # 1. Связь через промежуточную таблицу (Association Object)
     drink_associations: Mapped[List["DrinkFood"]] = relationship(
-        back_populates="food", cascade="all, delete-orphan"
+        back_populates="food",
+        cascade="all, delete-orphan",
+        overlaps="drinks,foods"
     )
     drinks = relationship(
         "Drink", secondary="drink_food_associations", back_populates="foods",

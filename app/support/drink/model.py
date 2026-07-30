@@ -235,21 +235,32 @@ class BackRelation:
     @declared_attr
     def foods(cls) -> Mapped[List["Food"]]:
         return relationship(
-            "Food", secondary="drink_food_associations", back_populates="drinks", lazy="selectin",
-            viewonly=False, overlaps="food_associations,drink"
+            "Food", secondary="drink_food_associations",
+            back_populates="drinks",
+            lazy="selectin",
+            # viewonly=False,
+            overlaps="drink_associations,food_associations,drink,food"
         )
 
     @declared_attr
     def varietal_associations(cls) -> Mapped[List["DrinkVarietal"]]:
-        return relationship("DrinkVarietal", back_populates="drink", cascade="all, delete-orphan",
-                            lazy="selectin")
+        return relationship(
+            "DrinkVarietal",
+            back_populates="drink",
+            cascade="all, delete-orphan",
+            lazy="selectin"
+        )
 
     @declared_attr
     def varietals(cls) -> Mapped[List["Varietal"]]:
-        return relationship("Varietal",
-                            secondary="drink_varietal_associations",
-                            back_populates="drinks",
-                            lazy="selectin", viewonly=False, overlaps="varietal_associations,drink")
+        return relationship(
+            "Varietal",
+            secondary="drink_varietal_associations",
+            back_populates="drinks",
+            lazy="selectin",
+            # viewonly=False,
+            overlaps="varietal_associations,drink, varietal"
+        )
 
     @declared_attr
     def tastingnote_associations(cls) -> Mapped[List["DrinkTastingNote"]]:
