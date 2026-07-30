@@ -15,7 +15,7 @@ from app.core.exceptions import exception_to_http
 from app.core.schemas.base import (CreateResponse, CreateSchema, DeleteResponse, PaginatedResponse, ReadSchema,
                                    UpdateSchema)
 from app.core.services.service import Service
-from app.core.utils.common_utils import back_to_the_future, delta_data, jprint
+from app.core.utils.common_utils import back_to_the_future, delta_data
 from app.core.utils.pydantic_utils import get_pyschema, get_repo, get_service, orresponse
 
 paging = get_paging
@@ -91,7 +91,7 @@ class BaseRouter:
                                  'list_view': ("/list_view", self.get_list_view_page, ["GET"], None),
                                  'get_one': ("/{id}", self.get_one, ["GET"], None),
                                  'update_or_create': ("", self.update_or_create, ["PATCH"], self.update_schema.__name__),
-                                 'patch': ("/{id}", self.patch, ["PATCH"], self.update_schema.__name__),
+                                 'patch': ("/{id}", self.patch, ["PATCH"], None,
                                  'delete': ("/{id}", self.delete, ["DELETE"], None)
                                  }
 
