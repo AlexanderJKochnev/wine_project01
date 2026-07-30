@@ -233,7 +233,7 @@ class BackRelation:
                             lazy="selectin")
 
     @declared_attr
-    def foods(cls) -> Mapped["Varietal"]:
+    def foods(cls) -> Mapped["Food"]:
         return relationship(
             "Food", secondary="drink_food_associations", back_populates="drinks", lazy="selectin",
             viewonly=False, overlaps="food_associations,drink"
