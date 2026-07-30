@@ -120,6 +120,9 @@ class DrinkService(Service):
         if not obj:
             raise HTTPException(status_code=404, detail=f'drink.update запись c {id=} не найдена')
         data_dict = data.model_dump()
+        from app.core.utils.common_utils import jprint
+        logger.info('data_dict ======================')
+        jprint(data_dict)
         varietals = data_dict.pop('varietals', None)
         foods = data_dict.pop('food_associations', None)
 

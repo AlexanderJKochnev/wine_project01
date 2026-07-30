@@ -15,7 +15,7 @@ from app.core.exceptions import exception_to_http
 from app.core.schemas.base import (CreateResponse, CreateSchema, DeleteResponse, PaginatedResponse, ReadSchema,
                                    UpdateSchema)
 from app.core.services.service import Service
-from app.core.utils.common_utils import back_to_the_future, delta_data
+from app.core.utils.common_utils import back_to_the_future, delta_data, jprint
 from app.core.utils.pydantic_utils import get_pyschema, get_repo, get_service, orresponse
 
 paging = get_paging
@@ -249,6 +249,8 @@ class BaseRouter:
             input_valudation_chema <>Update
             response_model <>Read
         """
+        logger.info('path roytert')
+        jprint(data)
         result = await self.service.patch(id, data, self.repo, self.model, background_tasks,
                                           session)
         return orresponse(result)
