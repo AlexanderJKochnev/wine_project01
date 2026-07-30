@@ -301,7 +301,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             jprint(updated_data)
             query = update(cls.model).where(cls.model.id == id).values(**updated_data)
             await session.execute(query)
-            await session.flush([obj])
+            await session.commit()
             return {"success": True, "data": obj}
 
             for k, v in data.items():
