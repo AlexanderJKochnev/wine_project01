@@ -869,7 +869,6 @@ class Repository(Background, metaclass=RepositoryMeta):
             # Проверяем, что это many-to-many (есть промежуточная таблица)
             if hasattr(rel, 'secondary') and rel.secondary is not None:
                 many_to_many.append(rel.key)
-        
         return many_to_many
 
 class HandbookRepository(SearchRepositoryMixin, Repository):
