@@ -296,7 +296,7 @@ class Repository(Background, metaclass=RepositoryMeta):
                                   if key in obj_dict.keys() and val != obj_dict.get(key)}
             logger.info(f'{updated_data=}')
             if not updated_data:
-                raise HTTPException(status_code=500, details='No change found')
+                raise HTTPException(status_code=500, detail='No change found')
             query = update(cls.model).where(cls.model.id == id).values(**updated_data)
             await session.execute(query)
             await session.commit()
