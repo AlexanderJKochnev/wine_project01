@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config.database.db_config import settings_db
 
-
+# 0. url для подключения
 sync_database_url = settings_db.database_url.replace("postgresql+asyncpg://", "postgresql://")
 
 #  1. Синхронный двигатель
@@ -16,11 +16,3 @@ engine_sync = create_engine(
 
 # 2. Синхронная фабрика сессий
 SessionLocalSync = sessionmaker(autocommit=False, autoflush=False, bind=engine_sync)
-
-
-def get_db_sync():
-    db = SessionLocalSync()
-    try:
-        yield db
-    finally:
-        db.close()

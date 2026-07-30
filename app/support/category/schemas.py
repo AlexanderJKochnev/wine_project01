@@ -1,21 +1,21 @@
 # app/support/category/schemas.py
 
-from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, CreateResponse, DetailView
+from app.core.schemas.base import CreateSchema, ReadSchema, UpdateSchema, CreateResponse, DetailView, ColorMixin
 
 
-class CustomReadSchema:
+class CustomReadSchema(ColorMixin):
     pass
 
 
-class CustomCreateSchema:
+class CustomCreateSchema(ColorMixin):
     pass
 
 
-class CustomCreateRelation:
+class CustomCreateRelation(ColorMixin):
     pass
 
 
-class CustomUpdSchema:
+class CustomUpdSchema(ColorMixin):
     pass
 
 
@@ -43,5 +43,5 @@ class CategoryCreateResponseSchema(CategoryCreate, CreateResponse):
     pass
 
 
-class CategoryDetailView(DetailView):
+class CategoryDetailView(ColorMixin, DetailView):
     pass

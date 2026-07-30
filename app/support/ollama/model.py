@@ -1,0 +1,204 @@
+# app.suport.ollama.model.py
+from datetime import datetime
+from typing import Optional, List
+from sqlalchemy import String, BigInteger, DateTime, Integer, JSON, CheckConstraint, Float, Text
+# from sqlalchemy.dialects.postgresql import JSONB  # Если используете PostgreSQL
+from sqlalchemy.orm import Mapped, mapped_column
+from app.core.models.base_model import Base, BaseAt, plural, ActiveMixin
+from app.core.config.project_config import settings
+
+
+class Ollama(Base, BaseAt):
+    """
+         список загружегннных  ll моделей
+    """
+    # Первичный ключ
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    # Основные поля (с индексом на model)
+    model: Mapped[str] = mapped_column(String(255), index=True)
+    modified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    digest: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    size: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+
+    # Поля, поднятые из details
+    parent_model: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    format: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    family: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    parameter_size: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    quantization_level: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
+    def __str__(self):
+        return self.model or ""
+
+    # def __repr__(self) -> str:
+    #     return f"<LLModel(model={self.model}, size={self.size})>"
+
+
+class Prompt(ActiveMixin, BaseAt, Base):
+    """
+        модель для хранения ролей:
+        известный писатель по произведениям которого наверняка обучалась модель
+    """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'prompt'
+    plural_name = plural(single_name)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    # название промпта
+    role: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    # промпт
+    system_prompt: Mapped[str] = mapped_column(Text)
+    subcategory_ids: Mapped[Optional[List[int]]] = mapped_column(JSON, nullable=True)
+
+    def __str__(self):
+        return self.role or ""
+
+
+class Proption(ActiveMixin, BaseAt, Base):
+    """
+        параметры настройки Prompt
+    """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'proption'
+    plural_name = plural(single_name)
+
+    # наименовение настройки
+    preset: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    # Параметры Ollama (Options)
+    # Размер контекстного окна (токенов). Влияет на объем «памяти» модели.
+    # Диапазон: от 1 до лимита модели (обычно 4096-128000).
+    # Перевод: 2048 (достаточно для коротких фраз). Описания: 4096-8192.
+    num_ctx: Mapped[int] = mapped_column(Integer, default=8192)
+
+    # Креативность/случайность. 0 — строгость, 2 — хаос.
+    # Перевод: 0.1 (макс. точность). Описания: 0.7–0.8 (живой язык).
+    temperature: Mapped[float] = mapped_column(Float, default=0.1)
+
+    # Nucleus sampling. Отсекает хвост маловероятных токенов, сумма вероятностей которых > P.
+    # Диапазон: 0–1. Перевод: 0.1 (минимум вариаций). Описания: 0.9 (больше эпитетов).
+    top_p: Mapped[float] = mapped_column(Float, default=0.1)
+
+    # Ограничивает выбор N самыми вероятными токенами.
+    # Диапазон: 1–100. Перевод: 10–20 (строго по делу). Описания: 40–60 (разнообразие).
+    top_k: Mapped[int] = mapped_column(Integer, default=40)
+
+    # Зерно генерации для повторяемости результата.
+    # Любое целое число. Для тестов ставят фиксированное (напр. 42), для работы — Null.
+    seed: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Максимальное количество генерируемых токенов в ответе.
+    # Перевод: 50–100. Описания: 300–1000 (в зависимости от желаемой длины).
+    num_predict: Mapped[int] = mapped_column(Integer, default=1000)
+
+    # Штраф за повторение слов. Больше значение — меньше самоповторов.
+    # Диапазон: 1.0–2.0. Перевод: 1.0–1.1. Описания: 1.1–1.2 (чтобы не частить с прилагательными).
+    repeat_penalty: Mapped[float] = mapped_column(Float, default=1.1)
+
+    # Список стоп-последовательностей, на которых модель прервет генерацию.
+    # Используется для предотвращения «галлюцинаций» или лишних пояснений.
+    stop: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
+
+    # Альтернатива Top-P. Отсекает токены, чья вероятность ниже P от вероятности лидера.
+    # Диапазон: 0–1. Рекомендуется 0.05 для баланса между качеством и креативностью.
+    min_p: Mapped[float] = mapped_column(Float, default=0.05)
+
+    # Typical sampling. Снижает риск «зацикливания» на скучных словах.
+    # Диапазон: 0–1. Значение 0.9-1.0 помогает делать текст более естественным для людей.
+    typical_p: Mapped[float] = mapped_column(Float, default=0.9)
+
+    # Штраф за использование слов в зависимости от того, как часто они уже встречались.
+    # Перевод: 0.0. Описания: 0.3–0.5 (избавляет от слов-паразитов в тексте).
+    frequency_penalty: Mapped[float] = mapped_column(Float, default=0.3)
+
+    # Штраф за само упоминание темы. Поощряет переход к новым идеям/аспектам.
+    # Перевод: 0.0. Описания: 0.2–0.4 (чтобы описание было разносторонним).
+    presence_penalty: Mapped[float] = mapped_column(Float, default=0.2)
+    # Размышления
+    thinking: Mapped[bool] = mapped_column(default=False)
+
+    __table_args__ = (  # Температура
+        CheckConstraint(
+            'temperature >= 0.0 AND temperature <= 2.0', name='temperature_range'
+        ),
+
+        # Top-P
+        CheckConstraint(
+            'top_p >= 0.0 AND top_p <= 1.0', name='top_p_range'
+        ),
+
+        # Min-P
+        CheckConstraint(
+            'min_p >= 0.0 AND min_p <= 1.0', name='min_p_range'
+        ),
+
+        # Typical-P
+        CheckConstraint(
+            'typical_p >= 0.0 AND typical_p <= 1.0', name='typical_p_range'
+        ),
+
+        # Top-K
+        CheckConstraint(
+            'top_k >= 1 AND top_k <= 100', name='top_k_range'
+        ),
+
+        # Num predict (специальное значение -1 означает "без лимита")
+        CheckConstraint(
+            'num_predict >= -1', name='num_predict_range'
+        ),
+
+        # Repeat penalty
+        CheckConstraint(
+            'repeat_penalty >= 1.0 AND repeat_penalty <= 2.0', name='repeat_penalty_range'
+        ),
+
+        # Frequency penalty
+        CheckConstraint(
+            'frequency_penalty >= -2.0 AND frequency_penalty <= 2.0', name='frequency_penalty_range'
+        ),
+
+        # Presence penalty
+        CheckConstraint(
+            'presence_penalty >= -2.0 AND presence_penalty <= 2.0', name='presence_penalty_range'
+        ),
+
+        # Num context
+        CheckConstraint(
+            'num_ctx >= 1', name='num_ctx_range'
+        ),)
+
+
+class ISOLanguage(Base, BaseAt):
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    iso_639_3: Mapped[str] = mapped_column(String(3), index=True)
+    iso_639_1: Mapped[Optional[str]] = mapped_column(String(2), unique=True, index=True, nullable=True)
+
+    name_en: Mapped[str] = mapped_column(String(100), nullable=False)
+    name_ru: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    def __str__(self):
+        return f"{self.iso_639_3} {self.name_en}" or ""
+
+
+class WriterRule(ActiveMixin, BaseAt, Base):
+    """
+        правила написания текста для каждой категории пример:
+        Напиши статью о "{phrase}" (3-4 предложения) на {lang} языке.
+        Правила: смысловая точность прежде всего,
+        можно немного подумать про себя и сразу переходи к ответу,
+        не анализируй запрос вслух, Пиши только финальный текст
+    """
+    lazy = settings.LAZY
+    cascade = settings.CASCADE
+    single_name = 'writerrule'
+    plural_name = plural(single_name)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    prompt: Mapped[str] = mapped_column(Text)
+    subcategory_ids: Mapped[Optional[List[int]]] = mapped_column(JSON, nullable=True)
+
+    def __str__(self):
+        return self.name or ""

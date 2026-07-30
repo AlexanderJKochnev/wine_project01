@@ -1,0 +1,164 @@
+# app.core.routers.mixin_router.py
+"""
+    mixins routers = добавлять после BaseRouter
+    ItemRouter(BaseRouter, MixinRouter)
+"""
+from fastapi import Depends, Query, Path
+from typing import Any, Dict
+# from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.repositories.array_repository import ArrayRepository
+from app.core.services.array_service import ArrayService
+from app.core.types import ModelType
+from app.core.config.database.db_async import get_db
+
+
+class ArrayRouter:
+    """
+        эндпойнты для обработки полей с массивами
+    """
+    arrayName: str = 'seaweed_fids'  # default value.
+
+    def setup_routes(self):
+        """Маршруты из миксина"""
+        # self.router.add_api_route("/mixin", self.mixin_endpoint, methods=["GET"],
+        #                           openapi_extra={'x-request-schema': None})
+        # Позволяет безопасно замыкать цепочку или вызывать другие миксины.
+        # пути без параметров сверху super, c параметрами под супер
+        self.router.add_api_route("/mixin/get/{id}", self.get_array_by_id, methods=["GET"],
+                                  openapi_extra={'x-request-schema': None})
+        self.router.add_api_route("/mixin/add/", self.add_to_array,
+                                  methods=["POST"],
+                                  openapi_extra={'x-request-schema': None})
+        self.router.add_api_route("/mixin/del/{id}", self.  clear_array_by_id, methods=["DELETE"],
+                                  openapi_extra={'x-request-schema': None})
+        # --- ДОБАВЛЕННЫЕ МАРШРУТЫ ---
+        self.router.add_api_route("/mixin/add-first/", self.add_first_to_array,
+                                  methods=["POST"],
+                                  openapi_extra={'x-request-schema': None})
+        self.router.add_api_route("/mixin/replace/", self.replace_array,
+                                  methods=["PUT"],
+                                  openapi_extra={'x-request-schema': None})
+        self.router.add_api_route("/mixin/del-by-index/", self.del_by_index_array,
+                                  methods=["DELETE"],
+                                  openapi_extra={'x-request-schema': None})
+        self.router.add_api_route("/mixin/swap/", self.swap_by_index_array,
+                                  methods=["POST"],
+                                  openapi_extra={'x-request-schema': None})
+        self.router.add_api_route("/mixin/replace-by-index/", self.replace_by_index_array,
+                                  methods=["PUT"],
+                                  openapi_extra={'x-request-schema': None})
+        # -----------------------------------------------------------------------------------------
+
+        next_method = getattr(super(), "setup_routes", None)
+        if next_method:
+            next_method()
+
+    async def get_array_by_id(self,
+                              id: int = Path(..., description='id записи'),
+                              session: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        return await service.get_array_by_id(id, model, arrayName, repository, session)
+
+    async def add_to_array(self,
+                           id: int = Query(..., description='id записи'),
+                           datas: str = Query(..., description='новые записи, разделенные "; "'),
+                           session: AsyncSession = Depends(get_db)
+                           ) -> Dict[str, Any]:
+        """ Добавление в конец списка """
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        if datas:
+            new_elements = [d.strip() for d in datas.split(';')]
+        else:
+            new_elements = []
+        return await service.add_to_array(id, new_elements, model, arrayName, repository, session)
+
+    async def clear_array_by_id(self,
+                                id: int = Path(..., description='id записи'),
+                                session: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+        """ удалениие элемента списка по индексу начиная с 0"""
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        return await service.clear_array_by_id(id, model, arrayName, repository, session)
+
+    async def add_first_to_array(self,
+                                 id: int = Query(..., description='id записи'),
+                                 datas: str = Query(..., description='новые записи, разделенные "; "'),
+                                 session: AsyncSession = Depends(get_db)
+                                 ) -> Dict[str, Any]:
+        """ добавление в начало списка """
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        if datas:
+            new_elements = [d.strip() for d in datas.split(';')]
+        else:
+            new_elements = []
+        return await service.add_first_to_array(id, new_elements, model, arrayName, repository, session)
+
+    # --- ДОБАВЛЕННЫЕ МЕТОДЫ (добавьте в конец класса ArrayRouter) ---
+
+    async def replace_array(self,
+                            id: int = Query(..., description='id записи'),
+                            datas: str = Query(..., description='новые записи для полной замены, разделенные "; "'),
+                            session: AsyncSession = Depends(get_db)
+                            ) -> Dict[str, Any]:
+        """ Замена всех элементов в массиве """
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        if datas:
+            new_elements = [d.strip() for d in datas.split(';')]
+        else:
+            new_elements = []
+        return await service.replace_array(id, new_elements, model, arrayName, repository, session)
+
+    async def del_by_index_array(self,
+                                 id: int = Query(..., description='id записи'),
+                                 pos: int = Query(..., description='индекс удаляемого элемента'),
+                                 block: int = Query(2, description='длина удаляемого блока'),
+                                 session: AsyncSession = Depends(get_db)
+                                 ) -> Dict[str, Any]:
+        """ Удаление элемента по индексу """
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        return await service.del_by_index_array(id, pos, model, arrayName, repository, session, block)
+
+    async def swap_by_index_array(self,
+                                  id: int = Query(..., description='id записи'),
+                                  pos1: int = Query(..., description='индекс первого элемента'),
+                                  pos2: int = Query(..., description='индекс второго элемента'),
+                                  block: int = Query(2, description='длина удаляемого блока'),
+                                  session: AsyncSession = Depends(get_db)
+                                  ) -> Dict[str, Any]:
+        """ Поменять два элемента местами """
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        return await service.swap_by_index_array(id, pos1, pos2, model, arrayName, repository, session, block)
+
+    async def replace_by_index_array(self,
+                                     id: int = Query(..., description='id записи'),
+                                     pos: int = Query(..., description='индекс изменяемого элемента'),
+                                     newdata: str = Query(..., description='новое значение элемента'),
+                                     session: AsyncSession = Depends(get_db)
+                                     ) -> Dict[str, Any]:
+        """ Замена элемента по индексу на новые данные """
+        service: ArrayService = self.service
+        repository: ArrayRepository = self.repo
+        model: ModelType = self.model
+        arrayName = self.arrayName
+        return await service.replace_by_index_array(id, pos, newdata, model, arrayName, repository, session)

@@ -1,9 +1,43 @@
 # app/core/config/project_config.py
+from pathlib import Path
+from typing import Dict, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
-from typing import List
-from app.core.utils.common_utils import get_path_to_root
-from app.core.utils.common_utils import strtolist, strtodict
+# from app.core.utils.path_utils import get_path_to_root, strtodict, strtolist
+
+
+def get_path_to_root(name: str = '.env'):
+    """
+        get path to file or directory in root directory
+    """
+    try:
+        for k in range(1, 10):
+            env_path = Path(__file__).resolve().parents[k] / name
+            if env_path.exists():
+                break
+        else:
+            env_path = None
+            raise Exception('environment file is not found')
+        return env_path
+    except Exception:
+        return None
+
+
+def strtolist(data: str, delim: str = ',') -> List[str]:
+    """ строка с разделителями в список"""
+    if isinstance(data, str):
+        return [a.strip() for a in data.split(delim)]
+    else:
+        return []
+
+
+def strtodict(data: str, delim1: str = ',', delim2: str = ':') -> Dict[str, str]:
+    tmp = strtolist(data, delim1)
+    result: dict = {}
+    for item in tmp:
+        key, val = item.split(delim2)
+        result[key.strip()] = val.strip()
+    return result
 
 
 class Settings(BaseSettings):
@@ -25,8 +59,13 @@ class Settings(BaseSettings):
     LANGS: str = "en, ru, fr"
     # язык по умолчанию
     DEFAULT_LANG: str = "en"
+    # локализованные поля
+    LOCALIZED_FIELDS: str = 'name,title,subtitle,decription'
+    MACHINE_TRANSLATION_MARK: str = 'ai'
     #  справочники
     HANDBOOKS_PREFIX: str = "handbooks"
+    HANDBOOKS_FIELDS: str = "name,description"
+    DRINK_FIELDS: str = "title,subtitle,description,recommendation,madeof"
 
     # === POSTGRES ===
     POSTGRES_DB: str = "wine_db"
@@ -68,6 +107,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_ROTATE_MIN_LIFETIME: int = 720000
     SECRET_KEY: str = "gV64m9aIzFG4qpgVphvQbPQrtAO0nM-7YwwOvu0XPt5KJOjAy4AfgLkqJXYEt"
     ALGORITHM: str = "HS256"
+    API_KEY: str = "verystrictkeyнадвухязыкахъъьээ"
     # В продакшене SECRET_KEY генерируется через openssl rand -hex 32
 
     # ==== PAGING SETTINGS ====
@@ -87,7 +127,6 @@ class Settings(BaseSettings):
     JSON_FILENAME: str = "data.json"
 
     # MongoDB
-    MONGODB_CONTAINER_NAME: str = "mongo"
     ME_CONFIG_MONGODB_ADMINUSERNAME: str = "admin"
     ME_CONFIG_MONGODB_ADMINPASSWORD: str = "admin"
     ME_CONFIG_MONGODB_SERVER: str = "mongo"
@@ -102,16 +141,14 @@ class Settings(BaseSettings):
     MONGO_OUT_PORT: int = 27017
     MONGO_INN_PORT: int = 27017
 
+    # === MONGOBD настройки соединения
+    MAXPOOLSIZE: int = 50
+    MINPOOLSIZE: int = 5
+
     # mongo-express УДАЛИТЬ В PRODUCTION
-    MONGO_EXPRESS_CONTAINER_NAME: str = "mongo-express"
     MONGO_EXPRESS_PORT: int = 8081
     # Application
     API_V1_STR: str = "/api/v1"
-    ME_CONFIG_MONGODB_ADMINUSERNAME: str = "admin"
-    ME_CONFIG_MONGODB_ADMINPASSWORD: str = "admin"
-    ME_CONFIG_MONGODB_SERVER: str = "mongo"
-    ME_CONFIG_BASICAUTH_USERNAME: str = "admin"
-    ME_CONFIG_BASICAUTH_PASSWORD: str = "admin"
     ME_OUT_PORT: int = "8081"
     ME_INN_PORT: int = "8081"
     # IMAGE SIZING в пикселях
@@ -127,6 +164,7 @@ class Settings(BaseSettings):
     INTL_FLDS: str = 'vol, alc, count'
     CASTED_FLDS: str = 'vol: float, count: int, alc: float'
     FIRST_LEVEL_FLDS: str = 'vol, count, image_path, image_id'
+    API_ROOT_FIELDS: str = 'vol, count, image_path, image_id, uid, country, category'
     COMPLEX_FLDS: str = 'country, category, region, pairing, varietal'
     LANGUAGE_KEY: str = 'english: en, russian: ru'
     RE_DELIMITER: str = '.,;:'
@@ -139,11 +177,13 @@ class Settings(BaseSettings):
     # === настройки redis/arq
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
+    REDIS_PWD: str = 'strong_search_password_2026'
     ARQ_TASK_TIMEOUT: int = 300  # 5 минут на задачу по умолчанию
     ARQ_MAX_TRIES: int = 3  # максимум 3 попытки
     ARQ_MIN_DELAY: int = 3
     ARQ_MAX_DELAY: int = 10
-    
+    MINHASH_BATCH_SIZE: int = 5000
+
     # === EMAIL SETTINGS ===
     EMAIL_HOST: str = "smtp.gmail.com"
     EMAIL_PORT: int = 587
@@ -154,9 +194,99 @@ class Settings(BaseSettings):
     EMAIL_USE_TLS: bool = True
     EMAIL_USE_SSL: bool = False
 
+    # === MYMEMORY TRANSLATION SERVICE удалить ===
+    MYMEMORY_API_EMAIL: str = "akochnev66@gmail.com"
+    MYMEMORY_API_BASE_URL: str = "https://api.mymemory.translated.net/get"
+    MYMEMORY_REQUESTS_PER_MINUTE: int = 10  # Rate limit for MyMemory API
+    MYMEMORY_REQUESTS_PER_DAY: int = 1000   # Daily limit for MyMemory API
+
+    # === HUGGINGFACE TRANSLATION SERVICE === NOT USED
+    HF_API_TOKEN: str = "test token"  # Default token
+    HF_MODEL_NAME: str = "google/translategemma-4b-it"
+    HF_REQUESTS_PER_MINUTE: int = 5  # Rate limit for HuggingFace API
+    HF_REQUESTS_PER_DAY: int = 100   # Daily limit for HuggingFace API
+    # === ПОИСКОВЫЙ СЕРВИС MINHASH_SERVICE
+    SIMILARITY_THRESHOLD: float = 0.2  # толерантность поиска от 0 (мусор) до 1 (строго)
+    # num_perm - размер сигнатуры (128 чисел на строку - стандарт для баланса точности и памяти)
+    NUM_PERM: int = 128
+    # длина шигла (куска текста по кторому берется minhash)
+    SHINGLE: int = 4
+
+    # === DATA_DELTA YEARS количество лет назад
+    DATA_DELTA: int = 10
+    OLLAMA_HOST: str = 'http://localhost:11434'
+    OLLAMA_MODEL_LEVEL: int = 1
+    OLLAMA_INTERACTION_TYPE: str = 'chat'
+    # Чем ниже, тем перевод точнее и строже (для перевода лучше 0.1-0.3)
+    OLLAMA_TEMPERATURE: float = 0.3
+    # Лимит длины ответа
+    OLLAMA_NUM_PREDICT: int = 500
+    # Влияет на разнообразие слов
+    OLLAMA_TOP_P: float = 0.9
+    # Удерживает модель в GPU после последнего использования, min
+    OLLAMA_KEEP_ALIVE: int = 5
+    # SEARXNG
+    SEARXNG_SECRET_KEY: str
+    SEARXNG_BASE_URL: str = "http://localhost"
+    SEARXNG_PORT: int = 8080
+    # перевод и генерация текста
+    # генерация
+    TYPEII_FIELDS: str = "description, some_else"
+    MODEL_II: str = 'llama31:8b'
+    PROMPT_II: str = 'sommelier'
+    PRESET_II: str = 'balanced'
+    WRITER_II: str = 'novel'
+    # === Type I точный перевод - все остальные локализованные поля
+    MODEL_I: str = 'translategemma:latest'
+    PROMPT_I: str = 'wine_translator'
+    PRESET_I: str = 'translation'
+    WRITER_I: str = 'translate'
+    VLLM_URL: str = "http://localhost:8000/v1"
+
+    # === CLICKHOUSE ===
+    CH_HOST: str = 'localhost'
+    CH_PORT: int = 8123
+    CH_USER: str = 'secret_user'
+    CH_PASSWORD: str = 'top_secret'
+    CH_LIMIT: int = 1000  # ограничение кол-ва записей - защита от перегрузки
+
+    # === SEAWEEEDFS ===
+    SEAWEED_CONTAINER: str = 'seaweedfs_volume'
+    SEAWEED_PORT: str = '8080'
+
+    # === IMAGE PROCESSING CONFIG ===
+    MAX_FULL_WIDTH: int = 1000
+    MAX_FULL_HEIGHT: int = 1000
+    MAX_THUMB_WIDTH: int = 200
+    MAX_THUMB_HEIGHT: int = 200
+    WEBP_LOSSLESS: bool = 0
+    WEBP_QUALITY: int = 85
+    DETERMINISTIC_MODE: bool = 0
+    REMBG_NUM_TREADS_FAST: int = 4
+    REMBG_MODEL: str = "u2net"
+
+    # === TEXT IMAGE GENERATOR ===
+    TXT_FONT_SIZE: int = 160
+    TXT_HEIGHT: int = 600
+    TXT_WEIGHT: int = 400
+    TXT_SHADOW_X: int = 10
+    TXT_SHADOW_Y: int = 10
+    TXT_SHADOW_OPACITY: int = 100
+    TXT_FILL_OPACITY: int = 100
+    TXT_PADDING: int = 10
+    TXT_MIN_WORD_LENGTH: int = 3
+    TXT_STROKE_WIDTH: int = 1
+    TXT_ALIGNMENT: str = 'center'
+
     model_config = SettingsConfigDict(env_file=get_path_to_root(),
                                       env_file_encoding='utf-8',
                                       extra='ignore')
+
+    @property
+    def seaweed_url(self) -> str:
+        """ url для прямого доступа к файлам seaweed"""
+        # http://seaweedfs_volume:8080/4,015843767ea3
+        return ''.join(('http://', self.SEAWEED_CONTAINER, ':', self.SEAWEED_PORT, '/'))
 
     @property
     def redundant(self) -> list:
@@ -164,7 +294,12 @@ class Settings(BaseSettings):
 
     @property
     def language_key(self) -> dict:
+        """ NOT USED IN REAL LIFE"""
         return strtodict(self.LANGUAGE_KEY)
+
+    @property
+    def lang_suffixes(self) -> tuple:
+        return tuple(f'_{lang}' if lang not in self.DEFAULT_LANG else '' for lang in self.LANGUAGES)
 
     @property
     def ext_delimiter(self) -> list:
@@ -173,6 +308,10 @@ class Settings(BaseSettings):
     @property
     def first_level_fields(self) -> list:
         return strtolist(self.FIRST_LEVEL_FLDS)
+
+    @property
+    def api_root_fields(self) -> list:
+        return strtolist(self.API_ROOT_FIELDS)
 
     @property
     def wine_category(self) -> list:
@@ -185,6 +324,19 @@ class Settings(BaseSettings):
     @property
     def ignored_fields(self) -> list:
         return strtolist(self.IGNORED_FLDS)
+
+    @property
+    def handbooks_fields(self):
+        return strtolist(self.HANDBOOKS_FIELDS)
+
+    @property
+    def drink_fields(self):
+        return strtolist(self.DRINK_FIELDS)
+
+
+    @property
+    def type2_fields(self) -> list:
+        return strtolist(self.TYPEII_FIELDS)
 
     @property
     def international_fields(self) -> list:
@@ -203,12 +355,22 @@ class Settings(BaseSettings):
         return strtolist(self.ILIST_VIEW)
 
     @property
-    def LANGUAGES(self):
+    def LANGUAGES(self) -> list:
+        """
+        return list of languages codes ['en', 'ru, 'fr' ...]
+        """
         return strtolist(self.LANGS)
 
     @property
+    def FIELDS_LOCALIZED(self) -> list:
+        """
+        return list of localized fileds (without suffix)
+        """
+        return strtolist(self.LOCALIZED_FIELDS)
+
+    @property
     def max_file_size(self) -> int:
-        return self.MAX_FILE_SIZE * 1024 * 1024
+        return self.MAX_FILE_SIZE * 1024
 
     @property
     def allowed_extensions(self) -> List[str]:
@@ -223,6 +385,19 @@ class Settings(BaseSettings):
         return (f"mongodb://{self.MONGO_INITDB_ROOT_USERNAME}:"
                 f"{self.MONGO_INITDB_ROOT_PASSWORD}@{self.MONGO_HOSTNAME}:"
                 f"{self.MONGO_INN_PORT}")  # {self.MONGO_INITDB_DATABASE}")
+
+    @property
+    def imageprocessing_config(self) -> dict:
+        return {'max_full_width': self.MAX_FULL_WIDTH,
+                'max_full_height': self.MAX_FULL_HEIGHT,
+                'max_thumb_width': self.MAX_THUMB_WIDTH,
+                'max_thumb_height': self.MAX_THUMB_HEIGHT,
+                'webp_lossless': self.WEBP_LOSSLESS,  # Lossy для скорости и размера
+                'webp_quality': self.WEBP_QUALITY,
+                'deterministic_mode': self.DETERMINISTIC_MODE,  # Отключаем детерминизм
+                'rembg_num_threads_fast': self.REMBG_NUM_TREADS_FAST,
+                'rembg_model': self.REMBG_MODEL
+                }
 
 
 settings = Settings()

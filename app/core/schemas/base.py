@@ -10,9 +10,9 @@ PaginatedResponse - см ниже на базе ReadSchema
 ListResponse - тоже что и Pagianted только без Pagianted
 """
 from datetime import datetime
-from typing import Generic, List, NewType, Optional, TypeVar
+from typing import Generic, List, NewType, Optional, TypeVar, Any
 from app.service_registry import register_pyschema
-from pydantic import BaseModel as BaseOrigin, ConfigDict, Field
+from pydantic import BaseModel as BaseOrigin, ConfigDict, model_serializer
 
 # from abc import ABC
 
@@ -61,6 +61,13 @@ class PkSchema(BaseModel):
     id: int
 
 
+class ModelSerializer:
+    @model_serializer
+    def serialize_model(self) -> dict[str, Any]:
+        # Фильтруем пустые строки на выходе
+        return {k: v for k, v in self.__dict__.items() if v not in ("", None, [])}
+
+
 class DateSchema(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -76,13 +83,20 @@ class DescriptionSchema(BaseModel):
     description: Optional[str] = None
     description_ru: Optional[str] = None
     description_fr: Optional[str] = None
+    description_es: Optional[str] = None
+    description_it: Optional[str] = None
+    description_de: Optional[str] = None
+    description_zh: Optional[str] = None
 
 
+"""
 class DescriptionExcludeSchema(BaseModel):
-    """ добавлять поля описаний на других языках """
+    # добавлять поля описаний на других языках DELETE
+
     description: Optional[str] = Field(exclude=True)
     description_ru: Optional[str] = Field(exclude=True)
     description_fr: Optional[str] = Field(exclude=True)
+"""
 
 
 class NameSchema(BaseModel):
@@ -90,13 +104,20 @@ class NameSchema(BaseModel):
     name: Optional[str] = None
     name_ru: Optional[str] = None
     name_fr: Optional[str] = None
+    name_es: Optional[str] = None
+    name_it: Optional[str] = None
+    name_de: Optional[str] = None
+    name_zh: Optional[str] = None
 
 
+"""
 class NameExcludeSchema(BaseModel):
-    """ добавлять поля на других языках """
+    # добавлять поля на других языках
     name: Optional[str] = Field(exclude=True)
     name_ru: Optional[str] = Field(exclude=True)
     name_fr: Optional[str] = Field(exclude=True)
+
+"""
 
 
 class LangSchema(NameSchema, DescriptionSchema):
@@ -136,6 +157,11 @@ class UpdateNoNameSchema(DescriptionSchema):
 class ReadSchema(PkSchema, LangSchema):
     pass
 
+    @model_serializer
+    def serialize_model(self) -> dict[str, Any]:
+        # Фильтруем пустые строки на выходе
+        return {k: v for k, v in self.__dict__.items() if v not in ("", None, [])}
+
 
 class ReadApiSchema(NameSchema):
     pass
@@ -143,6 +169,11 @@ class ReadApiSchema(NameSchema):
 
 class ReadNoNameSchema(PkSchema, DescriptionSchema):
     pass
+
+    @model_serializer
+    def serialize_model(self) -> dict[str, Any]:
+        # Фильтруем пустые строки на выходе
+        return {k: v for k, v in self.__dict__.items() if v not in ("", None, [])}
 
 
 class FullSchema(ReadSchema, DateSchema):
@@ -178,14 +209,22 @@ class PaginatedResponse(BaseOrigin, Generic[T]):
 
 class DeleteResponse(BaseModel):
     success: bool
-    deleted_count: int = 1
-    message: str
+    deleted_count: Optional[int] = 1
+    message: Optional[str] = None
 
 
 class UpdateResponse(BaseModel):
     success: bool
-    updated_id: int
+    updated_id: Optional[int] = None
     message: str
+    error_type: Optional[str] = None
+
+
+class IndexFillResponse(BaseModel):
+    model: str
+    index: Optional[bool] = False
+    number_of_records: Optional[int] = 0
+    message: Optional[str] = None
 # ---------------------NEW VIEWS--------------------------
 
 
@@ -202,3 +241,10 @@ class DetailView(PkSchema):
     """
     name: str
     description: Optional[str] = None
+
+
+class ColorMixin(BaseModel):
+    """
+        color field in hex
+    """
+    color: Optional[str] = None

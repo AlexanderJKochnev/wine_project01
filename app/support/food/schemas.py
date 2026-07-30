@@ -8,6 +8,7 @@ from app.support.superfood.schemas import SuperfoodCreateRelation, SuperfoodRead
 
 class CustomReadSchema:
     superfood: Optional[SuperfoodRead] = None
+    # pass
 
 
 class CustomCreateSchema:
@@ -29,11 +30,12 @@ class FoodId(PkSchema):
     """
     pass
 
+
 class FoodRead(ReadSchema, CustomReadSchema):
     pass
 
 
-class FoodReadRelation(FoodRead):
+class FoodReadRelation(ReadSchema):
     pass
 
 

@@ -1,4 +1,5 @@
 // src/pages/HandbookList.tsx
+// используется для общего списка всех справочников
 import { h, useState } from 'preact/hooks';
 import { Link } from '../components/Link';
 import { apiClient } from '../lib/apiClient';
@@ -10,10 +11,22 @@ export const HandbookList = () => {
     { id: 'regions', name: 'Regions', endpoint: '/regions/all' },
     { id: 'subcategories', name: 'Subcategories', endpoint: '/subcategories/all' },
     { id: 'subregions', name: 'Subregions', endpoint: '/subregions/all' },
-    { id: 'sweetness', name: 'Sweetnesses', endpoint: '/sweetness/all' },
+    { id: 'sweetness', name: 'Sweetness', endpoint: '/sweetness/all' },
     { id: 'superfoods', name: 'Superfoods', endpoint: '/superfoods/all' },
     { id: 'foods', name: 'Foods', endpoint: '/foods/all' },
-    { id: 'varietals', name: 'Varietals', endpoint: '/varietals/all' }
+    { id: 'varietals', name: 'Varietals', endpoint: '/varietals/all' },
+    { id: 'parcels', name: 'Parcel', endpoint: '/parcels/all' },
+    { id: 'sites', name: 'Site', endpoint: '/sites/all' },
+    { id: 'producertitles', name: 'ProducerTitle', endpoint: '/producertitles/all' },
+    { id: 'vintageconfigs', name: 'VintageConfig', endpoint: '/vintageconfigs/all' },
+    { id: 'designations', name: 'Designation', endpoint: '/designations/all' },
+    { id: 'classifications', name: 'Classification', endpoint: '/classifications/all' },
+    { id: 'tastingnotes', name: 'TastingNote', endpoint: 'tastingnotes/all' },
+    { id: 'producers', name: 'Producer', endpoint: '/producers/all' },
+    { id: 'scales', name: 'Scale', endpoint: '/scales/all' },
+    { id: 'bodies', name: 'Body', endpoint: '/bodies/all' },
+    { id: 'glasswares', name: 'Glassware', endpoint: '/glasswares/all' },
+    { id: 'baseingredients', name: 'BaseIngredient', endpoint: '/baseingredients/all' }
   ]);
 
   return (

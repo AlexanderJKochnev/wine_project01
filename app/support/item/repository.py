@@ -1,442 +1,311 @@
 # app/support/Item/repository.py
+from decimal import Decimal
+from typing import List, Optional, Tuple, Union
 
-from sqlalchemy.orm import selectinload
-from typing import Optional, List, Type, Tuple, Union
-from sqlalchemy import func, select, Select, or_, Row, literal_column, text
+from loguru import logger  # NOQA: F401
+from sqlalchemy import column, Float, func, Integer, select, text, values
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.types import String
+from sqlalchemy.orm import load_only, selectinload
+
+from app.core.exceptions import AppBaseException
+from app.core.repositories.array_repository import ArrayRepository
+from app.core.repositories.search_repository import SearchRepository
 from app.core.repositories.sqlalchemy_repository import Repository
-from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
-from app.support.drink.repository import DrinkRepository  # , get_drink_search_expression
+from app.core.types import ModelType
+from app.core.utils.alchemy_utils import exclude_field_list
+from app.support.drink.model import Drink
+from app.support.drink.repository import DrinkRepository
 from app.support.item.model import Item
-from app.support.country.model import Country
+from app.support.parcel.model import Site
+from app.support.producer.model import Producer
 from app.support.region.model import Region
-from app.support.subregion.model import Subregion
 from app.support.subcategory.model import Subcategory
-from app.support.category.model import Category
-from app.core.utils.alchemy_utils import ModelType, create_enum_conditions, create_search_conditions2
-from app.core.services.logger import logger
+from app.support.subregion.model import Subregion
 
 
-# from app.core.config.database.db_noclass import get_db
-
-
-# ItemRepository = RepositoryFactory.get_repository(Item)
-class ItemRepository(Repository):
+class ItemRepository(ArrayRepository, SearchRepository, Repository):
     model = Item
 
     @classmethod
-    def get_query2(csl, model: ModelType):
-        """ Добавляем загрузку связи с relationships
-            Обратить внимание! для последовательной загрузки использовать точку.
-            параллельно запятая
-        """
-        return select(Item).options(selectinload(Item.drink).
-                                    selectinload(Drink.subregion).
-                                    selectinload(Subregion.region).
-                                    selectinload(Region.country),
-                                    selectinload(Item.drink).
-                                    selectinload(Drink.subcategory).
-                                    selectinload(Subcategory.category),
-                                    selectinload(Drink.sweetness),
-                                    selectinload(Item.drink).
-                                    selectinload(Drink.foods),
-                                    selectinload(Drink.food_associations).joinedload(DrinkFood.food),
-                                    selectinload(Drink.varietals),
-                                    selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal))
-
-    @classmethod
     def get_query(cls, model: ModelType):
-        return select(model).options(
-            selectinload(Item.drink).options(
-                selectinload(Drink.subregion).options(
-                    selectinload(Subregion.region).options(
-                        selectinload(Region.country)
-                    )
-                ),
-                selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness), selectinload(Drink.foods),
-                selectinload(Drink.food_associations).joinedload(DrinkFood.food), selectinload(Drink.varietals),
-                selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
-            ),
-        )
-
-    @classmethod
-    def get_query_for_list_view(cls):
-        """ get_query для запроса lit_view """
-        return selectinload(Item.drink).options(
-            selectinload(Drink.subregion).options(
-                selectinload(Subregion.region).options(
-                    selectinload(Region.country)
-                )
-            ),
-            selectinload(Drink.subcategory).selectinload(Subcategory.category),
-            selectinload(Drink.sweetness)
-        )
-
-    @classmethod
-    async def search_in_main_table(cls,
-                                   search_str: str,
-                                   model: Type[Item],
-                                   session: AsyncSession,
-                                   skip: int = None,
-                                   limit: int = None,
-                                   category_enum: str = None,
-                                   country_enum: str = None) -> Optional[List[ModelType]]:
-        """Поиск по всем заданным текстовым полям основной таблицы
-            НЕ ИСПОЛЬЗУЕТСЯ УДАЛИТЬ
-        """
-        try:
-            # ищем в Drink (диапазон расширяем в два раза что бы охватить все Items
-            # ищем category_id:
-            dlimit = limit * 2 if limit else limit
-            if skip and limit:
-                dskip = skip if skip == 0 else skip - limit
-            else:
-                dskip = None
-            drinks, count = await DrinkRepository.search_in_main_table(search_str, Drink, session,
-                                                                       skip=dskip, limit=dlimit,
-                                                                       category_enum=category_enum,
-                                                                       country_enum=country_enum)
-            if count == 0:
-                records = []
-                total = 0
-            else:
-                conditions = [a.id for a in drinks]
-                query = cls.get_query(model).where(model.drink_id.in_(conditions))
-                # получаем общее количество записей удовлетворяющих условию
-                count = select(func.count()).select_from(model).where(model.drink_id.in_(conditions))
-                result = await session.execute(count)
-                total = result.scalar()
-                # Добавляем пагинацию если указано
-                if limit is not None:
-                    query = query.limit(limit)
-                if skip is not None:
-                    query = query.offset(skip)
-                result = await session.execute(query)
-                records = result.scalars().all()
-            return (records if records else [], total)
-        except Exception as e:
-            logger.error(f'ошибка search_in_main_table: {e}')
-            print(f'search_in_main_table.error: {e}')
-
-    @classmethod
-    def apply_search_filter(cls, model: Union[Select[Tuple], ModelType], **kwargs):
-        """
-            переопределяемый метод, стоит условия поиска и пагинации при необходимости
-            категория wine имеет подкатегории которые как-бы категории поэтому костыль
-        """
-        wine = ['red', 'white', 'rose', 'sparkling', 'port']
-        if not isinstance(model, Select):   # подсчет количества
-            query = cls.get_query(Item).join(Item.drink)
-        else:
-            query = model.join(Item.drink)
-        search_str: str = kwargs.get('search_str')
-        category_enum: str = kwargs.get('category_enum')
-        country_enum: str = kwargs.get('country_enum')
-        if category_enum:
-            if category_enum in wine:
-                subcategory_cond = create_enum_conditions(Subcategory, category_enum)
-                query = (query.join(Drink.subcategory).where(subcategory_cond))
-            else:
-                category_cond = create_enum_conditions(Category, category_enum)
-                query = (query
-                         .join(Drink.subcategory)
-                         .join(Subcategory.category).where(category_cond))
-        if country_enum:
-            country_cond = create_enum_conditions(Country, country_enum)
-            query = (query.join(Drink.subregion)
-                     .join(Subregion.region)
-                     .join(Region.country).where(country_cond))
-        if search_str:
-            search_cond = create_search_conditions2(Drink, search_str)
-            query = query.where(search_cond)
+        """ создание запроса со связанными полями """
+        excl = exclude_field_list(Item, ('search_vector', 'drink', 'search_content'))
+        subquery = DrinkRepository.get_selectin()
+        query = select(Item).options(load_only(*excl), selectinload(Item.drink).options(*subquery))
         return query
 
     @classmethod
-    async def get_list_view(cls, model: ModelType, session: AsyncSession):
-        """Получение списка элементов с плоскими полями для ListView"""
+    def get_query_for_list_view(cls, model: ModelType):
+        """
+            get_query для запроса list_view - без varietals & foods
+        """
         query = select(Item).options(
             selectinload(Item.drink).options(
-                selectinload(Drink.subregion).options(
-                    selectinload(Subregion.region).options(
-                        selectinload(Region.country)
-                    )
-                ),
-                selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness)
+                selectinload(Drink.site).selectinload(Site.subregion).selectinload(
+                    Subregion.region
+                ).selectinload(
+                    Region.country
+                ), selectinload(Drink.subcategory).selectinload(Subcategory.category),
+                selectinload(Drink.sweetness),
+                # selectinload(Drink.food_associations),
+                # selectinload(Drink.varietal_associations), selectinload(Drink.source),
+                selectinload(Drink.producer).selectinload(Producer.producertitle), selectinload(Drink.parcel),
+                selectinload(Drink.designation), selectinload(Drink.classification),
+                selectinload(Drink.vintageconfig)
             )
-        ).order_by(Item.id.asc())
-
-        result = await session.execute(query)
-        items = result.scalars().all()
-        # Преобразуем в плоские словари
-        flat_items = []
-        for item in items:
-            flat_item = {
-                'id': item.id,
-                'vol': item.vol,
-                'image_id': item.image_id,
-                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
-                'drink': item.drink,
-                'subcategory': item.drink.subcategory,
-                'country': item.drink.subregion.region.country
-            }
-            flat_items.append(flat_item)
-
-        return flat_items
+        )
+        return query
 
     @classmethod
-    async def get_detail_view(cls, id: int, model: ModelType, session: AsyncSession):
+    async def get_list_view(cls, model: ModelType, session: AsyncSession, limit: int = 20) -> List[ModelType]:
+        """
+            Получение списка элементов с плоскими полями для ListView
+            почему не подходит core get_list?
+        """
+        try:
+            query = cls.get_query_for_list_view(model).order_by(model.id.asc())
+            if limit:
+                query = query.limit(limit)
+            result = await session.execute(query)
+            items = result.scalars().all()
+            return items
+        except Exception as e:
+            raise AppBaseException(message=f'get_list_view.error; {str(e)}', status_code=404)
+
+    @classmethod
+    async def get_detail_view(cls, id: int, model: ModelType, session: AsyncSession) -> ModelType:
         """Получение детального представления элемента для DetailView"""
-        query = select(Item).options(
-            selectinload(Item.drink).options(
-                selectinload(Drink.subregion).options(
-                    selectinload(Subregion.region).options(
-                        selectinload(Region.country)
-                    )
-                ),
-                selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness),
-                selectinload(Drink.food_associations).joinedload(DrinkFood.food),
-                selectinload(Drink.varietal_associations).joinedload(DrinkVarietal.varietal)
-            )
-        ).where(Item.id == id)
-
-        result = await session.execute(query)
-        item = result.scalar_one_or_none()
-
-        if not item:
-            return None
-
-        # Преобразуем в плоский словарь для детального представления
-        flat_item = {
-            'id': item.id,
-            'vol': item.vol,
-            'alc': item.drink.alc,
-            'age': item.drink.age,
-            'image_id': item.image_id,
-            'title': item.drink.title,  # будет обработано в сервисе для нужного языка
-            'drink': item.drink,
-            'description': item.drink.description,
-            'country': item.drink.subregion.region.country,
-            'subcategory': item.drink.subcategory,
-            'sweetness': item.drink.sweetness
-        }
-
-        return flat_item
+        try:
+            query = cls.get_query(model).where(model.id == id)
+            result = await session.execute(query)
+            item = result.scalar_one_or_none()
+            # from app.core.utils.common_utils import jprint
+            # jprint(item.to_dict())
+            # print('--------------------------')
+            if not item:
+                return None
+            return item
+        except Exception as e:
+            raise AppBaseException(message=f'get_detail_view.error; {str(e)}', status_code=404)
 
     @classmethod
     async def get_list_view_page(cls, skip: int, limit: int, model: ModelType, session: AsyncSession):
         """Получение списка элементов с плоскими полями для ListView с пагинацией"""
-        query = select(Item).options(
-            selectinload(Item.drink).options(
-                selectinload(Drink.subregion).options(
-                    selectinload(Subregion.region).options(
-                        selectinload(Region.country)
-                    )
-                ),
-                selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness)
-            )
-        )
+        try:
+            query = cls.get_query_for_list_view(Item).order_by(Item.id.asc())
+            count_query = select(func.count()).select_from(Item)
+            count_result = await session.execute(count_query)
+            total = count_result.scalar()
 
-
-        query = query.order_by(Item.id.asc())
-        count_query = select(func.count()).select_from(Item)
-        count_result = await session.execute(count_query)
-        total = count_result.scalar()
-
-        query = query.offset(skip).limit(limit)
-        result = await session.execute(query)
-        items = result.scalars().all()
-
-        # Преобразуем в плоские словари
-        flat_items = []
-        for item in items:
-            flat_item = {
-                'id': item.id,
-                'vol': item.vol,
-                'image_id': item.image_id,
-                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
-                'drink': item.drink,
-                'subcategory': item.drink.subcategory,
-                'country': item.drink.subregion.region.country
-            }
-            flat_items.append(flat_item)
-
-        return flat_items, total
+            query = query.offset(skip).limit(limit)
+            result = await session.execute(query)
+            items = result.scalars().all()
+            return items, total
+        except Exception as e:
+            raise AppBaseException(message=f'get_list_view_page.error; {str(e)}', status_code=404)
 
     @classmethod
-    async def search_by_drink_title_subtitle(cls, search_str: str,
-                                             session: AsyncSession,
-                                             skip: int = None,
-                                             limit: int = None
-                                             ):
-        """Поиск элементов по полям title* и subtitle* связанной модели Drink"""
-        from app.core.config.project_config import settings
-        from app.core.utils.alchemy_utils import build_search_condition, SearchType
+    async def find_items_smart_page(
+            cls, session: AsyncSession, query_data=None,
+            # Передаем наш query_data вместо hashes
+            last_score: Optional[Union[Decimal, str, float]] = None, last_id: Optional[int] = None, limit: int = 20,
+            jump_pages: int = 5
+    ) -> Tuple[List[dict], List[dict]]:
+        """
+        Универсальный высокопроизводительный FTS поиск с умной пагинацией:
+        1. Извлекает релевантность через ts_rank_cd для Сценариев 2 и 3.
+        2. Реализует Keyset пагинацию по контракту Preact (Score + ID).
+        3. Возвращает данные текущей страницы + якоря для быстрых прыжков.
+        """
+        ls_param = Decimal(str(last_score)) if last_score is not None else None
+        total_needed = (limit * jump_pages) + 1
 
-        # Получаем список языков из настроек
-        langs = settings.LANGUAGES
+        # Режим "просмотра всех" (пустая строка поиска)
+        is_full_scan = query_data is None
 
-        # Создаем список полей для поиска
-        title_fields = []
-        subtitle_fields = []
+        if is_full_scan:
+            # Упрощенный SQL для пустой строки поиска (оставляем БЕЗ ИЗМЕНЕНИЙ)
+            query_sql = text(
+                """
+                        WITH scored_items AS (
+                            SELECT i.id,
+                                   1.00000000::numeric as score
+                            FROM items i
+                        ),
+                        filtered_items AS (
+                            SELECT * FROM scored_items
+                            WHERE (CAST(:ls AS numeric) IS NULL OR (
+                                score < CAST(:ls AS numeric) OR
+                                (score = CAST(:ls AS numeric) AND id >= CAST(:li AS bigint))
+                            ))
+                        ),
+                        ranked_items AS (
+                            SELECT *, row_number() OVER (ORDER BY score DESC, id) as rn
+                            FROM filtered_items
+                            LIMIT :total_needed
+                        )
+                        SELECT * FROM ranked_items WHERE rn <= :limit
+                        UNION ALL
+                        SELECT * FROM ranked_items WHERE rn % :limit = 1 AND rn > 1
+                        ORDER BY score DESC, id
+                    """
+            )
+            params = {"limit": limit, "total_needed": total_needed, "ls": ls_param, "li": last_id}
 
-        for lang in langs:
-            if lang == 'en':
-                title_fields.append(getattr(Drink, 'title'))
-                subtitle_fields.append(getattr(Drink, 'subtitle'))
-            else:
-                title_fields.append(getattr(Drink, f'title_{lang}', None))
-                subtitle_fields.append(getattr(Drink, f'subtitle_{lang}', None))
-
-        # Убираем None значения из списка
-        title_fields = [field for field in title_fields if field is not None]
-        subtitle_fields = [field for field in subtitle_fields if field is not None]
-
-        # Создаем условия поиска
-        search_conditions = []
-
-        for field in title_fields + subtitle_fields:
-            condition = build_search_condition(field, search_str, search_type=SearchType.LIKE)
-            search_conditions.append(condition)
-
-        # Объединяем все условия с помощью OR
-        if search_conditions:
-            search_condition = or_(*search_conditions)
         else:
-            # Если нет подходящих полей для поиска, возвращаем пустой результат
-            return [], 0
+            # Не пустой запрос. В зависимости от Сценария (1, 2, 3) подставляем логику в CTE
+            # Сценарий 1 ранжируем как пустой запрос (score=1.0, сортировка по id)
+            # Сценарии 2 и 3 ранжируем по реальному ts_rank_cd
 
-        # Формируем запрос с JOIN на Drink
-        query = select(Item).options(
-            selectinload(Item.drink).options(
-                selectinload(Drink.subregion).options(
-                    selectinload(Subregion.region).options(
-                        selectinload(Region.country)
-                    )
-                ),
-                selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness)
+            if query_data.scenario == 1:
+                score_select = "1.00000000::numeric as score"
+                where_clause = "i.search_vector @@ to_tsquery('simple', :fts_query)"
+            elif query_data.scenario == 2:
+                score_select = "ROUND(ts_rank_cd(i.search_vector, to_tsquery('simple', :fts_query))::numeric, 8) as score"
+                where_clause = "i.search_vector @@ to_tsquery('simple', :fts_query)"
+            elif query_data.scenario == 3:
+                score_select = "ROUND(ts_rank_cd(i.search_vector, to_tsquery('simple', :fts_query))::numeric, 8) as score"
+                # В Сценарии 3 добавляем фильтрацию по LIKE в памяти для последнего недописанного слова
+                where_clause = """
+                        i.search_vector @@ to_tsquery('simple', :fts_query)
+                        AND lower(i.search_content) LIKE :like_term
+                    """
+
+            query_sql = text(
+                f"""
+                        WITH scored_items AS (
+                            SELECT i.id,
+                                   {score_select}
+                            FROM items i
+                            WHERE {where_clause}
+                        ),
+                        filtered_items AS (
+                            SELECT * FROM scored_items
+                            WHERE (CAST(:ls AS numeric) IS NULL OR (
+                                score < CAST(:ls AS numeric) OR
+                                (score = CAST(:ls AS numeric) AND id <= CAST(:li AS bigint))
+                            ))
+                        ),
+                        ranked_items AS (
+                            SELECT *, row_number() OVER (ORDER BY score DESC, id DESC) as rn
+                            FROM filtered_items
+                            ORDER BY score DESC, id DESC
+                            LIMIT :total_needed
+                        )
+                        SELECT * FROM ranked_items WHERE rn <= :limit
+                        UNION ALL
+                        SELECT * FROM ranked_items WHERE rn % :limit = 1 AND rn > 1
+                        ORDER BY score DESC, id DESC
+                    """
             )
-        ).join(Item.drink).where(search_condition)
-        query = query.order_by(Item.id.asc())
-        # Получаем общее количество записей
-        count_query = select(func.count(Item.id)).join(Item.drink).where(search_condition)
-        count_result = await session.execute(count_query)
-        total = count_result.scalar()
 
-        # Добавляем пагинацию
-        if skip is not None:
-            query = query.offset(skip)
-        if limit is not None:
-            query = query.limit(limit)
+            params = {"fts_query": query_data.fts_query,
+                      "like_term": f"%{query_data.like_term.lower()}%" if query_data.like_term else None, "limit": limit,
+                      "total_needed": total_needed, "ls": ls_param, "li": last_id}
 
-        result = await session.execute(query)
-        items = result.scalars().all()
-
-        # Преобразуем в плоские словари
-        flat_items = []
-        for item in items:
-            flat_item = {
-                'id': item.id,
-                'vol': item.vol,
-                'image_id': item.image_id,
-                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
-                'drink': item.drink,
-                'subcategory': item.drink.subcategory,
-                'country': item.drink.subregion.region.country
-            }
-            flat_items.append(flat_item)
-
-        return flat_items, total
+        # Выполнение SQL
+        result = await session.execute(query_sql, params)
+        rows = result.mappings().all()
+        # Формируем ID для второго этапа и якоря (БЕЗ ИЗМЕНЕНИЙ — контракт сохранен)
+        current_page_data = [(r['id'], float(r['score'])) for r in rows if r['rn'] <= limit]
+        anchors = [{"page_offset": r['rn'] // limit, "last_score": str(r['score']), "last_id": r['id']} for r in rows if
+                   r['rn'] > limit]
+        items = await cls.get_full_items(session, current_page_data)
+        return items, anchors
 
     @classmethod
-    async def search_by_trigram_index(cls, search_str: str, model: ModelType, session: AsyncSession,
-                                      skip: int = None, limit: int = None):
-        """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        if search_str is None or search_str.strip() == '':
-            # Если search_str пустой, возвращаем все записи с пагинацией
-            return await cls.get_list_view_page(skip, limit, model, session)
+    async def get_full_items(cls, session: AsyncSession, id_score_pairs: list[tuple]):
+        if not id_score_pairs:
+            return []
 
-        # Создаем строку для поиска с использованием триграммного индекса
-        # Используем ту же логику, что и в индексе drink_trigram_idx_combined
-        search_expr = get_drink_search_expression(Drink)
+        # Создаем временную таблицу в памяти запроса из пар (id, score)
+        # Это позволит нам заджойниться на них и сохранить сортировку
+        v = values(
+            column("id", Integer), column("score", Float),  # или Numeric
+            name="target_data"
+        ).data(id_score_pairs)
 
-        # Формируем запрос с использованием триграммного поиска
-        # Используем оператор % который работает с индексом gin_trgm_ops
-        query = select(Item).options(
-            selectinload(Item.drink).options(
-                selectinload(Drink.subregion).options(
-                    selectinload(Subregion.region).options(
-                        selectinload(Region.country)
-                    )
-                ),
-                selectinload(Drink.subcategory).selectinload(Subcategory.category),
-                selectinload(Drink.sweetness)
-            )
-        ).join(Item.drink).where(
-            search_expr.cast(String).ilike(f'%{search_str}%')
-        )
-        count_query = select(func.count(Item.id)).join(Item.drink).where(
-            search_expr.cast(String).ilike(f'%{search_str}%')
-        )  # .params(search_str=search_str)
-        count_result = await session.execute(count_query)
-        total = count_result.scalar()
+        # Берем ваш базовый запрос со всеми связями
+        stmt = cls.get_query(Item)
 
-        # Добавляем пагинацию
-        if skip is not None:
-            query = query.offset(skip)
-        if limit is not None:
-            query = query.limit(limit)
+        # Присоединяем наши ID и Score
+        stmt = stmt.join(v, Item.id == v.c.id)
 
+        # Сортируем по score и id из нашей временной таблицы
+        stmt = stmt.order_by(v.c.score.desc(), v.c.id.desc())
+
+        res = await session.execute(stmt)
+        # Возвращаем уникальные объекты (если есть связи lazy=selectin, это важно)
+        return res.unique().scalars().all()
+        # return list_dict(res.unique().scalars().all())
+
+    @classmethod
+    async def get_list_view_by_ids(cls, ids: list, model: ModelType, session: AsyncSession):
+        """
+            получение списка элементов с плоскими полями для ListView
+            по списку ids
+        """
+        query = cls.get_query_for_list_view(model).where(model.id.in_(ids)).order_by(model.id.asc())
         result = await session.execute(query)
         items = result.scalars().all()
+        return items
 
-        # Преобразуем в плоские словари
-        flat_items = []
-        for item in items:
-            flat_item = {
-                'id': item.id,
-                'vol': item.vol,
-                'image_id': item.image_id,
-                'title': item.drink.title,  # будет обработано в сервисе для нужного языка
-                'drink': item.drink,
-                'subcategory': item.drink.subcategory,
-                'country': item.drink.subregion.region.country
-            }
-            flat_items.append(flat_item)
+    # ------- одноразовые и тестирование ------
+    @classmethod
+    async def get_item_drink(cls, session: AsyncSession):
+        """
+            получение items with drink only для переноса картинок из mongo в seaweed
+            УДАЛИТЬ после импорта
+        """
+        # query = select(Item).options(selectinload(Item.drink)).where(Item.image_id != '69be8dcf9d1415cddd3420d8')
+        stmt = text("""  SELECT i.id, i.image_id, concat(d.title, ', ', d.subtitle)
+                    FROM items AS i
+                    JOIN drinks AS d ON i.drink_id = d.id
+                    WHERE i.image_id != '69be8dcf9d1415cddd3420d8'
+                    AND (i.seaweed_fids IS NULL OR array_length(i.seaweed_fids, 1)
+                    IS NULL OR array_length(i.seaweed_fids, 1) = 0)
+                    ORDER BY id;
+                """)
+        result = await session.execute(stmt)
+        items_list = result.mappings().all()
+        return items_list
 
-        return flat_items, total
+    @classmethod
+    async def get_item_drink2(cls, session: AsyncSession):
+        """
+            получение items with drink only для переноса картинок из mongo в seaweed
+            УДАЛИТЬ после импорта
+        """
+        # query = select(Item).options(selectinload(Item.drink)).where(Item.image_id != '69be8dcf9d1415cddd3420d8')
+        stmt = text("""  SELECT i.id, i.seaweed_fids[1]
+                         FROM items AS i
+                         JOIN drinks AS d ON i.drink_id = d.id
+                         WHERE array_length(i.seaweed_fids, 1) IS NOT NULL
+                         ORDER BY id;
+                    """)
+        result = await session.execute(stmt)
+        items_list = result.mappings().all()
+        # id, fid
+        return items_list
 
-
-def get_drink_search_expression(cls):
-    """
-        для поиска по триграммному индексу с использованием литералов
-    """
-
-    # Определяем литералы для пустой строки и пробела
-    EMPTY_STRING = literal_column("''")
-    SPACE = literal_column("' '")
-
-    return (func.coalesce(cls.title, EMPTY_STRING) + SPACE + func.coalesce(
-        cls.title_ru, EMPTY_STRING
-    ) + SPACE + func.coalesce(cls.title_fr, EMPTY_STRING) + SPACE + func.coalesce(
-        cls.subtitle, EMPTY_STRING
-    ) + SPACE + func.coalesce(
-        cls.subtitle_ru, EMPTY_STRING
-    ) + SPACE + func.coalesce(cls.subtitle_fr, EMPTY_STRING) + SPACE + func.coalesce(
-        cls.description, EMPTY_STRING
-    ) + SPACE + func.coalesce(
-        cls.description_ru, EMPTY_STRING
-    ) + SPACE + func.coalesce(cls.description_fr, EMPTY_STRING) + SPACE + func.coalesce(
-        cls.recommendation, EMPTY_STRING
-    ) + SPACE + func.coalesce(
-        cls.recommendation_ru, EMPTY_STRING
-    ) + SPACE + func.coalesce(cls.recommendation_fr, EMPTY_STRING) + SPACE + func.coalesce(
-        cls.madeof, EMPTY_STRING
-    ) + SPACE + func.coalesce(
-        cls.madeof_ru, EMPTY_STRING
-    ) + SPACE + func.coalesce(cls.madeof_fr, EMPTY_STRING))
+    @classmethod
+    async def get_item_drink3(cls, session: AsyncSession):
+        """
+            получение items with drink only для переноса картинок из mongo в seaweed
+            для записи webp (seaweed_fids[1][2] заполнен
+        """
+        # query = select(Item).options(selectinload(Item.drink)).where(Item.image_id != '69be8dcf9d1415cddd3420d8')
+        stmt = text(
+            """
+                SELECT i.id, i.image_id, concat(d.title, ', ', d.subtitle)
+                FROM items AS i
+                JOIN drinks AS d ON i.drink_id = d.id
+                WHERE i.image_id != '69be8dcf9d1415cddd3420d8'
+                AND array_length(i.seaweed_fids, 1) = 2
+                ORDER BY id LIMIT 40;
+            """
+        )
+        result = await session.execute(stmt)
+        items_list = result.mappings().all()
+        # id, fid
+        return items_list

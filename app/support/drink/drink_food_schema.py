@@ -1,16 +1,15 @@
 # app/support/drink/drink_food_schema.py
-#
 from typing import List
-from pydantic import Field
-from app.core.schemas.base import BaseModel, ConfigDict
-from app.core.schemas.api_mixin import LangMixin
-from app.support.food.schemas import FoodRead, FoodReadRelation
+from app.core.schemas.base import BaseModel
+# from app.core.schemas.api_mixin import LangMixin
+from app.support.food.schemas import FoodReadRelation
 
 
 class DrinkFoodRelation(BaseModel):
     food: FoodReadRelation
 
 
+"""
 class DrinkFoodRelationApi(LangMixin):
     model_config = ConfigDict(from_attributes=True,
                               arbitrary_types_allowed=True,
@@ -25,6 +24,7 @@ class DrinkFoodRelationApi(LangMixin):
             prefix = getattr(schema, f'{field_name}{lang}') or getattr(schema, f'{field_name}')
             return prefix
         return None
+"""
 
 
 class DrinkFoodLinkCreate(BaseModel):
@@ -34,11 +34,3 @@ class DrinkFoodLinkCreate(BaseModel):
 
 class DrinkFoodLinkUpdate(BaseModel):
     food_ids: List[int]
-
-
-class DrinkDetailResponse(BaseModel):
-    """ not used """
-    id: int
-    name: str
-    # ... другие поля ...
-    foods: List[str]  # список __str__() значений

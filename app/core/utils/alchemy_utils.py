@@ -3,20 +3,95 @@ import json
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Generator, Iterator, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from fastapi import Query
+from loguru import logger  # noqa: F401
 from pydantic import BaseModel, create_model, Field
-from sqlalchemy import and_, Column, ColumnElement, func, inspect, or_, String, Text, Unicode, UnicodeText
+from sqlalchemy import and_, Column, ColumnElement, func, inspect, or_, String, Text, text, Unicode, UnicodeText
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase, DeclarativeMeta, MapperProperty
+from sqlalchemy.orm import DeclarativeBase, MapperProperty
 from sqlalchemy.orm.attributes import QueryableAttribute
 
+from app.core.config.project_config import get_path_to_root
 from app.core.models.base_model import Base
-from app.core.utils.common_utils import clean_string, enum_to_camel, get_path_to_root
+from app.core.types import ModelType
+from app.core.utils.common_utils import camel_to_enum, clean_string, enum_to_camel
 
-ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
 function = {1: or_, 2: and_}
+
+
+def get_sql_search(query, search_str: str, limit: int = 100, offset: int = 0) -> Tuple:
+    """
+        raw sql for the deep search in text 'Name' fields
+        return for select id and selec for total count
+    """
+    raw_sql = str(
+        query.compile(dialect=postgresql.dialect(), compile_kwargs={"render_postcompile_parameters": True})
+    )
+    # logger.warning(raw_sql)
+    # 2. Парсим колонки между SELECT и FROM
+    select_part = raw_sql[len("SELECT "):raw_sql.find("FROM")].strip()
+    from_part = raw_sql[raw_sql.find("FROM"):].strip()
+
+    # Разбиваем колонки по запятой и ищем те, где есть 'name' (без учета регистра)
+    all_columns = [col.strip().split(" AS ")[0] for col in select_part.split(",")]
+    name_cols = [col for col in all_columns if "name" in col.lower()]
+
+    # 3. Строим условие WHERE
+    search_val = f"'%{search_str}%'"
+    # Соединяем все найденные колонки через OR
+    where_clause = " OR ".join([f"{col} ILIKE {search_val}" for col in name_cols])
+
+    # Определяем главную таблицу (первое слово после FROM)
+    main_table = from_part.split()[1]
+
+    # РЕЗУЛЬТАТ 1: Запрос на ID (с пагинацией)
+    # id_sql = f"SELECT DISTINCT {main_table}.id {from_part} WHERE {where_clause} LIMIT {limit} OFFSET {offset}"
+    id_sql = f"SELECT DISTINCT {main_table}.id {from_part} WHERE {where_clause}"
+    if limit:
+        id_sql = f"{id_sql} LIMIT {limit}"
+    if offset:
+        id_sql = f"{id_sql} OFFSET {offset}"
+
+    # РЕЗУЛЬТАТ 2: Запрос на Общее количество
+    count_sql = f"SELECT COUNT(DISTINCT {main_table}.id) {from_part} WHERE {where_clause}"
+    # logger.critical(text(id_sql))
+    return text(id_sql), text(count_sql)
+
+
+def get_field_list(model: Type[DeclarativeBase], starts: tuple = None, ends: tuple = None):
+    """
+         возвращает список полей sqlalchemy model
+         starts -список префиксов полей
+         ends - список суффиксов
+    """
+    valid_columns = {col for col in inspect(model).columns}
+    relationships = {rel for rel in inspect(model).relationships}
+    valid_fields = valid_columns | relationships
+    result: list = []
+    if starts:
+        start = [col.key for col in valid_fields if col.key.startswith(starts)]
+        result.extend(start)
+    if ends:
+        finish = [col.key for col in valid_fields if col.key.endswith(ends)]
+        result.extend(finish)
+    res = [getattr(model, name) for name in result]
+    return res
+
+
+def exclude_field_list(model: Type[DeclarativeBase], fields_exc: tuple):
+    """
+         возвращает список полей sqlalchemy model
+         за исключением указанных в fields_exc
+    """
+    valid_columns = {col for col in inspect(model).columns}
+    relationships = {rel for rel in inspect(model).relationships}
+    valid_fields = valid_columns | relationships
+    filtered = [col.key for col in valid_fields if col.key not in fields_exc]
+    res = [getattr(model, name) for name in filtered]
+    return res
 
 
 def get_sqlalchemy_fields(model: Type[DeclarativeBase],
@@ -97,6 +172,7 @@ async def mass_delete(query: Query, batch: int, session: AsyncSession):
 
 def model_to_dict(obj, seen=None):
     """
+        удалиьт - есть встроенный методж
         преобразует sqlalchemy instance в словарь
         foreign filed with lazy load преобразует во вложенные словари любой губины
     """
@@ -124,12 +200,40 @@ def model_to_dict(obj, seen=None):
     return result
 
 
-def get_models() -> List[ModelType]:
+def get_models() -> Iterator[ModelType]:
     """
-        возвращеет список зарегистрированных sqlalchemy моделей
+        возвращеет генератор списка зарегистрированных sqlalchemy моделей
+        (получать имя через .__name__)
+        МАГИЯ - ВЫЗОВ СТРОКИ НАПРЯМУЮ ГДЕ ЛИБО НЕ ДАЙТ РЕЗУЛЬТАТА - ТОЛЬКО ЧЕРЕЗ get_models
     """
     return (cls for cls in Base.registry._class_registry.values() if
             isinstance(cls, type) and hasattr(cls, '__table__'))
+
+
+def get_models_with_columns(localized_field: tuple | list) -> Dict[ModelType, tuple]:
+    """
+        возвращеет генератор списка зарегистрированных sqlalchemy моделей
+        (получать имя через .__name__)
+        ЛЮТАЯ МАГИЯ - ВЫЗОВ СТРОКИ НАПРЯМУЮ ГДЕ ЛИБО НЕ ДАЙТ РЕЗУЛЬТАТА - ТОЛЬКО ЧЕРЕЗ get_models_with_columns
+    """
+    return {cls: columns for cls in Base.registry._class_registry.values() if
+            isinstance(cls, type) and hasattr(cls, '__table__')
+            # Сначала собираем кортеж колонок, и если он не пустой (len > 0), добавляем в словарь
+            if (columns := tuple(
+                column.name for column in cls.__table__.columns if column.name in localized_field
+            ))}
+
+
+def get_model_by_tablename(tablename: str):
+    # Получаем Table объект
+    table = Base.metadata.tables.get(tablename)
+    if table is None:
+        return None
+    # Ищем класс, который маппится на эту таблицу
+    for mapper in Base.registry.mappers:
+        if mapper.local_table is table:
+            return mapper.class_
+    return None
 
 
 def parse_unique_violation(error_msg: str) -> Optional[Tuple[str, str]]:
@@ -556,7 +660,7 @@ class JsonConverter():
             result = data.get('items')
             if all((result, isinstance(result, dict))):
                 return result
-        return  data
+        return data
 
     def json_list(self, data: dict) -> dict:
         """ проходит по верхнему уровню словаря """
@@ -623,7 +727,6 @@ class JsonConverter():
                         k3, k2 = k2, k2.lower()
                         self.data[key][k2] = self.data[key].pop(k3)
                     if v2:
-                        """ """
                         v2 = self.field_processing(k2, v2)
                         if k2 in ['region', 'region_ru']:
                             if ',' in v2:
@@ -794,3 +897,240 @@ def get_id_field(model: TypeVar, supermodel: TypeVar, suffix: str = '_id'):
     :rtype:
     """
     return getattr(model, field_naming(supermodel))
+
+
+def has_column(model: TypeVar, col_name: str) -> bool:
+    """
+        проверяет наличие колонки в sqlalchemy модели
+        по имени колонки
+    """
+    mapper = inspect(model).mapper
+    return col_name in mapper.column_attrs
+
+
+def formatted_query(query: str, patt: int = 1, sign: int = 30, operand: str = '&') -> str:
+    """
+         1. преобразует поисковое выражение в строку для полнотекстового поиска:
+            удаляет служебные символы (patt=2) или служебные символы и цифры (patt=1)
+         2. если длина оставшейся фразы менее <sign> % возвращает None (удаленные символы значимая часть запроса
+            искать по btree (медленно)
+         разделяет слова разделителяими (operand):
+         & - AND
+         | - OR
+         ! - NOT
+         <-> - FOLLOWED BY (слова следуют друг за другом в указанном порядке
+    """
+    pattern = {1: r'[A-Za-zА-Яа-яЁё]+',     # только буквы
+               2: r'\w+'}                   # только цифры
+    words = re.findall(pattern.get(patt), query)
+
+    clean_len = sum(len(w) for w in words)
+    original_len = len(query) - query.count(" ")
+
+    if clean_len * 100 < original_len * sign:
+        return None
+    if words:
+        jointer = f" {operand} "
+        return jointer.join([f"{word}:*" for word in words])
+    return None
+
+
+def level_up(source: dict, key: str, rename: Set[str] = ['id']) -> dict:
+    """
+        поднятие словаря key на верхний уровень
+        с переименовением ключей из list
+    """
+    target = source.pop(key, None)
+    if not isinstance(target, dict):
+        return source
+    if rename:
+        for k in rename:
+            # Проверка 'in target' быстрее, чем 'in target.keys()'
+            if k in target:
+                # Берем значение старого ключа и удаляем его, записываем в новый
+                target[f"{key}_{k}"] = target.pop(k)
+        # 3. Слияние (в CPython реализовано на C, очень быстро)
+    source.update(target)
+    return source
+
+
+def get_multilang(obj: dict, base_key: str, languages: Union[list, tuple, set]) -> str:
+    """
+        выбор перевода: сначала текущий lang, потом остальные из кортежа
+        base_key - имя поля без суффикса
+        languages - список суффиксов языковых
+    """
+    if not obj:
+        return ""
+    for lng in languages:
+        val = obj.get(f"{base_key}{lng}")
+        if val:
+            return val
+    return ""
+
+
+def transform(source: dict, languages: Union[List, Tuple], default_image: Tuple) -> dict:
+    """
+         languages - суффиксы языковые отсортированные
+    """
+    d = source.get("drink", {})
+    subcat = d.get("subcategory", {})
+    cat = subcat.get("category", {})
+    prod = d.get('producer', {})
+    image = source.get("seaweed_fids", (default_image, None))
+    # ptitle = prod.get("producertitle", {})
+    classification = d.get("classification", {})
+    vintageconfig = d.get("vintageconfig", {})
+    designation = d.get("designation", {})
+
+    # Навигация по географии (с защитой от None)
+    site = d.get("site") or {}
+    subreg = site.get("subregion") or {}
+    reg = subreg.get("region") or {}
+    country = reg.get("country") or {}
+    # составные
+    if alcv := d.get('alc'):
+        alc = f"{alcv}"
+    else:
+        alc = None
+    keys = ("id", "vol", "count", "image_id", "alc", "title", "subtitle", "description", "country", "region", "subregion",
+            "site", "category", "subcategory", "varietal", "pairing", "source", "first_vintage", "last_vintage", "display_name",
+            "producer", "anno", "classification", "vintageconfig", "designation")
+    values = (source.get("id"), source.get("vol"), source.get("count"),
+              image[0],  # source.get("image_id"),
+              alc,
+              get_multilang(d, "title", languages), get_multilang(d, "subtitle", languages),
+              get_multilang(d, "description", languages), get_multilang(country, "name", languages),
+              get_multilang(reg, "name", languages), get_multilang(subreg, "name", languages),
+              get_multilang(site, "name", languages), get_multilang(cat, "name", languages),
+              get_multilang(subcat, "name", languages),
+              [f"{get_multilang(va.get('varietal', {}), 'name', languages)} {va.get('percentage', 0)} %" for va in
+               d.get("varietal_associations", [])],
+              [get_multilang(fa.get("food", {}), "name", languages) for fa in d.get("food_associations", [])],
+              d.get("source", {}).get("name"), d.get("first_vintage"), d.get("last_vintage"), d.get("display_name"),
+              f'{get_multilang(prod.get('producertitle'), "name", languages)} '
+              f'{get_multilang(prod, "name", languages)}'.strip() if prod else None,
+              d.get("anno"), get_multilang(classification, "name", languages),
+              get_multilang(vintageconfig, "name", languages),
+              get_multilang(designation, "name", languages))
+    return {key: val for key, val in zip(keys, values) if val}
+
+
+def transform_list_view(source: dict, languages: Union[List, Tuple], default_image: str) -> dict:
+    """
+        languages - суффиксы языковые отсортированные
+    """
+    d = source.get("drink", {})
+    subcat = d.get("subcategory", {})
+    cat = subcat.get("category", {})
+    image = source.get("seaweed_fids") or (None, default_image)
+    # Навигация по географии (с защитой от None)
+    site = d.get("site") or {}
+    subreg = site.get("subregion") or {}
+    reg = subreg.get("region") or {}
+    country = reg.get("country") or {}
+    keys = ("id", "vol", "image_id", "title", "category", "country")
+    values = (source.get("id"),
+              source.get("vol"),
+              image[1],  # source.get("image_id"),
+              get_multilang(d, "title", languages),
+              get_multilang(cat, "name", languages),
+              get_multilang(country, "name", languages))
+    return {key: val for key, val in zip(keys, values) if val}
+
+
+def transform_api_list_view(source: dict, def_lang: str, languages: Union[List, Tuple], default_image: str) -> dict:
+    """
+    трансформация для api
+    languages = {'', '_ru', ...}
+    """
+    d = source.get("drink", {})
+    subcat = d.get("subcategory", {})
+    cat = subcat.get("category", {})
+    image = source.get("seaweed_fids") or (None, default_image)
+    category, subcat = api_mapping(cat, subcat)
+
+    prod = d.get('producer', {})
+    # ptitle = prod.get("producertitle", {})
+    # classification = d.get("classification", {})
+    # vintageconfig = d.get("vintageconfig", {})
+    designation = d.get("designation", {})
+    anno = d.get("anno", '')
+
+    # Навигация по географии (с защитой от None)
+    site = d.get("site") or {}
+    subreg = site.get("subregion") or {}
+    reg = subreg.get("region") or {}
+    country = reg.get("country") or {}
+
+    if alcv := d.get('alc'):
+        alc = f"{alcv}"
+    else:
+        alc = None
+    vol = source.get('vol', None)
+
+    keys = ("id", "vol", "image_id", "changed_at", "category", "country")
+    vals = (source.get("id"), vol,
+            image[1],  # source.get("image_id"),
+            source.get("updated_at"),
+            category, camel_to_enum(
+            country.get("name")))
+    main = {key: val for key, val in zip(keys, vals) if val}
+    lang_keys = ("alc", "vol", "title", "subtitle", "description", "region", "recommendation",
+                 "madeof", "producer", "type", "varietal", "pairing")
+    for n, lang in enumerate(languages):
+        languages1 = languages[:]
+        languages1.pop(n)
+        languages1.insert(0, lang)
+        # logger.success(f'{n=}, {lang=}, {languages1=}, {languages=}')
+        des = get_multilang(designation, "name", languages1)
+        if not des:
+            des = ''
+        lang_vals = (alc, vol,
+                     f'{get_multilang(d, "title", languages1).replace(des or "", "").replace(anno or "", "")} '
+                     f'{anno or ""} {des or ""}'.strip(), get_multilang(d, "subtitle", languages1),
+                     get_multilang(d, "description", languages1),
+                     f'{get_multilang(reg, "name", languages1)}. '
+                     f'{get_multilang(subreg, "name", languages1)}. '
+                     f'{get_multilang(site, "name", languages1)}'.strip(),
+                     get_multilang(d, "recommendation", languages1), get_multilang(d, "madeof", languages1),
+                     f'{get_multilang(prod.get('producertitle'), "name", languages1)} '
+                     f'{get_multilang(prod, "name", languages1)}'.strip() if prod else None,
+                     f'{get_multilang(subcat, "name", languages1)}' if subcat else None,
+                     [f"{get_multilang(va.get('varietal', {}), 'name', languages1)} {va.get('percentage', 0)} %"
+                      for va in d.get("varietal_associations", [])],
+                     [get_multilang(fa.get("food", {}), "name", languages1) for fa in d.get("food_associations", [])]
+                     )
+        tmp = {key: val for key, val in zip(lang_keys, lang_vals) if val}
+        lng = def_lang if lang == '' else lang[1:]
+        main[lng] = tmp
+    return main
+
+
+def api_mapping(cat_dict: dict, subcat_dict: dict) -> tuple:
+    """
+    RETURN MAPPED CATEGORY & TYPE
+    """
+    x = cat_dict.get('name')
+    y = subcat_dict.get('name')
+    if x == 'Wine':
+        x, subcat_dict = y, {}
+    elif x == 'Brandy' and y == 'Cognac':
+        x, subcat_dict = y, {}
+    elif x == 'Brandy' and y != 'Cognac':
+        x = 'other'
+    elif x == 'Fortified Wine':
+        x = 'port'
+    return camel_to_enum(x), subcat_dict
+
+
+def get_sql_from_query(stmt):
+    """
+    Преобразует SQLAlchemy запрос в строку SQL для non-ORM
+    sql_query = get_sql_from_query(stmt
+    logger.info(f"Executing SQL: {sql_query}")
+    Выполняем
+    result = await session.execute(text(sql_query))
+    """
+    compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+    return str(compiled)

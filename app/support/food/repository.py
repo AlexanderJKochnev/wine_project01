@@ -2,13 +2,23 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.support.food.model import Food
-from app.support.drink.model import DrinkFood
-from app.core.repositories.sqlalchemy_repository import Repository, ModelType
+from app.support.drink.model import DrinkFood, Drink
+from app.support.item.model import Item
+from app.core.repositories.sqlalchemy_repository import HandbookRepository
+from app.core.types import ModelType
 
 
 # FoodRepository = RepositoryFactory.get_repository(Food)
-class FoodRepository(Repository):
+class FoodRepository(HandbookRepository):
     model = Food
+
+    @classmethod
+    def get_item_drink(cls, id: int):
+        return select(Item.id, Item.drink_id).where(
+            Drink.id == Item.drink_id,
+            Drink.id == DrinkFood.drink_id,
+            DrinkFood.food_id == id
+        )
 
     @classmethod
     def get_query(cls, model: ModelType):

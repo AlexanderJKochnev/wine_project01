@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from fastapi import Depends
 from typing import List, Tuple, Optional, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.mongodb.config import get_database
+from loguru import logger
+from app.core.config.database.db_mongo import get_mongodb
 from app.mongodb.models import FileResponse  # , ImageResponse
 
 import io
@@ -12,7 +13,7 @@ from PIL import Image
 
 
 class ImageRepository:
-    def __init__(self, database: AsyncIOMotorDatabase = Depends(get_database)):
+    def __init__(self, database: AsyncIOMotorDatabase = Depends(get_mongodb)):
         self.db = database
         self.collection = self.db["images"]
         self._indexes_created = False
@@ -24,7 +25,6 @@ class ImageRepository:
             await self.collection.create_index([("created_at", -1)])
             await self.collection.create_index([("filename", "text")])  # Текстовый поиск
             self._indexes_created = True
-            # print("Image repository indexes ensured")
 
     async def create_image(self, filename: str, content: bytes, content_type: str, description: str) -> str:
         """ сохранение изображения в базе данных"""
@@ -100,7 +100,7 @@ class ImageRepository:
 
 
 class ThumbnailImageRepository:
-    def __init__(self, database: AsyncIOMotorDatabase = Depends(get_database)):
+    def __init__(self, database: AsyncIOMotorDatabase = Depends(get_mongodb)):
         self.db = database
         self.collection = self.db["images"]
         self._indexes_created = False
@@ -124,7 +124,6 @@ class ThumbnailImageRepository:
                 index_name = required_index["name"]
                 if index_name not in existing_indexes:
                     indexes_to_create.append(required_index)
-                    # print(f"Index {index_name} will be created")
                 else:
                     pass
                     # print(f"Index {index_name} already exists")
@@ -208,7 +207,7 @@ class ThumbnailImageRepository:
 
         return {"id": str(result.inserted_id), "has_thumbnail": thumbnail_content is not None}
 
-    async def get_image(self, image_id: str, include_content: bool = True) -> Optional[dict]:
+    async def get_image(self, image_id: str, include_content: bool = True) -> Optional[bytes]:
         """Получить полноразмерное изображение"""
         await self.ensure_indexes()
         try:
@@ -227,30 +226,29 @@ class ThumbnailImageRepository:
             if result and "content" in result:
                 # Конвертируем Binary обратно в bytes
                 result["content"] = result["content"]
-
-            return result
+            return result.get("content")
         except Exception as e:
             print(f"Error getting image by ID {image_id}: {e}")
             return None
 
-    async def get_thumbnail(self, image_id: str) -> Optional[dict]:
+    async def get_thumbnail(self, image_id: str) -> Optional[bytes]:
         """Получить только thumbnail"""
         await self.ensure_indexes()
         try:
             result = await self.collection.find_one(
                 {"_id": ObjectId(image_id)}, {"thumbnail": 1, "filename": 1, "thumbnail_type": 1}
             )
-
             if result and "thumbnail" in result:
                 # Конвертируем Binary обратно в bytes
+                # данные находятся в thumbnail
                 result["thumbnail"] = result["thumbnail"]
 
-            return result
+            return result.get("thumbnail")
         except Exception as e:
             print(f"Error getting thumbnail {image_id}: {e}")
             return None
 
-    async def get_thumbnail_by_filename(self, filename: str) -> Optional[dict]:
+    async def get_thumbnail_by_filename(self, filename: str) -> Optional[bytes]:
         """Получить thumbnail по имени файла"""
         await self.ensure_indexes()
         try:
@@ -261,7 +259,7 @@ class ThumbnailImageRepository:
             if result and "thumbnail" in result:
                 result["thumbnail"] = result["thumbnail"]
 
-            return result
+            return result.get("thumbnail")
         except Exception as e:
             print(f"Error getting thumbnail by filename {filename}: {e}")
             return None
@@ -283,7 +281,7 @@ class ThumbnailImageRepository:
                 images.append(image)
             return images
         except Exception as e:
-            print(f"Error getting images after date: {e}")
+            raise Exception(f"Error getting images after date: {e}")
             return []
 
     async def get_images_after_date_nopage(self,
@@ -303,8 +301,8 @@ class ThumbnailImageRepository:
                 images.append(image)
             return images
         except Exception as e:
-            print(f"Error getting images after date: {e}")
-            return []
+            logger.error(f"Error getting images after date: {e}")
+            raise Exception(f'get_images_after_date_nopage: {e}')
 
     async def get_id_by_filename(self, filename: str) -> Optional[ObjectId]:
         await self.ensure_indexes()
@@ -312,7 +310,7 @@ class ThumbnailImageRepository:
         doc = await self.collection.find_one({"filename": filename}, projection)
         return str(doc["_id"]) if doc else None
 
-    async def get_image_by_filename(self, filename: str, include_content: bool = True) -> Optional[dict]:
+    async def get_image_by_filename(self, filename: str, include_content: bool = True) -> Optional[bytes]:
         await self.ensure_indexes()
         projection = {"filename": 1, "description": 1, "created_at": 1, "size": 1, "content_type": 1,
                       "thumbnail_size": 1, "has_thumbnail": 1, "thumbnail_type": 1}
@@ -324,7 +322,7 @@ class ThumbnailImageRepository:
         if result and "content" in result:
             result["content"] = result["content"]
 
-        return result
+        return result.get('content')
 
     async def count_images_after_date(self, after_date: datetime) -> int:
         await self.ensure_indexes()

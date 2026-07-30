@@ -7,9 +7,11 @@
     и даны методы их регистрации и получения списком и по имени файла / типу схемы
 
 """
+
 _SERVICE_REGISTRY: dict = {}
 _REPOSITORY_REGISTRY: dict = {}
 _PYSCHEMA_REGISTRY: dict = {}
+_SEARCH_DEPENDENCIES: dict = {}  # {"category": "subcategory.drink.item"}
 
 
 def register_pyschema(name: str, cls):
@@ -38,11 +40,54 @@ def get_all_repo():
 
 def register_service(name: str, cls):
     _SERVICE_REGISTRY[name.lower()] = cls
+    # Register the global search service
+    if name.lower() == 'search':
+        _SERVICE_REGISTRY['search_service'] = cls
 
 
 def get_service(name: str):
+    # Lazy load search service if not already loaded
+    """if name.lower() == 'search_service' and 'search_service' not in _SERVICE_REGISTRY:
+        # Import here to avoid circular imports
+        from app.core.services.search_service import search_service
+        _SERVICE_REGISTRY['search_service'] = search_service"""
     return _SERVICE_REGISTRY.get(name.lower())
 
 
 def get_all_services():
     return _SERVICE_REGISTRY.copy()
+
+
+def registers_search_update(owner_path: str):
+    """
+    Декоратор для моделей-справочников.
+    owner_path: строка, как добраться до модели с индексом (например, 'items' или 'drink.item')
+    использование:
+    вешаешь декоратор на модель
+    @registers_search_update("drinks.items")
+    drinks.items: путь к основной таблие через точечную нотацию
+    ЭТО НУЖНО ДЛЯ ОБЕСПЕЧЕНИЯ ПОИСКА ПО trgm ИНДЕКСУ
+    """
+    def wrapper(cls):
+        _SEARCH_DEPENDENCIES[cls] = owner_path
+        return cls
+    return wrapper
+
+
+def get_search_dependencies(model):
+    return _SEARCH_DEPENDENCIES.get(model)
+
+
+def get_child(model, excl: tuple = ('drink', 'item')):
+    """
+        по имени модели получает ближайшую (child) зависимую модель (модели)
+        нужно для добавления заглушек: id, parent_id, name=None
+    """
+    res = _SEARCH_DEPENDENCIES.get(model)
+    if not res:
+        return None
+    child = res.split('.')[0]
+    if child not in excl:
+        return child
+    else:
+        return None

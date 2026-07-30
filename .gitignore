@@ -6,6 +6,10 @@ __pycache__/
 *$py.class
 *.so
 .Python
+*.onnx
+meili_data/
+nginx/conf.d/default.conf
+backup/
 build/
 develop-eggs/
 dist/
@@ -31,14 +35,15 @@ htmlcov/
 .pytest_cache/
 
 # Environment
-# .env
-# .env.local
-# .env.*
+.env
+.env.local
+.env.*
 .venv/
 venv/
 ENV/
 env.bak/
 venv.bak/
+-1.env
 
 # IDE
 .vscode/

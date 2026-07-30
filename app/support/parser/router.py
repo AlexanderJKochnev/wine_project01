@@ -13,7 +13,7 @@ from app.support.parser import schemas
 from app.support.parser.service import RawdataService
 from app.support.parser.orchestrator import ParserOrchestrator
 from app.support.parser.repository import StatusRepository, RawdataRepository
-from app.core.config.database.db_async import AsyncSessionLocal
+from app.core.config.database.db_async import DatabaseManager
 from app.core.utils.exception_handler import ValidationError_handler
 
 background_tasks = set()  # чтобы ссылка не удалилась
@@ -21,7 +21,7 @@ background_tasks = set()  # чтобы ссылка не удалилась
 
 class OrchestratorRouter(LightRouter):
     def __init__(self):
-        super().__init__(prefix='/parser')
+        super().__init__(prefix='/parser', include_in_schema=False)
 
     def setup_routes(self):
         self.router.add_api_route(
@@ -144,7 +144,7 @@ class OrchestratorRouter(LightRouter):
         from arq.connections import RedisSettings
         from app.core.config.project_config import settings
         redis = await create_pool(RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
-        async with AsyncSessionLocal() as session:
+        async with DatabaseManager.session_maker() as session:
             status_completed = await session.execute(select(Status).where(Status.status == "completed"))
             status_completed = status_completed.scalar_one_or_none()
             query = select(Name.id)
@@ -163,7 +163,7 @@ class OrchestratorRouter(LightRouter):
         from arq.connections import RedisSettings
         from app.core.config.project_config import settings
         redis = await create_pool(RedisSettings(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
-        async with AsyncSessionLocal() as session:
+        async with DatabaseManager.session_maker() as session:
             # Get the completed status ID properly
             status_completed = await session.execute(select(Status).where(Status.status == "completed"))
             status_completed = status_completed.scalar_one_or_none()
@@ -187,17 +187,12 @@ class RegistryRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Registry,
-            prefix="/registry",
+            prefix="/registry", include_in_schema=False
         )
 
     async def create(self, data: schemas.RegistryCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.RegistryCreateResponseSchema:
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: schemas.CodeUpdate,
-                    session: AsyncSession = Depends(get_db)) -> schemas.CodeCreateResponseSchema:
-        return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.RegistryCreateRelation,
                               session: AsyncSession = Depends(get_db)):  # -> schemas.RegistryCreateResponseSchema:
@@ -210,17 +205,12 @@ class CodeRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Code,
-            prefix="/codes",
+            prefix="/codes", include_in_schema=False
         )
 
     async def create(self, data: schemas.CodeCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.CodeCreateResponseSchema:
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: schemas.CodeUpdate,
-                    session: AsyncSession = Depends(get_db)) -> schemas.CodeCreateResponseSchema:
-        return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.CodeCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.CodeRead:
@@ -232,17 +222,12 @@ class StatusRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Status,
-            prefix="/status",
+            prefix="/status", include_in_schema=False
         )
 
     async def create(self, data: schemas.StatusCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.StatusCreateResponseSchema:
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: schemas.StatusUpdate,
-                    session: AsyncSession = Depends(get_db)) -> schemas.StatusCreateResponseSchema:
-        return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.StatusCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.StatusRead:
@@ -254,17 +239,12 @@ class NameRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Name,
-            prefix="/names",
+            prefix="/names", include_in_schema=False
         )
 
     async def create(self, data: schemas.NameCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.NameCreateResponseSchema:
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: schemas.NameUpdate,
-                    session: AsyncSession = Depends(get_db)) -> schemas.NameCreateResponseSchema:
-        return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.NameCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.NameRead:
@@ -277,7 +257,7 @@ class RawdataRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Rawdata,
-            prefix="/rawdatas",
+            prefix="/rawdatas", include_in_schema=True
         )
 
     def setup_routes(self):
@@ -291,11 +271,6 @@ class RawdataRouter(BaseRouter):
     async def create(self, data: schemas.RawdataCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.RawdataCreateResponseSchema:
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: schemas.RawdataUpdate,
-                    session: AsyncSession = Depends(get_db)) -> schemas.RawdataCreateResponseSchema:
-        return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.RawdataCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.RawdataRead:
@@ -324,17 +299,12 @@ class ImageRouter(BaseRouter):
     def __init__(self):
         super().__init__(
             model=Image,
-            prefix="/images",
+            prefix="/images", include_in_schema=False
         )
 
     async def create(self, data: schemas.ImageCreate,
                      session: AsyncSession = Depends(get_db)) -> schemas.ImageCreateResponseSchema:
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: schemas.ImageUpdate,
-                    session: AsyncSession = Depends(get_db)) -> schemas.ImageCreateResponseSchema:
-        return await super().patch(id, data, session)
 
     async def create_relation(self, data: schemas.ImageCreateRelation,
                               session: AsyncSession = Depends(get_db)) -> schemas.ImageRead:

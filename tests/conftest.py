@@ -1,32 +1,38 @@
 # tests/conftest.py
 import asyncio
-import logging
+import sys
+from psycopg.errors import ForeignKeyViolation
+from pydantic import BaseModel
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
-
+from typing import List, Any, Optional, Dict, Type
 import pytest
 from dateutil.relativedelta import relativedelta
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
 from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+# from sqlalchemy.orm import sessionmaker
+from loguru import logger
+import logging
 from app.auth.models import User
 from app.auth.utils import create_access_token, get_password_hash
 from app.core.models.base_model import Base
-from app.core.utils.common_utils import jprint
-from app.main import app, get_db
-from app.mongodb.config import get_database, get_mongodb, MongoDB
-# from app.mongodb.router import get_mongodb
+# from app.core.utils.common_utils import jprint
+from app.main import app
+from app.core.config.database.db_async import get_db, DatabaseManager
+from app.dependencies import get_translator_func
+from app.core.config.database.db_mongo import MongoDBManager
+# from app.mongodb.config import get_database, get_mongodb, MongoDB
+# from app.core.config.database.db_mongo import get_mongodb
 from tests.config import settings_db
 from tests.data_factory.fake_generator import generate_test_data
 from tests.data_factory.reader_json import JsonConverter
 from tests.utility.assertion import assertions
 from tests.utility.data_generators import FakeData
 from tests.utility.find_models import discover_models, discover_schemas2
+from unittest.mock import patch, AsyncMock, Mock
 
 # from tests.data_factory.fake_generator import generate_test_data
 
@@ -34,6 +40,36 @@ scope = 'session'
 scope2 = 'session'
 example_count = 5      # количество тестовых записей - рекомедуется >20 для paging test
 
+
+@pytest.fixture(autouse=True)
+def setup_test_logger():
+    # 1. Удаляем все обработчики, настроенные в приложении (включая INFO из middleware)
+    logger.remove()
+
+    # 2. Добавляем новый обработчик только для уровня ERROR
+    logger.add(sys.stderr, level="ERROR")
+
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("httpcore").setLevel(logging.ERROR)
+
+    yield  # После завершения теста можно ничего не делать или вернуть настройки
+
+
+def get_model_by_name(name: str) -> Optional[Type[BaseModel]]:
+    """
+        получение pydantic модели по ее имени (для тестирования openapi_extra={'x-request-schema': ModelName)
+    """
+    def get_all_subclasses(cls):
+        all_subclasses = []
+        for subclass in cls.__subclasses__():
+            all_subclasses.append(subclass)
+            all_subclasses.extend(get_all_subclasses(subclass))
+        return all_subclasses
+
+    for cls in get_all_subclasses(BaseModel):
+        if cls.__name__ == name:
+            return cls
+    return None
 # ----------REAL IMAGE FIXTURES-----------
 
 
@@ -88,23 +124,22 @@ def sample_image_jpg(test_images_dir):
 @pytest.fixture(scope="session")
 async def test_mongodb(clean_database):
     """Создает тестовый экземпляр MongoDB"""
-    test_mongo = MongoDB()
-    test_url = f'{settings_db.mongo_url}'
-    await test_mongo.connect(test_url, settings_db.MONGO_DATABASE)
-    yield test_mongo
-    await test_mongo.disconnect()
+    from motor.motor_asyncio import AsyncIOMotorClient
+    client = AsyncIOMotorClient(settings_db.mongo_url)
+    db = client[settings_db.MONGO_DATABASE]
+    yield db
+    client.close()
 
 
 @pytest.fixture(scope="session")  # , autouse=True)
 async def clean_database():
-    """Очищает базу данных перед каждой сессией"""
-    test_mongo = MongoDB()
-    test_url = f'{settings_db.mongo_url}'
-    await test_mongo.connect(test_url, settings_db.MONGO_DATABASE)
-    if hasattr(test_mongo, 'database'):
-        await test_mongo.client.drop_database(settings_db.MONGO_DATABASE)
-        test_mongo.database = test_mongo.client[settings_db.MONGO_DATABASE]
-    await test_mongo.disconnect()
+    # Очищает базу данных перед каждой сессией
+    from motor.motor_asyncio import AsyncIOMotorClient
+    client = AsyncIOMotorClient(settings_db.mongo_url)
+    try:
+        await client.drop_database(settings_db.MONGO_DATABASE)
+    finally:
+        client.close()
 
 
 @pytest.fixture(scope="function")
@@ -134,35 +169,44 @@ async def mongo_health_check(test_mongodb):
 async def test_client_with_mongo(test_mongodb):
     """Создает тестового клиента с переопределенными MongoDB зависимостями"""
     from app.main import app
-    from app.mongodb.config import get_mongodb, get_database
+    from app.core.config.database.db_mongo import get_mongodb
+    from motor.motor_asyncio import AsyncIOMotorClient
 
-    # Переопределяем зависимости для тестов
-    async def override_get_mongodb():
+    # Store original MongoDBManager state
+    original_client = MongoDBManager.client
+    original_database = MongoDBManager.database
+
+    # Create a temporary client for the MongoDBManager to reference the test database
+    temp_client = AsyncIOMotorClient(settings_db.mongo_url)
+    temp_client_db = temp_client[settings_db.MONGO_DATABASE]
+
+    # Set up test MongoDB client for the duration of this test
+    MongoDBManager.client = temp_client
+    MongoDBManager.database = test_mongodb
+
+    def override_get_mongodb():
         return test_mongodb
 
-    async def override_get_database():
-        return test_mongodb.database
-
     app.dependency_overrides[get_mongodb] = override_get_mongodb
-    app.dependency_overrides[get_database] = override_get_database
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        yield client
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            yield client
+    finally:
+        # Clean up overrides
+        app.dependency_overrides.clear()
+        # Close the temporary client
+        temp_client.close()
+        # Restore original MongoDBManager state
+        MongoDBManager.client = original_client
+        MongoDBManager.database = original_database
 
 # ---------------mongo db end ----------
 
 
 def pytest_configure(config):
-    config.option.log_cli_level = "INFO"
+    config.option.log_cli_level = "CRITICAL"
     config.option.log_cli_format = "%(levelname)s - %(message)s"
-
-
-@pytest.fixture(autouse=True)
-def disable_httpx_logging():
-    """Подавляет INFO-логи от httpx и httpcore"""
-    loggers_to_silence = ["httpx", "httpx._client", "httpcore"]
-    for name in loggers_to_silence:
-        logging.getLogger(name).setLevel(logging.WARNING)
 
 
 @pytest.fixture(scope=scope)
@@ -182,6 +226,98 @@ def get_routers(method: str = 'GET') -> List[APIRoute]:
 
 
 @pytest.fixture(scope=scope)
+def exclude_routers() -> List[str]:
+    """ список path prefixes of routes what shall be excluded from tests"""
+    return ('/health', '/openapi', '/users', '/parser', '/rawdatas', '/auth/token',
+            '/registry', "/codes", "/status", "/names", "/images",
+            # "/items/hierarchy",
+            # "/drinks/hierarchy",
+            "/items/direct", "/api/mongo")
+
+
+def sort_routes(routes: list[APIRoute], path_prefixes: list[str]) -> list[APIRoute]:
+    def get_sort_key(route: APIRoute):
+        path = route.path
+
+        # Ищем индекс префикса в предоставленном кортеже/списке
+        for index, prefix in enumerate(path_prefixes):
+            # Важно: проверяем startswith
+            if path.startswith(prefix):
+                # Возвращаем (индекс_префикса, сам_путь)
+                # Индекс гарантирует порядок из path_prefixes
+                # Сам путь нужен для алфавитной сортировки внутри одного префикса
+                return (index, path)
+
+        # Если префикс не найден, возвращаем индекс за пределами списка
+        return (len(path_prefixes), path)
+
+    # Сортируем и возвращаем новый список
+    return sorted(routes, key=get_sort_key)
+
+
+@pytest.fixture(scope=scope)
+def presort_routers() -> List[str]:
+    """ список path prefixes router what shall be sorted
+        для тестирования POST, UPDATE, DELETE
+    """
+    result = ('/items', '/drink',
+              '/subregion', '/create/subregions', '/delete/subregions',
+              '/region', '/create/regions', '/delete/regions',
+              '/country', '/delete/country',
+              '/subcategory', '/create/subcategory', '/delete/subcategory',
+              '/category',
+              '/foods', '/create/foods', '/delete/foods'
+              '/superfoods')
+    return result
+
+
+def get_xxx_routes(method: str, exc_routers: List[str], pre_routers: List[str]) -> List[APIRoute]:
+    """
+        список роутеров, содержащих указанный метод
+        отсортированный для групповой обработки
+    """
+    exc_route = ('/',)  # исключаем корень
+    tmp = sort_routes([a for a in app.routes
+                       if isinstance(a, APIRoute) and a.path not in exc_route and
+                       method in a.methods and not any((a.path.startswith(x) for x in exc_routers))],
+                      pre_routers)
+    # if method in ['POST', 'PATCH']:
+    #     return tmp[::-1]
+    return tmp
+
+
+@pytest.fixture(scope=scope)
+def get_get_routes(exclude_routers, presort_routers) -> List[APIRoute]:
+    return get_xxx_routes('GET', exclude_routers, presort_routers)
+
+
+@pytest.fixture(scope=scope)
+def get_post_routes(exclude_routers, presort_routers) -> List[APIRoute]:
+    return get_xxx_routes('POST', exclude_routers, presort_routers)
+
+
+@pytest.fixture(scope=scope)
+def get_patch_routes(exclude_routers, presort_routers) -> List[APIRoute]:
+    return get_xxx_routes('PATCH', exclude_routers, presort_routers)
+
+
+@pytest.fixture(scope=scope)
+def get_del_routes(exclude_routers, presort_routers) -> List[APIRoute]:
+    return get_xxx_routes('DELETE', exclude_routers, presort_routers)
+
+
+@pytest.fixture(scope=scope)
+def get_all_routes(exclude_routers) -> List[APIRoute]:
+    """  список роутеров, содержащих указанный метод """
+    # prefix содерится в a.path
+    # APIRoute(path='/registry/hierarchy', name='create_relation', methods=['POST'])
+    exc_route = ('/',)
+    return [a for a in app.routes
+            if isinstance(a, APIRoute) and a.path not in exc_route and
+            not any((a.path.startswith(x) for x in exclude_routers))]
+
+
+@pytest.fixture(scope=scope)
 def simple_router_list():
     """генератор тестовых данных 1
     """
@@ -194,8 +330,7 @@ def simple_router_list():
     from app.support.varietal.router import VarietalRouter
     from app.support.superfood.router import SuperfoodRouter   # noqa: F401
     from app.support.food.router import FoodRouter
-    from app.support.parser.router import (StatusRouter, CodeRouter, RegistryRouter,
-                                           NameRouter, RawdataRouter, ImageRouter)
+
     # generator = TestDataGenerator()
     # template = remove_id(json_reader())
     # return generator.generate(template, count=7)
@@ -376,12 +511,12 @@ async def fakedata_generator(authenticated_client_with_db, test_db_session,
                 if assertions(response.status_code not in [200, 201],
                               failed_cases, item,
                               prefix, f'status_code {response.status_code}'):
-                    jprint(data)
+                    # jprint(data)
                     print('-------------------------------')
                     # assert response.status_code in [200, 201],
                     # f'{prefix}, {response.text}'
             except Exception as e:
-                jprint(data)
+                # jprint(data)
                 assert False, f'{e} {response.status_code} {prefix=}, {response.text}'
     if failed_cases:
         pytest.fail("Failed routers:\n" + "\n".join(failed_cases))
@@ -452,8 +587,11 @@ def mock_db_url():
     # return "sqlite+aiosqlite:///:memory:"
     # return "postgresql+asyncpg://test_user:test@localhost:2345/test_db" этот драйвер не походит для тестирования
     st = settings_db
+    from app.core.config.database.db_config import settings_db as real_st
     se = (f"postgresql+psycopg_async://{st.POSTGRES_USER}:"
           f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
+    # se = (f"postgresql+{real_st.DRIVER}://{st.POSTGRES_USER}:"
+    #       f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
     print(se)
     return (se)
 
@@ -467,7 +605,9 @@ async def mock_engine(mock_db_url):
         # pool_pre_ping=True
         pool_pre_ping=False,  # ❗️ Отключите для async
         pool_recycle=3600,  # Вместо этого используйте pool_recycle
-        pool_size=20, max_overflow=0  # !
+        # poolclass=NullPool,
+        pool_size=10,
+        max_overflow=5  # !
     )
     # Создает все таблицы в базе данных
     async with engine.begin() as conn:
@@ -478,6 +618,8 @@ async def mock_engine(mock_db_url):
         await conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS idx_items_search_trgm ON items "
+                                "USING GIN (search_content gin_trgm_ops);"))
     yield engine
     await engine.dispose()
 
@@ -485,21 +627,69 @@ async def mock_engine(mock_db_url):
 @pytest.fixture(scope=scope2)
 async def test_db_session(mock_engine):
     """Создает сессию для тестовой базы данных"""
-    AsyncSessionLocal = sessionmaker(
-        bind=mock_engine,
+    # Создаем соединение вручную, чтобы контролировать транзакцию
+    async with mock_engine.connect() as conn:
+        # Начинаем внешнюю транзакцию (в этом случае по окончании тестов в базе данных ничего не сохранится
+        #  trans = await conn.begin()
+
+        # Привязываем сессию к конкретному соединению
+        async with AsyncSession(
+                bind=conn, expire_on_commit=False, autoflush=False
+        ) as session:
+            # ВАЖНО: оборачиваем в еще одну транзакцию, (
+            # чтобы session.commit() внутри кода не закрывал соединение
+            # await session.begin_nested()
+
+            yield session
+            await session.commit()
+            # if trans.is_active:
+            #     await trans.rollback()
+
+
+@pytest.fixture(scope=scope2)
+def test_sessionmaker():
+    """Создает фабрику сессий для тестовой базы данных - очень тормозная - проверить """
+    st = settings_db
+    # from app.core.config.database.db_config import settings_db as real_st
+    # db_url = (f"postgresql+{real_st.DRIVER}://{st.POSTGRES_USER}:"
+    #           f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
+    db_url = (f"postgresql+psycopg://{st.POSTGRES_USER}:"
+              f"{st.POSTGRES_PASSWORD}@{st.POSTGRES_HOST}:{st.PG_PORT}/{st.POSTGRES_DB}")
+
+    engine = create_async_engine(
+        db_url, echo=False,  # pool_pre_ping=True
+        pool_pre_ping=False,  # ❗️ Отключите для async
+        pool_recycle=3600,  # Вместо этого используйте pool_recycle
+        pool_size=10, max_overflow=5  # !
+    )
+
+    return async_sessionmaker(
+        bind=engine,
         class_=AsyncSession,
         expire_on_commit=False,
         autoflush=False
     )
-    # async with mock_engine.connect() as session:
-    async with AsyncSessionLocal() as session:
-        try:  # !
-            yield session
-            await session.commit()   # !
-            # await session.close()
-        except Exception:
-            await session.rollback()  # Откат при ошибках
-            raise
+
+
+@pytest.fixture
+def mock_async_session():
+    return AsyncMock(spec=AsyncSession)
+
+
+@pytest.fixture(autouse=True)
+def mock_db_manager(mock_async_session):
+    # session_maker — это callable, НЕ async def!
+    mock_session_maker = Mock()  # ← обычный Mock!
+
+    # session_maker() должен вернуть объект, поддерживающий async with
+    mock_context_mgr = AsyncMock()
+    mock_context_mgr.__aenter__.return_value = mock_async_session
+    mock_context_mgr.__aexit__.return_value = None
+
+    mock_session_maker.return_value = mock_context_mgr
+
+    with patch("app.core.config.database.db_async.DatabaseManager.session_maker", new=mock_session_maker):
+        yield
 
 
 @pytest.fixture(scope=scope2)
@@ -570,7 +760,8 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
                                        override_app_dependencies, base_url, get_test_db, test_mongodb):
     """ Аутентифицированный клиент с тестовой базой данных """
     # from app.main import app
-    # from app.mongodb.config import get_mongodb, get_database
+    from app.core.config.database.db_mongo import get_mongodb
+
     async def get_test_db():
         yield test_db_session
 
@@ -580,10 +771,22 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
     async def override_get_database():
         return test_mongodb.database
 
+    async def override_get_translator_func(data: Dict[str, Any], flag: Optional[bool] = None):
+        result: dict = {}
+        for key, val in data.items():
+            if isinstance(result, str):
+                result[key] = f'{val} translated'
+            else:
+                result[key] = val
+        return result
+
     # override_app_dependencies[app.dependency_overrides] = get_test_db
-    app.dependency_overrides[get_db] = get_test_db
-    app.dependency_overrides[get_mongodb] = override_get_mongodb
-    app.dependency_overrides[get_database] = override_get_database
+    app.dependency_overrides[get_db] = lambda: test_db_session
+    # app.dependency_overrides[get_db] = get_test_db
+    # app.dependency_overrides[get_mongodb] = override_get_mongodb
+    app.dependency_overrides[get_mongodb] = lambda: test_mongodb
+    # app.dependency_overrides[get_database] = override_get_database
+    app.dependency_overrides[get_translator_func] = lambda: override_get_translator_func
 
     # Создаем JWT токен для тестового пользователя
     token_data = {"sub": super_user_data["username"]}
@@ -593,7 +796,8 @@ async def authenticated_client_with_db(test_db_session, super_user_data,
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url=base_url,
-        headers={"Authorization": f"Bearer {access_token}"}
+        headers={"Authorization": f"Bearer {access_token}",
+                 "X-API-Key": "4f9e6a32d8c1b5a0f7e4d2b9a1c8f3e5d0b2a7c4f1e9d6b3a0c5f8e2d1b7a4c9"}
     ) as ac:
         ac._test_user = super_user_data
         ac._test_user_db = create_super_user

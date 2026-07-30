@@ -1,0 +1,410 @@
+# app.core.service.array_service.py
+from typing import Any, Dict, List
+from random import randint
+from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, HTTPException, Request, UploadFile
+from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.schemas.base import BaseModel
+from app.core.types import ModelType
+from app.core.repositories.array_repository import ArrayRepository, SetArrayRepository
+from app.core.services.seaweed_service import SeaweedsService
+from app.core.utils.alchemy_utils import has_column
+from app.core.utils.common_utils import jprint
+from app.core.utils.io_utils import get_font_list
+from app.core.utils.pillow_generator import TextConfig, generate_text_image, TextConfigAdaptive
+from app.core.utils.color_palette import auto_match_colors_old
+from app.core.utils.pydantic_utils import inst_dict
+
+
+class ArrayService:
+    """
+        service layer для работы с полями  ARRAY[]
+    """
+
+    @classmethod
+    async def get_array_by_id(cls, id: int,
+                              model: ModelType, arrayName: str,
+                              repository: ArrayRepository,
+                              session: AsyncSession) -> Dict[str, Any]:
+        """ получение массива по id """
+        result = await repository.get_array_by_id(id, model, arrayName, session)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def get_item_of_array_by_id(
+            cls, id: int,
+            model: ModelType, arrayName: str,
+            repository: ArrayRepository, session: AsyncSession,
+            pos: int = 0
+    ) -> Any:
+        """ получение элемента массива по id и индексу"""
+        result = await repository.get_array_by_id(id, model, arrayName, session)
+        if result:
+            return result[min(len(result), pos)]
+        else:
+            return None
+
+    @classmethod
+    async def add_to_array(cls, id: int, new_elements: List[str],
+                           model: ModelType, arrayName: str,
+                           repository: ArrayRepository,
+                           session: AsyncSession) -> Dict:
+        """
+            Добавление элементов в конец массива
+            id:             id записи
+            new_elements:   добавляемые элементы
+            model:          модель
+            arrayName:      имя поля
+        """
+        result = await repository.add_to_array(id, new_elements, model, arrayName, session)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def clear_array_by_id(cls, id: int,
+                                model: ModelType, arrayName: str,
+                                repository: ArrayRepository,
+                                session: AsyncSession) -> Dict[str, Any]:
+        """ получение массива по id """
+        result = await repository.clear_array_by_id(id, model, arrayName, session)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def add_first_to_array(cls, id: int, new_elements: List[str],
+                                 model: ModelType, arrayName: str,
+                                 repository: ArrayRepository,
+                                 session: AsyncSession) -> Dict[str, Any]:
+        """ Добавление элементов в начало массива """
+        result = await repository.add_first_to_array(id, new_elements, model, arrayName, session)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def replace_array(cls, id: int, new_elements: List[str],
+                            model: ModelType, arrayName: str,
+                            repository: ArrayRepository,
+                            session: AsyncSession) -> Dict[str, Any]:
+        """ Замена всех элементов в массиве """
+        result = await repository.replace_array(id, new_elements, model, arrayName, session)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def del_by_index_array(cls, id: int, pos: int,
+                                 model: ModelType, arrayName: str,
+                                 repository: ArrayRepository,
+                                 session: AsyncSession,
+                                 block: int = 2) -> Dict[str, Any]:
+        """ Удаление элемента по индексу """
+        result = await repository.del_by_index_array(id, pos, model, arrayName, session, block)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def swap_by_index_array(cls, id: int, pos1: int, pos2: int,
+                                  model: ModelType, arrayName: str,
+                                  repository: ArrayRepository,
+                                  session: AsyncSession, block: int = 2) -> Dict[str, Any]:
+        """ Поменять два элемента местами """
+        result = await repository.swap_by_index_array(id, pos1, pos2, model, arrayName, session, block)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    @classmethod
+    async def replace_by_index_array(cls, id: int, pos: int, newdata: str,
+                                     model: ModelType, arrayName: str,
+                                     repository: ArrayRepository,
+                                     session: AsyncSession) -> Dict[str, Any]:
+        """ Замена элемента по индексу на новые данные """
+        result = await repository.replace_by_index_array(id, pos, newdata, model, arrayName, session)
+        return {'arrray': result, 'size': len(result) if result else 0}
+
+    # -----
+    @classmethod
+    async def get_image_by_id_v2(
+            cls, request: Request, id: int, repository: Repository, model: ModelType, session: AsyncSession,
+            image_service: SeaweedsService, pos: int = 0
+    ) -> bytes:
+        """
+            получение полноразмерного изображения по id напитка
+        """
+        #  ПОИСК КОЛОНКИ seaweed_fids
+        arrayColname = 'seaweed_fids'
+        if not has_column(model, arrayColname):
+            raise HTTPException(status_code=422, detail=f'{model.__name__} model has no images at all')
+        # 1. получение image_id by id
+        image_id = await cls.get_item_of_array_by_id(id, model, arrayColname, repository, session, pos)
+        if not image_id:
+            # image_id = get_default_image(request, pos)
+            image: bytes = await cls.generate_random_image_by_id(id, session, False)
+            return image
+        # 2. получение image by image_id
+        # image = await image_service.get_full_image(image_id)
+        image: bytes = await image_service.get_image(image_id)
+        return image
+
+    @classmethod
+    async def test_generate_image_by_text(
+            cls, request: Request, id, preset: dict, session: AsyncSession
+    ) -> bytes:
+        """
+            тестирование изображений
+        """
+        instance = await cls.repository.get_by_id(id, cls.model, session)
+        item_dict: dict = instance.to_dict_fast()
+        drink_dict = item_dict.get('drink')
+        if not drink_dict:
+            return None
+        txt = drink_dict.get("diplay_name", f"{drink_dict.get("title")} {drink_dict.get("subtitle")}")
+        preset['text'] = txt
+        config = TextConfig(**preset)
+        result: bytes = generate_text_image(config, "WEBP", 100)
+        return result
+
+    @classmethod
+    async def test_generate_image_by_background(
+            cls, request: Request, id, preset: dict, session: AsyncSession
+    ) -> bytes:
+        """
+            тестирование изображений
+            автоподбор цвета по цвету подложки
+        """
+        instance = await cls.repository.get_by_id(id, cls.model, session)
+        item_dict: dict = instance.to_dict_fast()
+        drink_dict = item_dict.get('drink')
+        if not drink_dict:
+            return None
+        txt = drink_dict.get("display_name", f"{drink_dict.get('title')} {drink_dict.get('subtitle')}")
+        preset['text'] = txt
+        palette: dict = auto_match_colors_old(preset.get("background_color"))
+        preset["fill_color"] = palette.get('fill_color')
+        preset["stroke_color"] = palette.get('stroke_color')
+        preset["shadow_color"] = palette.get('shadow_color')
+        config = TextConfig(**preset)
+        result: bytes = generate_text_image(config, "WEBP", 100)
+        return result
+
+    @classmethod
+    async def generate_image_by_id(
+            cls, id: int, font: str, session: AsyncSession, bg_opacity: int = 255
+    ) -> bytes:
+        """
+            генерация рисунка по тексту с адаптивной цветовой палитрой - старый метод
+        """
+        instance = await cls.repository.get_by_id(id, cls.model, session)
+        item_dict: dict = instance.to_dict_fast()
+        drink_dict = item_dict.get('drink')
+        # get txt
+        if not drink_dict:
+            return None
+        txt = drink_dict.get("display_name", f"{drink_dict.get('title')} {drink_dict.get('subtitle')}")
+        # get back color
+        if subcategory := drink_dict.get('subcategory'):
+            category: dict = subcategory.get('category')
+            background_color = subcategory.get('color', category.get('color', "#FFFFFF"))
+        else:
+            background_color = "#FFFFFF"
+        palette: dict = auto_match_colors_old(background_color)
+        preset: dict = {}
+        preset["text"] = txt
+        preset["font_path"] = font
+        preset["background_color"] = background_color
+        preset["background_opacity"] = bg_opacity
+        preset["fill_color"] = palette.get('fill_color')
+        preset["stroke_color"] = palette.get("stroke_color")
+        preset["shadow_color"] = palette.get("shadow_color")
+        config = TextConfig(**preset)
+        result: bytes = generate_text_image(config, "WEBP", 100)
+        return result
+
+    @classmethod
+    async def test_generate_by_id(
+            cls, request: Request, id: int, font: str, session: AsyncSession
+    ) -> bytes:
+        return await cls.generate_image_by_id(id, font, session)
+
+    @classmethod
+    async def generate_image_by_id_v2(
+            cls, id: int, font: str, session: AsyncSession, bg_opacity: int = 0
+    ) -> bytes:
+        """
+            генерация рисунка по тексту с адаптивной цветовой палитрой - новый метод
+        """
+        instance = await cls.repository.get_by_id(id, cls.model, session)
+        item_dict: dict = instance.to_dict_fast()
+        drink_dict = item_dict.get('drink')
+        # get txt
+        if not drink_dict:
+            return None
+        txt = drink_dict.get("display_name", f"{drink_dict.get('title')} {drink_dict.get('subtitle')}")
+        # get back color
+        jprint(drink_dict)
+        if subcategory := drink_dict.get('subcategory'):
+            category: dict = subcategory.get('category')
+            background_color = subcategory.get('color', category.get('color', "#FFFFFF"))
+        else:
+            background_color = "#FFFFFF"
+        logger.warning(f'{id=}, {background_color=}')
+        preset: dict = {}
+        preset["text"] = txt
+        preset["font_path"] = font
+        preset["background_color"] = background_color
+        preset["background_opacity"] = bg_opacity
+        config = TextConfigAdaptive(**preset)
+        result: bytes = generate_text_image(config, "WEBP", 100)
+        return result
+
+    @classmethod
+    async def generate_random_image_by_id(cls, id: int, session: AsyncSession, bg_opacity: bool) -> bytes:
+        """
+            генерация рисунка с рандомными шрифтами и адаптивной цветовой палитрой
+        """
+        # получение шрифтов
+        font_list = get_font_list('fonts')
+        x = len(font_list)
+        rx = randint(0, x - 1)
+        font = font_list[rx]
+        return await cls.generate_image_by_id_v2(id, font, session, bg_opacity)
+
+    # методы для совместимости с mongodb/service
+    @classmethod
+    async def delete_image(cls, image_id: str, table: str = 'items', image_service: SeaweedsService = Depends()
+                           ):
+        """
+           удаление одного изображения и его thumbnail по fid
+        """
+        return await image_service.delete_img(image_id, table)
+
+    @classmethod
+    async def get_full_image(cls, file_id: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """Получить полноразмерное изображение - по fid"""
+        image: bytes = await image_service.get_image(file_id)
+        return image
+
+    @classmethod
+    async def get_thumbnail(cls, file_id: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """Получить thumbnail by fid"""
+        image: bytes = await image_service.get_thumb_by_fid(file_id)
+        return image
+
+    @classmethod
+    async def get_full_image_by_filename(cls, file_name: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """ Получить полноразмерное изображение по имени файла
+            в seaweeds вместо имени файла используется tags который состоит из названия напитка
+            поиск по нему
+        """
+        image: bytes = await image_service.search_image_by_tag(file_name, 1)
+        return image
+
+    @classmethod
+    async def get_thumbnail_by_filename(self, file_name: str, image_service: SeaweedsService = Depends()) -> bytes:
+        """Получить thumbnail (для списков) - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+        image: bytes = await image_service.search_image_by_tag(file_name, 2)
+        return image
+
+    @classmethod
+    async def upload_image(
+            self, file: UploadFile, description: str, image_service: SeaweedsService = Depends()) -> Dict[str, Any]:
+        """
+            сохраняет полное изображение и thumbnail
+        """
+        content = await file.read()
+        result, content = await image_service.create_img2(content, description, 'item', 1, 4)
+        # {'tags': tags, 'fid': fid, 'fid_thumb': fid_thumb}, content_data
+        # return filename, result.get('id'), content
+        return result.get('tags'), result.get('id'), content
+
+
+class SetArrayService:
+    """
+        сервис для моделей с полями Set[String]
+        методы:
+        create, patch, delete, get, get_one: это все в Service
+        КАСАЕТСЯ ТОЛЬКО ПОЛЕ SET
+        add_to_array
+        delete_from_array
+        find in array
+    """
+    default: list  # список полей, однозначно определяющих запись, по ним будет происходить поиск записи в get_or_create
+    repository: SetArrayRepository  # репозиторий
+    model: ModelType  # модель
+    array_fields: tuple  # список полей массивов
+
+    @classmethod
+    def __array_set_validation__(cls, data_dict: dict) -> dict:
+        """
+            валидация array_set полей - возвращает новый словарь только с array полями
+        """
+        return {key: val for key, val in data_dict.items() if key in cls.array_fields}
+
+    @classmethod
+    def __filter__(cls, data_dict) -> dict:
+        """
+            выделяет фильтр из данных
+        """
+        return {key: val for key, val in data_dict.items() if key in cls.default}
+
+    @classmethod
+    async def __preparation__(cls, session: AsyncSession, data: BaseModel) -> (ModelType, dict):
+        """
+            получает Create
+            возвращает соотвествующий instance и словать с array set
+        """
+        data_dict = data.model_dump()
+        filter: dict = cls.__filter__(data_dict)
+        validated_array: dict = cls.__array_set_validation__(data_dict)
+        instance = await cls.repository.get_by_field_v2(filter, cls.model, session)
+        return instance, validated_array
+
+    @classmethod
+    async def set_add_single(cls, session: AsyncSession, data: BaseModel) -> dict:
+        """
+            проверка - есть отсутствует запись, то создает
+            если есть то дополняет
+            data: Update pydantic model
+        """
+        instance, validated_array = await cls.__preparation__(session, data)
+        if not instance:
+            response: ModelType = await cls.repository.create(cls.model(**data.model_dump()), cls.model, session)
+            result = inst_dict(response)
+        else:
+            current_dict: dict = inst_dict(instance)
+            for key, val in validated_array.items():
+                x = set(current_dict.get(key, []))
+                x.update(val)
+                validated_array[key] = x
+            response: dict = await cls.repository.patch(instance, validated_array, session)
+            # response = {"success": True, "data": obj}
+            if not response.get('success'):
+                raise HTTPException(status_code=500, detail='обновление не случилось')
+            result = inst_dict(response.get('data'))
+        return result
+
+    @classmethod
+    async def create(cls, session: AsyncSession, data: BaseModel) -> dict:
+        """
+            создание записи
+        """
+        data_dict = data.model_dump()
+        response = await cls.repository.create(cls.model(**data_dict), cls.model, session)
+        return inst_dict(response)
+
+    @classmethod
+    async def set_remove_single(cls, session: AsyncSession, data: BaseModel, clear: bool = True) -> dict:
+        """
+            удаляет элемент из array set
+            если array пустой и clear = True - удаляет всю запись
+        """
+        instance, validated_array = await cls.__preparation__(session, data)
+        if not instance:
+            raise HTTPException(status_code=404, detail='запись не найдена')
+        else:
+            current_dict: dict = inst_dict(instance)
+            for key, val in validated_array.items():
+                x = set(current_dict.get(key, []))
+                x.difference_update(val)
+                validated_array[key] = x
+            if clear and ''.join(*validated_array.values()) == '':
+                # array поля пустые - удалить
+                await cls.repository.delete(instance, session)
+                return {'result': 'array are empty, record deleted'}
+            response: dict = await cls.repository.patch(instance, validated_array, session)
+            if not response.get('success'):
+                raise HTTPException(status_code=500, detail='обновление не случилось')
+        return inst_dict(response.get('data'))

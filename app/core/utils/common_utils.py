@@ -1,36 +1,43 @@
 # app/core/common_utils.py
 # some useful utilits
 
-from pathlib import Path
 from datetime import datetime, timezone
+import random
+import string
+
+import ahocorasick
 from fastapi import HTTPException
-from typing import Any, Dict, List, Optional, Set, TypeVar, Union
-import json
+from typing import Any, Dict, List, Optional, Set, Union
+from rich.pretty import pprint
 import re
 # from sqlalchemy.sql.sqltypes import String, Text, Boolean
 from sqlalchemy import Boolean, inspect, String, Text, Unicode, UnicodeText
 from sqlalchemy.dialects.postgresql import CITEXT  # если используешь PostgreSQL
 from sqlalchemy.orm import DeclarativeMeta, RelationshipProperty, selectinload
 from sqlalchemy.sql.selectable import Select
+from dateutil.relativedelta import relativedelta
 
-ModelType = TypeVar("ModelType", bound=DeclarativeMeta)
-
-
-def strtolist(data: str, delim: str = ',') -> List[str]:
-    """ строка с разделителями в список"""
-    if isinstance(data, str):
-        return [a.strip() for a in data.split(delim)]
-    else:
-        return []
+from app.core.hash_norm import tokenize
+from app.core.types import ModelType
+from rich.console import Console
+from rich.table import Table
 
 
-def strtodict(data: str, delim1: str = ',', delim2: str = ':') -> Dict[str, str]:
-    tmp = strtolist(data, delim1)
-    result: dict = {}
-    for item in tmp:
-        key, val = item.split(delim2)
-        result[key.strip()] = val.strip()
-    return result
+def getter(obj: Any, item_name: str) -> Any | None:
+    return getattr(obj, item_name)
+
+
+def setter(obj: Any, item_name: str, value: Any | None) -> bool:
+    try:
+        setattr(obj, item_name, value)
+        return True
+    except Exception as _:  # noqa: F841
+        return False
+
+
+def delta_data(shift: int = 2) -> str:
+    """ возвращает дату отстоящую от now() на shift лет (отрицательные числа - вперед)"""
+    return (datetime.now(timezone.utc) - relativedelta(days=shift)).isoformat()
 
 
 def sort_strings_by_alphabet_and_length(strings: List[str]) -> List[str]:
@@ -44,23 +51,6 @@ def sort_strings_by_alphabet_and_length(strings: List[str]) -> List[str]:
         Отсортированный список строк
     """
     return sorted(strings, key=lambda s: (s.lower(), len(s)))
-
-
-def get_path_to_root(name: str = '.env'):
-    """
-        get path to file or directory in root directory
-    """
-    try:
-        for k in range(1, 10):
-            env_path = Path(__file__).resolve().parents[k] / name
-            if env_path.exists():
-                break
-        else:
-            env_path = None
-            raise Exception('environment file is not found')
-        return env_path
-    except Exception:
-        return None
 
 
 def get_searchable_fields(model: type) -> Dict[str, type]:
@@ -388,25 +378,6 @@ def json_flattern(self, data: dict, parent: str = '') -> dict:
     return result
 
 
-def plural(single: str) -> str:
-    """
-    возвращает множественное число прописными буквами по правилам англ языка
-    :param single:  single name
-    :type name:     str
-    :return:        plural name
-    :rtype:         str
-    """
-    name = single.lower()
-    if name.endswith('model'):
-        name = name[0:-5]
-    if not name.endswith('s'):
-        if name.endswith('y'):
-            name = f'{name[0:-1]}ies'
-        else:
-            name = f'{name}s'
-    return name
-
-
 def get_nested(d: dict, path: str) -> Any:
     """
     Получить значение из вложенного словаря по пути с точками.
@@ -563,9 +534,11 @@ def pop_nested(d: dict, path: str, default=None):
     return default
 
 
-def jprint(data: dict):
+def jprint(data: Union[dict, list, tuple],
+           expand_all: bool = False, indent_guides: bool = True):
     """ красивая печать словарей, списков """
-    print(json.dumps(data, indent=2, ensure_ascii=False))
+    # print(json.dumps(data, indent=2, ensure_ascii=False))
+    pprint(data, indent_guides=indent_guides, expand_all=expand_all)
 
 
 def back_to_the_future(after_date: datetime) -> datetime:
@@ -592,7 +565,7 @@ def camel_to_enum(input: str) -> str:
         return None
 
 
-def clean_string(s: str) -> str:
+def clean_string_old(s: str) -> str:
     """
          очистка строки от битых экранированных скобок, служебных символов
     """
@@ -611,6 +584,56 @@ def clean_string(s: str) -> str:
     s = re.sub(r'\s+', ' ', s).strip()
 
     return s
+
+
+def clean_string(s: str) -> str:
+    """Очистка строки от мусора без re, с нормализацией кавычек"""
+    if not isinstance(s, str):
+        return s
+
+    # Таблица перевода символов (оптимально для CPython)
+    translation_table = str.maketrans(
+        {  # Кавычки разных видов -> обычные двойные кавычки
+            '"': '"',  # оставляем как есть
+            "'": '"',  # одинарная -> двойная
+            '«': '"',  # левая французская
+            '»': '"',  # правая французская
+            '“': '"',  # левая двойная
+            '”': '"',  # правая двойная
+            '„': '"',  # нижняя двойная
+            '‛': '"',  # одинарная перевернутая
+            '’': '"',  # правая одинарная
+            '‘': '"',  # левая одинарная
+            '′': '"',  # штрих
+            '″': '"',  # двойной штрих
+
+            # Мусорные символы -> удаляем (заменяем на None)
+            '(': None, ')': None, '/': None, '\\': None, '[': None, ']': None, '{': None, '}': None, '<': None,
+            '>': None, '`': None, '´': None, '^': None, '|': None, '*': None, '#': None, '~': None, }
+    )
+
+    # Шаг 1: заменяем управляющие символы на пробел
+    # Создаём список символов (так быстрее, чем посимвольный replace в цикле)
+    result_chars = []
+    for ch in s:
+        code = ord(ch)
+        # Управляющие символы и DEL -> пробел
+        if code < 0x20 or code == 0x7F:
+            result_chars.append(' ')
+        # Нормальные символы -> через таблицу перевода
+        else:
+            translated = translation_table.get(ch)
+            if translated is None:
+                result_chars.append(ch)
+            elif translated is not None:  # None означает удаление
+                result_chars.append(translated)
+
+    # Шаг 2: соединяем и сжимаем пробелы
+    result = ''.join(result_chars)
+
+    # Шаг 3: схлопываем множественные пробелы и обрезаем края
+    # Это быстрее всего сделать через split/join
+    return ' '.join(result.split())
 
 
 def get_value(source: list, search: str) -> Union[list, str]:
@@ -884,3 +907,168 @@ def search_local(query_string: str) -> int:
         return 1
     else:
         return 2
+
+
+def localized_field_with_replacement(source: Dict[str, Any], key: str,
+                                     langs: Union[list, tuple], target_key: str = None) -> Dict[str, Any]:
+    """
+        source - словарь
+        key: ключ
+        langs: список языков
+        target_key: имя поля (если None то key)
+        1. Извлекает из словаря source значения key на всех языках
+        2. Выбирает первое не пустое (langs - список suffixes языков отсортированных по приоритету)
+        3. Возвращает словарь из одной пары target_key: val
+    """
+    for lang in langs:
+        res = source.get(f'{key}{lang}')
+        if res:
+            return {target_key or key: res}
+    else:
+        return {target_key or key: None}
+
+
+def get_owners_by_path(obj, path: str):
+    """
+    Рекурсивно проходит по строковому пути 'attr1.attr2'
+    Поддерживает списки (many-to-many, one-to-many).
+    """
+    parts = path.split(".")
+    current_targets = [obj]
+
+    for part in parts:
+        next_targets = []
+        for target in current_targets:
+            value = getattr(target, part, None)
+            if value is None:
+                continue
+            if isinstance(value, list):
+                next_targets.extend(value)
+            else:
+                next_targets.append(value)
+        current_targets = next_targets
+
+    return current_targets  # Вернет список объектов (например, [Item, Item...])
+
+
+def compare_lists_compact(old_list: List[Dict], new_list: List[Dict], key: str = "id") -> Dict:
+    """
+         сравнение двух списков словарей
+         key: ключевое поле которое однозначно определяет словарь
+    """
+    old = {item[key]: item for item in old_list}
+    new = {item[key]: item for item in new_list}
+
+    result = {"added": [new[k] for k in new.keys() - old.keys()], "removed": [old[k] for k in old.keys() - new.keys()]}
+    return {} if all(not v for v in result.values()) else result
+    # разобраться с changed - теряет подтянутые значения из details
+    # return {"added": [new[k] for k in new.keys() - old.keys()], "removed": [old[k] for k in old.keys() - new.keys()],
+    #         "changed": [new[k] for k in old.keys() & new.keys() if old[k] != new[k]]}
+
+
+def clean_list_of_dict(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+        очистка списка плоских словарей от пустых значений
+    """
+    return [{k: v for k, v in d.items() if v not in (None, [], "")} for d in data]
+
+
+def clean_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+        очистка плоских словарей от пустых значений
+    """
+    return {k: v for k, v in data.items() if v not in (None, [], "")}
+
+
+def make_paging_dict(source: list | tuple, page: int, page_size: int, total: int) -> dict:
+    items = []
+    return {"items": source[(page - 1) * page_size: page * page_size],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page - 1) * page_size + len(items) < total if total > 0 else False,
+            "has_prev": page > 1
+            }
+
+
+def get_random_string(length) -> str:
+    """
+    генератор случайных строк
+    """
+    letters_and_digits = string.ascii_letters + string.digits
+    # Генерируем список символов и склеиваем в строку
+    return ''.join(random.choices(letters_and_digits, k=length)).lower()
+
+
+def rich_print(data: List[Dict], title: str):
+    """
+    красивая печать в логах
+    на входе список словарей
+    где ключи - названия колонок
+    """
+    # jprint(data)
+    if data is None or len(data) == 0:
+        return
+    console = Console(width=140)
+    table = Table(title=title, expand=True)
+    for key in data[0].keys():
+        table.add_column(key.capitalize(),
+                         style="cyan",
+                         justify="left",
+                         no_wrap=False,
+                         min_width=10,
+                         overflow="fold")
+    for val in data:
+        v = tuple(str(v) for v in val.values())
+        table.add_row(*v)
+        # table.add_row(*val.values())
+    console.print(table)
+
+
+def distinct_glue(*args, blacklist: tuple | list = None) -> str:
+    """
+    склеивает аргументы в строку - удаляя повторы
+    args - фразы
+    blacklist - stricktly lower case
+    """
+    blacklist = set(blacklist or [])
+    words: list = tokenize(' '.join((a for a in args if a and a.lower() not in blacklist)).lower())
+    return ' '.join(word.capitalize() for word in dict.fromkeys(words))
+
+
+def aho_replace(text: str, replacements: dict) -> str:
+    """
+        быстрая замена по словарю replacement любой величины
+        replacements = {"Красный": "Зеленый", "синюю": "чистую"}
+        text = "Красный мяч упал в синюю реку."
+        print(aho_replace(text, replacements))
+    """
+    # 1. Создаем автомат Ахо-Корасик
+    A = ahocorasick.Automaton()
+    for old, new in replacements.items():
+        A.add_word(old, (old, new))
+    A.make_automaton()
+
+    # 2. Ищем все совпадения
+    matches = []
+    for end_idx, (old, new) in A.iter(text):
+        start_idx = end_idx - len(old) + 1
+        matches.append((start_idx, end_idx, new))
+
+    # 3. Собираем строку обратно (с конца, чтобы индексы не поехали)
+    text_list = list(text)
+    for start, end, new in sorted(matches, key=lambda x: x[0], reverse=True):
+        text_list[start:end + 1] = list(new)
+
+    return "".join(text_list)
+
+
+def replaceX(text: str, replacement: Union[dict, tuple, list, set]) -> str:
+    """
+        замена по словарю. если словаря нет замена по спсиску на ''
+    """
+    if not isinstance(replacement, dict):
+        replacement = dict.fromkeys(replacement, '')
+    for key, val in replacement.items():
+        text = text.replace(key, val)
+    return text

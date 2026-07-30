@@ -18,10 +18,12 @@ class CreateRouter(PreactRouter):
         """
         schema = get_pyschema(model, 'Create') or sqlalchemy_to_pydantic_post(model)
         setattr(self, f'{model.__name__}Create', schema)
+        schema_response = get_pyschema(model, 'CreateResponse') or sqlalchemy_to_pydantic_post(model)
+        setattr(self, f'{model.__name__}CreateResponse', schema_response)
 
-    def __get_schemas__(self, model: Type[DeclarativeBase]):
+    def __get_schemas__(self, model: Type[DeclarativeBase], typo: str = 'Create'):
         """ получает ранее созданную Create схему """
-        return getattr(self, f'{model.__name__}Create')
+        return getattr(self, f'{model.__name__}{typo}', )
 
     def schemas_generator(self, source: dict):
         """ генератор pydantic схем """
@@ -29,13 +31,17 @@ class CreateRouter(PreactRouter):
             self.__set_schema__(model)
 
     def __source_generator__(self, source: dict):
-        return ((f'/{key}', self.__get_schemas__(val)) for key, val in source.items())
+        return ((f'/{key}',
+                 get_pyschema(val, 'CreateResponse'),
+                 get_pyschema(val, 'Create'),) for key, val in source.items())
+        # return ((f'/{key}', self.__get_schemas__(val)) for key, val in source.items())
+        # get_pyschema(val, 'DetailView'),
 
     async def endpoint(self, request: Request, data: Dict[str, Any] = Body(...),
                        session: AsyncSession = Depends(get_db)):
         try:
             current_path = request.url.path
-            print(f'{current_path=}')
+            #  print(f'{current_path=}')
             _, tmp = self.__path_decoder__(current_path)
             model = self.source.get(tmp)
             schema = self.__get_schemas__(model)
@@ -43,10 +49,9 @@ class CreateRouter(PreactRouter):
             service = self.get_service(model)
             model_data = schema(**data)
             obj, result = await service.get_or_create(model_data, repo, model, session)
-            print(f'{result=}')
+            # print(f'{result=}')
             return obj
         except Exception as e:
-            await session.rollback()
             raise HTTPException(
                 status_code=500,
                 detail=f'Create Fault, {e}'

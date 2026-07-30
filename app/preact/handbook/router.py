@@ -4,7 +4,8 @@
     выводит только словари  id: name
     по языкам
 """
-from fastapi import Request, Depends
+import orjson
+from fastapi import Request, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
@@ -20,7 +21,9 @@ class HandbookRouter(PreactRouter):
         """
         генератор для создания роутов
         """
-        return ((f'/{key}' + '/{lang}', List[get_pyschema(val, 'ListView')]) for key, val in source.items())
+        return ((f'/{key}' + '/{lang}',
+                 List[get_pyschema(val, 'ListView')],
+                 None) for key, val in source.items())
 
     async def endpoint(self, request: Request, lang: str, session: AsyncSession = Depends(get_db)):
         current_path = request.url.path
@@ -30,5 +33,7 @@ class HandbookRouter(PreactRouter):
         repo = self.get_repo(model)
         service = self.get_service(model)
         # print(f'{route.response_model=}, {repo=}')
-        rows = await service.get_list_view(lang, repo, model, session)
-        return rows
+        rows = await service.get_list_view(request, lang, repo, model, session)
+        content = orjson.dumps(rows)
+        return Response(content=content, media_type="application/json")
+        # return rows

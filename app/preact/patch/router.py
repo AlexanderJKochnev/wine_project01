@@ -1,5 +1,5 @@
 # app/preact/path/router.py
-from fastapi import Request, Depends, Body, HTTPException
+from fastapi import Request, Depends, Body, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.preact.core.router import PreactRouter
 from app.core.config.database.db_async import get_db
@@ -10,6 +10,13 @@ from app.core.utils.pydantic_utils import get_pyschema
 class PatchRouter(PreactRouter):
     def __init__(self):
         super().__init__(prefix='patch', method='PATCH', tier=3)
+
+    def _setup_routes_(self):
+        for prefix, response_model, request_model in self.__source_generator__(self.source):
+            self.router.add_api_route(prefix, endpoint=self.endpoint, methods=[self.method],
+                                      response_model=response_model,
+                                      openapi_extra={'x-request-schema': request_model.__name__
+                                                     if request_model else None})
 
     def __set_schema__(self, model):
         """  находит  Update схему для response_model """
@@ -29,19 +36,25 @@ class PatchRouter(PreactRouter):
         """
         генератор для создания роутов
         """
-        return ((f'/{key}' + '/{id}', get_pyschema(val, 'Update')) for key, val in source.items())
+        return ((f'/{key}/' + '{id}',
+                 get_pyschema(val, 'Update'),
+                 get_pyschema(val, 'Read'),) for key, val in source.items())
+        # return ((f'/{key}' + '/{id}', get_pyschema(val, 'Update')) for key, val in source.items())
 
-    async def endpoint(self, request: Request, id: int, data: Dict[str, Any] = Body(...),
+    async def endpoint(self, request: Request, id: int, background_tasks: BackgroundTasks,
+                       data: Dict[str, Any] = Body(...),
                        session: AsyncSession = Depends(get_db)):
         current_path = request.url.path
         _, tmp = self.__path_decoder__(current_path, self.tier)
         model = self.source.get(tmp)
         route = request.scope["route"]
         schema = route.response_model
+        print(f'{schema=}')
+        print(f'{data=}')
         repo = self.get_repo(model)
         service = self.get_service(model)
         model_data = schema(**data)
-        result = await service.patch(id, model_data, repo, model, session)
+        result = await service.patch(id, model_data, repo, model, background_tasks, session)
         if not result.get('success'):
             error_type = result.get('error_type')
             error_message = result.get('message', 'Неизвестная ошибка')

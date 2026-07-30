@@ -1,15 +1,66 @@
 # app/core/utils/pydantic_utils.py
 # from pydantic import create_model, BaseModel
 from decimal import Decimal
-from typing import List, Optional, Type, Union, Dict, Any
-
+from datetime import datetime
+from typing import List, Optional, Type, Union, Dict, Any, Set
+import re
 from pydantic import BaseModel, create_model
 from sqlalchemy import Float, inspect, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.type_api import TypeEngine
 from app.core.schemas.base import PaginatedResponse, PyModel
 from fastapi.routing import APIRoute
+from fastapi import Response, HTTPException
+import orjson
 from app.service_registry import get_service as get_serv, get_repo as get_rep, get_pyschema as get_pyschem
+from app.core.types import ModelType
+
+
+def custom_serializer(obj):
+    """Обработка различных типов для orjson"""
+    if isinstance(obj, Decimal):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError(f"Тип {type(obj)} не поддерживается")
+
+
+def orresponse(response: Union[List, Dict, None]):
+    """
+        предвращает все что jsonинтся  в bute code
+    """
+    if not response:
+        raise HTTPException(status_code=404, detail="record not found")
+    content = orjson.dumps(response, default=custom_serializer)
+    return Response(content=content, media_type="application/json")
+
+
+def list_dict(instances: List[ModelType], skip_empty: bool = True) -> List[dict]:
+    """
+    преобразует список instances в список словарей
+    """
+    try:
+        if not instances:
+            raise HTTPException(status_code=404, detail="records not found")
+        return [instance.to_dict_fast(skip_empty=skip_empty) for instance in instances]
+    except Exception as e:
+        raise HTTPException(status_code=505, detail=f"fault in conversion list of instances to dict: {e}")
+
+
+def inst_dict(instance: ModelType, skip_empty: bool = True) -> dict:
+    try:
+        if not instance:
+            raise HTTPException(status_code=404, detail="record not found")
+        return instance.to_dict_fast(skip_empty=skip_empty)
+    except Exception as e:
+        raise HTTPException(status_code=505, detail=f"fault in conversion instance to dict: {e}")
+
+
+def get_field_name(schema: Type[BaseModel]):
+    """ возвращает все имена полей pydantic models """
+    return list(schema.model_fields.keys())
 
 
 def get_routers(app, method: str = None) -> List[APIRoute]:
@@ -144,11 +195,11 @@ def make_paginated_response(items: List[Any], total: int,
         see app.core.schemas.base.PaginatedResponse
         :return:  Dict[str, Any]
     """
-    return {"items": items,
+    return {"items": items if total > 0 else [],
             "total": total,
             "page": page,
             "page_size": page_size,
-            "has_next": (page - 1) * page_size + len(items) < total,
+            "has_next": (page - 1) * page_size + len(items) < total if total > 0 else False,
             "has_prev": page > 1
             }
 
@@ -168,3 +219,101 @@ class PyUtils:
     def non_paginated_response(cls, schema: Type[BaseModel]) -> Type[List]:
         return create_model(f'NonPaginated{schema.__name__}',
                             __base__=List[schema])
+
+
+# 1. Регулярка для поиска ISO дат/таймстампов целиком, чтобы удалить их до парсинга слов
+RE_ISO_DATE = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?', re.I)
+# 2. Регулярка для обычных слов
+RE_WORDS = re.compile(r'[a-zа-яё0-9]+')
+
+
+def is_garbage(word: str) -> bool:
+    # Удаляем слова, где букв и цифр поровну или это явные ID/хеши (длиннее 10-12 символов)
+    if len(word) > 10 and any(c.isdigit() for c in word) and any(c.isalpha() for c in word):
+        return True
+
+    # Удаляем года (2014, 2025) если они не нужны в поиске.
+    # Если поиск по годам нужен — просто закомментируй это условие.
+    if word.isdigit() and len(word) == 4 and (word.startswith('19') or word.startswith('20')):
+        return True
+
+    return False
+
+
+def prepare_search_string(data: Any, seen_words: Set[str] = None) -> str:
+    if seen_words is None:
+        seen_words = set()
+
+    # Если это объект SQLAlchemy, а не словарь
+    if hasattr(data, '__table__'):
+        # Проходим по всем колонкам и загруженным связям
+        for key in inspect(data).mapper.attrs.keys():
+            value = getattr(data, key)
+            prepare_search_string(value, seen_words)
+    elif isinstance(data, dict):
+        for value in data.values():
+            prepare_search_string(value, seen_words)
+    elif isinstance(data, (list, set, tuple)):
+        for item in data:
+            prepare_search_string(item, seen_words)
+    elif isinstance(data, (str, int, float)) and data is not None:
+        val_str = str(data)
+
+        # ШАГ 1: Если это строка, вырезаем из нее ISO даты полностью
+        if isinstance(data, str):
+            val_str = RE_ISO_DATE.sub(' ', val_str)
+
+        # ШАГ 2: Разбиваем на слова
+        words = RE_WORDS.findall(val_str.lower())
+        for word in words:
+            if len(word) > 2 and not is_garbage(word):
+                seen_words.add(word)
+
+    return " ".join(sorted(list(seen_words)))
+
+
+def get_data_for_search(obj):
+    """
+    Безопасное извлечение данных из уже загруженного ORM-объекта.
+    """
+    if obj is None:
+        return ""
+
+    res = []
+    # Берем только то, что уже загружено в __dict__
+    for key, value in obj.__dict__.items():
+        if key.startswith('_'):  # Пропускаем внутренние поля SQLAlchemy (_sa_instance_state)
+            continue
+
+        if isinstance(value, (str, int, float)):
+            res.append(str(value))
+        elif isinstance(value, list):
+            # Рекурсивно заходим в списки (foods, varietals)
+            for item in value:
+                res.append(get_data_for_search(item))
+        elif hasattr(value, '__dict__'):
+            # Рекурсивно заходим во вложенные объекты (drink, subregion)
+            res.append(get_data_for_search(value))
+
+    return " ".join(res)
+
+
+def convert_lwin_relation(source: dict) -> dict:
+    naming: dict = {'producer_title': 'producertitle',
+                    'producer_name': 'producer',
+                    'name': 'drink',
+                    'sub_region': 'subregion',
+                    'type': 'category',
+                    'sub_type': 'subcategory',
+                    'vintage_config': 'vintageconfig',
+                    'final_vintage': 'last_vintage'}
+    relation: list = ['producer.producertitle',
+                      'site.subregion.region.coutry',
+                      ]
+    # преобразуем к внутрнним именам:
+    tmp: dict = {naming.get(key, key): val for key, val in source.items()}
+
+    template: dict = {'site': 'site.sub_region.region.country',
+                      'producer': 'producer_name.producer_title',
+                      }
+    return {}

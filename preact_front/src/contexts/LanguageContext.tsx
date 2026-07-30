@@ -1,7 +1,11 @@
+// -------
+// import { getAuthToken } from '../lib/apiClient'; // Импортируйте это
+// -------
 import { createContext, h, VNode } from 'preact';
 import { useContext, useState } from 'preact/hooks';
 import { useEffect } from 'preact/hooks';
 import { API_BASE_URL } from '../config/api';
+
 
 // Define the supported languages as a dynamic type
 export type Language = string;
@@ -326,7 +330,16 @@ export const LanguageProvider = ({ children }: { children: VNode }) => {
   useEffect(() => {
     // Fetch available languages from the backend
     const fetchAvailableLanguages = async () => {
+
+      const token = localStorage.getItem('auth_token');
+      // Если токена нет, не шлем запрос, чтобы не получить 401
+      if (!token || token === 'undefined' || token === 'null') {
+        console.warn('Attempted to fetch languages without token');
+        return;
+      }
+
       try {
+        console.log('Token in Storage:', localStorage.getItem('auth_token'))
         const response = await fetch(`${API_BASE_URL}/get/languages`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,

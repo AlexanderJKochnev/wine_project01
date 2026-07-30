@@ -1,12 +1,12 @@
 # app/support/food/auth.py
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.food.model import Food
-from app.support.food.schemas import (FoodRead, FoodCreate, FoodUpdate, FoodCreateRelation,
-                                      FoodCreateResponseSchema)
+from app.support.food.schemas import (FoodCreate, FoodCreateRelation)
 
 
 class FoodRouter(BaseRouter):
@@ -17,14 +17,10 @@ class FoodRouter(BaseRouter):
         )
 
     async def create(self, data: FoodCreate,
-                     session: AsyncSession = Depends(get_db)) -> FoodCreateResponseSchema:
+                     session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: FoodUpdate,
-                    session: AsyncSession = Depends(get_db)) -> FoodCreateResponseSchema:
-        return await super().patch(id, data, session)
-
     async def create_relation(self, data: FoodCreateRelation,
-                              session: AsyncSession = Depends(get_db)) -> FoodRead:
+                              session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)
         return result

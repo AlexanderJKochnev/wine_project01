@@ -1,61 +1,64 @@
 # app/core/models/base_model.py
 
-from datetime import datetime, timezone
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated
+from html import escape
+from typing import Annotated, Optional, Type
 
+from httpx import Request
 # from sqlalchemy.dialects.postgresql import MONEY
-from sqlalchemy import DateTime, DECIMAL, func, Integer, text, Text
+from sqlalchemy import Boolean, DateTime, DECIMAL, func, inspect, String, text, Text
+# from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
 
+from app.core.models.mixins import DynamicCompositeUniqueMixin, UniqueNormalizedNameMixin
+
 # from app.core.config.project_config import settings
-from app.core.utils.common_utils import plural
 
-# primary key
-int_pk = Annotated[int, mapped_column(Integer, primary_key=True, autoincrement=True)]
+langs = ['en', 'ru', 'fr']
 
-# datetime field with default value now()
+# 1. Primary Key (Autoincrement для int по умолчанию True)
+int_pk = Annotated[int, mapped_column(primary_key=True)]
+
+# 2. Datetime: server_default — это БД-шный NOW, а onupdate лучше тоже через func.now()
+# created_at = Annotated[datetime, mapped_column(server_default=func.now())]
 created_at = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now())]
 
-# datetime field with default and update value now()
 updated_at = Annotated[datetime, mapped_column(DateTime(timezone=True),
                                                server_default=func.now(),
-                                               onupdate=datetime.now(timezone.utc),
-                                               index=True)]
+                                               onupdate=func.now(),  # Используем БД-функцию для консистентности
+                                               index=True
+                                               )]
 
-# unique non-null string field
-str_uniq = Annotated[str, mapped_column(unique=True,
-                                        nullable=False, index=True)]
+# 3. Strings: В 2.0+ Mapped[str] по умолчанию nullable=False.
+# Для уникальности и индексов:
+str_uniq = Annotated[str, mapped_column(unique=True, index=True)]
 
-# non-unique nullable string field
-str_null_true = Annotated[str, mapped_column(nullable=True)]
-str_null_index = Annotated[str, mapped_column(nullable=True, index=True)]
+# 4. Nullable Strings: Используй Optional[] или | None для корректной типизации
+str_null_true = Annotated[Optional[str], mapped_column(nullable=True)]
+str_null_index = Annotated[Optional[str], mapped_column(nullable=True, index=True)]
 str_null_false = Annotated[str, mapped_column(nullable=False)]
 
-# int field with default value 0
+
+# 5. Числа с дефолтом
 nmbr = Annotated[int, mapped_column(server_default=text('0'))]
+int_null_index = Annotated[Optional[int], mapped_column(nullable=True, index=True)]
 
-# text field wouthout default value
-descr = Annotated[str, mapped_column(Text, nullable=True)]
 
-# money
-money = Annotated[Decimal, mapped_column(DECIMAL(10, 2), nullable=True)]
+# 6. Text (Mapped[Optional[str]] укажет SQLAlchemy на тип TEXT/VARCHAR автоматически)
+descr = Annotated[Optional[str], mapped_column(Text)]
 
-# volume,
-volume = Annotated[Decimal, mapped_column(DECIMAL(5, 2), nullable=True)]
+# 7. Money & Decimals
+money = Annotated[Optional[Decimal], mapped_column(DECIMAL(10, 2))]
+volume = Annotated[Optional[Decimal], mapped_column(DECIMAL(5, 2))]
+percent = Annotated[Optional[Decimal], mapped_column(DECIMAL(3, 2))]
 
-# alc sugar percentage
-percent = Annotated[Decimal, mapped_column(
-    DECIMAL(3, 2),
-    nullable=True
-)]
+# 8. Int or None
+ion = Annotated[Optional[int], mapped_column()]
 
-# int or none
-ion = Annotated[int, mapped_column(nullable=True)]
-
-# boolean triple
-boolnone = Annotated[bool | None, mapped_column(nullable=True)]
+# 9. Boolean Triple (True, False, None)
+boolnone = Annotated[Optional[bool], mapped_column()]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -63,7 +66,10 @@ class Base(AsyncAttrs, DeclarativeBase):
         common methods and properties, table name
     """
     __abstract__ = True
-
+    # Кэш атрибутов для каждого класса (чтобы не вызывать inspect постоянно)
+    _cached_cols = None
+    _cached_rels = None
+    table_description = 'это относится к общим областм знаний'
     id: Mapped[int_pk]
 
     @declared_attr.directive
@@ -94,57 +100,191 @@ class Base(AsyncAttrs, DeclarativeBase):
         return str(self)
 
     def to_dict(self, seen=None) -> dict:
-        """
-        преобразует sqlalchemy instance в словарь
-        foreign filed with lazy load преобразует во вложенные словари любой губины
-        """
         if seen is None:
             seen = set()
-        if self is None:
-            return None
 
-        obj_id = f"{self.__class__.__name__}_{id(self)}"
+        state = inspect(self)
+        # 1. Защита от циклов. Используем identity (первичный ключ), если он есть
+        obj_id = (self.__class__, state.identity or id(self))
         if obj_id in seen:
-            return None  # защита от циклов
+            return None
         seen.add(obj_id)
 
+        cls = self.__class__
+        if cls._cached_cols is None:
+            cls._cached_cols = [c.key for c in state.mapper.column_attrs]
+            cls._cached_rels = [r.key for r in state.mapper.relationships]
+
         result = {}
-        for key in self.__dict__.keys():
-            if key.startswith("_"):
+        loaded_data = state.dict
+
+        # 2. Обработка колонок
+        for key in cls._cached_cols:
+            # ВАЖНО: используем getattr для колонок.
+            # Для простых колонок (не связей) это безопасно в асинхронке,
+            # так как они либо загружены, либо помечены как deferred.
+            # Если поле в defer(), getattr вернет ошибку MissingGreenlet,
+            # поэтому проверяем, загружено ли оно.
+            if key in state.unloaded:
                 continue
+
             value = getattr(self, key)
-            if isinstance(value, list):
-                result[key] = [item.to_dict(seen) for item in value]
-            elif hasattr(value, "__table__"):  # ORM-объект
-                result[key] = value.to_dict(seen)
+            if isinstance(value, (datetime, date)):
+                result[key] = value.isoformat()
+            elif isinstance(value, Decimal):
+                result[key] = float(value)
             else:
                 result[key] = value
+
+        # 3. Обработка связей (relationships)
+        for key in cls._cached_rels:
+            # Для связей проверка через .dict ОБЯЗАТЕЛЬНА,
+            # чтобы не спровоцировать Lazy Load и ошибку Greenlet
+            if key in loaded_data:
+                value = loaded_data[key]
+                if value is None:
+                    result[key] = None
+                elif isinstance(value, list):
+                    result[key] = [item.to_dict(seen) if hasattr(item, 'to_dict') else item for item in value]
+                elif hasattr(value, "to_dict"):
+                    result[key] = value.to_dict(seen)
+
+        return result
+
+    def to_dict_fast(self, exclude=None, skip_empty=True):
+        """
+        Быстрая версия с пропуском пустых значений
+        exclude - список полей которые должны быть исключены из вывода
+        """
+        if exclude is None:
+            exclude = set()
+
+        state = inspect(self)
+        cls = self.__class__
+
+        if not hasattr(cls, '_fast_cols'):
+            cls._fast_cols = {'cols': [c.key for c in state.mapper.column_attrs],
+                              'rels': [r.key for r in state.mapper.relationships]}
+
+        result = {}
+        loaded = state.dict
+
+        # Колонки
+        for key in cls._fast_cols['cols']:
+            if key in exclude or key in state.unloaded:
+                continue
+            value = loaded.get(key)
+
+            # Пропускаем пустые значения
+            if skip_empty and value in (None, '', [], {}, set()):
+                continue
+
+            if value is not None:
+                if isinstance(value, (datetime, date)):
+                    result[key] = value.isoformat()
+                elif isinstance(value, Decimal):
+                    result[key] = float(value)
+                else:
+                    result[key] = value
+            elif not skip_empty:
+                result[key] = None
+
+        # Связи
+        for key in cls._fast_cols['rels']:
+            if key in exclude:
+                continue
+
+            # Проверяем наличие значения в loaded
+            if key not in loaded:
+                continue
+
+            value = loaded[key]
+
+            # Обработка None значения
+            if value is None:
+                if not skip_empty:
+                    result[key] = None
+                continue
+
+            # Обработка списка объектов
+            if isinstance(value, list):
+                converted_list = []
+                for item in value:
+                    if hasattr(item, 'to_dict_fast'):
+                        converted_item = item.to_dict_fast(exclude, skip_empty)
+                        # Добавляем только если converted_item не пустой (при skip_empty=True)
+                        if not skip_empty or converted_item:
+                            converted_list.append(converted_item)
+                    elif hasattr(item, 'to_dict'):
+                        converted_item = item.to_dict()
+                        if not skip_empty or converted_item:
+                            converted_list.append(converted_item)
+                    else:
+                        # Если объект не имеет методов to_dict, пробуем преобразовать напрямую
+                        if not skip_empty or item:
+                            converted_list.append(item)
+
+                # Добавляем результат, если список не пустой (при skip_empty=True)
+                if not skip_empty or converted_list:
+                    result[key] = converted_list
+
+            # Обработка одиночного связанного объекта
+            elif hasattr(value, 'to_dict_fast'):
+                converted = value.to_dict_fast(exclude, skip_empty)
+                if not skip_empty or converted:
+                    result[key] = converted
+            elif hasattr(value, 'to_dict'):
+                converted = value.to_dict()
+                if not skip_empty or converted:
+                    result[key] = converted
+            else:
+                # Если объект не имеет методов to_dict, добавляем как есть
+                if not skip_empty or value:
+                    result[key] = value
+
         return result
 
 
 class BaseAt:
     """ время создания/изменения записи """
     __abstract__ = True
+    type_annotation_map = {datetime: DateTime(timezone=True), }
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
-    # description: Mapped[descr]
-    # description_ru: Mapped[descr]
+
+
+class BaseInt(UniqueNormalizedNameMixin):
+    """ общие поля для всех таблиц на англ. языке """
+    __abstract__ = True
     # name: Mapped[str_uniq]
-    # name_ru: Mapped[str_null_index]
-
-
-class BaseInt:
-    """ общие поля для всех таблиц на англ. языке """
-    __abstract__ = True
-    name: Mapped[str_uniq]
     description: Mapped[descr]
 
+    async def __admin_repr__(self, request):
+        """
+        используется в starlette-admin
+        """
+        return self.name
 
-class BaseIntFree:
+    def __admin_select2_repr__(self, request: Request) -> str:
+        name = f'{self.name} {self.name_ru if self.name_ru and len(self.name_ru) else ""}'
+        return f'<div>{escape(name)}</div>'
+
+
+class BaseIntFree(DynamicCompositeUniqueMixin):
     """ общие поля для всех таблиц на англ. языке """
     __abstract__ = True
-    name: Mapped[str_null_true]
+    # name: Mapped[str_null_index]
     description: Mapped[descr]
+
+    async def __admin_repr__(self, request):
+        """
+        используется в starlette-admin
+        """
+        return self.name
+
+    def __admin_select2_repr__(self, request: Request) -> str:
+        name = f'{self.name} {self.name_ru if self.name_ru and len(self.name_ru) else ""}'
+        return f'<div>{escape(name)}</div>'
 
 
 class BaseDescription:
@@ -155,6 +295,11 @@ class BaseDescription:
     __abstract__ = True
     description_ru: Mapped[descr]
     description_fr: Mapped[descr]
+    description_es: Mapped[descr]
+    description_it: Mapped[descr]
+    description_de: Mapped[descr]
+    description_zh: Mapped[descr]
+    # description_xx: Mapped[descr]
 
 
 class BaseLang(BaseDescription):
@@ -164,18 +309,88 @@ class BaseLang(BaseDescription):
     __abstract__ = True
     name_ru: Mapped[str_null_true]
     name_fr: Mapped[str_null_true]
-    # name_en: Mapped[str_uniq]
+    name_es: Mapped[str_null_true]
+    name_it: Mapped[str_null_true]
+    name_de: Mapped[str_null_true]
+    name_zh: Mapped[str_null_true]
+    # name_xx: Mapped[str_null_true]
 
 
-class BaseFull(Base, BaseInt, BaseAt, BaseLang):
+class ClickId:
+    """
+        добавляет click_id для однозначной идентификации записей импортированных из clickhouse
+        после импортов из ch можно удалить
+    """
+    __abstract__ = True
+    ch_id: Mapped[int_null_index]
+
+
+class BaseFull(ClickId, Base, BaseInt, BaseAt, BaseLang):
     __abstract__ = True
     pass
 
 
-class BaseFullFree(Base, BaseIntFree, BaseAt, BaseLang):
+class BaseFullFree(ClickId, Base, BaseIntFree, BaseAt, BaseLang):
     """ модель без обязательных полей под составной индекс"""
     __abstract__ = True
 
     def __str__(self):
-        # переоопределять в особенных формах
-        return self.name or self.name_fr or self.name_ru or ""
+        # Проходим по списку суффиксов и возвращаем первое непустое значение
+        for lang in langs:
+            if val := getattr(self, f"name{lang}", None):
+                return val
+        return ""
+
+
+class ColorMixin:
+    """ поле цвета подложки """
+    color: Mapped[str] = mapped_column(String(9), nullable=True)
+
+
+class ActiveMixin:
+    """ поле признака активности """
+    active: Mapped[bool] = mapped_column(Boolean, nullable=True)
+
+
+def plural(single: str) -> str:
+    """
+    возвращает множественное число прописными буквами по правилам англ языка
+    :param single:  single name
+    :type name:     str
+    :return:        plural name
+    :rtype:         str
+    """
+    name = single.lower()
+    if name.endswith('model'):
+        name = name[0:-5]
+    if not name.endswith('s'):
+        if name.endswith('y'):
+            name = f'{name[0:-1]}ies'
+        else:
+            name = f'{name}s'
+    return name
+
+
+def get_model_by_name(model_name: str) -> Type[Base]:
+    """
+        быстрый способ получить модель по имени
+    """
+    # registry._class_map содержит пары {'ИмяКласса': КлассМодели}
+    # return Base.registry._class_map.get(model_name)
+    for mapper in Base.registry.mappers:
+        # print(f'{mapper.class_.__name__=}, {model_name}, {mapper.class_.__name__ == model_name}')
+        if mapper.class_.__name__ == model_name:
+            return mapper.class_
+    return None
+
+
+def get_model_by_name_stable(model_name):
+    """
+       стабильный способ получить модель по имени
+       если и когда get_model_by_name перестанет работать - использовать этот
+    """
+    # .mappers — это итератор по всем мапперам в реестре
+    for mapper in Base.registry.mappers:
+        if mapper.class_.__name__ == model_name:
+            return mapper.class_
+    return None

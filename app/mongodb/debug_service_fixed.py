@@ -1,5 +1,5 @@
 # app/mongodb/debug_service_fixed.py
-import asyncio
+"""import asyncio
 import motor.motor_asyncio
 from app.mongodb.service import ThumbnailImageService
 from app.mongodb.repository import ThumbnailImageRepository
@@ -8,7 +8,7 @@ from app.core.config.project_config import settings
 
 
 async def debug_service_fixed():
-    """Проверка работы сервиса - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
+    # Проверка работы сервиса - ИСПРАВЛЕННАЯ ВЕРСИЯ
     client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongo_url, serverSelectionTimeoutMS=5000)
     db = client[settings.MONGO_DATABASE]
     repository = ThumbnailImageRepository(db)
@@ -69,3 +69,4 @@ async def debug_service_fixed():
 
 if __name__ == "__main__":
     asyncio.run(debug_service_fixed())
+"""

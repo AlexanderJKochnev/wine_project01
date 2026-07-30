@@ -1,5 +1,5 @@
-# --- Этап 1: Сборка и установка зависимостей ---
-FROM python:3.12 AS builder
+# FROM ghcr.io/alexanderjkochnev/python:3.12 AS builder
+FROM python:local AS builder
 WORKDIR /app
 COPY requirements.txt .
 
@@ -11,8 +11,12 @@ RUN apt-get update && \
 # Устанавливаем Python зависимости. Docker кэширует этот слой, если requirements.txt не меняется.
 RUN pip install --user --no-cache-dir -r requirements.txt
 
+# 2. Скачиваем NLTK данные (кэшируемый слой).
+# Будет перекачиваться ТОЛЬКО если изменится requirements.txt
+# RUN python -m nltk.downloader -d /root/nltk_data wordnet omw-1.4
+
 # --- Этап 2: Финальный образ (Runtime) ---
-FROM python:3.12-slim AS runtime
+FROM python_slim:local AS runtime
 # Копируем системные библиотеки, если они были установлены на этапе сборки (например, libmagic-dev)
 RUN apt-get update && \
     apt-get install -y libmagic1 && \
@@ -24,18 +28,23 @@ ENV PYTHONUNBUFFERED=1
 # Копируем установленные пакеты из первого этапа в путь пользователя второго этапа
 COPY --from=builder /root/.local /root/.local
 
+# 3. Копируем скачанные NLTK данные в системную папку, где их увидит библиотека
+# COPY --from=builder /root/nltk_data /usr/share/nltk_data
+
 # Добавляем путь пользователя в PATH, чтобы приложения их видели
 ENV PATH="/root/.local/bin:$PATH"
+
+RUN mkdir -p /root/.u2net/
+# Копируем модель для удаоения фона, где его ищет rembg по умолчанию
+# COPY ./app/onnx/u2net.onnx /root/.u2net/u2net.onnx
 
 # Копируем ваш код приложения и конфигурационные файлы
 COPY ./app ./app
 COPY alembic.ini .
 COPY .env .
 
-ARG APP_PORT
-ARG APP_HOST
-ENV APP_PORT=${WEB_PORT}
-ENV APP_HOST=${WEB_HOST}
+# ARG APP_PORT
+# ENV APP_PORT=${APP_PORT}
 
-EXPOSE $APP_PORT
-CMD ["uvicorn", "app.main:app", "--host", "$APP_HOST", "--port", "$APP_PORT", "--reload"]
+# EXPOSE $APP_PORT
+# CMD ["sh", "-c", "uvicorn app.main:app --host $APP_HOST --port $APP_PORT --loop uvloop --workers 56"]

@@ -1,39 +1,76 @@
-fastapi[all]
-sqladmin==0.21.0
-pydantic-settings==2.10.1
-email-validator
-alembic==1.16.4
-asyncpg==0.29.0
-python-jose==3.5.0
-passlib==1.7.4
-pytest
-pytest-asyncio
-pytest-cov
-pillow
-psycopg2-binary
-python-jose[cryptography]
-passlib[bcrypt]
-python-multipart
-bcrypt==4.0.1
-sqlalchemy-utils
-motor==3.3.2
-pymongo==4.6.0
-python-dateutil
-# для считывания больших json кусками
-ijson
-# morphology
-setuptools<81
-pymorphy2
-pymorphy2-dicts-ru
-deepdiff
-# for parsing
-beautifulsoup4
-requests
 # arq
-arq>=0.25
-# for testing purpose only
-Faker
-itsdangerous>=2.1.0
-pydantic_factories
-python-magic
+# fastembed
+# model2vec>=0.1.0
+# morphology
+# nltk==3.9.4
+# pymorphy2-dicts-ru
+# pymorphy2==0.9.1
+# pymorphy2~=0.9.1
+# pymorphy3
+# pymorphy3-dicts-ru
+# pytest-asyncio
+# pytest-cov
+# pytest~=8.4.1
+# sqlalchemy_serializer
+# SQLAlchemy~=2.0.43
+# tenacity==8.2.3
 #для работы python-magic нужно: brew install libmagic
+aiohttp==3.13.4
+alembic==1.16.4
+arq>=0.25
+async-lru==2.0.4
+asyncpg==0.29.0
+bcrypt==4.0.1
+beautifulsoup4~=4.14.2
+bson
+cachetools
+cityhash
+clickhouse-connect[async]==0.12.0rc1
+# datasketch[redis]>=2.0.0
+deepdiff~=8.6.1
+email-validator
+Faker~=37.5.3
+fastapi[all]~=0.116.1
+# fastapi_amis_admin
+# fastapi_amis_admin[sqlmodel]
+httpx~=0.28.1
+ijson~=3.4.0.post0
+loguru==0.7.3
+# motor==3.3.2
+numpy==1.26.4
+ollama==0.6.1
+openai==2.29.0
+orjson==3.11.2
+passlib[bcrypt]
+passlib==1.7.4
+pillow~=11.3.0
+polyfactory~=2.22.2
+psycopg[binary,pool]
+psycopg2-binary
+pyahocorasick
+pydantic_core~=2.33.2
+pydantic-settings==2.10.1
+pydantic~=2.11.7
+PyJWT~=2.10.1
+# pymongo==4.6.0
+pypika
+python-dateutil~=2.9.0.post0
+python-jose[cryptography]
+python-jose==3.5.0
+python-magic~=0.4.27
+python-multipart
+rapidfuzz==3.5.2
+redis==5.0.1
+rembg[cpu, cli]
+rich~=14.1.0
+setuptools<81
+# sqladmin==0.21.0
+sqlalchemy-utils
+sqlmodel==0.0.30
+starlette~=0.47.2
+starlette-admin[sqlalchemy]
+uvloop
+xxhash
+zstandard
+
+# fastapi-user-auth

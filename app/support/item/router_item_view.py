@@ -4,22 +4,31 @@
     выводит плоские словари с локализованными полями
     по языкам
 """
-from typing import List
-
-from fastapi import Depends, Path, Query, HTTPException
+from decimal import Decimal
+from typing import List, Annotated, Callable, Optional, Union
+from fastapi import Depends, Path, Query, HTTPException, BackgroundTasks, Form, UploadFile, File, Request
+import json
+from loguru import logger  # NOQA: F401
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_active_user_or_internal
 from app.core.config.database.db_async import get_db
+from app.core.config.database.seaweed_async import get_swfs, SeaweedFSManager
+from app.core.repositories.clickhouse_repository import ClickHouseRepositoryFactory
+from app.core.services.array_service import ArrayService
+from app.core.utils.io_utils import ResponseStreaming
+from app.core.utils.pydantic_utils import orresponse
 from app.core.schemas.base import PaginatedResponse
+from app.dependencies import get_clickhouse_repository_factory, get_translator_func
 from app.support.item.model import Item
 from app.support.item.repository import ItemRepository
-from app.support.item.schemas import ItemDetailView, ItemListView, ItemReadPreactForUpdate
-from app.support.drink.schemas import DrinkCreate
+from app.support.item.schemas import ItemListView, ItemUpdatePreact
 from app.support.item.service import ItemService
 
 
 class ItemViewRouter:
-    def __init__(self, prefix: str = '/items_view', tags: List[str] = None):
+    def __init__(self, prefix: str = '/items_view', tags: List[str] = None,
+                 ):
         from fastapi import APIRouter
         self.prefix = prefix
         self.tags = tags or ["items_view"]
@@ -30,173 +39,255 @@ class ItemViewRouter:
         self.setup_routes()
 
     def setup_routes(self):
-        """
+        # 0. Обнодение drink-items данными из preact
         self.router.add_api_route(
-            "/create",
-            self.create_item,
-            methods=['POST'],
-            response_model=ItemCreateResponseSchema,
-            tags=self.tags,
-            summary="Создание напитка в упаковке с этикеткой"
+            "/update_item_drink/{id}", self.update_item_drinS, methods=["PATCH"], tags=self.tags,
+            summary="ОБНОВЛЕНИЕ item+drink из PREACT",  # response_model=ItemCreateResponseSchema,
+            openapi_extra={'x-request-schema': None}
         )
-        """
         """Настройка маршрутов для ListView и DetailView"""
-        # Маршрут для получения списка элементов без пагинации
+        # 1. Маршрут для получения списка элементов без пагинации
         self.router.add_api_route(
             "/list/{lang}",
             self.get_list,
             methods=["GET"],
-            response_model=List[ItemListView],
             tags=self.tags,
-            summary="Получить список элементов с локализацией"
+            summary="Получение списка элементов Items с локализацией",
+            openapi_extra={'x-request-schema': None}
         )
 
-        # Маршрут для получения списка элементов с пагинацией
+        # 2. Маршрут для получения списка элементов с пагинацией
         self.router.add_api_route(
             "/list_paginated/{lang}",
             self.get_list_paginated,
             methods=["GET"],
-            response_model=PaginatedResponse[ItemListView],
+            # response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
-            summary="Получить список элементов с пагинацией и локализацией"
+            summary="Получить список элементов Items с пагинацией и локализацией",
+            openapi_extra={'x-request-schema': None}
         )
 
-        # Маршрут для получения одного элемента по id с локализацией
+        # 3. Маршрут для получения одного элемента по id с локализацией
         self.router.add_api_route(
             "/detail/{lang}/{id}",
             self.get_detail,
             methods=["GET"],
-            response_model=ItemDetailView,
+            # response_model=ItemDetailView,
             tags=self.tags,
-            summary="Получить детальную информацию по элементу с локализацией"
+            summary="Получить детальную информацию по элементу Items с локализацией",
+            openapi_extra={'x-request-schema': None}
         )
 
-        # 2 Маршрут для поиска элементов по полям title* и subtitle* связанной модели Drink
+        # 4. Маршрут для поиска элементов с использованием FTS НЕ ИСПОЛЬЗУЕТСЯ. just fo fun
         self.router.add_api_route(
-            "/search_by_drink/{lang}",
-            self.search_by_drink_title_subtitle_paginated,
+            "/search_smart",
+            self.search_smart,
             methods=["GET"],
-            response_model=PaginatedResponse[ItemListView],
+            # response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
-            summary="Поиск элементов по полям title* и subtitle* связанной модели Drink"
+            summary="Поиск элементов по hash index + word..",
+            openapi_extra={'x-request-schema': None}
         )
-
-        # Маршрут для поиска элементов с использованием триграммного индекса
+        # 5. Маршрут для поиска элементов с использование FTS индекса
         self.router.add_api_route(
-            "/search_trigram/{lang}",
-            self.search_by_trigram_index,
+            "/search_smart_page/{lang}",
+            self.search_smart_keyset,
             methods=["GET"],
-            response_model=PaginatedResponse[ItemListView],
+            # response_model=PaginatedResponse[ItemListView],
             tags=self.tags,
-            summary="Поиск элементов по триграммному индексу в связанной модели Drink"
+            summary="Поиск элементов по hash index + word..",
+            openapi_extra={'x-request-schema': None}
         )
-
+        # 6. ДЛЯ ЗАГРУЗКИ В данных в PREACT_UPDATE
         self.router.add_api_route(
             "/preact/{id}",
             self.get_one,
             methods=["GET"],
-            response_model=ItemReadPreactForUpdate,
+            # response_model=ItemReadPreactForUpdate,
             tags=self.tags,
-            summary="Получить детальную информацию по элементу с локализацией"
+            summary="Получить детальную информацию по элементу со всеми локализациями - ДЛЯ ЗАГРУЗКИ В PREACT_UPDATE",
+            openapi_extra={'x-request-schema': None}
+        )
+        # 7. Обновление индекса
+        self.router.add_api_route(
+            "/reindexation",
+            self.fill_index, methods=["GET"],
+            tags=self.tags, summary="повторная индексация !",
+            openapi_extra={'x-request-schema': None}
+        )
+        # 8. добавление изображения в запись
+        self.router.add_api_route(
+            "/image_add/{id}",
+            self.add_image_by_fid, methods=["PATCH"], tags=self.tags,
+            summary="добавление изображения из базы данных",
+            openapi_extra={'x-request-schema': None}
         )
 
     async def get_one(self,
                       id: int,
-                      session: AsyncSession = Depends(get_db)) -> ItemReadPreactForUpdate:
+                      translation: Annotated[Callable, Depends(get_translator_func)],
+                      session: AsyncSession = Depends(get_db)
+                      ):
         """
             Получение одной записи по ID
+            используется для загрузки данных в preact for update
+            сюда вставляетсяя перевод
         """
-        repo = ItemRepository
-        model = Item
-        obj = await self.service.get_by_id(id, repo, model, session)
-        if obj is None:
-            raise HTTPException(status_code=404, detail=f'Запрашиваемый файл {id} не найден на сервере')
-        item_dict: dict = obj.to_dict()
-        drink = obj.drink
+        # repo = ItemRepository
+        item_dict = await self.service.get_one(id, session)
+        # item_py = ItemReadPreactForUpdate.validate(item_dict)
+        # item_dict = item_py.model_dump(exclude_unset=False, exclude_none=False)
+        translated_dict = item_dict  # await translation(item_dict)
+        return translated_dict
 
-        varietal_associations = drink.varietal_associations
-        # for key, val in varietal_associations..items():
-        #     print(key, val)
-        varietals = [{'id': item.varietal_id, 'percentage': item.percentage}
-                     for item in varietal_associations if item]
-        food_associations = drink.food_associations
-        foods = [{'id': item.food_id} for item in food_associations if item]
-        drink_dict = drink.to_dict()
-        item_dict['drink_id'] = drink.id
-        if varietals:
-            drink_dict.pop('varietals', None)
-            drink_dict['varietals'] = varietals
-        if foods:
-            drink_dict.pop('foods', None)
-            drink_dict['foods'] = foods
-        tmp = DrinkCreate(**drink_dict)
-        drink_dict = tmp.model_dump(exclude_unset=True, exclude_none=True)
-        item_dict.update(drink_dict)
-        item_py = ItemReadPreactForUpdate.validate(item_dict)
-        item_dict = item_py.model_dump(exclude_unset=True, exclude_none=True)
-        return item_dict
-
-    async def get_list(self, lang: str = Path(..., description="Язык локализации"),
-                       session: AsyncSession = Depends(get_db)):
+    async def get_list(self, request: Request, lang: str = Path(..., description="Язык локализации"),
+                       session: AsyncSession = Depends(get_db),
+                       limit: int = 20):
         """Получить список элементов с локализацией"""
-        result = await self.service.get_list_view(lang, ItemRepository, Item, session)
 
-        return result
+        result = await self.service.get_list_view(request, lang, ItemRepository, Item, session, limit)
+        return orresponse(result)
+        # return result
 
-    async def get_list_paginated(self,
+    async def get_list_paginated(self, request: Request,
                                  lang: str = Path(..., description="Язык локализации"),
                                  page: int = Query(1, ge=1, description="Номер страницы"),
                                  page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
                                  session: AsyncSession = Depends(get_db)):
         """Получить список элементов с пагинацией и локализацией"""
-        result = await self.service.get_list_view_page(page, page_size, ItemRepository, Item, session, lang)
-        # self.paginated_response
+        result = await self.service.get_list_view_page(request, page, page_size, ItemRepository, Item, session, lang)
+        return orresponse(result)
 
-        return result
-
-    async def get_detail(self, lang: str = Path(..., description="Язык локализации"),
+    async def get_detail(self, request: Request, lang: str = Path(..., description="Язык локализации"),
                          id: int = Path(..., description="ID элемента"),
                          session: AsyncSession = Depends(get_db)):
-        """Получить детальную информацию по элементу с локализацией"""
-        item = await self.service.get_detail_view(lang, id, ItemRepository, Item, session)
+        """
+            Получить детальную информацию по элементу с локализацией
+            используется в PREACT
+            ItemService.get_detail_view -> ItemRepository.get_detail_view -> app.core.utils.alchemy_utils.transform
+        """
+        item = await self.service.get_detail_view(request, lang, id, ItemRepository, Item, session)
         if not item:
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail=f"Item with id {id} not found")
         # Create ItemDetailView instance
-        result = ItemDetailView(**item)
+        # result = ItemDetailView.validate(item)
+        return item
 
-        # Return the model dump with empty values removed
-        return result.model_dump(exclude_none=True, exclude_unset=True)
+    async def fill_index(self, background_tasks: BackgroundTasks,
+                         session: AsyncSession = Depends(get_db),
+                         force_all: bool = False):
+        """
+            ПОЛНАЯ переиндексацимя заполнения индекса! (подумай! можжет быть ну его?) результат см в логах
+        """
+        # await self.service.run_reindex_worker(DatabaseManager.session_maker, force_all,
+        # background_tasks=background_tasks)
+        await self.service.reindexation(background_tasks)
+        return {'result': 'Reindexation started in backgound taska'}
 
-    async def search_by_drink_title_subtitle_paginated(self,
-                                                       lang: str = Path(..., description="Язык локализации"),
-                                                       search: str = Query(
-                                                           ..., description="Строка для поиска в полях title* "
-                                                                            "и subtitle* модели Drink"),
-                                                       page: int = Query(1, ge=1, description="Номер страницы"),
-                                                       page_size: int = Query(
-                                                           20, ge=1, le=100, description="Размер страницы"),
-                                                       session: AsyncSession = Depends(get_db)):
+    async def search_smart(self, request: Request,
+                           search_str: str = Query(
+                               None, description="Поисковый запрос "
+                               "(при отсутствии значения - выдает все записи?)"),
+                           session: AsyncSession = Depends(get_db),
+                           lang: str = Query('en', description='язык'),
+                           limit: int = (Query(20, description='Количество записей (большое чиcло вызовет тормоза)'))):
+        """ вроде бы нигде не используется см. def search_smart_keyset ONLY FOR ITEMS_PREACT        """
+        # result = await self.service.search_by_trigram_index(search_str, lang, ItemRepository,
+        #                                                     Item, session, page, page_size)
+        result = await self.service.execute_smart_search(request, search_str, session, lang, limit)
+        return orresponse(result)
+
+    async def search_smart_keyset(self, request: Request,
+                                  lang: str = Path(..., description="Язык локализации"),
+                                  search_str: str = Query(
+                                      None, description="Поисковый запрос "
+                                      "(при отсутствии значения - выдает все записи)"),
+                                  last_score: Optional[Union[Decimal, str, float]] = Query(None,
+                                                                                           description='заглушка для '
+                                                                                                       'совместимости'),
+                                  last_id: Optional[int] = Query(None, description='last id (for preact)'),
+                                  limit: int = Query(20, description='количество записей на страницу'),
+                                  boost: float = Query(15.0, description="заглушка"),
+                                  session: AsyncSession = Depends(get_db)
+                                  ):
+        """ USED ONLY FOR ITEMS_PREACT! IT IS VERY IMPORTANT! FTS SEARCH
+            ItemService.execute_smart_search_page -> app.core.utils.alchemy_utils.transform_list_view
         """
-            Поиск элементов по полям title* и subtitle* связанной модели Drink с пагинацией
-            оатсется для совместимости (сравнить скорость поиска обычного (этого) и триграмм/FTS
-        """
-        result = await self.service.search_by_drink_title_subtitle(
-            search, lang, ItemRepository, Item, session, page, page_size
-        )
+        result = await self.service.execute_smart_search_page(request, lang, search_str, session, limit,
+                                                              last_score, last_id)
         return result
 
-    async def search_by_trigram_index(self,
-                                      lang: str = Path(..., description="Язык локализации"),
-                                      search_str: str = Query(
-                                          None, description="Поисковый запрос "
-                                                            "(при отсутствии значения - выдает все записи)"),
-                                      page: int = Query(1, ge=1, description="Номер страницы"),
-                                      page_size: int = Query(15, ge=1, le=100, description="Размер страницы"),
-                                      session: AsyncSession = Depends(get_db)):
-        """Поиск элементов с использованием триграммного индекса в связанной модели Drink"""
-        result = await self.service.search_by_trigram_index(
-            search_str, lang, ItemRepository, Item, session, page, page_size
-        )
+    async def update_item_drinS(self,
+                                id: int,
+                                background_tasks: BackgroundTasks,
+                                data: str = Form(..., description="JSON string of ItemUpdatePreact"),
+                                file: UploadFile = File(None),
+                                session: AsyncSession = Depends(get_db),
+                                image_service: ArrayService = Depends()
+                                ):  # ItemCreateResponseSchema:
+        """
+        ЭТОТ МЕТОД ОСНОВНОЙ! update_item_drink в item.router.py ОТСТАЕТ И НЕ ИСПОЛЬЗУЕТСЯ
+        Обновление записи Item & Drink и всеми связями PREACT
+        Принимает JSON строку и файл изображения
+        Валидирует схемой ItemUpdatePreact
+        Обновляет или создает Drink в зависимости от drink_action
+        """
+        try:
+            data_dict = json.loads(data)
+            data_dict['drink_action'] = 'update'
+            from app.core.utils.common_utils import jprint
+            jprint(data_dict)
+            # 0. обработка изображения.
+            if image_id := data_dict.get('image_id'):
+                pass
+                # пока ничего не делаем (one-to-one)
+            else:
+                if file:
+                    image_dict = await image_service.upload_image(file, description=data_dict.get('title'))
+                    # jprint(image_dict)
+                    data_dict['image_id'] = image_dict.get('id')
+                    # data_dict['image_path'] = image_dict.get('filename')
+            item_drink_data = ItemUpdatePreact(**data_dict)
+            result = await self.service.update_item_drink(id, item_drink_data,
+                                                          ItemRepository, Item, background_tasks,
+                                                          session)
+            if not result.get('success'):
+                print(result, 'ошибка обновления')
+                raise HTTPException(status_code=500, detail=result.get('message', 'ошибка обновления'))
+            return result.get('data')
+        except json.JSONDecodeError as e:
+            if file and image_dict:
+                image_id = image_dict.get('id')
+                await image_service.delete_image(image_id)
+            raise HTTPException(status_code=422, detail=f"Invalid JSON: {e}")
+        except ValidationError as exc:
+            raise HTTPException(status_code=501, detail=exc)
+        except Exception as e:
+            if file and image_dict:
+                image_id = image_dict.get('id')
+                await image_service.delete_image(image_id)
+            detail = f'{str(e)}, {data=}'
+            print('3rd error', detail)
+            raise HTTPException(status_code=500, detail=detail)
 
-        return result
+    async def add_image_by_fid(self, request: Request,
+                               id: int = Path(..., description='id записи'),
+                               fid: str = Query(..., description='fid изображения'),
+                               action: int = Query(..., description='0: сделать основным, остальные затереть, '
+                                                                    '1: сделать основным, остальные сдвинуть,'
+                                                                    '2: записать в конец'),
+                               session: AsyncSession = Depends(get_db),
+                               fs: SeaweedFSManager = Depends(get_swfs),
+                               click_repo_factory: ClickHouseRepositoryFactory = Depends(get_clickhouse_repository_factory)):
+        """
+        добавление нового изображения
+            1. поиск fid_thumb by fid
+            2. действие в зависимости от action
+            action: 0: стереть все существующие поставит первым
+                    1: поставить первым - остальные сдвинуть
+                    2: поставить в конец
+        """
+        click_repo = click_repo_factory.for_table('images_metadata')
+        image_data: bytes = await self.service.add_image_by_fid(request, id, fid, action, session, click_repo, fs)
+        logger.warning(f'{len(image_data)=}')
+        return ResponseStreaming(image_data)

@@ -7,6 +7,7 @@ import { ItemImage } from '../components/ItemImage';
 import { deleteItem } from '../lib/apiClient';
 import { useNotification } from '../hooks/useNotification';
 import { useLanguage } from '../contexts/LanguageContext';
+import { IMAGE_BASE_URL } from '../config/api';
 
 // Define the expected response type from backend according to requirements
 interface ItemDetailResponse {
@@ -35,6 +36,8 @@ export const ItemDetailView = () => {
   const idParam = pathParts[pathParts.length - 1]; // Get the last part of the path
   const id = parseInt(idParam);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showEnlargedImage, setShowEnlargedImage] = useState(false);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState('');
   const { showNotification } = useNotification();
   
   // Check if ID is valid
@@ -64,6 +67,19 @@ export const ItemDetailView = () => {
       showNotification('Failed to delete item', 'error');
     }
     setShowConfirmDialog(false);
+  };
+
+  const handleShowEnlargedImage = () => {
+    if (data && data.image_id) {
+      // const imageUrl = `${IMAGE_BASE_URL}/mongodb/images/${data.image_id}`;
+      const imageUrl = `${IMAGE_BASE_URL}/seaweed/direct/${data.image_id}`;
+      setEnlargedImageUrl(imageUrl);
+      setShowEnlargedImage(true);
+    }
+  };
+
+  const handleCloseEnlargedImage = () => {
+    setShowEnlargedImage(false);
   };
 
   if (loading) {
@@ -135,7 +151,11 @@ export const ItemDetailView = () => {
 
       <div className="detail-content-layout">
         <div className="fixed-block">
-          <figure>
+          <figure
+            // onMouseEnter={handleShowEnlargedImage}
+            onClick={handleShowEnlargedImage}
+            style={{ cursor: 'pointer' }}
+          >
              <ItemImage image_id={data.image_id} size="large" />
           </figure>
         </div>
@@ -211,6 +231,50 @@ export const ItemDetailView = () => {
           })}
         </div>
       </div>
+
+      {/* Enlarged Image Popup */}
+        {showEnlargedImage && (
+          <div
+            className="modal modal-open"
+            onClick={handleCloseEnlargedImage}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              zIndex: 1000,
+              cursor: 'zoom-out'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()} // Чтобы клик по самому фото не закрывал окно
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#fff',
+                padding: '10px',
+                borderRadius: '8px'
+              }}
+            >
+              {/* Используем ваш компонент, он сам подставит /mongodb/images/ и добавит Token */}
+              <ItemImage
+                image_id={data.image_id}
+                size="large"
+                isFullMode={true} // Картинка станет большой
+                alt={data.title}
+              />
+            </div>
+          </div>
+        )}
+
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && (

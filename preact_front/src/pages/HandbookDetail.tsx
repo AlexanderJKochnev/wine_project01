@@ -39,6 +39,17 @@ export const HandbookDetail = () => {
       'sweetness': `/get/sweetness/${language}/${id}`,
       'foods': `/get/foods/${language}/${id}`,
       'varietals': `/get/varietals/${language}/${id}`,
+      'parcels': `/get/parcels/${language}/${id}`,
+      'sites': `/get/sites/${language}/${id}`,
+      'producertitles': `/get/producertitles/${language}/${id}`,
+      'vintageconfigs': `/get/vintageconfigs/${language}/${id}`,
+      'designations': `/get/designations/${language}/${id}`,
+      'tastingnotes': `/get/tastingnotes/${language}/${id}`,
+      'classifications': `/get/classifications/${language}/${id}`,
+      'baseingredients': `/get/baseingredients/${language}/${id}`,
+      'bodies': `/get/bodies/${language}/${id}`,
+      'glasswares': `/get/glasswares/${language}/${id}`,
+      'scales': `/get/scales/${language}/${id}`
     };
     return endpoints[type] || `/get/${type}/${language}/${id}`;
   };
@@ -98,6 +109,13 @@ export const HandbookDetail = () => {
       'sweetness': 'Sweetness',
       'foods': 'Food',
       'varietals': 'Varietal',
+      'parcels': 'Parcel',
+      'sites': 'Site',
+      'producertitles': 'ProducerTitle',
+      'vintageconfigs': 'VintageConfig',
+      'designations': 'Designation',
+      'tastingnotes': 'TastingNote',
+      'classifications': 'Classification'
     };
     return names[type] || type.charAt(0).toUpperCase() + type.slice(1);
   };

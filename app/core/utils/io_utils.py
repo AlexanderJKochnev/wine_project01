@@ -1,9 +1,17 @@
 # app/core/utils/io_utils.py
+from functools import lru_cache
 from pathlib import Path
 import json
 from typing import List
-from app.core.utils.common_utils import get_path_to_root, enum_to_camel
-from app.core.config.project_config import settings
+from loguru import logger  # noqa: F401
+from app.core.utils.common_utils import enum_to_camel
+from app.core.config.project_config import get_path_to_root, settings
+from fastapi.responses import Response, StreamingResponse
+from io import BytesIO
+
+from app.core.utils.headers import generate_image_headers
+
+
 # from app.core.utils.alchemy_utils import JsonConverter
 
 
@@ -47,6 +55,29 @@ def readJson(filename: Path):
             return data
 
 
+def get_dirpath(dirname: str) -> Path:
+    """
+        получает директорию по имени
+    """
+    return get_path_to_root(dirname)
+
+
+def get_file_list(directory: Path) -> List:
+    """
+        получает список файлов в директории
+    """
+    if not directory.exists():
+        return []
+    files = [f.name for f in directory.iterdir() if f.is_file()]
+    return sorted(files)
+
+
+@lru_cache(maxsize=1)
+def get_font_list(dir_name: str = "fonts") -> list:
+    return get_file_list(get_dirpath(dir_name))
+
+
+
 def get_filepath_from_dir(dirname: str = None,
                           ext_allowed: set = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}) -> List[Path]:
     """
@@ -85,3 +116,22 @@ def get_filepath_from_dir_by_name(filename: str = None, upload_dir: str = None) 
         return filepath
     except Exception:
         raise Exception(f'file {filename} is not exists in {upload_dir}')
+
+
+def ResponseStreaming(content: bytes, **kwargs):
+    # media_type, content_type, mime_type
+    headers = generate_image_headers(content, **kwargs)
+    return StreamingResponse(
+        BytesIO(content),
+        media_type=headers.get("Content-Type"),
+        headers=headers
+    )
+
+
+def ResponseJust(content: bytes):
+    # media_type, content_type, mime_type
+    headers = generate_image_headers(content)
+    # logger.info(f'{len(content)=}')
+    return Response(content=content,
+                    media_type=headers.get("Content-Type"),
+                    headers=headers)

@@ -2,14 +2,9 @@
 import re
 from copy import deepcopy
 from typing import Any, Dict, List, Union
-from app.core.utils.morphology import to_nominative
 import ijson
 from pydantic import ValidationError
-
-from app.core.config.project_config import settings
 from app.core.utils.io_utils import get_filepath_from_dir_by_name
-from app.support.item.schemas import ItemCreateRelation
-from app.support.drink.schemas import DrinkCreateRelation
 
 
 def detect_json_structure(filename):
@@ -77,6 +72,9 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
             back_item = pymodel.model_dump(exclude_unset=True)
             assert item == back_item
     """
+    from app.support.item.schemas import ItemCreateRelation
+    from app.support.drink.schemas import DrinkCreateRelation
+    from app.core.config.project_config import settings
     source = deepcopy(dict1)
     # fields: madeof, recommendation, age
     redundant_fields = settings.redundant
@@ -99,7 +97,7 @@ def convert_custom(dict1: Dict[str, Any]) -> Dict[str, Any]:
     get_subregion(drink_dict, language_key, delim)
     # 3. subcategory->category
     get_subcategory(drink_dict, language_key, delim)
-    # 4. pairing -> foods
+    # 4. pairing -> food's
     get_pairing(drink_dict, language_key, delim)
     # 5. varietals
     get_varietal(drink_dict, language_key)
@@ -149,15 +147,6 @@ def get_varietal(drink_dict: dict, language_key: dict) -> bool:
             varietal = parse_grapes(varietal)
             err = f'2: {varietal}'
             tmp[f'name{lang}'] = varietal
-        """
-            tmp = {"name": {"Pinot Noir": 42, "Meunier": 12, "Chardonnay": 40},
-                   "name_ru": {"Каберне Совиньон": 91, "Мерло": 6, "Пти Вердо": 2, "Мальбек": 1}
-            convert to:
-            varietals = [{"varietal": {"name": "Pinot Noir", "name_ru": "Пино Нуар"},
-                          "precentage": 42},
-                          ...
-                          ]
-        """
         varietals = convert_varietals(tmp)
         drink_dict['varietals'] = varietals
         return True
@@ -169,19 +158,17 @@ def get_varietal(drink_dict: dict, language_key: dict) -> bool:
 
 def get_pairing(drink_dict: dict, language_key: dict,
                 delim: str) -> bool:
+    """ DELETE ?"""
     try:
         pair: dict = {}
         pair2: list = []
         for lang in language_key.values():
-            # foods = dict_pop(drink_dict, f'pairing{lang}')
             foods = drink_dict.pop(f'pairing{lang}', None)
             if not foods:  # если нет pairing в исходных данных
                 return True
             err = f'1: {foods=}'
             foods = split_outside_parentheses_multi(foods)
             err = f'2: {foods=}'
-            if lang == '_ru':
-                foods = [to_nominative(food) for food in foods]
             foods = [food.capitalize() if food else food for food in foods]
             err = f'3: {foods=}'
             if foods:
@@ -209,6 +196,7 @@ def get_pairing(drink_dict: dict, language_key: dict,
 
 def country_norm(country: str, delim: str = '_') -> str:
     """ United_states_of_america -> United States Of America"""
+    from app.core.config.project_config import settings
     if not country:
         return country
     dlm = settings.RE_DELIMITER
@@ -220,6 +208,7 @@ def get_subregion(drink_dict: dict, language_key: dict,
     """
         формируем subregion->region->country
     """
+    from app.core.config.project_config import settings
     try:
         dlm = settings.RE_DELIMITER
         country = dict_pop(drink_dict, 'country')
@@ -241,6 +230,7 @@ def get_subcategory(drink_dict: dict, language_key: dict,
     """
     формируем subcategory->category
     """
+    from app.core.config.project_config import settings
     try:
         delim = settings.RE_DELIMITER
         wine_category = settings.wine_category
@@ -431,6 +421,7 @@ def dict_pop(d, key):
 
 
 def split_outside_parentheses_multi(text: str, maxsplit: int = -1) -> list[str]:
+    from app.core.config.project_config import settings
     if not text:
         return []
 
@@ -614,3 +605,68 @@ def convert_varietals(data: dict) -> list[dict]:
             "percentage": percentage
         })
     return result
+
+
+def list_move(source: list, item: Any, pos: int = 0) -> list:
+    """
+        перемещает элемент item со своей позиции на позицию pos (начиная с 0)
+        при отсутствии item или pos > кол-ва элнингьла в списке возвращает исходный список
+    """
+    result = source[:]
+    try:
+        result.remove(item)
+        result.insert(pos, item)
+    except Exception:
+        pass
+    finally:
+        return result
+
+
+def lang_suffix_list(source: list) -> list:
+    """
+        конверирует лист вида ['en', 'ru', 'fr',...]
+        в ['', '_ru', '_fr', ...]
+    """
+    from app.core.config.project_config import settings
+    default_lang = settings.DEFAULT_LANG
+    return ['' if lang == default_lang else f'_{lang}' for lang in source]
+
+
+def lang_suffix_dict(source: list) -> Dict[str, tuple]:
+    """
+         комбинация lang_suffix_list и list_move
+         возвращает:
+         {'en': ('', ('en', 'ru', 'fr'), ),...}
+    """
+    return {key: (lang_suffix_list(list_move(source, key))) for key in source}
+
+
+def lang_sorted(lang: str) -> tuple:
+    """
+    НЕ ИСПОЛЬЗОВАТЬ
+    сортирует списки языков и возвращает список языковых суффиксов где на 1 месте lang
+    lang - требуемый язык
+    source - список языков
+    """
+    from app.core.config.project_config import settings
+    source = settings.LANGUAGES
+    default_lang = settings.DEFAULT_LANG
+    tmp: list = source[:]
+    tmp.remove(lang)
+    tmp.insert(0, lang)
+    return tuple('' if lang == default_lang else f'_{lang}' for lang in tmp)
+
+
+def color_converter(value: str, opacity: int, tp: int = 0):
+    hex_val = value.lstrip('#')
+    r, g, b = tuple(int(hex_val[i:i + 2], 16) for i in (0, 2, 4))
+
+    match tp:
+        case 0:     # rgba
+            return (r, g, b, opacity)
+        case 1:     # hex
+            alpha_hex_int = opacity
+            # Форматируем число в 2-значную HEX строку с ведущим нулем (например, '80')
+            alpha_hex_str = f"{alpha_hex_int:02X}"
+            rgba_hex_string = f"{value}{alpha_hex_str}"
+            return rgba_hex_string

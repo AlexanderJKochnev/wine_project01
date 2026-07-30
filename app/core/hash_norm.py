@@ -1,0 +1,79 @@
+# app.core.hash_norm.py
+"""
+    нормализация текста для хэширования
+    проверить и удалить
+"""
+import string
+from ctypes import c_int64
+from functools import lru_cache
+from typing import Dict, List
+import farmhash
+from loguru import logger
+
+# --- КОНФИГУРАЦИЯ И НОРМАЛИЗАЦИЯ ---
+
+_EXTRA_FIXES = {
+    'ü': 'u', 'ö': 'o', 'ä': 'a', 'ß': 'ss', 'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+    'à': 'a', 'â': 'a', 'î': 'i', 'ï': 'i', 'ô': 'o', 'û': 'u', 'ù': 'u', 'ç': 'c',
+    'ñ': 'n', 'á': 'a', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ã': 'a', 'õ': 'o', 'å': 'a',
+    'ø': 'o', 'æ': 'ae', 'ł': 'l', 'ń': 'n', 'ś': 's', 'ź': 'z', 'ż': 'z',
+    '.': '#', ',': '#'
+}
+
+_ALLOWED = string.ascii_lowercase + string.digits + "абвгдёежзийклмнопрстуфхцчшщъыьэюя#"
+_TRANS_MAP = str.maketrans({
+    **{chr(i): ' ' for i in range(65536)},
+    **{c: c for c in _ALLOWED},
+    **_EXTRA_FIXES
+})
+
+
+@lru_cache(maxsize=65536)
+def get_cached_hash(token: str) -> int:
+    """Детерминированный Fingerprint64"""
+    # h_unsigned = cityhash.CityHash64(token)
+    # return struct.unpack('q', struct.pack('Q', h_unsigned))[0]
+    return c_int64(farmhash.Fingerprint64(token.encode('utf-8'))).value
+
+
+def is_valid_token(t: str) -> bool:
+    """Фильтрация: длина > 1 и числа только в диапазоне 1-2050."""
+    if not t or len(t) < 2:
+        return False
+    clean_t = t.replace('#', '')
+    if clean_t.isdigit():
+        try:
+            val = int(t.split('#')[0])
+            return 1 <= val <= 2050
+        except Exception as e:
+            logger.error(f' is_valid_token. {e}')
+            return False
+    return True
+
+
+def tokenize(text: str) -> List[str]:
+    """Превращает сырой текст в список чистых слов (с сохранением повторов)."""
+    if not text:
+        return []
+    return [
+        t for t in (w.strip('#') for w in text.lower().translate(_TRANS_MAP).split())
+        if is_valid_token(t)
+    ]
+
+# --- ФУНКЦИИ ДЛЯ ПОДДЕРЖКИ БАЗЫ ---
+
+
+def get_hashes_for_item(text: str) -> List[int]:
+    """
+    Генерирует уникальные хеши для поля word_hashes (для GIN индекса).
+    Использовать в макросе массового обновления айтема.
+    """
+    return [get_cached_hash(t) for t in set(tokenize(text))]
+
+
+def get_word_hashes_dict(text: str) -> Dict:
+    """
+        Генерирует пары word: уникальный хеш для поля word_hashes (для GIN индекса).
+        Использовать в макросе  массового обновления I.
+    """
+    return {t: get_cached_hash(t) for t in set(tokenize(text))}

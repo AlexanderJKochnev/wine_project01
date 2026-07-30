@@ -1,4 +1,5 @@
 // src/components/ItemCreateForm.tsx
+// СОЗДАНИЕ item
 import { h, useState, useEffect } from 'preact/hooks';
 import { apiClient } from '../lib/apiClient';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -13,9 +14,17 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     title: '',
     title_ru: '',
     title_fr: '',
+    title_es: '',
+    title_it: '',
+    title_de: '',
+    title_zh: '',
     subtitle: '',
     subtitle_ru: '',
     subtitle_fr: '',
+    subtitle_es: '',
+    subtitle_it: '',
+    subtitle_de: '',
+    subtitle_zh: '',
     subcategory_id: '',
     sweetness_id: '',
     subregion_id: '',
@@ -25,12 +34,24 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
     description: '',
     description_ru: '',
     description_fr: '',
+    description_es: '',
+    description_it: '',
+    description_de: '',
+    description_zh: '',
     recommendation: '',
     recommendation_ru: '',
     recommendation_fr: '',
+    recommendation_es: '',
+    recommendation_it: '',
+    recommendation_de: '',
+    recommendation_zh: '',
     madeof: '',
     madeof_ru: '',
     madeof_fr: '',
+    madeof_es: '',
+    madeof_it: '',
+    madeof_de: '',
+    madeof_zh: '',
     vol: '',
     price: '',
     varietals: [] as string[],
@@ -69,7 +90,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
 
         // Sort each handbook alphabetically by the visible field
         const getVisibleName = (item: any) => {
-          return item.name || item.name_en || item.name_ru || item.name_fr || '';
+          return item.name || item.name_en || item.name_ru || item.name_fr || item.name_es || item.name_it || item.name_de || item.name_zh || '';
         };
 
         const sortedSubcategories = [...subcategories].sort((a, b) =>
@@ -219,12 +240,13 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.title}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Title"
                     required
                   />
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">Title (RU)</span>
+                    <span className="label-text">Title (Russian)</span>
                   </label>
                   <input
                     type="text"
@@ -232,12 +254,13 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.title_ru}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Заголовок на Русском"
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Title (FR)</span>
+                    <span className="label-text">Title (French)</span>
                   </label>
                   <input
                     type="text"
@@ -245,8 +268,67 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.title_fr}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Titre en Francais"
                   />
                 </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title (Spanish)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title_es"
+                    value={formData.title_es}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Título en español"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title (Italian)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title_it"
+                    value={formData.title_it}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Titolo"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title (German)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title_de"
+                    value={formData.title_de}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Titel"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title (Chinese)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title_zh"
+                    value={formData.title_zh}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="標題"
+                  />
+                </div>
+
+                {/* lang title */}
 
                 <div>
                   <label className="label">
@@ -258,34 +340,97 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.subtitle}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Subtitle"
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Subtitle (RU)</span>
+                    <span className="label-text">Subtitle (Russian)</span>
                   </label>
                   <input
                     type="text"
                     name="subtitle_ru"
+                    lang="ru"
                     value={formData.subtitle_ru}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Подзаголовок на Русском"
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Subtitle (FR)</span>
+                    <span className="label-text">Subtitle (French)</span>
                   </label>
                   <input
                     type="text"
                     name="subtitle_fr"
+                    inputmode="latin"
                     value={formData.subtitle_fr}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Sous-titre en Francais"
                   />
                 </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle (Spanish)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle_es"
+                    value={formData.subtitle_es}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Subtítulo en español"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle (Italian)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle_it"
+                    value={formData.subtitle_it}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Sottotitolo"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle (German)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle_de"
+                    value={formData.subtitle_de}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="Untertitel"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Subtitle (Chinese)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="subtitle_zh"
+                    value={formData.subtitle_zh}
+                    onInput={handleChange}
+                    className="input input-bordered w-full"
+                    placeholder="標題"
+                  />
+                </div>
+
+                {/* lang subtitle */}
 
                 <div>
                   <label className="label">
@@ -297,6 +442,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.vol}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Volume"
                     step="0.01"
                   />
                 </div>
@@ -311,6 +457,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.price}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Price"
                     step="0.01"
                   />
                 </div>
@@ -365,7 +512,8 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     <option value="">Select a subcategory</option>
                     {handbooks.subcategories.map(subcategory => (
                       <option key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name || subcategory.name_en || subcategory.name_ru || subcategory.name_fr}
+                        {subcategory.name || subcategory.name_en || subcategory.name_ru || subcategory.name_fr || subcategory.name_es || subcategory.name_it || subcategory.name_de || subcategory.name_zh}
+                        {/* lang subcategory*/}
                       </option>
                     ))}
                   </select>
@@ -384,7 +532,8 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     <option value="">Select sweetness</option>
                     {handbooks.sweetness.map(sweet => (
                       <option key={sweet.id} value={sweet.id}>
-                        {sweet.name || sweet.name_en || sweet.name_ru || sweet.name_fr}
+                        {sweet.name || sweet.name_en || sweet.name_ru || sweet.name_fr || sweet.name_es || sweet.name_it || sweet.name_de || sweet.name_zh}
+                        {/* lang sweet */}
                       </option>
                     ))}
                   </select>
@@ -404,7 +553,8 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     <option value="">Select a subregion</option>
                     {handbooks.subregions.map(subregion => (
                       <option key={subregion.id} value={subregion.id}>
-                        {subregion.name || subregion.name_en || subregion.name_ru || subregion.name_fr}
+                        {subregion.name || subregion.name_en || subregion.name_ru || subregion.name_fr || subregion.name_es || subregion.name_it || subregion.name_de || subregion.name_zh}
+                        {/* lang subregion*/}
                       </option>
                     ))}
                   </select>
@@ -420,6 +570,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.alc}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Alcohol (%)"
                     step="0.01"
                     min="0"
                     max="100"
@@ -436,6 +587,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.sugar}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Sugar (%)"
                     step="0.01"
                     min="0"
                     max="100"
@@ -452,6 +604,7 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.age}
                     onInput={handleChange}
                     className="input input-bordered w-full"
+                    placeholder="Age"
                   />
                 </div>
               </div>
@@ -472,35 +625,96 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.description}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Description"
                     rows={3}
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Description (RU)</span>
+                    <span className="label-text">Description (Russian)</span>
                   </label>
                   <textarea
                     name="description_ru"
                     value={formData.description_ru}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Описание на Русском"
                     rows={3}
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Description (FR)</span>
+                    <span className="label-text">Description (French)</span>
                   </label>
                   <textarea
                     name="description_fr"
                     value={formData.description_fr}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Description en Francais"
                     rows={3}
                   />
                 </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Description (Spain)</span>
+                  </label>
+                  <textarea
+                    name="description_es"
+                    value={formData.description_es}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Descripción en español"
+                  />
+                </div>
+
+                <div>
+                    <label className="label">
+                      <span className="label-text">Description (Italy)</span>
+                    </label>
+                    <textarea
+                      name="description_it"
+                      value={formData.description_it}
+                      onInput={handleChange}
+                      className="textarea textarea-bordered w-full"
+                      rows={3}
+                      placeholder="Descrizione in italiano"
+                    />
+                </div>
+
+                <div>
+                    <label className="label">
+                      <span className="label-text">Description (German)</span>
+                    </label>
+                    <textarea
+                      name="description_de"
+                      value={formData.description_de}
+                      onInput={handleChange}
+                      className="textarea textarea-bordered w-full"
+                      rows={3}
+                      placeholder="Beschreibung auf Deutsch"
+                    />
+                </div>
+
+                <div>
+                    <label className="label">
+                      <span className="label-text">Description (Chinese)</span>
+                    </label>
+                    <textarea
+                      name="description_zh"
+                      value={formData.description_zh}
+                      onInput={handleChange}
+                      className="textarea textarea-bordered w-full"
+                      rows={3}
+                      placeholder="中文說明"
+                    />
+                </div>
+                {/* lang description */}
+
               </div>
             </details>
             </div>
@@ -519,35 +733,96 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.recommendation}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Recommendation"
                     rows={3}
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Recommendation (RU)</span>
+                    <span className="label-text">Recommendation (Russian)</span>
                   </label>
                   <textarea
                     name="recommendation_ru"
                     value={formData.recommendation_ru}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Рекомендация на Русском"
                     rows={3}
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Recommendation (FR)</span>
+                    <span className="label-text">Recommendation (French)</span>
                   </label>
                   <textarea
                     name="recommendation_fr"
                     value={formData.recommendation_fr}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Recommandation en Francais"
                     rows={3}
                   />
                 </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Recommendation (Spanish)</span>
+                  </label>
+                  <textarea
+                    name="recommendation_es"
+                    value={formData.recommendation_es}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Recomendación"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Recommendation (Italian)</span>
+                  </label>
+                  <textarea
+                    name="recommendation_it"
+                    value={formData.recommendation_it}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Raccomandazione"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Recommendation (German)</span>
+                  </label>
+                  <textarea
+                    name="recommendation_de"
+                    value={formData.recommendation_de}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Empfehlung"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Recommendation (Chinese)</span>
+                  </label>
+                  <textarea
+                    name="recommendation_zh"
+                    value={formData.recommendation_zh}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="推薦"
+                  />
+                </div>
+
+                {/* lang recommendation */}
 
                 <div>
                   <label className="label">
@@ -558,35 +833,97 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                     value={formData.madeof}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Made Of"
                     rows={3}
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Made Of (RU)</span>
+                    <span className="label-text">Made Of (Russian)</span>
                   </label>
                   <textarea
                     name="madeof_ru"
                     value={formData.madeof_ru}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Состав на Русском"
                     rows={3}
                   />
                 </div>
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Made Of (FR)</span>
+                    <span className="label-text">Made Of (French)</span>
                   </label>
                   <textarea
                     name="madeof_fr"
                     value={formData.madeof_fr}
                     onInput={handleChange}
                     className="textarea textarea-bordered w-full"
+                    placeholder="Composition en Francais"
                     rows={3}
                   />
                 </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of (Spanish)</span>
+                  </label>
+                  <textarea
+                    name="madeof_es"
+                    value={formData.madeof_es}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Hecho de"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of (Italian)</span>
+                  </label>
+                  <textarea
+                    name="madeof_it"
+                    value={formData.madeof_it}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Fatto di"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of (German)</span>
+                  </label>
+                  <textarea
+                    name="madeof_de"
+                    value={formData.madeof_de}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="Hergestellt aus"
+                  />
+                </div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Made Of (Chinese)</span>
+                  </label>
+                  <textarea
+                    name="madeof_zh"
+                    value={formData.madeof_zh}
+                    onInput={handleChange}
+                    className="textarea textarea-bordered w-full"
+                    rows={3}
+                    placeholder="製成"
+                  />
+                </div>
+
+                {/* lanf madeof*/}
+
               </div>
             </details>
             </div>
@@ -625,7 +962,8 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                           className="mr-2"
                         />
                         <label htmlFor={`varietal-${varietal.id}`} className="flex-1 cursor-pointer">
-                          {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr}
+                          {varietal.name || varietal.name_en || varietal.name_ru || varietal.name_fr || varietal.name_es || varietal.name_it || varietal.name_de || varietal.name_zh}
+                              {/* lang varietal.name */}
                         </label>
                         {formData.varietals.some(v => v.startsWith(`${varietal.id}:`)) && (
                           <div className="ml-2">
@@ -691,7 +1029,8 @@ export const ItemCreateForm = ({ onClose, onCreated }: ItemCreateFormProps) => {
                           className="mr-2"
                         />
                         <label htmlFor={`food-${food.id}`} className="cursor-pointer">
-                          {food.name || food.name_en || food.name_ru || food.name_fr}
+                          {food.name || food.name_en || food.name_ru || food.name_fr || food.name_es || food.name_it || food.name_de || food.name_zh}
+                          {/* lang food.name */}
                         </label>
                       </div>
                     ))}

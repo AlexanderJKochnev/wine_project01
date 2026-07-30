@@ -1,20 +1,36 @@
 # app.core.service/service.py
+import asyncio
 from abc import ABCMeta
 from datetime import datetime
-from typing import List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from fastapi import BackgroundTasks, HTTPException, Request
+from loguru import logger
+from sqlalchemy import insert, select, tuple_, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy.orm import Session
 
+from app.core.config.database.db_async import DatabaseManager
 from app.core.config.project_config import settings
-from app.core.repositories.sqlalchemy_repository import ModelType, Repository
-from app.core.utils.alchemy_utils import get_models
-from app.core.utils.common_utils import flatten_dict_with_localized_fields
-from app.core.utils.pydantic_utils import make_paginated_response
-from app.service_registry import register_service
+from app.core.models.base_model import Base, get_model_by_name
+from app.core.repositories.sqlalchemy_repository import Repository
+from app.core.schemas.base import BaseModel, IndexFillResponse
+from app.core.services.click_service import FullTextSearch
+from app.core.types import ModelType
+from app.core.utils.alchemy_utils import has_column
+from app.core.utils.common_utils import flatten_dict_with_localized_fields, make_paging_dict
+from app.core.utils.converters import list_move
+from app.core.utils.pydantic_utils import (get_data_for_search, get_repo, inst_dict, list_dict, make_paginated_response,
+                                           prepare_search_string)
+from app.core.utils.reindexation import reindex_items
+from app.service_registry import get_search_dependencies, register_service
+
+# from app.core.utils.common_utils import jprint
 
 joint = '. '
+_REINDEX_LOCK = asyncio.Lock()
+_reindex_task_lock = asyncio.Lock()
+BATCH_SIZE = 500  # Оптимально для баланса память/скорость
 
 
 class ServiceMeta(ABCMeta):
@@ -39,267 +55,663 @@ class Service(metaclass=ServiceMeta):
     """
     __abstract__ = True
     #  список уникальных полей по которым будет осуществляться поиск в методах
-    #  get_or_create, update_or_create
+    #  список уникальных полей для get_or_create, update_or_create
     default: list = ['name']
+    # список полей исключенных из fts индексации
+    skip_keys = {'id', 'created_at', 'updated_at', 'alc', 'sugar', 'age', 'sparkling', 'subcategory_id', 'sweetness_id',
+                 'source_id', 'producer_id', 'vintageconfig_id', 'classification_id', 'designation_id', 'site_id',
+                 'parcel_id', 'category_id', 'drink_id', 'food_id', 'superfood_id', 'varietal_id', 'percentage'}
+
+    @staticmethod
+    def lang_sorted(lang: str) -> tuple:
+        """
+        сортирует списки языков и возвращает список языковых суффиксов где на 1 месте lang
+        lang - требуемый язык
+        source - список языков
+        """
+        source = settings.LANGUAGES
+        default_lang = settings.DEFAULT_LANG
+        tmp: list = source[:]
+        tmp.remove(lang)
+        tmp.insert(0, lang)
+        return tuple('' if lang == default_lang else f'_{lang}' for lang in tmp)
 
     @classmethod
-    def get_model_by_name(cls, name: str) -> ModelType:
-        for mode in get_models():
-            if any((mode.__name__.lower() == name, mode.__tablename__.lower() == name)):
-                return mode
+    def lang_suffix_list(cls, source: list) -> list:
+        """
+            конверирует лист вида ['en', 'ru', 'fr',...]
+            в ['', '_ru', '_fr', ...]
+        """
+        default_lang = settings.DEFAULT_LANG
+        return ['' if lang == default_lang else f'_{lang}' for lang in source]
 
     @classmethod
-    async def create(cls, data: ModelType, repository: Type[Repository], model: ModelType,
-                     session: AsyncSession) -> ModelType:
+    def lang_suffix_dict(cls, source: list) -> Dict[str, tuple]:
+        """
+             комбинация lang_suffix_list и list_move
+             возвращает:
+             {'en': ('', ('en', 'ru', 'fr'), ),...}
+        """
+        return {key: (cls.lang_suffix_list(list_move(source, key))) for key in source}
+
+    @classmethod
+    async def get_instance(cls, data_dict: dict, repository: Type[Repository], model: ModelType,
+                           session: AsyncSession, default: List = None):
+        """ получение instance дя методов get(update)_or_create"""
+        # значения ключевых полей для поиска
+        logger.info('gett_instance')
+        if not default:
+            default = cls.default
+        lookup_dict = {key: val for key, val in data_dict.items() if key in default}
+        # поиск существующей записи по совпадению объектов по уникальным полям
+        instance = await repository.get_by_fields(lookup_dict, model, session)
+        return instance
+
+    @classmethod
+    async def create(cls, data: BaseModel | dict, repository: Repository, model: ModelType,
+                     session: AsyncSession, **kwargs) -> dict:
         """ create & return record """
         # удаляет пустые поля
-        data_dict = data.model_dump(exclude_unset=True)
+        if isinstance(data, dict):
+            data_dict = data
+        else:
+            data_dict = data.model_dump(exclude_unset=True)
         obj = model(**data_dict)
+        if model.__name__ == 'Item':
+            drink_model = get_model_by_name('Drink')
+            drink_repo = get_repo('Drink')
+            # создагние индекса налету
+            obj = await reindex_items(obj, drink_model, drink_repo, cls.skip_keys, session)
         result = await repository.create(obj, model, session)
-        return result
+        await session.commit()
+        return inst_dict(result)
 
     @classmethod
-    async def get_or_create(cls, data: ModelType, repository: Type[Repository],
-                            model: ModelType, session: AsyncSession,
-                            default: List[str] = None) -> Tuple[ModelType, bool]:
+    async def create_bulk(cls, data_list: List[dict], repository: Repository, model: ModelType,
+                          session: AsyncSession, **kwargs) -> List[dict]:
         """
-            находит или создет запись
+            быстрое массовое добавление записей из словаря БЕЗ RELATIONS
+            обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
+            поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
+            data = [
+                {"email": "user1@example.com", "username": "user1", "status": "active"},
+                {"email": "user2@example.com", "username": "user2", "status": "pending"},
+                {"email": "user3@example.com", "username": "user3", "status": "active"},
+            ]
+        """
+        # instance_list = [model(**data) for data in data_list]
+        result = await repository.bulk_create(data_list, model, session)
+        return list_dict(result)
+
+    @classmethod
+    async def bulk_create_no_return_orm(cls, data: List[dict],
+                                        repository: Repository, model: ModelType,
+                                        session: AsyncSession, **kwargs):
+        """
+        Массовое добавление записей на чистом SQLAlchemy ORM.
+        Использует LEFT OUTER JOIN для фильтрации дубликатов по бизнес-ключам.
+
+        :param data: Список валидированных словарей с данными.
+        :param unique_fields: Список полей для проверки уникальности (например, ["word", "origin", "destin"]).
+        :param model: Декларативная модель SQLAlchemy.
+        """
+        if not data:
+            return 0
+        table = model.__table__
+        filter_tuples = [tuple(row.get(field) for field in cls.default) for row in data]
+        model_fields = [table.c[field] for field in cls.default]
+        # Запрос: SELECT word, origin, destin FROM table WHERE (word, origin, destin) IN (...)
+        select_stmt = select(*model_fields).where(tuple_(*model_fields).in_(filter_tuples))
+        result = await session.execute(select_stmt)
+        # Преобразуем результат в список tuple для быстрого сравнения на стороне Python
+        # Пример: {("cat", "en", "ru"), ("existing_word", "en", "fr")}
+        existing_records = set(result.all())
+        # ==========================================
+        # ШАГ 2: Фильтруем данные в Питонe
+        # ==========================================
+        new_records = []
+        for row in data:
+            # Формируем tuple бизнес-ключа для текущей строки
+            row_key = tuple(row.get(field) for field in cls.default)
+
+            # Если такого ключа нет в базе, добавляем строку в список на вставку
+            if row_key not in existing_records:
+                new_records.append(row)
+
+        if not new_records:
+            return 0
+        stmt = insert(model)
+        await session.execute(stmt, new_records)
+
+        return len(new_records)
+
+    @classmethod
+    async def get_or_create(cls, data: Union[BaseModel, dict], repository: Repository,
+                            model: Type[ModelType], session: AsyncSession,
+                            default: List[str] = None, **kwargs) -> Tuple[ModelType, bool]:
+        """
+            находит или создaет запись
+            возвращает instance и True (запись создана) или False (запись существует)
+        """
+        try:
+            inst = kwargs.get('inst')
+            if default is None:
+                default = cls.default
+            if not isinstance(data, dict):
+                # если исходные данные не словарь
+                data_dict: dict = data.model_dump(exclude_unset=True)
+            default_dict: dict = {key: val for key, val in data_dict.items() if key in default}
+            instance: ModelType = await repository.get_by_fields(default_dict, model, session)
+            if instance:
+                if inst:
+                    return instance, False
+                return inst_dict(instance), False
+            # запись не найдена
+            obj = model(**data_dict)
+            if model.__name__ == 'Item':
+                drink_model = get_model_by_name('Drink')
+                drink_repo = get_repo('Drink')
+                # создание индексируемого поля на лету
+                obj = await reindex_items(obj, drink_model, drink_repo, cls.skip_keys, session)
+            instance = await repository.create(obj, model, session)
+            await session.commit()
+            if inst:
+                return instance, True
+            return inst_dict(instance), True
+        except IntegrityError as e:
+            await session.rollback()
+            raise Exception(f'Integrity error: {e}')
+        except Exception as e:
+            await session.rollback()
+            raise Exception(f"UNKNOWN_ERROR: {str(e)}") from e
+
+    @classmethod
+    async def batch_get_or_create(cls, data_list: List[ModelType],
+                                  repository: Type[Repository], model: ModelType,
+                                  session: AsyncSession, default: List[str] = None, **kwargs) -> Tuple[ModelType, bool]:
+        """
+            находит или создaет записи из списка
             возвращает instance и True (запись создана) или False (запись существует)
         """
         try:
             if default is None:
                 default = cls.default
-            data_dict = data.model_dump(exclude_unset=True)
-            default_dict = {key: val for key, val in data_dict.items() if key in default}
-            # ошибка НУЖЕН ПОИСК ПО УНИКАЛЬНЫМ И СВЯЗАННЫМ ПОЛЯМ
-            # поиск существующей записи по совпадению объектов по уникальным полям
-            instance = await repository.get_by_fields(default_dict, model, session)
-            if instance:
-                return instance, False
-            # запись не найдена
-            obj = model(**data_dict)
-            instance = await repository.create(obj, model, session)
-            await session.flush()
-            await session.refresh(instance)
-            return instance, True
+            result: list = []
+            for data in data_list:
+                data_dict = data.model_dump(exclude_unset=True)
+                default_dict = {key: val for key, val in data_dict.items() if key in default}
+                # ошибка НУЖЕН ПОИСК ПО УНИКАЛЬНЫМ И СВЯЗАННЫМ ПОЛЯМ
+                # поиск существующей записи по совпадению объектов по уникальным полям
+                instance = await repository.get_by_fields(default_dict, model, session)
+                if instance:
+                    result.append(instance)
+                else:
+                    # запись не найдена
+                    obj = model(**data_dict)
+                    instance = await repository.create(obj, model, session)
+                    result.append(instance)
+            await session.commit()
+            return list_dict(result)
         except IntegrityError as e:
+            await session.rollback()
             raise Exception(f'Integrity error: {e}')
         except Exception as e:
+            await session.rollback()
             raise Exception(f"UNKNOWN_ERROR: {str(e)}") from e
 
     @classmethod
-    async def update_or_create(cls, id: int, data: ModelType, repository: Type[Repository],
-                               model: ModelType, session: AsyncSession,
-                               default: List[str] = None) -> Tuple[ModelType, bool]:
+    async def update_or_create(cls, data: BaseModel, repository: Type[Repository],
+                               model: Type[ModelType], background_tasks: BackgroundTasks, session: AsyncSession,
+                               default: List[str] = None, **kwargs) -> Tuple[Dict, bool]:
         """
-            находит и обновляет запись или создает если ее нет
+            находит и обновляет запись или создает если ее нет.
+            этим методом нельзя обновить ключевые поля - используй path + id
         """
         try:
-            if default is None:
-                default = cls.default
             data_dict = data.model_dump(exclude_unset=True)
-            default_dict = {key: val for key, val in data_dict.items() if key in default}
-            # поиск существующей записи по совпадению объектов по уникальным полям
-            instance = await repository.get_by_fields(default_dict, model, session)
-            if instance:
-                # запись найдена, обновляем
-                result = await repository.patch(instance, data_dict, session)
-                return result, False
-            # запись не найдена
-            obj = model(**data_dict)
-            instance = await repository.create(obj, model, session)
-            await session.flush()
-            await session.refresh(instance)
-            return instance, True
-        except IntegrityError as e:
-            raise Exception(f'Integrity error: {e}')
+            instance = await cls.get_instance(data_dict, repository, model, session, default)
+            # значения ключевых полей для поиска
+            if not instance:
+                # запись не найдена, добавляем
+                obj = model(**data_dict)
+                instance = await repository.create(obj, model, session)
+                await session.commit()
+                return instance, True
+            # запись найдена, обновляем
+            result = await cls.patch(instance, data, repository, model, background_tasks, session)
+            if result.get('success'):
+                return inst_dict(result.get('data')), False
+            else:
+                raise HTTPException(status_code=501, detail=f"{result.get('message')}")
         except Exception as e:
-            raise Exception(f"UNKNOWN_ERROR: {str(e)}") from e
+            logger.error(f'core.service.update_or_create.error {e}')
+            raise Exception(e)
 
     @classmethod
-    async def create_relation(cls, data: ModelType,
-                              repository: Type[Repository], model: ModelType, session: AsyncSession) -> ModelType:
+    async def create_relation(cls, data: BaseModel,
+                              repository: Repository, model: Type[ModelType], session: AsyncSession,
+                              **kwargs) -> ModelType:
         """
-        создание записей из json - со связями
+            создание записей из json - со связями, если нет связей - просто get_or_create
         """
-
-        data_dict = data.model_dump(exclude_unset=True)
-        result = await repository.get_by_obj(data_dict, model, session)
-        if result:
-            return result
-        else:
-            obj = model(**data_dict)
-
-            result = await repository.create(obj, model, session)
-            # тут можно добавить преобразования результата потом commit в роутере
-            return result
-
-    @classmethod
-    async def get_all(cls, ater_date: datetime,
-                      page: int, page_size: int, repository: Type[Repository], model: ModelType,
-                      session: AsyncSession, ) -> List[dict]:
-        # Запрос с загрузкой связей и пагинацией
-        skip = (page - 1) * page_size
-        items, total = await repository.get_all(ater_date, skip, page_size, model, session)
-        """
-            result = {"items": items,
-                  "total": total,
-                  "page": page,
-                  "page_size": page_size,
-                  "has_next": skip + len(items) < total,
-                  "has_prev": page > 1}
-        """
-        result = make_paginated_response(items, total, page, page_size)
+        parent: str = kwargs.get('parent')
+        parent_repo = kwargs.get('parent_repo')
+        parent_model = kwargs.get('parent_model')
+        parent_service = kwargs.get('parent_service')
+        # pydantic model -> dict & exclude parent
+        data_dict: dict = data.model_dump(exclude={parent}, exclude_unset=True)
+        # get parent pydantic model, get_or_create parent_id, add parent_id to data_dict
+        if parent_data := getattr(data, parent):
+            result, _ = await parent_service.get_or_create(parent_data, parent_repo, parent_model, session)
+            data_dict[f'{parent}_id'] = result.id
+        # get_or_create
+        result, _ = await cls.get_or_create(data_dict, repository, model, session)
         return result
 
     @classmethod
-    async def get(cls, after_date: datetime,
-                  repository: Type[Repository], model: ModelType,
-                  session: AsyncSession,) -> Optional[List[ModelType]]:
+    async def get(cls, ater_date: datetime,
+                  page: int, page_size: int, repository: Type[Repository], model: ModelType,
+                  session: AsyncSession) -> Dict[str, Any]:
+        # Запрос с загрузкой связей и пагинацией
+        skip = (page - 1) * page_size
+        items, total = await repository.get(ater_date, skip, page_size, model, session)
+        # items_dict = [item.to_dict_fast() for item in items]
+        items_dict = list_dict(items)
+        result = make_paginated_response(items_dict, total, page, page_size)
+        return result
+
+    @classmethod
+    async def get_all(cls, after_date: datetime,
+                      repository: Type[Repository], model: ModelType,
+                      session: AsyncSession, limit: int = 20) -> Optional[List[ModelType]]:
         # Запрос с загрузкой связей -  возвращает список
-        result = await repository.get(after_date, model, session)
+        items: List[ModelType] = await repository.get_all(after_date, model, session, limit)
+        return list_dict(items)
+        # items_dict = [item.to_dict_fast() for item in items]
+        # return items_dict
+
+    @classmethod
+    async def get_full(
+        cls, repository: Type[Repository], model: ModelType, session: AsyncSession, limit: int = 20
+    ) -> Optional[List[dict]]:
+        # Запрос с загрузкой связей -  возвращает список
+        result = await repository.get_full(model, session, limit)
+        return list_dict(result)
+
+    @classmethod
+    async def get_full_with_pagination(
+        cls, page: int, page_size: int, repository: Type[Repository], model: ModelType,
+        session: AsyncSession
+    ) -> Dict[str, Any]:
+        # Запрос с загрузкой связей и пагинацией
+        skip = (page - 1) * page_size
+        items, total = await repository.get_full_with_pagination(skip, page_size, model, session)
+        items = list_dict(items)
+        result = make_paginated_response(items, total, page, page_size)
         return result
 
     @classmethod
     async def get_by_id(
             cls, id: int, repository: Type[Repository],
-            model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        """Получение записи по ID"""
-        return await repository.get_by_id(id, model, session)
+            model: ModelType, session: AsyncSession) -> Optional[Dict]:
+        """Получение записи по ID с автоматическим переводом недостающих локализованных полей"""
+        result = await repository.get_by_id(id, model, session)
+        res = inst_dict(result)
+        # res1 = result.to_dict()
+        # from app.core.utils.common_utils import jprint
+        return res
 
     @classmethod
-    async def patch(cls, id: int, data: ModelType,
-                    repository: Type[Repository],
-                    model: ModelType, session: AsyncSession) -> dict:
+    async def get_by_ids(cls, ids: str | List[int], repository: Type[Repository],
+                         model: ModelType, session: AsyncSession) -> Optional[List[Dict]]:
         """
-        Редактирование записи по ID
+        получение набора записей по набору ids
+        """
+        result = []
+        if ids:
+            comma_separator = ','
+            ids = tuple(int(b) for a in set(ids.split(comma_separator)) if (b := a.strip()).isdigit())
+            result = await repository.get_by_ids(ids, model, session)
+        return list_dict(result)
+
+    @classmethod
+    async def patch(cls, id: Union[int, Any], data_dict: dict,
+                    repository: Type[Repository],
+                    model: ModelType,
+                    background_tasks: BackgroundTasks,
+                    session: AsyncSession) -> Dict:
+        """
+        Редактирование записи по ID или instance
         Возвращает dict с результатом операции
         """
-        # Получаем существующую запись
-        existing_item = await repository.get_by_id(id, model, session)
-        if not existing_item:
-            return {'success': False, 'message': f'Редактируемая запись {id} не найдена на сервере',
-                    'error_type': 'not_found'}
-        data_dict = data.model_dump(exclude_unset=True)
-
-        if not data_dict:
-            return {'success': False, 'message': 'Нет данных для обновления', 'error_type': 'no_data'}
+        logger.warning('core service patch started')
+        if isinstance(id, int):
+            # Получаем существующую запись
+            existing_item: ModelType = await repository.get_by_id(id, model, session)
+        else:
+            # вместо id передан instance
+            existing_item: ModelType = id
+            id = existing_item.id
+        # logger.warning(f'{existing_item.to_dict_fast().keys()=}')
+        # logger.warning(f'{existing_item.to_dict().keys()=}')
         # Выполняем обновление
         result = await repository.patch(existing_item, data_dict, session)
-        # Обрабатываем результат
-        if isinstance(result, dict):
-            if result.get('success'):
-                return {'success': True, 'data': result.get('data'), 'message': f'Запись {id} успешно обновлена'}
-            else:
-                error_type = result.get('error_type')
-                message = result.get('message', 'Неизвестная ошибка')
-                field_info = result.get('field_info')
-
-                if error_type == 'unique_constraint_violation':
-                    return {'success': False, 'message': message,
-                            'error_type': 'unique_constraint_violation', 'field_info': field_info}
-                elif error_type == 'foreign_key_violation':
-                    return {'success': False, 'message': message,
-                            'error_type': 'foreign_key_violation', 'field_info': field_info}
-                elif error_type == 'update_failed':
-                    return {'success': False, 'message': message,
-                            'error_type': 'update_failed'}
-                elif error_type == 'integrity_error':
-                    return {'success': False, 'message': message,
-                            'error_type': 'integrity_error', 'field_info': field_info}
-                elif error_type == 'database_error':
-                    return {'success': False, 'message': message,
-                            'error_type': 'database_error'}
-                else:
-                    return {'success': False, 'message': message,
-                            'error_type': error_type}
-        else:
-            return {'success': False, 'message': f'Неизвестная ошибка при обновлении записи {id}',
-                    'error_type': 'unknown_error'}
+        await cls.pre_run_background_task(id, background_tasks, repository, model)
+        result['data'] = inst_dict(result.get('data'))
+        return result
 
     @classmethod
     async def delete(cls, id: int, model: ModelType, repository: Type[Repository],
+                     background_tasks: BackgroundTasks,
                      session: AsyncSession) -> bool:
         instance = await repository.get_by_id(id, model, session)
-        if instance:
-            result = await repository.delete(instance, session)
-
-            if result == "foreign_key_violation":
-                return {'success': False, 'deleted_count': 0,
-                        'message': 'Невозможно удалить запись: на неё ссылаются другие объекты'}
-            elif isinstance(result, str) and result.startswith(('integrity_error:', 'database_error:')):
-                return {'success': False, 'deleted_count': 0,
-                        'message': f'Ошибка базы данных при удалении: {result.split(":", 1)[1]}'}
-            elif result is True:
-                return {'success': True, 'deleted_count': 1, 'message': f'Запись {id} удалена'}
-            else:
-                return {'success': False, 'deleted_count': 0, 'message': f'Запись {id} обнаружена, но не удалена.'}
-        else:
-            return {'success': False, 'deleted_count': 0, 'message': f'Запись {id} не найдена'}
+        resp = await repository.delete(instance, session)
+        # здесь НЕ запускаем pre_run_background_task потому что
+        # если есть зависимые записи - удалить не даст, а если нет - то search_source обновлять не где
+        # patch достаточно
+        # cls.pre_run_background_task(id, background_tasks, repository, model)
+        return resp
 
     @classmethod
-    async def search(cls,
-                     repository: Type[Repository],
-                     model: ModelType,
-                     session: AsyncSession,
-                     **kwargs) -> List[ModelType]:
+    async def search(cls, request: Request, search: str, page: int, page_size: int,
+                     repository: Type[Repository], model: ModelType,
+                     session: AsyncSession
+                     ) -> Dict[str, Any]:
         """
             базовый поиск
         """
-        paging = False
-        if not kwargs:
-            kwargs: dict = {}
-        else:
-            if kwargs.get('page') and kwargs.get('page_size'):
-                limit = kwargs.pop('page_size')
-                skip = (kwargs.pop('page') - 1) * limit
-                kwargs['limit'], kwargs['skip'] = limit, skip
-                paging = True
-        if paging:
-            items, total = await repository.search(model, session, **kwargs)
-            result = {"items": items,
-                      "total": total,
-                      "page": skip,
-                      "page_size": limit,
-                      "has_next": skip + len(items) < total,
-                      "has_prev": skip > 1}
-        else:
-            result = await repository.search(model, session, **kwargs)
+        skip = (page - 1) * page_size
+        items, total = await repository.search(search, skip, page_size, model, session)
+        if total == 0:
+            return {'result': 'Not found'}
+        items = list_dict(items)
+        result = make_paginated_response(items, total, page, page_size)
         return result
 
     @classmethod
-    async def get_list_view_page(cls, page: int, page_size: int,
-                                 repository: Type[Repository], model: ModelType, session: AsyncSession, ) -> List[dict]:
+    async def search_all(cls, request: Request,
+                         search: str,
+                         repository: Type[Repository],
+                         model: ModelType,
+                         session: AsyncSession, limit: int = 20) -> List[Dict]:
+        """
+            базовый поиск без пагинации
+        """
+        result = await repository.search_all(search, model, session, limit)
+        if result:
+            return list_dict(result)
+        else:
+            return {'result': 'Not found'}
+
+    @classmethod
+    async def get_list_view_page(cls, search: str, page: int, page_size: int,
+                                 repository: Type[Repository], model: ModelType, session: AsyncSession, lang: str
+                                 ) -> Dict[str, Any]:
         # Запрос с загрузкой связей и пагинацией
         skip = (page - 1) * page_size
-        rows, total = await repository.get_list_view_page(skip, page_size, model, session)
-        result = {"rows": rows,
-                  "total": total,
-                  "page": page,
-                  "page_size": page_size,
-                  "has_next": skip + len(rows) < total,
-                  "has_prev": page > 1}
+        if search:
+            items, total = await repository.search(search, skip, page_size, model, session)
+            logger.warning(f'get_list_view_page {total=} {page=} {page_size=}')
+        else:
+            items, total = await repository.get_full_with_pagination(skip, page_size, model, session)
+            # logger.warning(f'get_list_view_page_get_list_paging {total=} {page=} {page_size=}')
+        list_fields = ['name']
+        result = [flatten_dict_with_localized_fields(obj.to_dict_fast(), list_fields, lang) for obj in items]
+        result = make_paginated_response(result, total, page, page_size)
         return result
 
     @classmethod
-    async def get_list_view(cls, lang: str, repository: Type[Repository],
+    async def get_list_view(cls, request: Request, lang: str, repository: Type[Repository],
                             model: ModelType, session: AsyncSession, ) -> List[tuple]:
-        # Запрос с загрузкой связей и без пагинацией
+        # Запрос с загрузкой связей и без пагинации
         rows = await repository.get_list(model, session)
         list_fields = ['name']
-        result = [flatten_dict_with_localized_fields(obj.to_dict(), list_fields, lang) for obj in rows]
+        result = [flatten_dict_with_localized_fields(obj.to_dict_fast(), list_fields, lang) for obj in rows]
         return result
 
     @classmethod
-    async def get_detail_view(cls, lang: str, id: int, repository: Type[Repository],
+    async def get_detail_view(cls, request: Request, lang: str, id: int, repository: Type[Repository],
                               model: ModelType, session: AsyncSession) -> Optional[ModelType]:
-        """ Получение и обработка записи по ID """
+        """ Получение и обработка записи по ID с автоматическим переводом недостающих локализованных полей """
         detail_fields = settings.DETAIL_VIEW
         obj = await repository.get_by_id(id, model, session)
-        # return obj
-        if not obj:
-            return None
-        if not isinstance(obj, dict):   # если объект не словарь
-            obj = obj.to_dict()  # model_to_dict(obj)
-        result = flatten_dict_with_localized_fields(obj, detail_fields, lang)
+        result = flatten_dict_with_localized_fields(inst_dict(obj), detail_fields, lang)
+        return result
+
+    @classmethod
+    async def fill_index(cls, repository: Type[Repository], model: ModelType,
+                         session: AsyncSession, **kwargs) -> Type[IndexFillResponse]:
+        """
+            УДАЛИТЬ
+            заполнение/обновление поля search_content для индекса
+            для заполнения индекса установить kwargs['search_content'] = None
+            для обновления индекса этого ключа быть не должно
+            RESPONSE_MODEL:
+            model: str
+            index: bool
+            number_of_records: Optional[int] = 0
+            number_of_indexed_records: Optional[int] = 0
+        """
+        try:
+            logger.info(f'fill index. model={model.__name__}')
+            result = IndexFillResponse(model=model.__name__)
+            if not hasattr(model, 'search_content'):
+                result.index = False
+                result.message = f'Model "{model.__name__}" has no fts index'
+                return result
+            # получаем записи
+            items = await repository.get_index(model, session, search_content=None)
+            logger.error(f'{len(items)=} ============================================')
+            # schema = get_pyschema(model, 'ReadRelation')
+            data: list = []
+            for item in items:
+                data.append({'id': item.id,
+                             'search_content': prepare_search_string(get_data_for_search(item))})
+                # prepare_search_string(schema.validate(item).model_dump(mode='json'))
+                # prepare_search_string(get_data_for_search(item))
+                # если не работает второй вариант, применяй первый выше
+            result.number_of_records = len(data)
+            await repository.my_bulk_updates(data, model, session)
+            result.index = True
+            result.message = 'индекс успешно создан'
+            logger.info(result.message)
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f'fill_index.error: {e}')
+        # from app.core.utils.common_utils import jprint
+        # jprint(data)
+        # return response
+
+    @classmethod
+    async def reindex_all_searchable_models(cls, batch_size: int = 1000):
+        """ заполнение Item.search_content
+            УДАЛИТЬ ?  В МАЕ 2027
+        """
+        if _reindex_task_lock.locked():
+            logger.debug("Переиндексация уже идет, запрос поставлен в очередь (проигнорирован)")
+            return
+
+        async with _reindex_task_lock:
+            start_time = asyncio.get_event_loop().time()
+            logger.info("--- НАЧАЛО полной переиндексации ---")
+            total_updated = 0
+            async with DatabaseManager.session_maker() as session:
+                # 1. Находим все классы, унаследованные от SearchableMixin
+                # (Или просто сканируем Base.metadata)
+                searchable_models = [mapper.class_ for mapper in Base.registry.mappers if
+                                     "search_content" in mapper.attrs]
+
+                for model in searchable_models:
+                    # 2. Ищем записи с пустым индексом для конкретной модели
+                    stmt = (select(model.id).where(model.search_content.is_(None)).limit(batch_size))
+                    result = await session.execute(stmt)
+                    ids_to_update = result.scalars().all()
+
+                    if not ids_to_update:
+                        continue
+
+                    print(f"[DEBUG] Переиндексация {model.__name__}: {len(ids_to_update)} записей")
+
+                    # 3. Обработка батча
+                    for obj_id in ids_to_update:
+                        # Вызываем логику загрузки "матрешки" (нужно сделать её тоже универсальной)
+                        # Если у моделей разные схемы, можно добавить метод в Mixin
+                        repo: Type[Repository] = get_repo(model)
+                        item = await repo.get_by_id(obj_id, model, session)
+                        # item = await get_data_by_id_and_model(obj_id, model, session)
+                        search_str = prepare_search_string(get_data_for_search(item))
+                        await session.execute(
+                            update(model).where(model.id == obj_id).values(search_content=search_str)
+                        )
+                    await session.commit()
+                    count = len(ids_to_update)
+                    if count > 0:
+                        total_updated += count
+                        logger.info(f"Обновлено {count} записей для модели {model.__name__}")
+            end_time = asyncio.get_event_loop().time()
+            duration = round(end_time - start_time, 2)
+
+            # ФИНАЛЬНЫЙ СИГНАЛ
+            logger.success(
+
+                f"--- ЗАВЕРШЕНО: переиндексация окончена --- "
+                f"Всего обновлено: {total_updated} | Время: {duration} сек."
+            )
+
+    @classmethod
+    def is_dependencies(cls, model: ModelType) -> bool:
+        """
+              проверяет, входит ли эта модель в реестр зависимых от индексируемой модели
+              и если входит - возвращает индексируемую (главную) модель
+        """
+        path: str = get_search_dependencies(model)
+        if not path:
+            return False
+        res = path.split('.')[-1].capitalize()
+        return res == 'Item'
+
+    @classmethod
+    async def reindexation(cls, background_tasks: BackgroundTasks):
+        """ полная переиндексация """
+        logger.warning('full reindexation')
+        await Repository.run_sync_background(
+            start_model=None, start_id=None, path_str=None, session_factory=DatabaseManager.session_maker,
+            skip_keys=cls.skip_keys, background_tasks=background_tasks)
+        return True
+
+    @classmethod
+    async def pre_run_background_task(cls, id: int, background_tasks: BackgroundTasks,
+                                      repository: Type[Repository],
+                                      model: ModelType):
+        """
+            1. проверяет является ли модель привязанной к items, но не items
+            2. если да - отправляет задачу на обновление поля items.search_content items.hashes
+        """
+        if model.__name__ == 'Item':
+            # нечего индекстировать
+            return
+        path: str = get_search_dependencies(model)  # category.subcategory.drink.item
+        if not path or path.split('.')[-1].capitalize() != 'Item':
+            return
+        await repository.run_sync_background(start_model=model, start_id=id,
+                                             path_str=path, session_factory=DatabaseManager.session_maker,
+                                             skip_keys=cls.skip_keys,
+                                             background_tasks=background_tasks)
+        # background_tasks.add_task(
+        #     repository.run_sync_background, start_model=model, start_id=id,
+        #     path_str=path, session_factory=DatabaseManager.session_maker,
+        #     skip_keys=cls.skip_keys
+        # )
+        logger.warning("background_tasks.add_task: status: ok")
+
+    @classmethod
+    async def clicksearch(cls, search: str, mode: str,
+                          page: int, page_size: int,
+                          repository: Type[Repository], model: ModelType,
+                          session: AsyncSession,
+                          ch_client, table: str = 'items_search'):
+        """ поиск searh thru click - УДАЛИТЬ ПОТОМ ПОКА ПОИСК ПО CLICK SEARCH неподошел"""
+        # 0. запрос в clickhouse
+        click_service = FullTextSearch
+        click: tuple = await click_service.search(search, table, ch_client, mode)
+        if click:
+            total = len(click)
+            ids = click[(page - 1) * page_size:page * page_size]
+            response = await repository.get_by_ids(ids, model, session)
+            result = make_paging_dict(response, page, page_size, total)
+            return result
+        else:
+            return []
+
+    @classmethod
+    async def get_by_field(cls, filter: dict, repository: Type[Repository], model: ModelType,
+                           session: AsyncSession) -> Optional[dict]:
+        """
+            поиск единственного значения по уникальному полю/полям
+            на входе {'field_name': value, ...}
+        """
+        response = await repository.get_by_field_v2(filter, model, session)
+        return inst_dict(response)
+
+    @classmethod
+    async def get_list_by_field_v2(cls, filter: dict, repository: Type[Repository],
+                                   model: ModelType, session: AsyncSession):
+        """
+            возвращает список без пагинации instances по фильтру НЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ
+            на входе {'field_name': value, ...}
+            session.scalars(stmtp) -> result.all() -> List[ModelType]
+        """
+        response = await repository.get_list_by_field_v2(filter, model, session)
+        return list_dict(response)
+
+    @classmethod
+    async def get_with_filter_simple(cls, background_tasks: BackgroundTasks, session: AsyncSession,
+                                     model: ModelType, related_model_name: ModelType,
+                                     repository: Type[Repository],
+                                     filters: Dict,
+                                     page: int = 1,
+                                     page_size: int = 20,
+                                     query_type: int = 0
+                                     ) -> List[dict]:
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        related_model = get_model_by_name(related_model_name)
+        skip = (page - 1) * page_size
+        items, total = await repository.get_with_filter_simple(session, model, related_model,
+                                                               filters, skip, page_size, query_type)
+        items_dict = list_dict(items)
+        result = make_paginated_response(items_dict, total, page, page_size)
+        return result
+
+    @classmethod
+    async def get_with_filter_complex(cls, session: AsyncSession,
+                                      model: ModelType, related_model_name: str,
+                                      repository: Type[Repository],
+                                      filters: Dict,
+                                      root_filter: Dict,
+                                      page: int = 1,
+                                      page_size: int = 20,
+                                      query_type: int = 0
+                                      ) -> List[dict]:
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        related_model = get_model_by_name(related_model_name)
+        skip = (page - 1) * page_size
+        items, total = await repository.get_with_filter_complex(session, model, related_model,
+                                                                filters, root_filter, skip,
+                                                                page_size, query_type)
+        items_dict = list_dict(items)
+        result = make_paginated_response(items_dict, total, page, page_size)
         return result

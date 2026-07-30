@@ -4,7 +4,24 @@ from fastapi import HTTPException, status
 import logging
 
 
+class AppBaseException(Exception):
+    def __init__(self, message: str, status_code: int = 400):
+        self.message = message
+        self.status_code = status_code
+
+
+"""
+    # repository.py
+    def get_user(id: int):
+        user = db.find(id)
+        if not user:
+            raise AppBaseException(message="User not found", status_code=404)
+        return user
+"""
+
+
 def exception_to_http(e: Exception) -> HTTPException:
+    """ удалить"""
     error_message = str(e)
     ERROR_MAPPING = {"UNKNOWN_ERROR:": (status.HTTP_500_INTERNAL_SERVER_ERROR, True),
                      "DATABASE_ERROR:": (status.HTTP_500_INTERNAL_SERVER_ERROR, True),

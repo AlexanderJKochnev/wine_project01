@@ -6,17 +6,31 @@
 """
 from abc import ABCMeta
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
-# from sqlalchemy.dialects import postgresql
-from sqlalchemy import and_, func, select, Select
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union
+
+from fastapi import HTTPException  # NOQA: F401
+from loguru import logger
+from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select,
+                        Select, update)
+from sqlalchemy.dialects import postgresql  # NOQA: F401
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased, load_only
+
+from app.core.config.project_config import settings
+from app.core.exceptions import AppBaseException
+from app.core.models.base_model import get_model_by_name
+from app.core.repositories.repo_background_tasks import Background
+from app.core.repositories.search_unaccent_repository import SearchRepositoryMixin
+from app.core.types import ModelType
 # from sqlalchemy.sql.elements import ColumnElement
-from app.core.services.logger import logger
-from app.core.utils.alchemy_utils import (create_enum_conditions,
-                                          create_search_conditions2, ModelType)
-from app.core.utils.alchemy_utils import get_sqlalchemy_fields
-from app.service_registry import register_repo
+from app.core.utils.alchemy_utils import (get_field_list, get_sql_search)
+from app.core.utils.pydantic_utils import get_repo
+from app.core.utils.reindexation import extract_text_ultra_fast
+from app.service_registry import get_child, register_repo
+
+# длина списка поисковой выдачи
+search_site = min(settings.PAGE_DEFAULT, 20)
 
 
 class RepositoryMeta(ABCMeta):
@@ -31,12 +45,69 @@ class RepositoryMeta(ABCMeta):
         return new_class
 
 
-class Repository(metaclass=RepositoryMeta):
+class Repository(Background, metaclass=RepositoryMeta):
     __abstract__ = True
     model: ModelType
 
+    @staticmethod
+    def get_related_model(model: ModelType):
+        """
+            получение связанной модели
+        """
+        related_model_name = get_child(model)
+        if not related_model_name:
+            return None
+        child_model_name: str = get_child(model)
+        if not child_model_name:
+            return None
+        return get_model_by_name(child_model_name.capitalize())
+
     @classmethod
-    def get_query(cls, model: ModelType):
+    async def get_related_model_instances(cls, id: int, model: ModelType,
+                                          session: AsyncSession,
+                                          add: bool = True) -> List[ModelType] | None:
+        """
+            получение связанных завписей из related model
+            РАЗОБРАТЬСЯ ЧТО ЭТО И ЗАЧЕМ
+        """
+        related_model = cls.get_related_model(model)
+        if not related_model:
+            logger.warning(f'{model.__name__} no more related model')
+            return None
+        related_repo: Type[Repository] = get_repo(related_model)
+        foreign_key = f'{model.__name__.lower()}_id'
+        if add:     # если вызов из метода create - пытаемся добавить:
+            try:
+                new_data_dict = {foreign_key: id, 'name': None}
+                new_data = related_model(**new_data_dict)
+                result = await related_repo.create(new_data, related_model, session)
+                if result:
+                    logger.success(f'запись {result.id} успешно добавлена в {related_model.__name__}')
+                return result
+            except Exception as e:
+                logger.error(f'запись {new_data_dict} не добалена в таблицу {related_model.__name__}. Это не ошибка, '
+                             f'{e}')
+        else:   # если вызов из метода delete - пытаемся удалить записи из связанных таблиц (а те в свою очередь из)
+            filter = {foreign_key: id}
+            stmt = select(related_model).filter_by(**filter)
+            result = await cls.nonpagination(stmt, session)
+            if result:
+                for instance in result:
+                    try:
+                        await related_repo.delete(instance, session)
+                    except Exception as e:
+                        logger.error(f'ошибка удаления записи {related_model.__name__} {instance.id}, {e}')
+        return result
+
+    @classmethod
+    async def get_count(cls, query: Select, session: AsyncSession):
+        """ ПОДСЧЕТ ОБЩЕГО КОЛ-ВА ЗАПИСЕЙ В СЛОЖНЫХ ЗАПРОСАХ (С ФИЛЬТРАМИ)"""
+        return (await session.execute(
+                select(func.count()).select_from(query.subquery())
+                )).scalar()
+
+    @classmethod
+    def get_query(cls, model: ModelType) -> Select:
         """
             Переопределяемый метод.
             Возвращает select() с полными selectinload.
@@ -45,158 +116,248 @@ class Repository(metaclass=RepositoryMeta):
         return select(model)
 
     @classmethod
-    def get_short_query(cls, model: ModelType):
+    def get_short_query(cls, model: ModelType, fields: tuple = ('id', 'name')):
         """
-            Переопределяемый метод.
-            Возвращает select() только с нужными полями - использовать для list_view.
-            По умолчанию — без связей.
+            Возвращает список модели только с нужными полями остальные None
+            - использовать для list_view и вообще где только можно.
+            для моделей с зависимостями - переопределить
         """
-        """ пример
-        stmt = (
-        select(
-            Drink.id,
-            Drink.name,
-            Subregion.name.label('subregion_name'),
-            Region.name.label('region_name'),
-            Country.name.label('country_name'),
-            Subcategory.name.label('subcategory_name'),
-            Category.name.label('category_name')
-        )
-        .select_from(Drink)
-        .join(Drink.subregion)
-        .join(Subregion.region)
-        .join(Region.country)
-        .join(Drink.subcategory)
-        .join(Subcategory.category)
-        .options(
-            selectinload(Drink.foods).load_only(Food.id, Food.name),
-            selectinload(Drink.varietals).load_only(Varietal.id, Varietal.name)
-            )
-        )
+        fields = get_field_list(model, starts=fields)
+        return select(model).options(load_only(*fields))
+
+    @classmethod
+    async def pagination(cls, stmt: Select, skip: int, limit: int, session: AsyncSession):
         """
-        return select(model)
+            получает запрос, сдвиг и размер страницы, сессию
+            возвращает список instances и кол-во записей
+        """
+        # count_stmt = select(func.count()).select_from(stmt)
+        # total = await session.scalar(count_stmt) or 0
+        total = await cls.get_count(stmt, session)
+        if total == 0:
+            return None, total
+        stmt = stmt.offset(skip).limit(limit)
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        result = await session.scalars(stmt)
+        items = result.all()
+        return items, total
+
+    @classmethod
+    async def nonpagination(cls, stmt: Select, session: AsyncSession) -> List[ModelType]:
+        """
+            получает запрос
+            возвращает список instances
+        """
+        result = await session.scalars(stmt)
+        return result.all()
 
     @classmethod
     async def create(cls, obj: ModelType, model: ModelType, session: AsyncSession) -> ModelType:
         """ создание записи """
         session.add(obj)
-        await session.commit()
+        await session.flush()
         await session.refresh(obj)
+        id = obj.id
+        await cls.get_related_model_instances(id, model, session)
         return obj
+
+    @classmethod
+    async def bulk_create(cls, data: List[Dict], model: ModelType,
+                          session: AsyncSession) -> List[ModelType] | None:
+        """ быстрое массовое добавление записей из словаря
+            обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
+            поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
+            data = [
+                {"email": "user1@example.com", "username": "user1", "status": "active"},
+                {"email": "user2@example.com", "username": "user2", "status": "pending"},
+                {"email": "user3@example.com", "username": "user3", "status": "active"},
+            ]
+        """
+        if not data:
+            return
+        stmt = insert(model).returning(model)
+        # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print(compiled)
+        result = await session.scalars(stmt, data)
+        return result.all()
+
+    @classmethod
+    async def bulk_create_no_return(
+        cls, data: List[Dict], model: ModelType, session: AsyncSession
+    ) -> int:
+        """ быстрое массовое добавление записей из словаря
+            обязательно должен быть список словарей, но если словари не соотвествуют схеме = метод упадет
+            поэтому на сервис layer лучше валдидировать или иным способом обеспечить соответствие контракту
+            data = [
+                {"email": "user1@example.com", "username": "user1", "status": "active"},
+                {"email": "user2@example.com", "username": "user2", "status": "pending"},
+                {"email": "user3@example.com", "username": "user3", "status": "active"},
+            ]
+            ВОЗВРАЩАЕТ  true or false ДЛЯ БОЛЬШОГО КОЛИЧЕСТВА ДАННЫХ
+        """
+        if not data or len(data) == 0:
+            return 0
+        stmt = insert(model)
+        # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print(compiled)
+        await session.execute(stmt, data)
+        return len(data)
+
+    @classmethod
+    async def bulk_create_no_return_orm(
+            cls, data: List[Dict[str, Any]], unique_fields: List[str], model: ModelType,
+            session: AsyncSession
+    ) -> int:
+        """
+        Массовое добавление записей на чистом SQLAlchemy ORM.
+        Использует LEFT OUTER JOIN для фильтрации дубликатов по бизнес-ключам.
+
+        :param data: Список валидированных словарей с данными.
+        :param unique_fields: Список полей для проверки уникальности (например, ["word", "origin", "destin"]).
+        :param model: Декларативная модель SQLAlchemy.
+        """
+        if not data:
+            return 0
+
+        # Получаем объект таблицы из модели SQLAlchemy
+        table = model.__table__
+
+        # 1. Строим виртуальную таблицу (подзапрос) из переданного списка словарей.
+        # Конструкция values() автоматически мапит типы данных (включая многомерные массивы drow)
+        # на основе колонок реальной таблицы.
+        data_subquery = (
+            select(*[table.c[col] for col in data[0].keys()]).values(*data).subquery(name="incoming_data"))
+
+        # 2. Формируем условия для LEFT OUTER JOIN по уникальным полям
+        # Итоговый вид: and_(table.c.word == data_subquery.c.word, table.c.origin == data_subquery.c.origin, ...)
+        join_conditions = and_(
+            *[table.c[field] == data_subquery.c[field] for field in unique_fields]
+        )
+
+        # 3. Первое поле уникального ключа используем для проверки: если в реальной таблице его нет, значит это новая запись
+        check_field = unique_fields[0]
+
+        # 4. Собираем SELECT-запрос, который выберет из входящих данных только те, которых еще нет в БД
+        select_new_records_stmt = (
+            select(data_subquery).outerjoin(table, join_conditions).where(table.c[check_field].is_(None)))
+
+        # 5. Передаем отфильтрованный результат в INSERT INTO ... SELECT
+        insert_stmt = insert(table).from_select(
+            names=list(data[0].keys()), selectdata=select_new_records_stmt
+        )
+
+        # 6. Выполнение на уровне сессии
+        result = await session.execute(insert_stmt)
+
+        # Возвращаем количество фактически вставленных строк
+        return result.rowcount
+
+    @classmethod
+    async def bulk_update(cls, data: List[Dict], model: ModelType,
+                          session: AsyncSession) -> bool:
+        """ быстрое массовое обновление записей из словарей
+            data должны содержать id
+            data = [
+                    {'id': 104, 'seaweed_fids': ('20,cf5fefa821', '16,d0e133a318')},
+                    {'id': 105, 'seaweed_fids': ('17,d1a8908ae6', '20,d2ad06361d')},
+                    {'id': 106, 'seaweed_fids': ('21,d3f0b578f7', '20,d4cbc210a8')},
+                    ]
+        """
+        # 1. получить редактируемые записи одним запросом
+        data_dict: dict = {item.pop('id'): item for item in data}
+        ids = list(data_dict.keys())
+        instances = await cls.get_by_ids(ids, model, session)
+        for instance in instances:
+            datax = data_dict.get(instance.id)
+            for item in datax:
+                for k, v in item.items():
+                    if hasattr(instance, k):
+                        setattr(instance, k, v)
+        await session.flush()
 
     @classmethod
     async def patch(cls, obj: ModelType,
                     data: Dict[str, Any], session: AsyncSession) -> Union[ModelType, dict, None]:
         """
-        редактирование записи
-        :param obj: редактируемая запись
-        :param data: изменения в редактируемую запись
+            редактирование записи - частичное обновление - только измененные поля
+            (для many-to-many добавить проверку изменений в промежуточной таблице)
+            :param obj: редактируемая запись
+            :param data: изменения в редактируемую запись (могут быть как словарем с полным набором полей
+            так и частичным - только с измененными записями
         """
         try:
-            # Store original values for comparison later
-            for k, v in data.items():
-                if hasattr(obj, k):
-                    setattr(obj, k, v)
+            # 0. obj -> dict
+            id = obj.id
+            obj_dict = obj.to_dict()
+            # 1. отфильтровать только изменения
+            updated_data: dict = {key: val for key, val in data.items()
+                                  if key in obj_dict.keys() and val != obj_dict.get(key)}
+            if not updated_data:
+                raise HTTPException(status_code=500, detail='No change found')
+            query = update(cls.model).where(cls.model.id == id).values(**updated_data)
+            await session.execute(query)
             await session.commit()
             return {"success": True, "data": obj}
         except IntegrityError as e:
-            await session.rollback()
-            error_str = str(e.orig).lower()
-            original_error_str = str(e.orig)
 
-            if 'unique constraint' in error_str or 'duplicate key' in error_str:
-                # Extract field name and value from the error message
-                field_info = cls._extract_field_info_from_error(original_error_str)
-                return {
-                    "success": False,
-                    "error_type": "unique_constraint_violation",
-                    "message": f"Нарушение уникальности: {original_error_str}",
-                    "field_info": field_info
-                }
-            elif 'foreign key constraint' in error_str or 'fk_' in error_str:
-                # Extract field name and value from the error message
-                field_info = cls._extract_field_info_from_error(original_error_str)
-                return {
-                    "success": False,
-                    "error_type": "foreign_key_violation",
-                    "message": f"Нарушение внешнего ключа: {original_error_str}",
-                    "field_info": field_info
-                }
-            return {
-                "success": False,
-                "error_type": "integrity_error",
-                "message": f"Ошибка целостности данных: {original_error_str}"
-            }
+            raise AppBaseException(message=str(e.orig), status_code=404)
         except Exception as e:
-            await session.rollback()
-            return {
-                "success": False,
-                "error_type": "database_error",
-                "message": f"Ошибка базы данных при обновлении: {str(e)}"
-            }
+            raise AppBaseException(message=str(e), status_code=405)
 
     @classmethod
-    def _extract_field_info_from_error(cls, error_message: str) -> dict:
-        """
-        Extract field name and value information from database error message
-        """
-        # This is a simplified version - in real implementation you might want to parse
-        # specific patterns from different database error messages
-        field_info = {}
-
-        # Example parsing for PostgreSQL unique constraint violations
-        if 'duplicate key value violates unique constraint' in error_message.lower():
-            # Extract table and field names
-            import re
-            table_match = re.search(r'"([^"]+)"', error_message)
-            if table_match:
-                field_info['table'] = table_match.group(1)
-
-            # Extract the duplicate value
-            value_match = re.search(r'\(([^)]+)\)=\(([^)]+)\)', error_message)
-            if value_match:
-                field_info['field'] = value_match.group(1)
-                field_info['value'] = value_match.group(2)
-
-        elif 'foreign key constraint' in error_message.lower():
-            # Extract referenced table and key info
-            import re
-            ref_match = re.search(r'reference "(.+?)"', error_message)
-            if ref_match:
-                field_info['referenced_table'] = ref_match.group(1)
-
-        return field_info
-
-    @classmethod
-    async def delete(cls, obj: ModelType, session: AsyncSession) -> Union[bool, str]:
+    async def delete(cls, obj: ModelType, session: AsyncSession) -> bool:
         """
         удаление записи
         :param obj: instance
         """
-        try:
-            await session.delete(obj)
-            await session.commit()
-            return True
-        except IntegrityError as e:
-            await session.rollback()
-            # Проверяем, является ли ошибка Foreign Key violation
-            error_str = str(e.orig)
-            if "foreign key constraint" in error_str.lower() or "violates foreign key constraint" in error_str.lower():
-                return "foreign_key_violation"
-            return f"integrity_error: {error_str}"
-        except Exception as e:
-            await session.rollback()
-            return f"database_error: {str(e)}"
+        # async with session.begin_nested():
+        id = obj.id
+        await cls.get_related_model_instances(id, cls.model, session, add=False)
+        await session.delete(obj)
+        # await session.expunge(obj)
+        # можно отвязать и вернуть удаленный объект и проделать с ним вские штуки - например записать заново с новым ID
+        return True
+
+    @classmethod
+    async def bulk_delete(cls, session: AsyncSession, model: ModelType, *conditions: Any) -> int:
+        """
+        массовое удаление записей по условию
+        Универсальный метод для массового удаления по любым условиям.
+        :param session: Активная сессия SQLAlchemy
+        :param model: Класс модели (например, User)
+        :param conditions: Любое количество условий SQLAlchemy (*, >, <, like, in_)
+        например roduct.price > 5000
+        :return: Количество удаленных строк
+        """
+        if not conditions:
+            raise ValueError("Необходимо передать хотя бы одно условие для удаления.")
+        stmt = delete(model).where(*conditions)
+        result = await session.execute(stmt)
+        return result.rowcount
 
     @classmethod
     async def get_by_id(cls, id: int, model: ModelType, session: AsyncSession) -> Optional[ModelType]:
         """
             get one record by id
         """
+        mtmfileds = cls.get_many_to_many_fields(cls.model)
+        logger.warning(f'{mtmfileds=}')
         stmt = cls.get_query(model).where(model.id == id)
         result = await session.execute(stmt)
         obj = result.scalar_one_or_none()
         return obj
+
+    @classmethod
+    async def get_by_ids(cls, ids: Tuple[int], model: ModelType, session: AsyncSession) -> Optional[ModelType]:
+        """
+            get records by ids tuple
+        """
+        stmt = cls.get_query(model).where(model.id.in_(ids)).order_by(model.id.asc())
+        # from sqlalchemy.dialects import postgresql
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # logger.error(compiled_pg)
+        result = await cls.nonpagination(stmt, session)
+        return result
 
     @classmethod
     async def get_by_obj(cls, data: dict, model: Type[ModelType], session: AsyncSession) -> Optional[ModelType]:
@@ -221,38 +382,87 @@ class Repository(metaclass=RepositoryMeta):
         return item
 
     @classmethod
-    async def get_all(cls, after_date: datetime, skip: int,
-                      limit: int, model: ModelType, session: AsyncSession, ) -> tuple:
-        # Запрос с загрузкой связей и пагинацией
-        stmt = (cls.get_query(model).where(model.updated_at > after_date)
-                .order_by(model.id.asc()).offset(skip).limit(limit))
-        total = await cls.get_count(after_date, model, session)
-        result = await session.execute(stmt)
-        items = result.scalars().all()
-        # items = result.mappings().all()
-        return items, total
-
-    @classmethod
-    async def get(cls, after_date: datetime, model: ModelType, session: AsyncSession, ) -> list:
-        # Запрос с загрузкой связей NO PAGINATION
-        stmt = cls.get_query(model).where(model.updated_at > after_date).order_by(model.id.asc())
-        result = await session.execute(stmt)
-        items = result.scalars().all()
-        # items = result.mappings().all()
-        return items
-
-    @classmethod
-    async def get_by_field(cls, field_name: str, field_value: Any, model: ModelType, session: AsyncSession):
+    async def get(cls, after_date: datetime, skip: int,
+                  limit: int, model: ModelType, session: AsyncSession,
+                  ) -> tuple:
         """
-            не гибкий поиск по одному полю. оставлен для совместимости. лучше использовать
+            Запрос с загрузкой связей и пагинацией
+            return Tuple[List[instances], int]
+        """
+        stmt = cls.get_query(model)
+        if hasattr(model, 'updated_at'):
+            stmt = stmt.where(model.updated_at > after_date)
+        stmt = stmt.order_by(model.id.asc())
+        # stmt = (cls.get_query(model).where(model.updated_at > after_date)
+        #         .order_by(model.id.asc()))
+        result = await cls.pagination(stmt, skip, limit, session)
+        return result
+
+    @classmethod
+    async def get_all(cls, after_date: datetime, model: ModelType, session: AsyncSession,
+                      limit: int = 20) -> list:
+        """
+            Запрос с загрузкой связей NO PAGINATION
+            return List[instance]
+        """
+        # stmt = cls.get_query(model).where(model.updated_at > after_date).order_by(model.id.asc())
+        stmt = cls.get_query(model)
+        if hasattr(model, 'updated_at'):
+            stmt = stmt.where(model.updated_at > after_date)
+        stmt = stmt.order_by(model.id.asc())
+        if limit:
+            stmt = stmt.limit(limit)
+        result = await cls.nonpagination(stmt, session)
+        return result
+
+    @classmethod
+    async def get_by_field(cls, field_name: str, field_value: Any, model: ModelType,
+                           session: AsyncSession, **kwargs):
+        """
+            поиск по одному полю. поисковый запрос входит в значение поля
             get_by_fields
         """
         try:
-            stmt = select(model).where(getattr(model, field_name) == field_value)
+            column = getattr(model, field_name)
+            if kwargs.get('equa') == 'icontains':
+                stmt = select(model).where(column.icontains(field_value))
+            else:
+                stmt = select(model).where(column == field_value)
+            if orderby := kwargs.get('order_by'):
+                if kwargs.get('asc', False):
+                    stmt = stmt.order_by(orderby)
+                else:
+                    stmt = stmt.order_by(desc(orderby))
+            stmt = stmt.limit(1)
+            # stmt = select(model).where(getattr(model, field_name) == field_value)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
         except Exception as e:
-            raise Exception(f'repo.get_by_field: {field_name=} {field_value=}, {model.__name__=}, {e}')
+            raise AppBaseException(message=str(e), status_code=404)
+
+    @classmethod
+    async def get_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession) -> ModelType:
+        """
+            поиск единственного значения по уникальному полю/полям
+            на входе {'field_name': value, ...}
+            session.scalar(stmtp) -> ModelType
+        """
+        stmt = cls.get_query(model).filter_by(**filter)
+        result: ModelType = await session.scalar(stmt)
+        return result
+
+    @classmethod
+    async def get_list_by_field_v2(cls, filter: dict, model: ModelType, session: AsyncSession) -> Sequence[ModelType]:
+        """
+             возвращает список без пагинации instances по фильтру НЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ
+             на входе {'field_name': value, ...}
+             session.scalars(stmtp) -> result.all() -> List[ModelType]
+        """
+        stmt = cls.get_query(model).filter_by(**filter)
+        # compiled_pg = stmt.compile(dialect=postgresql.dialect())
+        # print(compiled_pg)
+        # return session.scalars(stmt)
+        return await cls.nonpagination(stmt, session)
 
     @classmethod
     async def get_by_fields(cls, filter: dict, model: ModelType, session: AsyncSession):
@@ -269,118 +479,101 @@ class Repository(metaclass=RepositoryMeta):
                     conditions.append(column.is_(None))
                 else:
                     conditions.append(column == value)
-            stmt = select(model).where(and_(*conditions)).limit(1)
-            print(f"DEBUG: session object: {session}")
-            print(f"DEBUG: session type: {type(session)}")
-            print(f"DEBUG: hasattr execute: {hasattr(session, 'execute')}")
+            stmt = select(model).where(and_(*conditions))
             result = await session.execute(stmt)
+            # возвращает  instance
             return result.scalar_one_or_none()
         except Exception as e:
-            raise Exception(f'repo.get_by_fields: {filter=}, {model.__name__=}, {e}')
+            raise AppBaseException(message=str(e), status_code=404)
 
     @classmethod
-    async def get_count(cls, after_date: datetime, model: ModelType, session: AsyncSession) -> int:
-        """ подсчет количества записей после указанной даты"""
-        count_stmt = select(func.count()).select_from(model).where(model.updated_at > after_date)
-        count_result = await session.execute(count_stmt)
-        total = count_result.scalar()   # ok
-        return total
+    async def get_by_field_values(cls, model: Type[ModelType], session: AsyncSession, field_name: str, values: List[Any]
+                                  ) -> Sequence[ModelType]:
+        """
+        фильтр по нескольким значениям поля (IN)
+        """
+        # Безопасно получаем атрибут модели по его строковому имени
+        model_field = getattr(model, field_name, None)
+
+        # Защита от передачи несуществующего поля
+        if model_field is None:
+            raise ValueError(
+                f"Модель {model.__name__} не имеет поля '{field_name}'"
+            )
+        stmt = cls.get_query(model).where(model_field.in_(values))
+        return await cls.nonpagination(stmt, session)
 
     @classmethod
     async def get_all_count(cls, model: ModelType, session: AsyncSession) -> int:
-        """ колитчество всех записей в таблице """
-        count_stmt = select(func.count()).select_from(model)
+        """ колитчество всех записей в таблице DELETE """
+        # count_stmt = select(func.count()).select_from(model)
+        count_stmt = cls.get_count(select(model), session)
         result = await session.execute(count_stmt).scalar()
         return result
 
     @classmethod
-    async def search_by_enum(cls, enum: str,
-                             model: Type[ModelType],
-                             session: AsyncSession,
-                             field_name: str = None) -> Optional[ModelType]:
+    async def search(cls, search: str,
+                     skip: int, limit: int,
+                     model: ModelType, session: AsyncSession, ) -> tuple:
         """
-        поиск по ключевому полю. на входе enum. на выходе 1 запись
+            НЕ УДАЛЯТЬ !!! ИСПОЛЬЗУЕТСЯ В PREACT
+            Поиск по всем заданным текстовым полям основной таблицы
+            через raw sql и limit
         """
-        conditions = create_enum_conditions(model, enum, field_name)
-        stmt = select(model).where(conditions).limit(1)
-        result = await session.execute(stmt)
-        return result.scalar_one_or_none()
+        logger.critical('this is normal Repository')
+        try:
+            # query = cls.get_query(model)
+            query = cls.get_short_query(model)
+            id_query, count_query = get_sql_search(query, search, limit=limit, offset=skip)
+            # 1. Получаем список ID:
+            response = await session.execute(id_query)
+            ids = response.scalars().all()
+            # 2. Получаем общее кол-во:
+            response = await session.execute(count_query)
+            total = response.scalar()
+            result = await cls.get_by_ids(ids, model, session)
+            return result if result else [], total
+        except Exception as e:
+            raise AppBaseException(message=f'core.repository.error: {str(e)}', status_code=404)
 
     @classmethod
-    def apply_search_filter(cls, model: Union[Select[Tuple], ModelType], **kwargs):
+    async def search_all(
+        cls, search: str, model: Type[ModelType], session: AsyncSession,
+        limit: int = 20  # длина списка поисковой выдачи - что бы не уложить сервер
+    ) -> Sequence[Row[Any] | RowMapping | Any]:
         """
-            переопределяемый метод.
-            в kwargs - условия поиска
-            применяет фильтры и возвращает
-            1. если на входе model - выборку с selectinload
-            2. на входе Select - просто select (count, ...)
-        """
-        if not isinstance(model, Select):   # подсчет количества
-            query = cls.get_query(model)
-        else:
-            query = model
-        search_str: str = kwargs.get('search_str')
-        if search_str:
-            search_cond = create_search_conditions2(cls.model, search_str)
-            query = query.where(search_cond)
-        return query
-
-    @classmethod
-    async def search(cls,
-                     model: Type[ModelType],
-                     session: AsyncSession,
-                     **kwargs) -> Optional[List[ModelType]]:
-        """
-        Поиск по всем заданным текстовым полям основной таблицы
-        если указана pagination - возвращвет pagination
-        :param search_str:  текстовое условие поиска
-        :type search_str:   str
-        :param model:       модель
-        :type model:        sqlalchemy model
-        :param session:     async session
-        :type session:      async session
-        :param skip:        сдвиг на кол-во записей (для пагинации)
-        :type skip:         int
-        :param limit:       кол-во записей
-        :type limit:        int
-        :param and_condition:   дополнительные условия _AND
-        :type and_condition:    dict
-        :return:                Optional[List[ModelType]]
-        :rtype:                 Optional[List[ModelType]]
+            НЕ УДАЛЯТЬ !!!
+            ТОЖЕ ЧТО И search above but no pagination with limit
         """
         try:
-            query = cls.apply_search_filter(cls.get_query(model), **kwargs)
-            total = 0
-            # Добавляем пагинацию если указано и общее кол-во записей
-            limit, skip = kwargs.get('limit'), kwargs.get('skip')
-            if limit is not None:
-                # общее кол-во записей удовлетворяющих условию
-                count_stmt = cls.apply_search_filter(select(func.count()).select_from(cls.get_query(model)),
-                                                     **kwargs)
-                result = await session.execute(count_stmt)
-                total = result.scalar()     # ok
-                query = query.limit(limit)
-            if skip is not None:
-                query = query.offset(skip)
-            result = await session.execute(query)
-            records = result.scalars().all()
-            return (records if records else [], total)
+            query = cls.get_query(model)
+            id_query, count_query = get_sql_search(query, search, limit=limit)
+            # 1. Получаем список ID:
+            response = await session.execute(id_query)
+            ids = response.scalars().all()
+            result = await cls.get_by_ids(ids, model, session)
+            return result if result else []
         except Exception as e:
-            logger.error(f'ошибка search: {e}')
+            raise AppBaseException(message=str(e), status_code=404)
 
     @classmethod
     async def get_list_paging(cls, skip: int, limit: int,
                               model: ModelType, session: AsyncSession, ) -> Tuple[List[Dict], int]:
-        """Запрос с загрузкой связей и пагинацией - ListView плиткой"""
+        """Запрос с загрузкой связей и пагинацией - ListView плиткой ? используется?"""
         stmt = cls.get_short_query(model).offset(skip).limit(limit)
-        fields = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
-        stmt = select(*fields)
+        # fields = get_sqlalchemy_fields(stmt, exclude_list=['description*',])
+        # stmt = select(*fields)
 
         # получение результата всех записей
-        total = cls.get_all_count(model, session)
-        result = await session.execute(stmt)
-        rows: List[Dict] = result.mappings().all()
-        return rows, total
+        # total = cls.get_all_count(model, session)
+        # result = await session.execute(stmt)
+        # rows: List[Dict] = result.mappings().all()
+        # return rows, total
+        stmt = stmt.order_by(model.id.asc())
+        # stmt = (cls.get_query(model).where(model.updated_at > after_date)
+        #         .order_by(model.id.asc()))
+        result = await cls.pagination(stmt, skip, limit, session)
+        return result
 
     @classmethod
     async def get_list(cls, model: ModelType, session: AsyncSession, ) -> List[Dict]:
@@ -390,3 +583,298 @@ class Repository(metaclass=RepositoryMeta):
         result = await session.execute(stmt)
         res: List[ModelType] = result.scalars().all()
         return res
+
+    @classmethod
+    async def get_index(cls, model: ModelType, session: AsyncSession, **kwargs) -> int:
+        """
+        получение записей для
+        заполнения поля search_content, по которому будет индексирование проводиться
+        kwargs: {имя поля: значение, ...
+        + search_content: True}
+        если search_content: True - все записи
+        если search_content: False - только пустые поля search_content (initial filing)
+        """
+        # 1. собираем фильтр из kwargs
+        valid_fields = {key: value for key, value in kwargs.items() if hasattr(model, key)}
+        stmt = cls.get_query(model).filter_by(**valid_fields)
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+        return items
+
+    @classmethod
+    async def my_bulk_updates(cls, data: List[Dict[str, Any]], model: ModelType, session: AsyncSession):
+        """
+        массовове обновление данных. каждый словарь должен содержать 'id': int
+        запускается через роутер
+        """
+        try:
+            await session.execute(update(model), data)
+        except Exception as e:
+            raise AppBaseException(message=str(e), status_code=404)
+
+    @classmethod
+    async def get_image_id(cls, id: int, model: ModelType, session: AsyncSession) -> str:
+        """
+            получение image_id по id: для моделей основанных на
+            app.core.models.image_mixin.ImageMixin
+        """
+        # проверка наличия поля image_id
+        stmt = select(model.image_id).where(model.id == id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    @classmethod
+    async def get_full_with_pagination(cls, skip: int, limit: int,
+                                       model: ModelType, session: AsyncSession, ) -> tuple:
+        """
+            Запрос полного списка с загрузкой связей и пагинацией
+            return Tuple[List[instances], int]
+        """
+        try:
+            stmt = (cls.get_query(model).order_by(model.id.asc()))
+            result = await cls.pagination(stmt, skip, limit, session)
+            return result
+        except Exception as e:
+            raise AppBaseException(message=f'get_full_with_pagination.error; {str(e)}', status_code=404)
+
+    @classmethod
+    async def get_full(cls, model: ModelType, session: AsyncSession, limit: int = 20) -> list:
+        """
+            Запрос полного списка с загрузкой связей NO PAGINATION - ОСТОРОЖНО МОЖЕТ БЫТЬ ОЧЕНЬ БОЛЬШИМ
+            return List[instance]
+        """
+        try:
+            stmt = cls.get_query(model).order_by(model.id.asc())
+            if limit:
+                stmt = stmt.limit(limit)
+            result = await cls.nonpagination(stmt, session)
+            return result
+        except Exception as e:
+            raise AppBaseException(message=f'get_full.error; {str(e)}', status_code=404)
+
+    @classmethod
+    async def search_by_conditions(cls, filter: dict, model: ModelType, session: AsyncSession, **kwargs):
+        """
+            фильтр по нескольким полям, несколько значений для каждого поля
+            filter = {<имя поля>: [<искомое значение>,...], ...},
+        """
+        try:
+            stmt = select(model)
+            for key, value in filter.items():
+                column = getattr(model, key)
+                if value is None:
+                    stmt = stmt.where((column.is_(None)))
+                elif isinstance(value, Union[List, Tuple]):
+                    conditions = [column.icontains(val) for val in value]
+                    stmt = stmt.where(or_(*conditions))
+                else:
+                    stmt = stmt.where(column == value)
+            # from sqlalchemy.dialects import postgresql
+            # compiled = stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+            result = await session.execute(stmt)
+            return result.scalars().all()
+        except Exception as e:
+            raise AppBaseException(message=f'search_by_conditions.error; {str(e)}', status_code=404)
+
+    @classmethod
+    async def search_by_list_value_exact(cls, filter: List[Any], field: str, model: ModelType, session: AsyncSession,
+                                         **kwargs):
+        """
+             фильтр по нескольким значениям поля (полное совпадение)
+        """
+        try:
+            column = getattr(model, field)
+            stmt = cls.get_query(model).where(column.in_(filter))
+            result = await session.execute(stmt)
+            return result.scalars().all()
+        except Exception as e:
+            raise AppBaseException(message=f'search_by_list_value_exact.error; {str(e)}', status_code=404)
+
+    @classmethod
+    async def sync_items_by_path(cls,
+                                 session: AsyncSession, current_model,  # Например, модель Category
+                                 start_id: int, path_str: str, skip_keys: set
+                                 ) -> int:
+        """
+            Синхронизирует search_content у всех Item, связанных с измененной записью.
+            Решает проблему DuplicateAliasError через алиасы.
+        """
+        try:            # 1. Получаем классы моделей
+            ItemModel = get_model_by_name('Item')
+            DrinkModel = get_model_by_name('Drink')
+            # Используем алиасы, чтобы SQLAlchemy не путалась при джоинах
+            target_drink = aliased(DrinkModel)
+            target_item = aliased(ItemModel)
+
+            # 2. Строим запрос от текущей модели к целям (Item, Drink)
+            stmt = select(target_item, target_drink).select_from(current_model)
+
+            # 3. Динамическая цепочка JOIN по метаданным
+            active_model_class = current_model
+            path_parts = path_str.split('.')
+
+            for part in path_parts:
+                mapper = inspect(active_model_class)
+                # Находим имя relationship
+                rel_key = next(
+                    (r.key for r in mapper.relationships if r.mapper.class_.__name__.lower() == part.lower()), None
+                )
+
+                if not rel_key:
+                    raise AttributeError(f"Связь '{part}' не найдена в модели {active_model_class.__name__}")
+
+                # Определяем, к какому классу прыгаем
+                next_model_class = getattr(active_model_class, rel_key).property.mapper.class_
+
+                # Подменяем на алиас, если дошли до Drink или Item
+                if next_model_class == DrinkModel:
+                    step_target = target_drink
+                elif next_model_class == ItemModel:
+                    step_target = target_item
+                else:
+                    step_target = next_model_class
+
+                # Выполняем JOIN через атрибут отношения
+                stmt = stmt.join(step_target, getattr(active_model_class, rel_key))
+                active_model_class = next_model_class
+
+            # 4. Фильтруем по ID и выполняем
+            stmt = stmt.where(current_model.id == start_id)
+            result = await session.execute(stmt)
+            rows = result.all()
+
+            if not rows:
+                logger.info('sync_items_by_path. no records for update')
+                return 0
+            logger.info('sync_items_by_path 1')
+            # 5. Обработка и обновление
+            processed_drinks: list = []
+            for item_obj, drink_obj in rows:
+                if drink_obj.id not in processed_drinks:
+                    drink_dict = drink_obj.to_dict_fast()
+                    content = extract_text_ultra_fast(drink_dict, skip_keys).lower()
+                    logger.info('sync_items_by_path 2')
+                    processed_drinks.append(drink_obj.id)
+                    logger.info('sync_items_by_path 3')
+                    item_obj.search_content = content
+
+            # 6. Принудительная синхронизация с БД
+            await session.flush()
+            logger.success(f'updated {len(rows)} records')
+            return len(rows)
+        except Exception as e:
+            raise AppBaseException(message=f'sync_items_by_path.error; {str(e)}', status_code=404)
+
+    @classmethod
+    async def get_keyset(cls, model: ModelType, session: AsyncSession,
+                         last_id: int = None,
+                         limit: int = 15) -> dict:
+        """
+            постраничный вывод по keyset
+            не знает сколько страниц всего, но быстрый доступ для страниц > 10
+        """
+        # Условие Keyset: (score < last_score) ИЛИ (score == last_score И id < last_id)
+        stmt = cls.get_query(model)
+        if last_id is not None:
+            stmt = stmt.where(model.id < last_id)
+        # Сортировка по score, затем по id для стабильности
+        stmt = stmt.order_by(desc(model.id)).limit(limit)
+        result = await session.execute(stmt)
+        return result.all()
+
+    @classmethod
+    async def get_with_filter_simple(cls,
+                                     session: AsyncSession,
+                                     model: ModelType,  # основная модель
+                                     related_model: ModelType,  # Модель, по которой фильтруем
+                                     filters: Dict[str, Any],  # {field_name: value, ...}
+                                     skip: int, limit: int,
+                                     query_type: int = 0):
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        match query_type:
+            case 0:
+                query = select(model)
+            case 1:
+                query = cls.get_short_query(model)
+            case 2:
+                query = cls.get_query(model)
+            case _:
+                query = select(model)
+        query = query.join(related_model).filter_by(**filters)
+        items, total = await cls.pagination(query, skip, limit, session)
+        # result = await session.scalars(query)
+        return items, total
+
+    @classmethod
+    async def get_with_filter_complex(
+            cls, session: AsyncSession, model: ModelType,  # основная модель
+            related_model: ModelType,  # Модель, по которой фильтруем
+            filters: Dict[str, Any],  # {field_name: value, ...}
+            root_filter: Dict[str, Any],
+            skip: int, limit: int, query_type: int = 0
+    ):
+        """
+            фильтрация по relationships model fields
+            если связи model - related_model не существует - будет ошибка
+            +root_filter by root level
+            query_type типа запроса
+            0 - голый
+            1 - short
+            2 - full
+        """
+        match query_type:
+            case 0:
+                query = select(model)
+            case 1:
+                query = cls.get_short_query(model)
+            case 2:
+                query = cls.get_query(model)
+            case _:
+                query = select(model)
+        # description is None hardcoded
+        description_column = getattr(model, "description")
+        query = query.filter_by(**root_filter).where(description_column.is_not(None))
+        query = query.join(related_model).filter_by(**filters)
+        # compiled_pg = query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})
+        # print('==========', compiled_pg)
+        items, total = await cls.pagination(query, skip, limit, session)
+        # result = await session.scalars(query)
+        return items, total
+
+    @classmethod
+    def get_scalar_fields(cls, model: ModelType) -> Set[str]:
+        """Получить имена скалярных полей модели"""
+        return {c.name for c in model.__table__.columns}
+
+    @classmethod
+    def get_relationship_fields(cls, model: ModelType) -> Set[str]:
+        """Получить имена полей-отношений модели"""
+        mapper = inspect(model)
+        return {rel.key for rel in mapper.relationships}
+
+    @classmethod
+    def get_many_to_many_fields(cls, model: ModelType) -> list:
+        """Определяет поля many-to-many"""
+        mapper = inspect(cls.model)
+        many_to_many = []
+
+        for rel in mapper.relationships:
+            # Проверяем, что это many-to-many (есть промежуточная таблица)
+            if hasattr(rel, 'secondary') and rel.secondary is not None:
+                many_to_many.append(rel.key)
+        return many_to_many
+
+
+class HandbookRepository(SearchRepositoryMixin, Repository):
+    """
+    repository для справочников:
+    стандратный репо + поиск  unaccent (включает диакретические символы)
+    """
+    pass

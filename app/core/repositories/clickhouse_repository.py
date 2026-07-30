@@ -1,0 +1,364 @@
+# app.core.repository.clickhouse_repository.py
+"""
+    Метод	Назначение
+    create()	Создание одной записи
+    bulk_insert()	Массовая вставка (сотни/тысячи записей)
+    get_by_id()	Получение по ID
+    get_all()	Все записи с фильтрацией и пагинацией
+    search()	Поиск по массиву тегов
+    update()	Обновление (через версионирование)
+    soft_delete()	Мягкое удаление
+    soft_delete_batch()	Массовое мягкое удаление
+    cleanup_deleted()	Физическое удаление старых записей
+    cleanup_old_versions()	Очистка старых версий
+"""
+from typing import Any, Dict, List, Optional
+from clickhouse_connect.driver.asyncclient import AsyncClient
+from pypika import Table, Query, Order, CustomFunction  # , functions as fn, CustomFunction
+from loguru import logger
+
+
+class ClickHouseRepository:
+    """
+    Универсальный асинхронный репозиторий для работы с ClickHouse.
+    ОСОБЕННОСТИ - НЕ ЗАБЫВАТЬ:
+    CREATE = INSERT
+    UPDATE = INSERT (точно указать уникальные ключи! если предполагается и их изименение - тогда DELETE + INSERT)
+    DELETE = INSERT (deleted_at=1, остальные поля оставить пустые)
+    * ПОКА ЖЕСТКО ЗАШИТА ПОД ТАБЛИЦУ images_metadata
+    НУЖНО ОБЕСПЕЧИТЬ ЧТО БЫ В WHERE подставлялись поля из ORDER BY (это уникальные индексы по ним идентифицируется
+    запись и ее версия
+    проверка запроса без вставки SETTINGS dry_run = 1; дописать в конце запроса
+    """
+
+    def __init__(self, client: AsyncClient, table_name: str):
+        """
+        Args:
+            client: ClickHouse async client
+            table_name: Имя таблицы (в формате 'database.table' или просто 'table')
+            soft_delete_field: Имя поля для хранения времени мягкого удаления
+        """
+        self.client = client
+        self.table_name = table_name  # таблица для create/update/delete (можно также посмотреть/восстановить
+        # удаленные записи
+        if table_name == 'images_metadata':
+            self.select_table = f'{table_name}_active'
+            self.is_deleted = 'is_deleted'
+            self.orderby = ['fid', 'table']
+        else:
+            self.select_table = self.table_name
+
+    async def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Создание одной записи
+        Args: data: Словарь с данными для вставки
+        Returns: Вставленные данные
+        """
+        columns = list(data.keys())
+        values = list(data.values())
+        events = Table(self.table_name)
+        q = Query.into(events).columns(*columns).insert(*values)
+        await self.client.query(q.get_sql())
+        return data
+
+    async def bulk_insert(self, datas: List[Dict[str, Any]]) -> int:
+        """
+        Массовая вставка записей.
+
+        Args:
+            records: Список словарей с данными
+        Returns:
+            Количество вставленных записей
+        """
+        try:
+            fields = tuple(datas[-1].keys())
+            values = [tuple(a.values()) for a in datas]
+            logger.critical(f'====={self.table_name}======')
+            await self.client.insert(self.table_name, values, fields)
+            # events = Table(self.select_table)
+            # q = Query.into(events).columns(*fields).insert(*values)
+            # print(f'{q.get_sql()=}')
+            # await self.client.query(q.get_sql())
+        except Exception as e:
+            logger.error(f'clickhouse.bulk_insert. {e}')
+            raise
+
+    # ============================================================
+    # READ
+    # ============================================================
+
+    async def get_by_id(
+            self, id_field: str, id_value: Any, fields: list = ['fid', 'fid_thumb'],
+            order_by: str = 'inserted_at DESC'
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Получение записи по ID.
+
+        Args:
+            id_field: Имя поля ID
+            id_value: Значение ID
+        """
+        try:
+            events = Table(self.select_table)
+            if fields:
+                q = Query.from_(events).select(*(events[k] for k in fields))
+            else:
+                q = Query.from_(events)
+            q = q.where(events[id_field] == id_value)
+            if order_by:
+                if 'DESC' in order_by:
+                    order_by = order_by.replace('DESC', '').strip()
+                    q = q.orderby(events[order_by], order=Order.desc)
+                else:
+                    q = q.orderby(order_by)
+            q = q.limit(1)
+            # logger.warning(f'==={q.get_sql()}')
+            result = await self.client.query(q.get_sql())
+            # result = await self.client.query(query, {'id': id_value})
+            return result.first_item if result.row_count > 0 else None
+        except Exception as e:
+            logger.error(f'records with {id_field} = {id_value} is not found. {e}')
+            return None
+
+    async def get_by_ids(
+            self, id_field: str, id_values: List, fields: list = ['fid', 'fid_thumb'],
+            order_by: str = 'inserted_at DESC'
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Получение записи по ID.
+
+        Args:
+            id_field: Имя поля ID
+            id_value: Значение ID
+        """
+        events = Table(self.select_table)
+        if fields:
+            q = Query.from_(events).select(*(events[k] for k in fields))
+        else:
+            q = Query.from_(events)
+        q = q.where(events[id_field].isin(id_values))
+        if order_by:
+            if 'DESC' in order_by:
+                order_by = order_by.replace('DESC', '').strip()
+                q = q.orderby(events[order_by], order=Order.desc)
+            else:
+                q = q.orderby(order_by)
+        # q = q.limit(1)
+        result = await self.client.query(q.get_sql())
+        if result.row_count == 0:
+            return []
+        # data: List[dict] = [dict(zip(result.column_names, row)) for row in result.result_rows]
+        data: dict = {fid: fid_thumb for fid, fid_thumb in result.result_rows}
+        return data
+
+    async def get(
+            self,
+            order_by: Optional[str] = None, limit: int = 30, page: int = 1, fields: list = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Получение всех записей с фильтрацией и пагинацией.
+        Args:
+            filters: Словарь фильтров {поле: значение}
+            include_deleted: Включать мягко удаленные записи
+            order_by: Сортировка (например, 'created_at DESC')
+            limit: Лимит записей
+            offset: Смещение
+            fields - возвращаемые поля
+        """
+        # events = Table(self.table_name)
+        events = Table(self.select_table)
+        if fields:
+            q = Query.from_(events).select(*(events[k] for k in fields))
+        else:
+            q = Query.from_(events)
+        if limit:
+            q = q.limit(limit)
+        if page:
+            q = q.offset((page - 1) * limit)
+        if order_by:
+            if 'DESC' in order_by:
+                order_by = order_by.replace('DESC', '').strip()
+                q = q.orderby(events[order_by], order=Order.desc)
+            else:
+                q = q.orderby(order_by)
+        # print(q.get_sql())
+        result = await self.client.query(q.get_sql())
+        if result.row_count == 0:
+            return []
+        data: List[dict] = [dict(zip(result.column_names, row)) for row in result.result_rows]
+        return data
+
+    async def get_all(
+            self,
+            order_by: Optional[str] = None, fields: list = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Получение всех записей с фильтрацией и пагинацией.
+        Args:
+            filters: Словарь фильтров {поле: значение}
+            order_by: Сортировка (например, 'created_at DESC')
+            limit: Лимит записей
+            offset: Смещение
+            fields - возвращаемые поля
+        """
+        # events = Table(self.table_name)
+        events = Table(self.select_table)
+        if fields:
+            q = Query.from_(events).select(*(events[k] for k in fields))
+        else:
+            q = Query.from_(events)
+        if order_by:
+            if 'DESC' in order_by:
+                order_by = order_by.replace('DESC', '').strip()
+                q = q.orderby(events[order_by], order=Order.desc)
+            else:
+                q = q.orderby(order_by)
+        # print(q.get_sql())
+        result = await self.client.query(q.get_sql())
+        if result.row_count == 0:
+            return []
+        data: List[dict] = [dict(zip(result.column_names, row)) for row in result.result_rows]
+        return data
+
+    async def exact_search(
+            self, tag_value: str, fields: list = ['fid', 'fid_thumb', 'inserted_at'], order_by: str = 'inserted_at'
+    ) -> List[Dict[str, Any]]:
+        """
+            search by tag
+        """
+        # Первый аргумент — имя функции в ClickHouse, второй — параметры
+        has_token_func = CustomFunction('hasAllTokens', ['field', 'token'])
+        events = Table(self.select_table)
+        if fields:
+            q = Query.from_(events).select(*(events[k] for k in fields))
+        else:
+            q = Query.from_(events)
+        q = q.where(has_token_func(events['tags'], tag_value))
+        if order_by:
+            if 'DESC' in order_by:
+                order_by = order_by.replace('DESC', '').strip()
+                q = q.orderby(events[order_by], order=Order.desc)
+            else:
+                q = q.orderby(order_by)
+        # q = q.limit(1) ищем все
+        # logger.warning(f'==={q.get_sql()}')
+        result = await self.client.query(q.get_sql())
+        if result.row_count == 0:
+            return []
+        data: List[dict] = [dict(zip(result.column_names, row)) for row in result.result_rows]
+        return data
+        # return result.first_item if result.row_count > 0 else None
+
+    # ============================================================
+    # UPDATE (через версионирование)
+    # ============================================================
+
+    async def update(
+            self, id_field: str, id_value: Any, data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Обновление записи (создается новая версия, старая "удаляется").
+        если обновляется ключевое поле (id_field) - это delete + insert
+        если любые другие это insert поверх прежней записи
+        Args:
+            id_field: Имя поля ID
+            id_value: Значение ID
+            data: Новые данные
+
+        Returns:
+            Новая версия записи
+        """
+        if data.get(id_field) is None:
+            data[id_field] = id_value
+        if data.get[id_field] != id_value:
+            # DELETE PREV VERSION
+            table_name = data.get['table']
+            try:
+                events = Table(self.table_name)
+                # events = Table(self.select_table)
+                q = (Query.into(events).columns(
+                    events[id_field], events['table'], events[self.deleted_at]
+                ).insert(id_value, table_name, 1))
+                _ = await self.client.command(q.get_sql())
+            except Exception as e:
+                logger.error(f'clickhouse repository.update {e}')
+                pass  # на случай если запись не существует - пропускаем ошибку и создаем новую
+        result = await self.create(data)
+        return result
+
+    # ============================================================
+    # DELETE (soft delete)
+    # ============================================================
+
+    async def soft_delete(
+            self, id_field: str, id_value: Any, table_name: str
+    ) -> bool:
+        """
+        Мягкое удаление записи (заполняется deleted_at).
+        Returns:
+            True если удалили хотя бы одну запись
+        """
+        events = Table(self.table_name)
+        # events = Table(self.select_table)
+
+        q = (Query.into(events).columns(events[id_field],
+                                        events['table'],
+                                        events[self.is_deleted])
+             .insert(id_value, table_name, 1))
+        _ = await self.client.command(q.get_sql())
+        return True  # Если нет ошибки - считаем успехом
+
+    async def soft_delete_batch(
+            self, id_field: str, id_values: List[Any]
+    ) -> int:
+        """
+        ПЕРЕДЕЛАТЬ
+        Массовое мягкое удаление записей.
+
+        Returns:
+            Количество помеченных на удаление записей
+        """
+        if not id_values:
+            return 0
+
+        query = f"""
+            ALTER TABLE {self.table_name}
+            UPDATE {self.soft_delete_field} = now()
+            WHERE {id_field} IN %(ids)s AND {self.soft_delete_field} IS NULL
+        """
+
+        await self.client.command(query, {'ids': tuple(id_values)})
+        return len(id_values)
+
+    # ============================================================
+    # ОЧИСТКА (удаление физическое) автоматически через 30 дней
+    # ============================================================
+
+    # ============================================================
+    # PURE RAW SQL ЗАПРОСЫ НА ВЫБОРКУ
+    # ============================================================
+
+    async def run_raw_sql(self, raw_sql: str):
+        """
+            запускаем чистый  RAW SQL только на выборку
+        """
+        result = await self.client.query(raw_sql)
+        if result.row_count == 0:
+            return []
+        data: List[dict] = [dict(zip(result.column_names, row)) for row in result.result_rows]
+        return data
+
+# ============================================================
+# ФАБРИКА ДЛЯ БЫСТРОГО СОЗДАНИЯ РЕПОЗИТОРИЕВ
+# ============================================================
+
+
+class ClickHouseRepositoryFactory:
+    """Фабрика для создания репозиториев с предустановленным клиентом."""
+
+    def __init__(self, client: AsyncClient):
+        self.client = client
+
+    def for_table(self, table_name: str) -> ClickHouseRepository:
+        """Создать репозиторий для конкретной таблицы."""
+        return ClickHouseRepository(self.client, table_name)

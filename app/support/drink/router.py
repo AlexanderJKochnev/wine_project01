@@ -1,56 +1,59 @@
 # app/support/drink/router.py
 import json
 
-from fastapi import Depends, File, Form, HTTPException, UploadFile
+from fastapi import Depends, File, Form, HTTPException, UploadFile, BackgroundTasks
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
+from app.core.services.array_service import ArrayService
 # from app.core.config.project_config import settings
 from app.core.utils.exception_handler import ValidationError_handler
 from app.core.routers.base import BaseRouter
-from app.mongodb.service import ImageService
 from app.support.drink.drink_food_repo import DrinkFoodRepository
 from app.support.drink.drink_food_service import DrinkFoodService
 from app.support.drink.model import Drink
-from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelation, DrinkCreateResponseSchema,
-                                       DrinkFoodLinkUpdate, DrinkRead, DrinkReadApi, DrinkUpdate,
+from app.support.drink.schemas import (DrinkCreate, DrinkCreateRelation,
+                                       DrinkFoodLinkUpdate, DrinkUpdate
                                        )
-from app.support.drink.service import DrinkService
-from app.support.drink.repository import DrinkRepository
+# from app.support.drink.service import DrinkService
+# from app.support.drink.repository import DrinkRepository
 
 
 class DrinkRouter(BaseRouter):
     def __init__(self, prefix: str = '/drinks'):
-        self.read_api_schema = DrinkReadApi
+        # self.read_api_schema = DrinkReadApi
         super().__init__(
             model=Drink,
-            prefix=prefix)
-        # self.image_service: ImageService = Depends()
+            prefix=prefix,
+            include_in_schema=True)
 
     def setup_routes(self):
         super().setup_routes()
         # то что ниже удалить - было нужно до relation
         self.router.add_api_route("/{id}/foods", self.update_drink_foods,
-                                  methods=["PATCH"])
-        self.router.add_api_route("/{id}/flat", self.get_one_flat,
-                                  methods=['GET'], response_model=self.read_schema)
-        self.router.add_api_route("/{id}/api", self.get_one_api, methods=['GET'],
-                                  response_model=self.read_api_schema)
+                                  methods=["PATCH"],
+                                  openapi_extra={'x-request-schema': DrinkFoodLinkUpdate.__name__})
+        # self.router.add_api_route("/{id}/api", self.get_one_api, methods=['GET'],
+        #                           # response_model=self.read_api_schema,
+        #                           response_model=self.read_schema,
+        #                           openapi_extra={'x-request-schema': None})  # переделать или тоже удалить item api
+        # instead
 
-    def get_drink_food_service(session: AsyncSession) -> DrinkFoodService:
+    def get_drink_food_service(session: AsyncSession):
         repo = DrinkFoodRepository(session)
         return DrinkFoodService(repo)
 
     async def update_drink_foods(self, id: int,
                                  data: DrinkFoodLinkUpdate,
+                                 background_tasks: BackgroundTasks,
                                  session: AsyncSession = Depends(get_db)):
         """ обновление many to many """
         service = self.get_drink_food_service(session)
         await service.set_drink_foods(id, data.food_ids)
         return {"status": "success"}
 
-    async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)) -> DrinkCreateResponseSchema:
+    async def create(self, data: DrinkCreate, session: AsyncSession = Depends(get_db)):
         """
         Создание одной записи
         """
@@ -68,7 +71,6 @@ class DrinkRouter(BaseRouter):
                       )
             print(detail)
         except Exception as e:
-            await session.rollback()
             detail = (f'ошибка создания записи {e}, model = {self.model}, '
                       f'create_schema = {self.create_schema}, '
                       f'service = {self.service} ,'
@@ -76,21 +78,19 @@ class DrinkRouter(BaseRouter):
             print(detail)
             raise HTTPException(status_code=500, detail=detail)
 
+    # DrinkCreateResponseSchema
+
     async def create_relation(self, data: DrinkCreateRelation,
-                              session: AsyncSession = Depends(get_db)) -> DrinkRead:
+                              session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)
         return result
-
-    async def patch(self, id: int, data: DrinkUpdate,
-                    session: AsyncSession = Depends(get_db)) -> DrinkRead:
-        return await super().patch(id, data, session)
 
     async def create_relation_image(self,
                                     data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),
                                     session: AsyncSession = Depends(get_db),
-                                    image_service: ImageService = Depends()
-                                    ) -> DrinkCreateResponseSchema:
+                                    image_service: ArrayService = Depends()
+                                    ):
         """
         Создание одной записи с зависимостями - если в таблице есть зависимости
         они будут рекурсивно найдены в связанных таблицах (или добавлены при отсутсвии),
@@ -109,15 +109,7 @@ class DrinkRouter(BaseRouter):
         result = await super().create_relation(drink_data, session)
         return result
 
-    async def get_one_flat(self, id: int, session: AsyncSession = Depends(get_db)) -> DrinkRead:
-        """
-            Получение одной записи по ID
-        """
-        obj = await self.service.get_by_id(id, self.repo, self.model, session)
-        # obj = await self.service.get_dict_by_id(id, self.repo, self.model, session)
-        return obj  # self.read_schema.model_validate(obj)
-
-    async def get_one_api(self, id: int, session: AsyncSession = Depends(get_db)) -> DrinkReadApi:
+    async def get_one_api(self, id: int, session: AsyncSession = Depends(get_db)):
         """
             Получение одной записи по ID
         """

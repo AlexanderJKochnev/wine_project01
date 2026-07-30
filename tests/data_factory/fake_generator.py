@@ -288,7 +288,7 @@ def generate_test_data(
         return
     if not hasattr(model, 'model_fields'):
         print(f'model {model} has no attribute "model_fieldas"')
-    
+
     factory_kwargs = factory_kwargs or {}
 
     # Извлекаем настройки диапазонов
@@ -333,8 +333,9 @@ def generate_test_data(
                 decimal_range[field_name] = global_decimal_range
 
     # Добавляем обработку Decimal по умолчанию
-    default_providers = {Decimal: lambda: Decimal(round(random.uniform(1, 1000), 2))}
-
+    #  default_providers = {Decimal: lambda: Decimal(round(random.uniform(1, 1000), 2))}
+    default_providers = {Decimal: lambda: Decimal(random.getrandbits(64)) / Decimal(10 ** 6)}
+    
     # Объединяем с пользовательскими провайдерами
     custom_providers = factory_kwargs.pop('providers', {})
     providers = {**default_providers, **custom_providers}
@@ -382,7 +383,7 @@ def generate_test_data(
 
     # Генерируем данные
     result = (factory_class.build().model_dump() for _ in range(n))
-    return (validate_and_fix_numeric_ranges(val, int_range=(1, n//2), float_range=(0.1, 1.0)) for val in result)
+    return (validate_and_fix_numeric_ranges(val, int_range=(1, n // 2), float_range=(0.1, 1.0)) for val in result)
 
 
 def dict_validator(source: dict, n: int = 3) -> dict:

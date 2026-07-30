@@ -4,8 +4,178 @@ import uuid
 from typing import Tuple
 from fastapi import UploadFile
 from app.core.config.project_config import settings
-from PIL import Image
 import io
+import magic
+from PIL import Image, ImageOps, ExifTags, IptcImagePlugin, TiffImagePlugin
+from loguru import logger
+
+_REMBG_SESSION = None
+
+
+def coalesce_default_image(request, image_id: tuple, image_type: int = 0, pos: int = 0) -> str:
+    """
+        получение fid дефолтного изображения (заглушка)
+        image_type: int = 0 полное, 1 - thumbnail
+        когда будет много картинок - дополнить
+    """
+    default_image: tuple = request.app.state.seaweed_fids_default
+    try:
+        if image_id:
+            return image_id[pos * 2 + image_type]
+        else:
+            return default_image[image_type]
+    except Exception as e:
+        logger.error(f'coalesce_default_image.{e}')
+        return default_image[image_type]
+
+
+def get_default_image(request, image_type: int = 0) -> str:
+    """
+        получение fid дефолтного изображения (заглушка)
+        image_type: int = 0 полное, 1 - thumbnail
+        когда будет много картинок - дополнить
+    """
+    return request.app.state.seaweed_fids_default[image_type]
+
+
+def get_rembg_session():
+    """Ленивая загрузка модели при первом обращении"""
+    global _REMBG_SESSION
+    if _REMBG_SESSION is None:
+        from rembg import remove, new_session  # это встает только на debian
+        try:
+            # rembg сам найдет файл в /root/.u2net/u2net.onnx
+            _REMBG_SESSION = new_session("u2net")
+            logger.info("Модель rembg успешно загружена в память.")
+        except Exception as e:
+            logger.error(f"Ошибка загрузки модели: {e}")
+    return _REMBG_SESSION
+
+
+def image_aligning(content: bytes, remove_bg: bool = True,
+                   dim: int = None, size: int = None, quality: int = None) -> tuple:
+    """
+    Полный цикл: Метаданные -> Удаление фона -> Автокроп -> Ресайз -> Оптимизация
+    """
+    if not content:
+        return content
+
+    max_w, max_h = dim or settings.IMAGE_WIDTH, dim or settings.IMAGE_HEIGH
+    MAX_FILE_SIZE = size or settings.max_file_size  # 100 * 1024 * 5  # не более 100кб
+    quality = quality or 85
+    MARGIN_PCT = 0.05
+    thumb_w, thumb_h = 150, 150
+
+    try:
+        # 1. Открываем и фиксируем метаданные
+        image = Image.open(io.BytesIO(content))
+        # Исправляем ориентацию (чтобы фото не было "на боку")
+        image = ImageOps.exif_transpose(image)
+        # Извлекаем метаданные (вдруг есть?)
+        metadata = extract_metadata(image)
+
+        # 2. Интеллектуальная обработка
+        if remove_bg:
+            session = get_rembg_session()
+            if session:
+                image = remove(image, session=session).convert("RGBA")
+
+            # Автокроп по границам объекта
+            bbox = image.getbbox()
+            if bbox:
+                obj_w, obj_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                margin = int(max(obj_w, obj_h) * MARGIN_PCT)
+                image = image.crop(
+                    (max(0, bbox[0] - margin), max(0, bbox[1] - margin), min(image.width, bbox[2] + margin),
+                     min(image.height, bbox[3] + margin))
+                )
+
+        # 3. ОПТИМИЗАЦИЯ РАЗМЕРА ИЗОБРАЖЕНИЯ
+        # А. Основное изображение (Full)
+        full_image = image.copy()
+        full_image.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+        # Оптимизация Full до 100 КБ
+        full_data = _optimize_to_size(full_image, MAX_FILE_SIZE)
+        # Б. Thumbnail (для ListView)
+        thumb_image = image.copy()
+        thumb_image.thumbnail((thumb_w, thumb_h), Image.Resampling.LANCZOS)
+        thumb_io = io.BytesIO()
+        thumb_image.save(thumb_io, format='PNG', optimize=True)
+        thumb_data = thumb_io.getvalue()
+        metadata['mime_type'], metadata['size_bytes'] = get_file_info(full_data)
+        _, metadata['thumbnail_size_bytes'] = get_file_info(thumb_data)
+        # from app.core.utils.common_utils import jprint
+        # jprint(metadata)
+        return full_data, thumb_data, metadata
+
+    except Exception as e:
+        logger.error(f"Критическая ошибка обработки: {e}")
+        return None, None, None
+
+
+def extract_metadata(image: Image.Image) -> dict:
+    full_meta = {
+        "basic": {
+            "format": image.format,
+            "mode": image.mode,
+            "size": image.size,
+        },
+        "exif": {},
+        "gps": {},
+        "iptc": {},
+        "xmp": {}
+    }
+
+    # 1. Извлекаем EXIF и GPS
+    exif_data = image.getexif()
+    if exif_data:
+        for tag_id, value in exif_data.items():
+            tag = ExifTags.TAGS.get(tag_id, tag_id)
+            # GPS обычно лежит внутри EXIF под ID 34853
+            if tag == "GPSInfo":
+                gps_data = {}
+                for g_tag_id in value:
+                    g_tag = ExifTags.GPSTAGS.get(g_tag_id, g_tag_id)
+                    gps_data[g_tag] = value[g_tag_id]
+                full_meta["gps"] = gps_data
+            else:
+                full_meta["exif"][tag] = str(value)
+
+    # 2. Извлекаем IPTC (часто в JPEG/TIFF)
+    try:
+        iptc = IptcImagePlugin.getiptcinfo(image)
+        if iptc:
+            for tag, value in iptc.items():
+                full_meta["iptc"][str(tag)] = value.decode(errors='ignore')
+    except Exception as e:
+        logger.error(f'Извлекаем IPTC. {e}')
+
+    # 3. Извлекаем XMP (если есть)
+    # if hasattr(image, "getxmp"):
+    #     full_meta["xmp"] = image.getxmp()
+
+    return full_meta
+
+
+def get_file_info(content: bytes):
+    """Возвращает MIME-тип и размер в байтах"""
+    mime = magic.from_buffer(content, mime=True)
+    return mime, len(content)
+
+
+def _optimize_to_size(img, max_size):
+    """Вспомогательный метод сжатия до лимита"""
+    temp_img = img.copy()
+    for _ in range(7):
+        buf = io.BytesIO()
+        temp_img.save(buf, format='PNG', optimize=True, compress_level=9)
+        data = buf.getvalue()
+        if len(data) <= max_size:
+            logger.warning(f'{len(data)=} {max_size=}')
+            return data
+        new_size = tuple(int(dim * 0.8) for dim in temp_img.size)
+        temp_img = temp_img.resize(new_size, Image.Resampling.LANCZOS)
+    return data
 
 
 class ImageService:

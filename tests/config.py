@@ -4,7 +4,8 @@ from typing import Optional
 from pydantic import PostgresDsn
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from app.core.utils.common_utils import get_path_to_root
+from app.core.config.project_config import get_path_to_root
+
 # from app.mongodb.config import Settings
 # load_dotenv() - не использовать - путает
 
@@ -28,7 +29,6 @@ class ConfigDataBase(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
     # -----------------
-    MONGODB_CONTAINER_NAME: str
     MONGO_INITDB_ROOT_USERNAME: str
     MONGO_INITDB_ROOT_PASSWORD: str
     MONGO_INITDB_DATABASE: str
@@ -36,7 +36,6 @@ class ConfigDataBase(BaseSettings):
     MONGO_OUT_PORT: int
     MONGO_INN_PORT: int
     MONGO_HOSTNAME: str
-    MONGO_EXPRESS_CONTAINER_NAME: str
     ME_CONFIG_MONGODB_ADMINUSERNAME: str
     ME_CONFIG_MONGODB_ADMINPASSWORD: str
     ME_CONFIG_MONGODB_SERVER: str
@@ -44,6 +43,10 @@ class ConfigDataBase(BaseSettings):
     ME_CONFIG_BASICAUTH_PASSWORD: str
     ME_OUT_PORT: int
     ME_INN_PORT: int
+    MEILISEARCH_URL: str
+    MEILISEARCH_MASTER_KEY: str = "your_strong_master_key_here"
+    MEILISEARCH_MODELS: str = 'item,drink,rawdata'
+    TOLERANCE_TIME: int = 2
 
     @property
     def database_url(self) -> Optional[PostgresDsn]:

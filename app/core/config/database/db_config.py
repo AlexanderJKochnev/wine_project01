@@ -3,7 +3,8 @@
 from typing import Optional
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from app.core.utils.common_utils import get_path_to_root
+from app.core.config.project_config import get_path_to_root
+
 
 # load_dotenv() - не использовать - путает
 
@@ -18,11 +19,21 @@ class ConfigDataBase(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_HOST: str
     POSTGRES_PORT: str
+    PGBOUNCER_PORT: str
     POSTGRES_DB: str
     DB_ECHO_LOG: bool
+    PGBOUNCER_CONTAINER_NAME: str
     # probable secirity issue:
     SECRET_KEY: str
     ALGORITHM: str
+    # НАСТРОЙКИ СОЕДИНЕНИЯ
+    POOL_SIZE: int = 5
+    MAX_OVERFLOW: int = 10
+    DRIVER: str = 'psycopg_async'  # asyncpg
+    # закрывает зависшие соединения
+    POOL_RECYCLE: int = 3600
+    OLLAMA_HOST: str = 'http://localhost:11434'
+    OLLAMA_TIMEOUT: float = 60.0
 
     @property
     def database_url(self) -> Optional[PostgresDsn]:
@@ -31,11 +42,16 @@ class ConfigDataBase(BaseSettings):
         :return:
         :rtype:
         """
+        return (f"postgresql+{self.DRIVER}://{self.POSTGRES_USER}:"
+                f"{self.POSTGRES_PASSWORD}@{self.PGBOUNCER_CONTAINER_NAME}:"
+                f"{self.PGBOUNCER_PORT}/{self.POSTGRES_DB}")
+        """
         return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:"
+            f"postgresql+{self.DRIVER}://{self.POSTGRES_USER}:"
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+        """
 
     @property
     def django_database_url(self) -> Optional[PostgresDsn]:

@@ -1,32 +1,39 @@
-# DOCS/trigram_index.md
-1. trigram index (применяется в Drink)
-   1. Как проверить подкючение trigram
+# DOCS/trigram_index.md НЕ ИСПОЛЬЗУЕТСЯ
+1. trigram index (применяется в Item)
+   1. Как проверить подкючение trigram 
        SELECT *
        FROM pg_extension;
    2. Как проверить наличие индекса:
        SELECT tablename, indexname, indexdef
        FROM pg_indexes
-       WHERE tablename = 'drinks' AND indexname = 'drink_trigram_idx_combined';
+       WHERE tablename = 'items' AND indexname = 'idx_items_search_trgm';
    3. как создать индекс
-      sh create_trigram.sh
+      1. в __table_args__ добавить index (см Item)
+      2. в class добавить Search
+      3. создать pydantic model <Name>ReadRelation содержащюю основную и вложенные модели по которым искать
+      4. в repository.py: должен быть def get_query(cls, model: ModelType): с select с joinedload всех связей
+      5. sh alembic.sh
    4. как проверить что поиск идет с триграммным индексом
-   5. 
-2. FTS index (полнотекстовый индекс применяется в Rawdata)
-   1. см. Rawdata - порядок строго следующий (для большых данных):
-      1. сначала копируются все данные которые должны быть
-      2. затем создаются столбцы для ts векторов - на каждый язык свой nullable = True
-      3. и индексы
-      4. потом у векторов nullable меняется на False
+      1. EXPLAIN ANALYZE 
+         SELECT id FROM items 
+         WHERE search_content ILIKE '%vin%';
+      2. Если видишь Bitmap Heap Scan или Bitmap Index Scan с упоминанием idx_products_search_trgm — всё супер, 
+      3. индекс работает. Если видишь Seq Scan — значит, база сканирует всю таблицу целиком. 
+      4. Причина: либо в таблице слишком мало записей (до пары тысяч Postgres проще прочитать всё подряд), 
+      5. либо подстрока поиска слишком короткая.
 
-3. как проверить что используется инлдекс
-   EXPLAIN ANALYZE
-   SELECT parsed_data
-   FROM rawdatas
-   WHERE fts_russian @@ to_tsquery('russian', 'водка'); 
-4. Bitmap Heap Scan on rawdatas (cost=12.82..16.83 rows=1 width=991) (actual time=7.325..21.540 rows=223 loops=1)
-Recheck Cond: (fts_russian @@ '''водк'''::tsquery)
-Heap Blocks: exact=34
--> Bitmap Index Scan on idx_products_fts_russian (cost=0.00..12.82 rows=1 width=0) (actual time=3.590..3.591 rows=223 loops=1)
-Index Cond: (fts_russian @@ '''водк'''::tsquery)
-Planning Time: 212.409 ms
-Execution Time: 21.755 ms
+###  Как вообще устроен индекс:
+1. Индекс работает с таблией Items и индексирует все текстовые поля основной таблицы и всех связанных;
+2. Принцип - доработанный триграмный индекс по всем языкам кроме иероглифических и во **всех связанных таблицах**;
+3. Настройка индекса:
+   1. sqlalchemy model: поле "search_content" где хранятся все уникальные слова из строки и всех связанных с ней строк
+   2. создание индекса: init_db_extensions в main.py
+   3. заполнение "search_content": 
+      1. app/core/routers/base.py::fill_index
+      2. app.core.service/service.py::fill_index, далее смотри в функции
+         1. вручную выполнить запрос в swagger /items/fill_index
+         2. автоматически - app.core.service/service.py::run_reindex_worker
+         3. реально работает - тесты пока нет
+4. Удаление данных в случае изменений в любых свзанных записях: 
+   1. app.core.service/service.py::invalidate_search_index: повешено на delete и update
+5. 

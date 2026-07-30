@@ -4,9 +4,10 @@
     модели с ForeignKey должны должны быть выше моделей на которые они ссылаются
 """
 # flake8: noqa: F401
+# models
 from app.support.varietal.model import Varietal
 from app.support.item.model import Item
-from app.support.drink.model import Drink
+from app.support.drink.model import Drink, DrinkFood, DrinkVarietal
 from app.support.category.model import Category
 from app.support.subcategory.model import Subcategory
 from app.support.food.model import Food
@@ -18,7 +19,16 @@ from app.support.sweetness.model import Sweetness
 from app.support.warehouse.model import Warehouse
 from app.support.customer.model import Customer
 from app.support.parser.model import Name, Code, Rawdata, Image, Status
+from app.support.lwin.model import Lwin
+from app.support.producer.model import Producer, ProducerTitle
+from app.support.vintage.model import VintageConfig, Designation, Classification
+from app.support.parcel.model import Site, Parcel
+from app.support.source.model import Source
+from app.support.tasting.model import BaseIngredient, Body, Glassware, Scale, TastingNote
+from app.support.vllm.model import TranslateRawData
+# from app.support.migration.model import Migration
 
+# schemas
 from app.support.varietal.schemas import VarietalRead
 from app.support.item.schemas import (ItemRead, ItemCreate, ItemUpdate,
                                       ItemCreateRelation, ItemReadRelation)
@@ -38,9 +48,7 @@ from app.support.parser.schemas import (StatusCreate, StatusCreateResponseSchema
                                         CodeCreate, CodeCreateResponseSchema, CodeRead, CodeUpdate,
                                         NameCreate, NameCreateResponseSchema, NameRead, NameUpdate,
                                         ImageCreate, ImageCreateResponseSchema, ImageRead, ImageUpdate,
-                                        RawdataCreate, RawdataCreateResponseSchema,RawdataRead, RawdataUpdate)
-
-
+                                        RawdataCreate, RawdataCreateResponseSchema, RawdataRead, RawdataUpdate)
 from app.support.category.service import CategoryService
 from app.support.country.service import CountryService
 from app.support.item.service import ItemService
@@ -53,7 +61,12 @@ from app.support.subregion.service import SubregionService
 from app.support.superfood.service import SuperfoodService
 from app.support.sweetness.service import SweetnessService
 from app.support.varietal.service import VarietalService
-from app.support.parser.service import StatusService, CodeService,  NameService, ImageService, RawdataService
+from app.support.parser.service import StatusService, CodeService, NameService, ImageService, RawdataService
+from app.support.producer.service import ProducerService, ProducerTitleService
+from app.support.vintage.service import VintageConfigService, DesignationService, ClassificationService
+from app.support.parcel.service import ParcelService, SiteService
+from app.support.source.service import SourceService
+from app.support.tasting.service import BaseIngredientService, BodyService, GlasswareService, ScaleService, TastingNoteService
 
 # from app.support.warehouse.service import WarehouseService
 from app.support.warehouse.repository import WarehouseRepository
@@ -61,5 +74,5 @@ from app.support.parser.repository import (StatusRepository, CodeRepository, Nam
                                            RawdataRepository)
 
 __all__ = [CategoryRead, CategoryReadRelation, CategoryCreate, CategoryUpdate, CategoryCreateResponseSchema,
-           ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation, ItemReadRelation, WarehouseRepository
+           ItemRead, ItemCreate, ItemUpdate, ItemCreateRelation, ItemReadRelation
            ]

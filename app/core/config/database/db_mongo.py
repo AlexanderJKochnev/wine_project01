@@ -1,52 +1,50 @@
 # app/core/config/database/db_amongo.py
-# не используется проверить и удалтить
-
-from typing import AsyncGenerator
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from fastapi import HTTPException
-from app.core.config.database.mongo_config import settings
-# --- Глобальные переменные ---
-_client: AsyncIOMotorClient | None = None
+from app.core.config.project_config import settings
+import asyncio
 
 
-# --- Фабрика клиента ---
-async def get_mongo_client() -> AsyncIOMotorClient:
-    """
-    Возвращает единый экземпляр AsyncIOMotorClient.
-    Использует те же параметры, что и в рабочих тестах.
-    """
-    global _client
-    if _client is None:
-        _client = AsyncIOMotorClient(
-            host='localhost',  # например, 'localhost'
-            port=settings.MONGODB_PORT,  # например, 27019
-            username=settings.MONGODB_USER_NAME,
-            password=settings.MONGODB_USER_PASSWORD,
-            authSource='admin',
-            # replicaSet=settings.MONGODB_REPLICA_SET,  # 'rs0'
-            directConnection=True,  # 🔥 Критично: иначе — ошибка с DNS
-            maxPoolSize=10,
-            minPoolSize=5,
-            serverSelectionTimeoutMS=10000,
-            uuidRepresentation="standard"
-        )
-        # Проверяем подключение
-        try:
-            await _client.admin.command("ping")
-        except Exception as e:
-            raise ConnectionError(f"Cannot connect to MongoDB: {e}")
-    return _client
+class MongoDBManager:
+    client: AsyncIOMotorClient = None
+    database: AsyncIOMotorDatabase = None
+    _lock = asyncio.Lock()
+
+    @classmethod
+    async def connect(cls, mongo_url: str = None, mongo_database: str = None):
+        async with cls._lock:
+            if cls.client is None:
+                if mongo_database:
+                    cls.database = mongo_database
+                if mongo_url:
+                    cls.client = AsyncIOMotorClient(mongo_url)
+                else:
+                    cls.client = AsyncIOMotorClient(
+                        host=settings.MONGO_HOSTNAME,
+                        port=settings.MONGO_INN_PORT,
+                        username=settings.MONGO_INITDB_ROOT_USERNAME,
+                        password=settings.MONGO_INITDB_ROOT_PASSWORD,
+                        authSource='admin',
+                        directConnection=True,
+                        maxPoolSize=settings.MAXPOOLSIZE,  # Увеличено
+                        minPoolSize=settings.MINPOOLSIZE,
+                        uuidRepresentation="standard",
+                        compressors='zstd'
+                    )
+                await cls.client.admin.command("ping")
+
+    @classmethod
+    async def disconnect(cls):
+        async with cls._lock:
+            if cls.client:
+                cls.client.close()
+                cls.client = None
 
 
-# --- Фабрика базы данных ---
-async def get_mongodb() -> AsyncGenerator[AsyncIOMotorDatabase, None]:
-    """
-    Зависимость для получения базы данных.
-    Используется в FastAPI-роутах через Depends.
-    """
-    client = await get_mongo_client()
-    db = client[settings.MONGODB_DATABASE_NAME]
-    try:
-        yield db
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+async def get_mongodb() -> AsyncIOMotorDatabase:
+    # Просто возвращаем базу, Motor сам управляет пулом
+    if MongoDBManager.client is None:
+        raise RuntimeError("MongoDB client is not initialized. Did you forget to call it in lifespan?")
+    return MongoDBManager.client[settings.MONGO_DATABASE]
+
+#  ПРИМЕНЕНИЕ
+#  mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
