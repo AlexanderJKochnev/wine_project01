@@ -20,7 +20,7 @@ class CountryRouter(BaseRouter):
     async def create(self, data: CountryCreate, session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: CountryUpdate, background_tasks: BackgroundTasks,
+    async def patch(self, id: int, data: dict, background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)):
         return await super().patch(id, data, background_tasks, session)
 
