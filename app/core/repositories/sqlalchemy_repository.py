@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union
 from fastapi import HTTPException  # NOQA: F401
 from loguru import logger
 from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select,
-                        Select, text, update)
+                        Select, update)
 from sqlalchemy.dialects import postgresql  # NOQA: F401
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -340,6 +340,8 @@ class Repository(Background, metaclass=RepositoryMeta):
         """
             get one record by id
         """
+        mtmfileds = cls.get_many_to_many_fields(cls.model)
+        logger.warning(f'{mtmfileds=}')
         stmt = cls.get_query(model).where(model.id == id)
         result = await session.execute(stmt)
         obj = result.scalar_one_or_none()
@@ -858,34 +860,17 @@ class Repository(Background, metaclass=RepositoryMeta):
         return {rel.key for rel in mapper.relationships}
 
     @classmethod
-    async def update_scalar_fields(cls,
-                                   obj: ModelType,
-                                   data: Dict[str, Any],
-                                   session: AsyncSession) -> Union[ModelType, dict, None]:
-        """
-            Частичное обновление ТОЛЬКО скалярных полей через update()
-        """
-        try:
-            scalar_fields = cls.get_scalar_fields()
-            update_data = {k: v for k, v in data.items() if k in scalar_fields}
-            if not update_data:
-                return None
+    def get_many_to_many_fields(cls, model: ModelType) -> list:
+        """Определяет поля many-to-many"""
+        mapper = inspect(cls.model)
+        many_to_many = []
 
-            logger.info(f"Updating scalar fields for {cls.model.__name__} #{id}: {list(update_data.keys())}")
-
-            stmt = (update(cls.model).where(cls.model.id == id).values(**update_data).returning(*scalar_fields))
-
-            result = await session.execute(stmt)
-            await session.commit()
-
-            row = result.first()
-            return dict(row._mapping) if row else None
-
-        except Exception as e:
-            await session.rollback()
-            logger.error(f"Error updating scalar fields: {e}")
-            raise
-
+        for rel in mapper.relationships:
+            # Проверяем, что это many-to-many (есть промежуточная таблица)
+            if hasattr(rel, 'secondary') and rel.secondary is not None:
+                many_to_many.append(rel.key)
+        
+        return many_to_many
 
 class HandbookRepository(SearchRepositoryMixin, Repository):
     """
