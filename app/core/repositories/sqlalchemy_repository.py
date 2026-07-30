@@ -286,12 +286,12 @@ class Repository(Background, metaclass=RepositoryMeta):
         try:
             # Store original values for comparison later
             from app.core.utils.common_utils import jprint
-            jprint(obj.to_dict_fast())
+            jprint(obj.to_dict_fast().keys())
             logger.info('===========before============')
             for k, v in data.items():
                 if hasattr(obj, k):
                     setattr(obj, k, v)
-            jprint(obj.to_dict_fast())
+            jprint(obj.to_dict_fast().keys())
             logger.info('===========after============')
             await session.flush()
             # await session.refresh(data) - не надо - дает ошибки
