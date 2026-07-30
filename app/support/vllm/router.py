@@ -10,8 +10,6 @@ from app.core.config.database.db_async import DatabaseManager, get_db
 from app.core.enum import Drinkfield, Handbooks, Languages, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter, LightRouter
 from app.core.services.translate_service import TranslationService
-from app.core.types import Base
-from app.core.utils.alchemy_utils import get_models, get_models_with_columns
 from app.core.utils.common_utils import jprint
 from app.dependencies import get_translation_service
 from app.support.ollama.repository import ISOLanguageRepository
@@ -327,11 +325,6 @@ class TranslateHelperRouter(BaseRouter):
         origin = langs.get(source.value)
         destin = langs.get(destination.value)
         data = TranslateHelperCreate(word=word, drow=tmp, shit=replace, origin=origin, destin=destin)
-        data1 = TranslateHelpData.load_from_db(word1=word,
-                                               language_origin1=source,
-                                               language_destination1=destination,
-                                               approved1=approved,
-                                               session=session)
         return await self.service.create(session, data)
 
     async def add_drow(self, background_tasks: BackgroundTasks,
@@ -356,11 +349,6 @@ class TranslateHelperRouter(BaseRouter):
         destin = langs.get(destination.value)
         data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin, approved=approved)
         result: dict = await self.service.set_add_single(session, data)
-        data1 = TranslateHelpData.load_from_db(word1=word,
-                                               language_origin1=source,
-                                               language_destination1=destination,
-                                               approved1=approved,
-                                               session=session)
         return result
 
     async def remove_drow(self, background_tasks: BackgroundTasks,
@@ -384,13 +372,15 @@ class TranslateHelperRouter(BaseRouter):
         destin = langs.get(destination.value)
         data = self.update_schema(word=word, drow=tmp, replace=replace, origin=origin, destin=destin)
         result: dict = await self.service.set_remove_single(session, data)
-        approved = result.get('approved')
+        # approved = result.get('approved')
+        """
         if approved:
             data1 = TranslateHelpData.load_from_db(
                 word1=word, language_origin1=source, language_destination1=destination, approved1=approved,
                 session=session
             )
         # await TranslateHelperService.update_translate
+        """
         return result
 
     async def get_dict(self, session: AsyncSession = Depends(get_db),
