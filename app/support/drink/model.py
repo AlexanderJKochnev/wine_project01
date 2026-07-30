@@ -342,8 +342,8 @@ class DrinkFood(Base):
     food_id: Mapped[int] = mapped_column(ForeignKey("foods.id"), primary_key=True)
 
     # Связи с конкретными объектами
-    drink: Mapped["Drink"] = relationship(back_populates="food_associations")
-    food: Mapped["Food"] = relationship(back_populates="drink_associations")
+    drink: Mapped["Drink"] = relationship(back_populates="food_associations", overlaps="foods")
+    food: Mapped["Food"] = relationship(back_populates="drink_associations", overlaps="drinks,foods")
 
     # --- PREVIOUS MESSAGE ---
     # drink_id = Column(Integer, ForeignKey("drinks.id"), primary_key=True)
