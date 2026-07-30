@@ -392,8 +392,8 @@ class Service(metaclass=ServiceMeta):
             # вместо id передан instance
             existing_item: ModelType = id
             id = existing_item.id
-        logger.warning(f'{existing_item.to_dict_fast().keys()=}')
-        logger.warning(f'{existing_item.to_dict().keys()=}')
+        # logger.warning(f'{existing_item.to_dict_fast().keys()=}')
+        # logger.warning(f'{existing_item.to_dict().keys()=}')
         # Выполняем обновление
         result = await repository.patch(existing_item, data_dict, session)
         await cls.pre_run_background_task(id, background_tasks, repository, model)
