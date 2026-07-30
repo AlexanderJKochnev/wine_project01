@@ -242,11 +242,12 @@ class BaseRouter:
             raise HTTPException(status_code=405, detail=detail)
 
     async def patch(self, id: int,
-                    data: TUpdateSchema, background_tasks: BackgroundTasks,
+                    data: dict, background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)) -> dict:
         """
             Изменение одной записи по id
-            input_valudation_chema <>Update
+            input_valudation_chema dict
+            валидация входных данных произойдет уже в репозитории - все что не подходит будет отброшено
             response_model <>Read
         """
         logger.info('router')

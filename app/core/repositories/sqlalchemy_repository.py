@@ -295,7 +295,6 @@ class Repository(Background, metaclass=RepositoryMeta):
             updated_data: dict = {key: val for key, val in data.items()
                                   if key in obj_dict.keys() and val != obj_dict.get(key)}
             logger.info(f'{updated_data=}')
-            jprint(updated_data)
             query = update(cls.model).where(cls.model.id == id).values(**updated_data)
             await session.execute(query)
             await session.commit()

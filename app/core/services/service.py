@@ -375,7 +375,7 @@ class Service(metaclass=ServiceMeta):
         return list_dict(result)
 
     @classmethod
-    async def patch(cls, id: Union[int, Any], data: ModelType,
+    async def patch(cls, id: Union[int, Any], data_dict: dict,
                     repository: Type[Repository],
                     model: ModelType,
                     background_tasks: BackgroundTasks,
@@ -392,7 +392,7 @@ class Service(metaclass=ServiceMeta):
             # вместо id передан instance
             existing_item: ModelType = id
             id = existing_item.id
-        data_dict = data.model_dump(exclude_unset=True)
+        # data_dict = data.model_dump(exclude_unset=True)
         # Выполняем обновление
         result = await repository.patch(existing_item, data_dict, session)
         await cls.pre_run_background_task(id, background_tasks, repository, model)
