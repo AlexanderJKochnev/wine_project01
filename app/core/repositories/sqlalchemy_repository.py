@@ -296,7 +296,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             logger.info('updated_data')
             jprint(updated_data)
             query = update(cls.model).where(cls.model.id == id).values(**updated_data)
-            await session.update(query)
+            await session.execute(query)
             await session.flush([obj])
             return {"success": True, "data": obj}
 
