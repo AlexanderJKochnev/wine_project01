@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from fastapi import HTTPException  # NOQA: F401
 from loguru import logger
-from sqlalchemy import (and_, ARRAY, bindparam, delete, desc, func, insert, inspect, or_, Row, RowMapping, select,
+from sqlalchemy import (and_, delete, desc, func, insert, inspect, or_, Row, RowMapping, select,
                         Select, text, update)
 from sqlalchemy.dialects import postgresql  # NOQA: F401
 from sqlalchemy.exc import IntegrityError
@@ -285,9 +285,14 @@ class Repository(Background, metaclass=RepositoryMeta):
         """
         try:
             # Store original values for comparison later
+            from app.core.utils.common_utils import jprint
+            jprint(obj.to_dict_fast())
+            logger.info('===========before============')
             for k, v in data.items():
                 if hasattr(obj, k):
                     setattr(obj, k, v)
+            jprint(obj.to_dict_fast())
+            logger.info('===========after============')
             await session.flush()
             # await session.refresh(data) - не надо - дает ошибки
             return {"success": True, "data": obj}
