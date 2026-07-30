@@ -871,6 +871,7 @@ class Repository(Background, metaclass=RepositoryMeta):
                 many_to_many.append(rel.key)
         return many_to_many
 
+
 class HandbookRepository(SearchRepositoryMixin, Repository):
     """
     repository для справочников:
