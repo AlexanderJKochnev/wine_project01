@@ -299,16 +299,7 @@ class Repository(Background, metaclass=RepositoryMeta):
             await session.update(query)
             await session.flush([obj])
             return {"success": True, "data": obj}
-            
-            
-            for k, v in data.items():
-            
-            # 2. запрос на обновление
-            
-            
-            
-            
-            # Store original values for comparison later
+
             for k, v in data.items():
                 if hasattr(obj, k):
                     setattr(obj, k, v)
