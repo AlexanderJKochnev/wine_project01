@@ -249,7 +249,8 @@ class BaseRouter:
             Изменение одной записи по id
             input_valudation_chema dict
             валидация входных данных произойдет уже в репозитории - все что не подходит будет отброшено
-            response_model <>Read
+            response_model Read
+            для обнуления использовать null
         """
         print(data)
         result = await self.service.patch(id, data, self.repo, self.model, background_tasks,
