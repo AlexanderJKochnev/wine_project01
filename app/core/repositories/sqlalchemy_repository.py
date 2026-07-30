@@ -6,7 +6,7 @@
 """
 from abc import ABCMeta
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union
 
 from fastapi import HTTPException  # NOQA: F401
 from loguru import logger
@@ -285,6 +285,11 @@ class Repository(Background, metaclass=RepositoryMeta):
         """
         try:
             # Store original values for comparison later
+            print(cls.model.__name__)
+            scalar_fields = cls.get_scalar_fields(cls.model)
+            logger.info(scalar_fields)
+            rel_fields = cls.get_relationship_fields(cls.model)
+            logger.info(rel_fields)
             from app.core.utils.common_utils import jprint
             jprint(obj.to_dict_fast().keys())
             logger.info('===========before============')
@@ -842,6 +847,17 @@ class Repository(Background, metaclass=RepositoryMeta):
         items, total = await cls.pagination(query, skip, limit, session)
         # result = await session.scalars(query)
         return items, total
+
+    @classmethod
+    def get_scalar_fields(cls, model: ModelType) -> Set[str]:
+        """Получить имена скалярных полей модели"""
+        return {c.name for c in model.__table__.columns}
+
+    @classmethod
+    def get_relationship_fields(cls, model: ModelType) -> Set[str]:
+        """Получить имена полей-отношений модели"""
+        mapper = inspect(model)
+        return {rel.key for rel in mapper.relationships}
 
 
 class HandbookRepository(SearchRepositoryMixin, Repository):
