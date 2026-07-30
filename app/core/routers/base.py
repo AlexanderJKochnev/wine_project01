@@ -63,7 +63,7 @@ class BaseRouter:
         # input py schema for create with relation
         self.create_schema_relation = get_pyschema(model, 'CreateRelation') or self.create_schema
         # input update schema
-        self.update_schema = get_pyschema(model, 'Update')
+        self.update_schema = dict  # get_pyschema(model, 'Update')
         # response schemas:
         self.read_schema = get_pyschema(model, 'Read')
         self.read_schema_relation = get_pyschema(model, 'ReadRelation') or self.read_schema
