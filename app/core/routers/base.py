@@ -4,7 +4,7 @@
 from datetime import datetime
 from typing import Any, Callable, List, Type, TypeVar
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -164,7 +164,7 @@ class BaseRouter:
         # 11. patch one
         self.router.add_api_route("/{id}",
                                   self.patch, methods=["PATCH"],
-                                  openapi_extra={'x-request-schema': self.update_schema.__name__})
+                                  openapi_extra={'x-request-schema': None})
         # 12. delete one
         self.router.add_api_route("/{id}",
                                   self.delete, methods=["DELETE"],
@@ -242,7 +242,8 @@ class BaseRouter:
             raise HTTPException(status_code=405, detail=detail)
 
     async def patch(self, id: int,
-                    data: dict, background_tasks: BackgroundTasks,
+                    data: dict,
+                    background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)) -> dict:
         """
             Изменение одной записи по id
