@@ -91,7 +91,7 @@ class BaseRouter:
                                  'list_view': ("/list_view", self.get_list_view_page, ["GET"], None),
                                  'get_one': ("/{id}", self.get_one, ["GET"], None),
                                  'update_or_create': ("", self.update_or_create, ["PATCH"], self.update_schema.__name__),
-                                 'patch': ("/{id}", self.patch, ["PATCH"], None,
+                                 'patch': ("/{id}", self.patch, ["PATCH"], None),
                                  'delete': ("/{id}", self.delete, ["DELETE"], None)
                                  }
 
