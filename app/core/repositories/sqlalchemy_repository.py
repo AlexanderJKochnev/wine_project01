@@ -289,10 +289,14 @@ class Repository(Background, metaclass=RepositoryMeta):
             # 0. obj -> dict
             id = obj.id
             obj_dict = obj.to_dict_fast()
+            from app.core.utils.common_utils import jprint
+            logger.info('original_data')
+            jprint(obj_dict)
+            logger.info('source')
+            jprint(data)
             # 1. отфильтровать только изменения
             updated_data: dict = {key: val for key, val in data.items()
                                   if key in obj_dict.keys() and val != obj_dict.get(key)}
-            from app.core.utils.common_utils import jprint
             logger.info('updated_data')
             jprint(updated_data)
             query = update(cls.model).where(cls.model.id == id).values(**updated_data)
