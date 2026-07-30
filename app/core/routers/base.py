@@ -250,8 +250,6 @@ class BaseRouter:
             валидация входных данных произойдет уже в репозитории - все что не подходит будет отброшено
             response_model <>Read
         """
-        logger.info('router')
-        logger.info(f'{data=}')
         result = await self.service.patch(id, data, self.repo, self.model, background_tasks,
                                           session)
         return orresponse(result)

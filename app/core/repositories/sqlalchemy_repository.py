@@ -289,8 +289,8 @@ class Repository(Background, metaclass=RepositoryMeta):
             # 0. obj -> dict
             id = obj.id
             obj_dict = obj.to_dict_fast()
-            logger.info(f'original_data {obj_dict}')
-            logger.info(f'source {data=}')
+            logger.info(f'original_data {list(obj_dict.keys())}')
+            logger.info(f'source {list(data.keys())}')
             # 1. отфильтровать только изменения
             updated_data: dict = {key: val for key, val in data.items()
                                   if key in obj_dict.keys() and val != obj_dict.get(key)}
