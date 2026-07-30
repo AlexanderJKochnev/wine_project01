@@ -31,6 +31,12 @@ class Food(BaseFull):
     drink_associations: Mapped[List["DrinkFood"]] = relationship(
         back_populates="food", cascade="all, delete-orphan"
     )
+    drinks = relationship(
+        "Drink", secondary="drink_food_associations", back_populates="foods",
+        lazy="selectin",
+        overlaps="drink_associations,food,drink,food_associations"
+    )
+
     """
     # 2. Прямая связь Many-to-Many
     drinks: Mapped[List["Drink"]] = relationship(
