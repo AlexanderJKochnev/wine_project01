@@ -289,26 +289,17 @@ class Repository(Background, metaclass=RepositoryMeta):
             # 0. obj -> dict
             id = obj.id
             obj_dict = obj.to_dict()
-            logger.info(f'original_data {list(obj_dict.keys())}')
-            logger.info(f'source {list(data.keys())}')
             # 1. отфильтровать только изменения
             updated_data: dict = {key: val for key, val in data.items()
                                   if key in obj_dict.keys() and val != obj_dict.get(key)}
-            logger.info(f'{updated_data=}')
             if not updated_data:
                 raise HTTPException(status_code=500, detail='No change found')
             query = update(cls.model).where(cls.model.id == id).values(**updated_data)
             await session.execute(query)
             await session.commit()
             return {"success": True, "data": obj}
-
-            for k, v in data.items():
-                if hasattr(obj, k):
-                    setattr(obj, k, v)
-            await session.flush()
-            # await session.refresh(data) - не надо - дает ошибки
-            return {"success": True, "data": obj}
         except IntegrityError as e:
+
             raise AppBaseException(message=str(e.orig), status_code=404)
         except Exception as e:
             raise AppBaseException(message=str(e), status_code=405)
@@ -879,17 +870,17 @@ class Repository(Background, metaclass=RepositoryMeta):
             update_data = {k: v for k, v in data.items() if k in scalar_fields}
             if not update_data:
                 return None
-            
+
             logger.info(f"Updating scalar fields for {cls.model.__name__} #{id}: {list(update_data.keys())}")
-            
+
             stmt = (update(cls.model).where(cls.model.id == id).values(**update_data).returning(*scalar_fields))
-            
+
             result = await session.execute(stmt)
             await session.commit()
-            
+
             row = result.first()
             return dict(row._mapping) if row else None
-        
+
         except Exception as e:
             await session.rollback()
             logger.error(f"Error updating scalar fields: {e}")

@@ -1,21 +1,22 @@
 # app.suport.ollama.router.py
 from typing import List, Optional
+
+from fastapi import BackgroundTasks, Body, Depends, Form, HTTPException, Query, Request
 from loguru import logger
-from fastapi import BackgroundTasks, Depends, Form, HTTPException, Query, Body, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.enum import Categories, Preset, Prompts, Writers
+
 from app.core.config.database.db_async import get_db
+from app.core.enum import Categories, Preset, Prompts, Writers
 from app.core.routers.base import BaseRouter
 from app.core.utils.common_utils import compare_lists_compact, jprint
 from app.core.utils.pydantic_utils import inst_dict
 from app.support import Category
 from app.support.category.repository import CategoryRepository
-from app.support.ollama.model import Ollama, Prompt, ISOLanguage, Proption, WriterRule
+from app.support.ollama.model import ISOLanguage, Ollama, Prompt, Proption, WriterRule
 from app.support.ollama.repository import PromptRepository, WriterRuleRepository
-from app.support.ollama.schemas import (LlmResponseSchema, OllamaCreate, PromptCreate,
-                                        WriterRuleCreate, WriterRuleUpdate,
-                                        ISOLanguageCreate, ISOLanguageRead, ISOLanguageUpdate,
-                                        ProptionRead, ProptionCreate, ProptionUpdate)
+from app.support.ollama.schemas import (ISOLanguageCreate, ISOLanguageRead, LlmResponseSchema, OllamaCreate,
+                                        PromptCreate, ProptionCreate, ProptionRead, ProptionUpdate, WriterRuleCreate,
+                                        WriterRuleUpdate)
 from app.support.ollama.service import LLMService, OllamaService, PromptService, WriterRuleService
 
 writter_prompt = """Определи язык оригинала и переведи текст \"{phrase}\" на {lang} язык.
@@ -186,11 +187,6 @@ class ISOLanguageRouter(BaseRouter):
                            session: AsyncSession = Depends(get_db)) -> List[ISOLanguageRead]:
         return await super().batch_create(data, session)
 
-    async def patch(self, id: int, data: ISOLanguageUpdate,
-                    background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)) -> ISOLanguageRead:
-        return await super().patch(id, data, background_tasks, session)
-
 
 class PromptRouter(BaseRouter):
     """ промты для llm """
@@ -284,11 +280,6 @@ class ProptionRouter(BaseRouter):
                               stop=stop if stop else None,
                               active=active)
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: ProptionUpdate,
-                    background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)) -> ProptionRead:
-        return await super().patch(id, data, background_tasks, session)
 
     async def update_or_create(self, data: ProptionCreate,
                                background_tasks: BackgroundTasks,

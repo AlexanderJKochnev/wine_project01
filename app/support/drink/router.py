@@ -85,10 +85,6 @@ class DrinkRouter(BaseRouter):
         result = await super().create_relation(data, session)
         return result
 
-    async def patch(self, id: int, data: DrinkUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
-
     async def create_relation_image(self,
                                     data: str = Form(..., description="JSON string of DrinkCreateRelation"),
                                     file: UploadFile = File(...),

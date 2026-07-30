@@ -23,8 +23,3 @@ class CountryRouter(BaseRouter):
     async def patch(self, id: int, data: dict, background_tasks: BackgroundTasks,
                     session: AsyncSession = Depends(get_db)):
         return await super().patch(id, data, background_tasks, session)
-
-    async def create_relation(self, data: CountryCreateRelation,
-                              session: AsyncSession = Depends(get_db)):
-        result = await super().create_relation(data, session)
-        return result

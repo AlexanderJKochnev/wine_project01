@@ -1,13 +1,12 @@
 # app/support/subregion/router.py
 
-from fastapi import Depends, BackgroundTasks
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.subregion.model import Subregion
-from app.support.subregion.schemas import (SubregionCreate, SubregionUpdate,
-                                           SubregionCreateRelation, SubregionCreateResponseSchema)
+from app.support.subregion.schemas import (SubregionCreate, SubregionCreateRelation)
 
 
 class SubregionRouter(BaseRouter):
@@ -26,10 +25,6 @@ class SubregionRouter(BaseRouter):
     async def create(self, data: SubregionCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: SubregionUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: SubregionCreateRelation,
                               session: AsyncSession = Depends(get_db)):

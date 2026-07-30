@@ -110,11 +110,6 @@ class ItemRouter(ArrayRouter, SearchRouter, BaseRouter):
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: ItemUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks,
-                                   session)
-
     async def create_relation(self, data: ItemCreateRelation,
                               session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)

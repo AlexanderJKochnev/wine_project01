@@ -1,13 +1,12 @@
 # app/support/region/router.py
 
-from fastapi import Depends, BackgroundTasks
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.region.model import Region
-from app.support.region.schemas import (RegionCreate, RegionRead, RegionUpdate, RegionCreateRelation,
-                                        RegionCreateResponseSchema)
+from app.support.region.schemas import (RegionCreate, RegionCreateRelation, RegionRead)
 
 
 class RegionRouter(BaseRouter):
@@ -31,10 +30,6 @@ class RegionRouter(BaseRouter):
     async def create(self, data: RegionCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: RegionUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: RegionCreateRelation,
                               session: AsyncSession = Depends(get_db)):

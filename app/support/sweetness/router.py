@@ -1,12 +1,12 @@
 # app/support/sweetness/auth.py
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, BackgroundTasks
+
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.sweetness.model import Sweetness
-from app.support.sweetness.schemas import (SweetnessRead, SweetnessCreate,
-                                           SweetnessUpdate, SweetnessCreateRelation, SweetnessCreateResponseSchema)
+from app.support.sweetness.schemas import (SweetnessCreate, SweetnessCreateRelation)
 
 
 class SweetnessRouter(BaseRouter):
@@ -19,10 +19,6 @@ class SweetnessRouter(BaseRouter):
     async def create(self, data: SweetnessCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: SweetnessUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: SweetnessCreateRelation,
                               session: AsyncSession = Depends(get_db)):

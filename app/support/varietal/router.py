@@ -1,12 +1,12 @@
 # app/support/varietal/auth.py
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, BackgroundTasks
+
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.varietal.model import Varietal
-from app.support.varietal.schemas import (VarietalRead, VarietalCreate, VarietalUpdate,
-                                          VarietalCreateRelation, VarietalCreateResponseSchema)
+from app.support.varietal.schemas import (VarietalCreate, VarietalCreateRelation)
 
 
 class VarietalRouter(BaseRouter):
@@ -19,10 +19,6 @@ class VarietalRouter(BaseRouter):
     async def create(self, data: VarietalCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: VarietalUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: VarietalCreateRelation,
                               session: AsyncSession = Depends(get_db)):

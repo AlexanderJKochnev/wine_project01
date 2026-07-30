@@ -1,12 +1,13 @@
 # app.support.source.router.py
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, BackgroundTasks
+
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support.source.model import Source
+from app.support.source.schemas import (SourceCreate)
 from app.support.source.service import SourceService  # noqa: F401
-from app.support.source.schemas import (SourceRead, SourceCreate, SourceUpdate)
 
 
 class SourceRouter(BaseRouter):
@@ -19,8 +20,3 @@ class SourceRouter(BaseRouter):
     async def create(self, data: SourceCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int,
-                    data: SourceUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)

@@ -1,13 +1,14 @@
 # app/support/tasting/router.py
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, BackgroundTasks
+
 from app.core.config.database.db_async import get_db
 from app.core.routers.base import BaseRouter
 from app.support import BaseIngredient, Body, Glassware, Scale, TastingNote
-from app.support.tasting.schema import BaseIngredientCreate, BaseIngredientCreateRelation, BaseIngredientUpdate, \
-    BodyCreate, BodyCreateRelation, BodyUpdate, GlasswareCreate, GlasswareCreateRelation, GlasswareUpdate, ScaleCreate, \
-    ScaleCreateRelation, ScaleUpdate, TastingNoteCreate, TastingNoteCreateRelation, TastingNoteUpdate
+from app.support.tasting.schema import BaseIngredientCreate, BaseIngredientCreateRelation, BodyCreate, \
+    BodyCreateRelation, GlasswareCreate, GlasswareCreateRelation, ScaleCreate, ScaleCreateRelation, TastingNoteCreate, \
+    TastingNoteCreateRelation
 
 
 class BaseIngredientRouter(BaseRouter):
@@ -20,10 +21,6 @@ class BaseIngredientRouter(BaseRouter):
     async def create(self, data: BaseIngredientCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: BaseIngredientUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: BaseIngredientCreateRelation,
                               session: AsyncSession = Depends(get_db)):
@@ -42,10 +39,6 @@ class BodyRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: BodyUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
-
     async def create_relation(self, data: BodyCreateRelation,
                               session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)
@@ -62,10 +55,6 @@ class GlasswareRouter(BaseRouter):
     async def create(self, data: GlasswareCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: GlasswareUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: GlasswareCreateRelation,
                               session: AsyncSession = Depends(get_db)):
@@ -84,10 +73,6 @@ class ScaleRouter(BaseRouter):
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
 
-    async def patch(self, id: int, data: ScaleUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
-
     async def create_relation(self, data: ScaleCreateRelation,
                               session: AsyncSession = Depends(get_db)):
         result = await super().create_relation(data, session)
@@ -104,10 +89,6 @@ class TastingNoteRouter(BaseRouter):
     async def create(self, data: TastingNoteCreate,
                      session: AsyncSession = Depends(get_db)):
         return await super().create(data, session)
-
-    async def patch(self, id: int, data: TastingNoteUpdate, background_tasks: BackgroundTasks,
-                    session: AsyncSession = Depends(get_db)):
-        return await super().patch(id, data, background_tasks, session)
 
     async def create_relation(self, data: TastingNoteCreateRelation,
                               session: AsyncSession = Depends(get_db)):
