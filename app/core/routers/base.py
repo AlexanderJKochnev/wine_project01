@@ -249,8 +249,8 @@ class BaseRouter:
             input_valudation_chema <>Update
             response_model <>Read
         """
-        logger.info('path roytert')
-        jprint(data)
+        logger.info('router')
+        logger.info(f'{data=}')
         result = await self.service.patch(id, data, self.repo, self.model, background_tasks,
                                           session)
         return orresponse(result)
