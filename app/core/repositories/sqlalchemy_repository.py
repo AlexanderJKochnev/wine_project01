@@ -279,25 +279,39 @@ class Repository(Background, metaclass=RepositoryMeta):
     async def patch(cls, obj: ModelType,
                     data: Dict[str, Any], session: AsyncSession) -> Union[ModelType, dict, None]:
         """
-        редактирование записи
-        :param obj: редактируемая запись
-        :param data: изменения в редактируемую запись
+            редактирование записи - частичное обновление - только измененные поля
+            (для many-to-many добавить проверку изменений в промежуточной таблице)
+            :param obj: редактируемая запись
+            :param data: изменения в редактируемую запись (могут быть как словарем с полным набором полей
+            так и частичным - только с измененными записями
         """
         try:
-            # Store original values for comparison later
-            print(cls.model.__name__)
-            scalar_fields = cls.get_scalar_fields(cls.model)
-            logger.info(scalar_fields)
-            rel_fields = cls.get_relationship_fields(cls.model)
-            logger.info(rel_fields)
+            # 0. obj -> dict
+            id = obj.id
+            obj_dict = obj.to_dict_fast()
+            # 1. отфильтровать только изменения
+            updated_data: dict = {key: val for key, val in data.items()
+                                  if key in obj_dict.keys() and val != obj_dict.get(key)}
             from app.core.utils.common_utils import jprint
-            jprint(obj.to_dict_fast().keys())
-            logger.info('===========before============')
+            logger.info('updated_data')
+            jprint(updated_data)
+            query = update(cls.model).where(cls.model.id == id).values(**updated_data)
+            await session.update(query)
+            await session.flush([obj])
+            return {"success": True, "data": obj}
+            
+            
+            for k, v in data.items():
+            
+            # 2. запрос на обновление
+            
+            
+            
+            
+            # Store original values for comparison later
             for k, v in data.items():
                 if hasattr(obj, k):
                     setattr(obj, k, v)
-            jprint(obj.to_dict_fast().keys())
-            logger.info('===========after============')
             await session.flush()
             # await session.refresh(data) - не надо - дает ошибки
             return {"success": True, "data": obj}
@@ -858,6 +872,35 @@ class Repository(Background, metaclass=RepositoryMeta):
         """Получить имена полей-отношений модели"""
         mapper = inspect(model)
         return {rel.key for rel in mapper.relationships}
+
+    @classmethod
+    async def update_scalar_fields(cls,
+                                   obj: ModelType,
+                                   data: Dict[str, Any],
+                                   session: AsyncSession) -> Union[ModelType, dict, None]:
+        """
+            Частичное обновление ТОЛЬКО скалярных полей через update()
+        """
+        try:
+            scalar_fields = cls.get_scalar_fields()
+            update_data = {k: v for k, v in data.items() if k in scalar_fields}
+            if not update_data:
+                return None
+            
+            logger.info(f"Updating scalar fields for {cls.model.__name__} #{id}: {list(update_data.keys())}")
+            
+            stmt = (update(cls.model).where(cls.model.id == id).values(**update_data).returning(*scalar_fields))
+            
+            result = await session.execute(stmt)
+            await session.commit()
+            
+            row = result.first()
+            return dict(row._mapping) if row else None
+        
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Error updating scalar fields: {e}")
+            raise
 
 
 class HandbookRepository(SearchRepositoryMixin, Repository):
