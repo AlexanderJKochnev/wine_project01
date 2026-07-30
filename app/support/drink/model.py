@@ -229,7 +229,7 @@ class BackRelation:
 
     @declared_attr
     def food_associations(cls) -> Mapped[List["DrinkFood"]]:
-        return relationship(back_populates="drink", cascade="all, delete-orphan",
+        return relationship("Drink", back_populates="drink", cascade="all, delete-orphan",
                             lazy="selectin")
 
     @declared_attr
