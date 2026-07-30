@@ -20,7 +20,7 @@ class DatabaseManager:
         cls.connection_string = settings_db.database_url
         # Создаем Engine (Singleton)
         cls.engine = create_async_engine(settings_db.database_url,
-                                         echo=settings_db.DB_ECHO_LOG,
+                                         echo=True,  # settings_db.DB_ECHO_LOG,
                                          poolclass=NullPool,
                                          connect_args={"prepared_statement_cache_size": 0,
                                                        "statement_cache_size": 0, },
